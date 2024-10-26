@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Play Plus - 쿠팡플레이 기능 맞춤 설정",
+  "version": "0.1.0",
+  "description": "쿠팡플레이의 기능들을 개인 맞춤 설정할 수 있습니다.",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.coupangplay.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

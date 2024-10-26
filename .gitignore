@@ -1,0 +1,9 @@
+# Node.js dependencies
+node_modules/
+
+# Built files
+dist/
+
+# Local environment files
+.env
+.env.local
