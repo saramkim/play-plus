@@ -1,4 +1,6 @@
-type StorageSchema = {};
+type StorageSchema = {
+  skipTime: number;
+};
 type StorageKey = keyof StorageSchema;
 
 export const setStorage = <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
