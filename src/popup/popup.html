@@ -5,16 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Play Plus Popup</title>
   </head>
-  <body class="w-[350px] p-4 bg-teal-50 select-none">
-    <div class="flex flex-col gap-3">
-      <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
-      <p class="text-gray-600">쿠팡플레이의 기능들을 개인 맞춤 설정하여 이용하세요!</p>
-      <div class="flex items-center gap-2">
-        <label for="skip-time" class="text-nowrap">영상 이동 시간(초):</label>
-        <input type="number" id="skip-time" value="10" min="1" class="border outline-none rounded px-2 py-1 w-full" />
-        <div id="feedback" class="hidden">✔</div>
-        <button id="save-skip-time" class="px-2 py-1 bg-teal-500 text-white rounded text-nowrap">저장</button>
-      </div>
+  <body class="w-[350px] p-4 bg-teal-50 select-none text-nowrap">
+    <div class="flex flex-col gap-4">
+      <header class="flex flex-col gap-2">
+        <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
+        <p class="text-gray-600">쿠팡플레이의 기능들을 개인 맞춤 설정하여 이용하세요!</p>
+      </header>
+
+      <section class="flex flex-col gap-1">
+        <header class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold">🙂 메인 키 (←/→)</h2>
+          <div class="flex items-center gap-2">
+            <div id="feedback_1_s" class="hidden text-teal-500">✔</div>
+            <div id="feedback_1_e" class="hidden text-rose-400">✖</div>
+            <button id="save-skip-time" class="button bg-teal-500">저장</button>
+          </div>
+        </header>
+        <div class="flex items-center gap-2">
+          <label for="skip-time" class="label">영상 이동 시간(초):</label>
+          <input type="number" id="skip-time" value="10" min="1" class="input" />
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-1">
+        <header class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold">😎 서브 키 (맞춤 설정)</h2>
+          <div class="flex items-center gap-2">
+            <button id="reset-sub-key" class="button bg-rose-400">초기화</button>
+            <div id="feedback_2_s" class="hidden text-teal-500">✔</div>
+            <div id="feedback_2_e" class="hidden text-rose-400">✖</div>
+            <button id="save-sub-key" class="button bg-teal-500">저장</button>
+          </div>
+        </header>
+        <div class="flex items-center gap-2">
+          <label for="sub-forward-key" class="label">앞으로 이동 키:</label>
+          <input id="sub-forward-key" class="input" readonly />
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="sub-backward-key" class="label">뒤로 이동 키:</label>
+          <input id="sub-backward-key" class="input" readonly />
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="sub-skip-time" class="label">영상 이동 시간(초):</label>
+          <input type="number" id="sub-skip-time" value="10" min="1" class="input" />
+        </div>
+      </section>
     </div>
   </body>
 </html>
