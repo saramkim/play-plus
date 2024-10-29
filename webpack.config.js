@@ -8,7 +8,6 @@ module.exports = {
     popup: path.resolve(__dirname, 'src/popup/popup.ts'),
     background: path.resolve(__dirname, 'src/background.ts'),
     content: path.resolve(__dirname, 'src/content.ts'),
-    storage: path.resolve(__dirname, 'src/storage.ts'),
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -30,7 +29,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
   },
-  devtool: 'inline-source-map',
+  devtool: false,
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/popup/popup.html',
