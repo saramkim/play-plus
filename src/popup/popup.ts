@@ -1,4 +1,4 @@
-import { getStorage, removeStorage, setStorage } from '../storage';
+import { getStorage, removeStorage, setStorage } from '../utils/storage';
 import '../style.css';
 
 const FEEDBACK_DISPLAY_DURATION = 800;

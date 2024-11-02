@@ -1,4 +1,4 @@
-import { getStorage } from './storage';
+import { getStorage } from './utils/storage';
 
 let mainSkipTime = 10;
 let subSkipTime = 10;
