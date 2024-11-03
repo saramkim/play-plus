@@ -37,7 +37,10 @@ module.exports = {
       chunks: ['popup'],
     }),
     new CopyWebpackPlugin({
-      patterns: [{ from: 'public', to: '.' }],
+      patterns: [
+        { from: 'public', to: '.' },
+        { from: 'src/components/template.html', to: '[name][ext]' },
+      ],
     }),
   ],
   optimization: {

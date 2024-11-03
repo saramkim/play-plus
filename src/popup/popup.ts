@@ -6,8 +6,15 @@ const SKIP_TIME_STORAGE_KEY = 'skipTime';
 const SUB_KEY_STORAGE_KEY = 'subKey';
 
 async function initializeSettings() {
+  await loadTemplates();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
+}
+
+async function loadTemplates() {
+  const response = await fetch('template.html');
+  const text = await response.text();
+  document.body.insertAdjacentHTML('beforeend', text);
 }
 
 async function initializeSkipTimeSetting() {
