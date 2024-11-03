@@ -1,9 +1,3 @@
-export const getMetadataUrlFromUrl = (url: string) => {
-  const titleId = extractTitleIdFromUrl(url);
-  if (!titleId) throw new Error('Invalid URL');
-  return `https://www.coupangplay.com/api/playback/play?titleId=${titleId}&titleType=EPISODE`;
-};
-
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
     return { ...obj, [item.name]: item.value };
@@ -35,11 +29,6 @@ export const parseVTT = (data: string) => {
   });
 
   return subtitles;
-};
-
-const extractTitleIdFromUrl = (url: string) => {
-  const match = url.match(/play\/([a-f0-9-]+)\//);
-  return match ? match[1] : null;
 };
 
 const timeToSeconds = (time: string) => {
