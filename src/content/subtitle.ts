@@ -17,10 +17,11 @@ export async function fetchAndSyncSubtitles(url: string, headerList: chrome.webR
     .then((response) => response.json())
     .then((response: ApiResponse) => {
       const apiList = extractSubtitleApiFromResponse(response);
-      const fetchList = apiList.map(({ url }) => fetchSubtitle(url));
+      if (apiList.length === 0) return;
 
-      Promise.all(fetchList).then(([englishSubtitles, koreanSubtitles]) => {
-        syncSubtitles(video, englishSubtitles, koreanSubtitles);
+      const fetchList = apiList.map(({ lang, url }) => fetchSubtitle(url).then((subtitles) => ({ lang, subtitles })));
+      Promise.all(fetchList).then((subtitleDataList) => {
+        syncSubtitles(video, subtitleDataList);
       });
     });
 }
@@ -50,7 +51,7 @@ async function fetchSubtitle(url: string) {
   return parseVTT(text);
 }
 
-function syncSubtitles(video: HTMLVideoElement, englishSubtitles: SubtitleData[], koreanSubtitles: SubtitleData[]) {
+function syncSubtitles(video: HTMLVideoElement, subtitleDataList: { lang: string; subtitles: SubtitleData[] }[]) {
   const trackDisplayContainer = document.getElementsByClassName('vjs-text-track-display');
   const subtitleContainer = document.createElement('div');
 
@@ -84,12 +85,14 @@ function syncSubtitles(video: HTMLVideoElement, englishSubtitles: SubtitleData[]
 
   video.addEventListener('timeupdate', () => {
     const currentTime = video.currentTime;
-    const englishSubtitle = englishSubtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
-    const koreanSubtitle = koreanSubtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
+    const subtitleText = subtitleDataList
+      .sort((a, b) => (a.lang === 'en' ? -1 : b.lang === 'en' ? 1 : 0))
+      .map(({ subtitles }) => {
+        const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
+        return subtitle ? `<p style="color: white;">${subtitle.text}</p>` : '';
+      })
+      .join('');
 
-    subtitleContainer.innerHTML = `
-    <p style="color: white;">${englishSubtitle ? englishSubtitle.text : ''}</p>
-    <p style="color: white;">${koreanSubtitle ? koreanSubtitle.text : ''}</p>
-      `;
+    subtitleContainer.innerHTML = subtitleText;
   });
 }
