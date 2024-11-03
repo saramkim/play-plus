@@ -5,66 +5,87 @@ const FEEDBACK_DISPLAY_DURATION = 800;
 const SKIP_TIME_STORAGE_KEY = 'skipTime';
 const SUB_KEY_STORAGE_KEY = 'subKey';
 
+async function initializeSettings() {
+  await initializeSkipTimeSetting();
+  await initializeSubKeySetting();
+}
+
 async function initializeSkipTimeSetting() {
   const skipTime = await getStorage(SKIP_TIME_STORAGE_KEY);
-  const timeInput = initializeInput('skip-time', '10', skipTime?.toString());
+  const timeInput = setupInput('skip-time', '10', skipTime?.toString());
 
-  document.getElementById('save-skip-time')?.addEventListener('click', async () => {
-    const seconds = parseInt(timeInput.value, 10);
-
-    if (validateSkipTime(seconds)) {
-      await setStorage(SKIP_TIME_STORAGE_KEY, seconds);
-      showFeedback('feedback_1_s');
-    } else {
-      showFeedback('feedback_1_e');
-    }
-  });
+  document.getElementById('save-skip-time')?.addEventListener('click', () => handleSaveSkipTime(timeInput));
 }
 
 async function initializeSubKeySetting() {
   const subKey = await getStorage(SUB_KEY_STORAGE_KEY);
-  const forwardInput = initializeInput('sub-forward-key', '', subKey?.forward);
-  const backwardInput = initializeInput('sub-backward-key', '', subKey?.backward);
-  const timeInput = initializeInput('sub-skip-time', '10', subKey?.skipTime?.toString());
+  const forwardInput = setupInput('sub-forward-key', '', subKey?.forward);
+  const backwardInput = setupInput('sub-backward-key', '', subKey?.backward);
+  const timeInput = setupInput('sub-skip-time', '10', subKey?.skipTime?.toString());
 
-  addKeydownHandler(forwardInput);
-  addKeydownHandler(backwardInput);
-
-  document.getElementById('save-sub-key')?.addEventListener('click', async () => {
-    const seconds = parseInt(timeInput.value, 10);
-
-    if (validateSkipTime(seconds) && (forwardInput.value || backwardInput.value)) {
-      await setStorage(SUB_KEY_STORAGE_KEY, {
-        forward: forwardInput.value,
-        backward: backwardInput.value,
-        skipTime: seconds,
-      });
-      showFeedback('feedback_2_s');
-    } else {
-      showFeedback('feedback_2_e');
-    }
-  });
-
-  document.getElementById('reset-sub-key')?.addEventListener('click', async () => {
-    await removeStorage('subKey');
-    forwardInput.value = '';
-    backwardInput.value = '';
-    timeInput.value = '10';
-  });
+  setupKeydownHandlers([forwardInput, backwardInput]);
+  document
+    .getElementById('save-sub-key')
+    ?.addEventListener('click', () => handleSaveSubKey(forwardInput, backwardInput, timeInput));
+  document
+    .getElementById('reset-sub-key')
+    ?.addEventListener('click', () => handleResetSubKey(forwardInput, backwardInput, timeInput));
 }
 
-function initializeInput(elementId: string, defaultValue: string, storageValue?: string) {
+function setupInput(elementId: string, defaultValue: string, storageValue?: string): HTMLInputElement {
   const input = document.getElementById(elementId) as HTMLInputElement;
   input.value = storageValue || defaultValue;
   return input;
 }
 
-function addKeydownHandler(inputElement: HTMLInputElement) {
-  inputElement.addEventListener('keydown', (event) => {
-    event.preventDefault();
-    inputElement.value = event.code;
-    inputElement.blur();
-  });
+function setupKeydownHandlers(inputs: HTMLInputElement[]) {
+  inputs.forEach((input) =>
+    input.addEventListener('keydown', (event) => {
+      event.preventDefault();
+      input.value = event.code;
+      input.blur();
+    })
+  );
+}
+
+async function handleSaveSkipTime(timeInput: HTMLInputElement) {
+  const seconds = parseInt(timeInput.value, 10);
+  if (validateSkipTime(seconds)) {
+    await setStorage(SKIP_TIME_STORAGE_KEY, seconds);
+    showFeedback('feedback_1_s');
+  } else {
+    showFeedback('feedback_1_e');
+  }
+}
+
+async function handleSaveSubKey(
+  forwardInput: HTMLInputElement,
+  backwardInput: HTMLInputElement,
+  timeInput: HTMLInputElement
+) {
+  const seconds = parseInt(timeInput.value, 10);
+
+  if (validateSkipTime(seconds) && (forwardInput.value || backwardInput.value)) {
+    await setStorage(SUB_KEY_STORAGE_KEY, {
+      forward: forwardInput.value,
+      backward: backwardInput.value,
+      skipTime: seconds,
+    });
+    showFeedback('feedback_2_s');
+  } else {
+    showFeedback('feedback_2_e');
+  }
+}
+
+async function handleResetSubKey(
+  forwardInput: HTMLInputElement,
+  backwardInput: HTMLInputElement,
+  timeInput: HTMLInputElement
+) {
+  await removeStorage(SUB_KEY_STORAGE_KEY);
+  forwardInput.value = '';
+  backwardInput.value = '';
+  timeInput.value = '10';
 }
 
 function showFeedback(id: string) {
@@ -77,7 +98,4 @@ function validateSkipTime(seconds: number) {
   return !isNaN(seconds) && seconds > 0;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await initializeSkipTimeSetting();
-  await initializeSubKeySetting();
-});
+document.addEventListener('DOMContentLoaded', initializeSettings);

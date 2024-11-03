@@ -4,7 +4,7 @@ export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[
   }, {});
 };
 
-export const extractSubtitleApiFromResponse = (response: ApiResponse): SubtitleApi[] => {
+export const extractSubtitleApiFromResponse = (response: ApiResponse) => {
   return response.data.raw.text_tracks
     .filter(({ kind }) => kind === 'subtitles')
     .map(({ srclang, src }) => ({ lang: srclang!, url: src }));
@@ -40,11 +40,6 @@ export type SubtitleData = {
   start: number;
   end: number;
   text: string;
-};
-
-export type SubtitleApi = {
-  url: string;
-  lang: string;
 };
 
 export type ApiResponse = {
