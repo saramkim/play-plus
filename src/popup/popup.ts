@@ -1,12 +1,15 @@
 import { getStorage, removeStorage, setStorage } from '../utils/storage';
 import '../style.css';
+import { Toggle } from '../components/toggle';
 
 const FEEDBACK_DISPLAY_DURATION = 800;
+const IS_SUBTITLE_ON_STORAGE_KEY = 'isSubtitleOn';
 const SKIP_TIME_STORAGE_KEY = 'skipTime';
 const SUB_KEY_STORAGE_KEY = 'subKey';
 
 async function initializeSettings() {
   await loadTemplates();
+  await initializeSubtitleSetting();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
 }
@@ -15,6 +18,17 @@ async function loadTemplates() {
   const response = await fetch('template.html');
   const text = await response.text();
   document.body.insertAdjacentHTML('beforeend', text);
+}
+
+async function initializeSubtitleSetting() {
+  const isSubtitleOn = (await getStorage(IS_SUBTITLE_ON_STORAGE_KEY)) || false;
+
+  const toggle = Toggle({
+    isOn: isSubtitleOn,
+    onChange: (isOn) => setStorage(IS_SUBTITLE_ON_STORAGE_KEY, isOn),
+  });
+
+  document.getElementById('toggle-container')?.appendChild(toggle);
 }
 
 async function initializeSkipTimeSetting() {

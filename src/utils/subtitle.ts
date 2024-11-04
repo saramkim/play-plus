@@ -4,7 +4,7 @@ export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[
   }, {});
 };
 
-export const extractSubtitleApiFromResponse = (response: ApiResponse) => {
+export const extractSubtitleApiInfoFromResponse = (response: ApiResponse) => {
   return response.data.raw.text_tracks
     .filter(({ kind }) => kind === 'subtitles')
     .map(({ srclang, src }) => ({ lang: srclang!, url: src }));
@@ -34,6 +34,11 @@ export const parseVTT = (data: string) => {
 const timeToSeconds = (time: string) => {
   const [hours, minutes, seconds] = time.split(':');
   return Number(hours) * 3600 + Number(minutes) * 60 + parseFloat(seconds);
+};
+
+export type SubtitleApiInfo = {
+  lang: string;
+  url: string;
 };
 
 export type SubtitleData = {
