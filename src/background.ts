@@ -1,3 +1,17 @@
+const loadedTabs = new Set<number>();
+const messageQueue: { [tabId: number]: any[] } = {};
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'complete') {
+    loadedTabs.add(tabId);
+
+    if (messageQueue[tabId]) {
+      messageQueue[tabId].forEach((msg) => chrome.tabs.sendMessage(tabId, msg));
+      delete messageQueue[tabId];
+    }
+  }
+});
+
 chrome.webRequest.onSendHeaders.addListener(
   async (details) => {
     const hasCustomHeader = details.requestHeaders?.some((header) => header.name === 'X-Extension-Request');
@@ -5,9 +19,20 @@ chrome.webRequest.onSendHeaders.addListener(
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
-      chrome.tabs.sendMessage(tab.id, { url: details.url, headers: details.requestHeaders });
+      const message = { url: details.url, headers: details.requestHeaders };
+      sendMessageToContent(tab.id, message);
     }
   },
   { urls: ['https://www.coupangplay.com/api/playback/play?*'] },
   ['requestHeaders']
 );
+
+function sendMessageToContent(tabId: number, message: any) {
+  if (loadedTabs.has(tabId)) {
+    chrome.tabs.sendMessage(tabId, message);
+  } else if (messageQueue[tabId]) {
+    messageQueue[tabId].push(message);
+  } else {
+    messageQueue[tabId] = [message];
+  }
+}
