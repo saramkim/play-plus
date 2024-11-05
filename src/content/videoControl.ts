@@ -1,48 +1,51 @@
-import { getStorage } from '../utils/storage';
+import { getStorage, SubKeyConfig } from '../utils/storage';
+
+type KeyBindings = { [key: string]: () => void };
 
 const SKIP_TIME_STORAGE_KEY = 'skipTime';
 const SUB_KEY_STORAGE_KEY = 'subKey';
 
 let mainSkipTime = 10;
-let subSkipTime = 10;
+let keyBindings: KeyBindings = {};
 
 export async function initializeSkipTimeSetting() {
   mainSkipTime = (await getStorage(SKIP_TIME_STORAGE_KEY)) || 10;
   chrome.storage.sync.onChanged.addListener(handleStorageChange);
 }
 
-function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
-  if (changes[SKIP_TIME_STORAGE_KEY]) {
-    mainSkipTime = changes[SKIP_TIME_STORAGE_KEY].newValue;
-  }
-  if (changes[SUB_KEY_STORAGE_KEY]) {
-    subSkipTime = changes[SUB_KEY_STORAGE_KEY].newValue.skipTime;
-  }
-}
-
 export async function initializeKeyBindings() {
-  const keyBindings = await getKeyBindings();
-  document.addEventListener('keydown', (event) => handleKeydown(event, keyBindings));
+  setKeyBindings(await getStorage(SUB_KEY_STORAGE_KEY));
+  document.addEventListener('keydown', handleKeydown);
 }
 
-async function getKeyBindings() {
-  const keyBindings: { [key: string]: () => void } = {
+async function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
+  const skipTimeChange = changes[SKIP_TIME_STORAGE_KEY];
+  const subKeyChange = changes[SUB_KEY_STORAGE_KEY];
+
+  if (skipTimeChange && skipTimeChange.newValue) {
+    mainSkipTime = skipTimeChange.newValue;
+  }
+  if (subKeyChange) {
+    setKeyBindings(subKeyChange.newValue);
+  }
+}
+
+async function setKeyBindings(subKeyConfig?: SubKeyConfig) {
+  const bindings: KeyBindings = {
     ArrowRight: () => skipVideoTime(mainSkipTime),
     ArrowLeft: () => skipVideoTime(-mainSkipTime),
   };
 
-  const subKeyConfig = await getStorage(SUB_KEY_STORAGE_KEY);
   if (subKeyConfig) {
     const { forward, backward, skipTime } = subKeyConfig;
-    subSkipTime = skipTime;
-    keyBindings[forward] = () => skipVideoTime(subSkipTime);
-    keyBindings[backward] = () => skipVideoTime(-subSkipTime);
+    bindings[forward] = () => skipVideoTime(skipTime);
+    bindings[backward] = () => skipVideoTime(-skipTime);
   }
 
-  return keyBindings;
+  keyBindings = bindings;
 }
 
-function handleKeydown(event: KeyboardEvent, keyBindings: { [key: string]: () => void }) {
+function handleKeydown(event: KeyboardEvent) {
   if (isInputField()) return;
 
   const action = keyBindings[event.code];

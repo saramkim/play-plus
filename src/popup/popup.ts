@@ -86,7 +86,7 @@ async function handleSaveSubKey(
 ) {
   const seconds = parseInt(timeInput.value, 10);
 
-  if (validateSkipTime(seconds) && (forwardInput.value || backwardInput.value)) {
+  if (validateSkipTime(seconds) && forwardInput.value && backwardInput.value) {
     await setStorage(SUB_KEY_STORAGE_KEY, {
       forward: forwardInput.value,
       backward: backwardInput.value,

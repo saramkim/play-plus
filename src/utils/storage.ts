@@ -1,7 +1,7 @@
-type SubKeyStorage = { forward: string; backward: string; skipTime: number };
+export type SubKeyConfig = { forward: string; backward: string; skipTime: number };
 type StorageSchema = {
   skipTime: number;
-  subKey: SubKeyStorage;
+  subKey: SubKeyConfig;
   isSubtitleOn: boolean;
 };
 type StorageKey = keyof StorageSchema;
