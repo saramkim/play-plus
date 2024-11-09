@@ -1,5 +1,5 @@
 import { LANGUAGE_CODE, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
-import { getStorage, SubtitleConfig } from '../utils/storage';
+import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
   extractSubtitleApiInfoFromResponse,
@@ -18,7 +18,7 @@ let subtitleContainerObserver: MutationObserver | null;
 let handleVideoTimeupdate: (() => void) | null;
 
 export async function initializeSubtitleSync() {
-  chrome.storage.sync.onChanged.addListener(handleStorageChange);
+  onStorageChange(handleStorageChange);
   englishSubtitle = (await getStorage('englishSubtitle')) || null;
   koreanSubtitle = (await getStorage('koreanSubtitle')) || null;
 }
@@ -46,14 +46,14 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
   }
 }
 
-async function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
+async function handleStorageChange(changes: StorageChanges) {
   const subtitles = [
     { key: 'englishSubtitle', langCode: LANGUAGE_CODE.ENGLISH, setter: (value: any) => (englishSubtitle = value) },
     { key: 'koreanSubtitle', langCode: LANGUAGE_CODE.KOREAN, setter: (value: any) => (koreanSubtitle = value) },
   ] as const;
 
   for (const { key, langCode, setter } of subtitles) {
-    if (changes[key]) {
+    if (changes[key] && changes[key].newValue) {
       const { newValue } = changes[key];
       setter(newValue);
 

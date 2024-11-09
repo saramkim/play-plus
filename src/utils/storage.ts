@@ -9,6 +9,15 @@ type StorageSchema = {
 };
 type StorageKey = keyof StorageSchema;
 
+type StorageChange<T> = {
+  oldValue?: T;
+  newValue?: T;
+};
+
+export type StorageChanges = {
+  [K in StorageKey]?: StorageChange<StorageSchema[K]>;
+};
+
 export const setStorage = <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
   return chrome.storage.sync.set({ [key]: value });
 };
@@ -23,4 +32,8 @@ export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[
 
 export const removeStorage = <K extends StorageKey>(key: K) => {
   return chrome.storage.sync.remove(key);
+};
+
+export const onStorageChange = (callback: (changes: StorageChanges) => void) => {
+  chrome.storage.sync.onChanged.addListener(callback);
 };
