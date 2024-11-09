@@ -3,13 +3,15 @@ import '../style.css';
 import { Toggle } from '../components/toggle';
 
 const FEEDBACK_DISPLAY_DURATION = 800;
-const IS_SUBTITLE_ON_STORAGE_KEY = 'isSubtitleOn';
+const ENGLISH_SUBTITLE_STORAGE_KEY = 'englishSubtitle';
+const KOREAN_SUBTITLE_STORAGE_KEY = 'koreanSubtitle';
 const SKIP_TIME_STORAGE_KEY = 'skipTime';
 const SUB_KEY_STORAGE_KEY = 'subKey';
 
 async function initializeSettings() {
   await loadTemplates();
-  await initializeSubtitleSetting();
+  await initializeEnglishSubtitleSetting();
+  await initializeKoreanSubtitleSetting();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
 }
@@ -20,15 +22,23 @@ async function loadTemplates() {
   document.body.insertAdjacentHTML('beforeend', text);
 }
 
-async function initializeSubtitleSetting() {
-  const isSubtitleOn = (await getStorage(IS_SUBTITLE_ON_STORAGE_KEY)) || false;
-
+async function initializeEnglishSubtitleSetting() {
+  const englishSubtitle = await getStorage(ENGLISH_SUBTITLE_STORAGE_KEY);
   const toggle = Toggle({
-    isOn: isSubtitleOn,
-    onChange: (isOn) => setStorage(IS_SUBTITLE_ON_STORAGE_KEY, isOn),
+    isOn: englishSubtitle?.enabled || false,
+    onChange: (enabled) => setStorage(ENGLISH_SUBTITLE_STORAGE_KEY, { enabled }),
+  });
+  document.getElementById('english-toggle-container')?.appendChild(toggle);
+}
+
+async function initializeKoreanSubtitleSetting() {
+  const koreanSubtitle = await getStorage(KOREAN_SUBTITLE_STORAGE_KEY);
+  const toggle = Toggle({
+    isOn: koreanSubtitle?.enabled || false,
+    onChange: (enabled) => setStorage(KOREAN_SUBTITLE_STORAGE_KEY, { enabled }),
   });
 
-  document.getElementById('toggle-container')?.appendChild(toggle);
+  document.getElementById('korean-toggle-container')?.appendChild(toggle);
 }
 
 async function initializeSkipTimeSetting() {

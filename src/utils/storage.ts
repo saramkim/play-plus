@@ -1,8 +1,11 @@
 export type SubKeyConfig = { forward: string; backward: string; skipTime: number };
+export type SubtitleConfig = { enabled: boolean };
+
 type StorageSchema = {
   skipTime: number;
   subKey: SubKeyConfig;
-  isSubtitleOn: boolean;
+  englishSubtitle: SubtitleConfig;
+  koreanSubtitle: SubtitleConfig;
 };
 type StorageKey = keyof StorageSchema;
 

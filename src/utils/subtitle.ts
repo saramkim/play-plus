@@ -36,8 +36,10 @@ const timeToSeconds = (time: string) => {
   return Number(hours) * 3600 + Number(minutes) * 60 + parseFloat(seconds);
 };
 
+export type SubtitleLanguage = 'en' | 'ko';
+
 export type SubtitleApiInfo = {
-  lang: string;
+  lang: SubtitleLanguage;
   url: string;
 };
 
@@ -92,7 +94,7 @@ type TextTrack = {
   mime_type: string;
   sources: { src: string }[];
   src: string;
-  srclang: string | null;
+  srclang: SubtitleLanguage | null;
   width: number | null;
 };
 

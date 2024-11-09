@@ -1,22 +1,30 @@
-import { getStorage } from '../utils/storage';
+import { getStorage, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
   extractSubtitleApiInfoFromResponse,
   parseVTT,
   SubtitleApiInfo,
   SubtitleData,
+  SubtitleLanguage,
 } from '../utils/subtitle';
 
-const IS_SUBTITLE_ON_STORAGE_KEY = 'isSubtitleOn';
+const ENGLISH_SUBTITLE_STORAGE_KEY = 'englishSubtitle';
+const KOREAN_SUBTITLE_STORAGE_KEY = 'koreanSubtitle';
 const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 
+const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
+
+let englishSubtitle: SubtitleConfig | null;
+let koreanSubtitle: SubtitleConfig | null;
 let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
 let handleVideoTimeupdate: (() => void) | null;
 
 export async function initializeSubtitleSync() {
   chrome.storage.sync.onChanged.addListener(handleStorageChange);
+  englishSubtitle = (await getStorage(ENGLISH_SUBTITLE_STORAGE_KEY)) || null;
+  koreanSubtitle = (await getStorage(KOREAN_SUBTITLE_STORAGE_KEY)) || null;
 }
 
 export async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -29,26 +37,73 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
   if (apiInfoList.length === 0) return;
 
   subtitleApiInfoList = apiInfoList;
+  subtitleCache.clear();
+  handleVideoTimeupdate = null;
 
-  const isSubtitleOn = (await getStorage(IS_SUBTITLE_ON_STORAGE_KEY)) || false;
-  if (isSubtitleOn) fetchAndSyncSubtitles(subtitleApiInfoList);
-}
+  if (subtitleContainerObserver) {
+    subtitleContainerObserver.disconnect();
+    subtitleContainerObserver = null;
+  }
 
-function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
-  const isSubtitleOnChange = changes[IS_SUBTITLE_ON_STORAGE_KEY];
-  if (isSubtitleOnChange && subtitleApiInfoList) {
-    isSubtitleOnChange.newValue ? fetchAndSyncSubtitles(subtitleApiInfoList) : stopSubtitleSync();
+  if (englishSubtitle?.enabled || koreanSubtitle?.enabled) {
+    fetchAndSyncSubtitles(subtitleApiInfoList);
   }
 }
 
-async function fetchAndSyncSubtitles(apiInfoList: SubtitleApiInfo[]) {
+async function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
+  const subtitles = [
+    { key: ENGLISH_SUBTITLE_STORAGE_KEY, langCode: 'en', setter: (value: any) => (englishSubtitle = value) },
+    { key: KOREAN_SUBTITLE_STORAGE_KEY, langCode: 'ko', setter: (value: any) => (koreanSubtitle = value) },
+  ] as const;
+
+  for (const { key, langCode, setter } of subtitles) {
+    if (changes[key]) {
+      const { newValue } = changes[key];
+      setter(newValue);
+
+      if (newValue.enabled && subtitleApiInfoList) {
+        await fetchAndSyncSubtitles(subtitleApiInfoList);
+        showSubtitle(langCode);
+      } else if (!isSubtitleEnabled()) {
+        stopSubtitleSync();
+      } else {
+        hideSubtitle(langCode);
+      }
+    }
+  }
+}
+
+function showSubtitle(lang: SubtitleLanguage) {
+  const subtitleElement = selectSubtitleElement(lang);
+  if (subtitleElement) subtitleElement.style.display = 'block';
+}
+
+function hideSubtitle(lang: SubtitleLanguage) {
+  const subtitleElement = selectSubtitleElement(lang);
+  if (subtitleElement) subtitleElement.style.display = 'none';
+}
+
+function selectSubtitleElement(lang: SubtitleLanguage) {
+  const subtitleContainer = document.getElementById(SUBTITLE_CONTAINER_ID);
+  return subtitleContainer?.querySelector(`#${lang}`) as HTMLPreElement | null;
+}
+
+async function fetchAndSyncSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
   const video = await selectVideoElement();
   if (!video) return;
 
-  const subtitleDataList = await Promise.all(
-    apiInfoList.map(async ({ lang, url }) => ({ lang, subtitles: await fetchSubtitle(url) }))
-  );
-  setupSubtitleSync(video, subtitleDataList);
+  for (const { lang, url } of subtitleApiInfoList) {
+    if (isSubtitleEnabled(lang) && !subtitleCache.has(lang)) {
+      subtitleCache.set(lang, await fetchSubtitle(url));
+    }
+  }
+
+  if (handleVideoTimeupdate === null) setupSubtitleSync(video);
+}
+
+function isSubtitleEnabled(lang?: SubtitleLanguage) {
+  if (lang) return { en: englishSubtitle?.enabled, ko: koreanSubtitle?.enabled }[lang];
+  return englishSubtitle?.enabled || koreanSubtitle?.enabled;
 }
 
 function stopSubtitleSync() {
@@ -87,18 +142,20 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
   return parseVTT(await response.text());
 }
 
-function setupSubtitleSync(video: HTMLVideoElement, subtitleDataList: { lang: string; subtitles: SubtitleData[] }[]) {
+function setupSubtitleSync(video: HTMLVideoElement) {
   const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
-  const subtitleContainer = createSubtitleContainer();
+  const subtitleContainer =
+    document.getElementById(SUBTITLE_CONTAINER_ID) || createSubtitleContainer(SUBTITLE_CONTAINER_ID);
 
   appendSubtitleContainer(trackDisplayContainer, subtitleContainer);
   observeSubtitleContainer(trackDisplayContainer, subtitleContainer);
+  updateSubtitleText(video, subtitleContainer);
 
-  handleVideoTimeupdate = () => updateSubtitleText(video, subtitleContainer, subtitleDataList);
+  handleVideoTimeupdate = () => updateSubtitleText(video, subtitleContainer);
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 
-function observeSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLDivElement) {
+function observeSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLElement) {
   subtitleContainerObserver = new MutationObserver(() => {
     appendSubtitleContainer(trackDisplayContainer, subtitleContainer);
   });
@@ -106,33 +163,33 @@ function observeSubtitleContainer(trackDisplayContainer: Element, subtitleContai
   subtitleContainerObserver.observe(trackDisplayContainer, { attributes: true });
 }
 
-function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLDivElement) {
+function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLElement) {
   const subtitleContainerWrapper = trackDisplayContainer.children[0];
   if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(subtitleContainer)) {
     subtitleContainerWrapper.appendChild(subtitleContainer);
   }
 }
 
-function updateSubtitleText(
-  video: HTMLVideoElement,
-  subtitleContainer: HTMLDivElement,
-  subtitleDataList: { lang: string; subtitles: SubtitleData[] }[]
-) {
+function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement) {
   const { currentTime } = video;
-  const subtitleText = subtitleDataList
-    .sort(({ lang: langA }, { lang: langB }) => (langA === 'en' ? -1 : langB === 'en' ? 1 : 0))
-    .map(({ subtitles }) => {
+  const subtitleText = Array.from(subtitleCache.entries())
+    .sort(([langA], [langB]) => (langA === 'en' ? -1 : langB === 'en' ? 1 : 0))
+    .map(([lang, subtitles]) => {
       const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
-      return subtitle ? `<p style="color: white;">${subtitle.text}</p>` : '';
+      return subtitle
+        ? `<p id="${lang}" style="color: white; display: ${isSubtitleEnabled(lang) ? 'block' : 'none'}">${
+            subtitle.text
+          }</p>`
+        : '';
     })
     .join('');
 
   subtitleContainer.innerHTML = subtitleText;
 }
 
-function createSubtitleContainer(): HTMLDivElement {
+function createSubtitleContainer(id: string) {
   const subtitleContainer = document.createElement('div');
-  subtitleContainer.id = SUBTITLE_CONTAINER_ID;
+  subtitleContainer.id = id;
   applyStyles(subtitleContainer, {
     width: '100%',
     whiteSpace: 'pre-line',
