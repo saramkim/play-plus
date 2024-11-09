@@ -1,3 +1,4 @@
+import { LANGUAGE_CODE, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
 import { getStorage, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
@@ -7,11 +8,6 @@ import {
   SubtitleData,
   SubtitleLanguage,
 } from '../utils/subtitle';
-
-const ENGLISH_SUBTITLE_STORAGE_KEY = 'englishSubtitle';
-const KOREAN_SUBTITLE_STORAGE_KEY = 'koreanSubtitle';
-const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
-const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 
 const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
 
@@ -23,8 +19,8 @@ let handleVideoTimeupdate: (() => void) | null;
 
 export async function initializeSubtitleSync() {
   chrome.storage.sync.onChanged.addListener(handleStorageChange);
-  englishSubtitle = (await getStorage(ENGLISH_SUBTITLE_STORAGE_KEY)) || null;
-  koreanSubtitle = (await getStorage(KOREAN_SUBTITLE_STORAGE_KEY)) || null;
+  englishSubtitle = (await getStorage('englishSubtitle')) || null;
+  koreanSubtitle = (await getStorage('koreanSubtitle')) || null;
 }
 
 export async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -52,8 +48,8 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
 
 async function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
   const subtitles = [
-    { key: ENGLISH_SUBTITLE_STORAGE_KEY, langCode: 'en', setter: (value: any) => (englishSubtitle = value) },
-    { key: KOREAN_SUBTITLE_STORAGE_KEY, langCode: 'ko', setter: (value: any) => (koreanSubtitle = value) },
+    { key: 'englishSubtitle', langCode: LANGUAGE_CODE.ENGLISH, setter: (value: any) => (englishSubtitle = value) },
+    { key: 'koreanSubtitle', langCode: LANGUAGE_CODE.KOREAN, setter: (value: any) => (koreanSubtitle = value) },
   ] as const;
 
   for (const { key, langCode, setter } of subtitles) {
@@ -173,7 +169,7 @@ function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContain
 function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement) {
   const { currentTime } = video;
   const subtitleText = Array.from(subtitleCache.entries())
-    .sort(([langA], [langB]) => (langA === 'en' ? -1 : langB === 'en' ? 1 : 0))
+    .sort(([langA], [langB]) => (langA === LANGUAGE_CODE.ENGLISH ? -1 : langB === LANGUAGE_CODE.ENGLISH ? 1 : 0))
     .map(([lang, subtitles]) => {
       const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
       return subtitle

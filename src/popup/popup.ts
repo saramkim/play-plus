@@ -1,12 +1,7 @@
 import { getStorage, removeStorage, setStorage } from '../utils/storage';
 import '../style.css';
 import { Toggle } from '../components/toggle';
-
-const FEEDBACK_DISPLAY_DURATION = 800;
-const ENGLISH_SUBTITLE_STORAGE_KEY = 'englishSubtitle';
-const KOREAN_SUBTITLE_STORAGE_KEY = 'koreanSubtitle';
-const SKIP_TIME_STORAGE_KEY = 'skipTime';
-const SUB_KEY_STORAGE_KEY = 'subKey';
+import { DEFAULT_SKIP_TIME, FEEDBACK_DISPLAY_DURATION } from '../utils/constants';
 
 async function initializeSettings() {
   await loadTemplates();
@@ -23,36 +18,36 @@ async function loadTemplates() {
 }
 
 async function initializeEnglishSubtitleSetting() {
-  const englishSubtitle = await getStorage(ENGLISH_SUBTITLE_STORAGE_KEY);
+  const englishSubtitle = await getStorage('englishSubtitle');
   const toggle = Toggle({
     isOn: englishSubtitle?.enabled || false,
-    onChange: (enabled) => setStorage(ENGLISH_SUBTITLE_STORAGE_KEY, { enabled }),
+    onChange: (enabled) => setStorage('englishSubtitle', { enabled }),
   });
   document.getElementById('english-toggle-container')?.appendChild(toggle);
 }
 
 async function initializeKoreanSubtitleSetting() {
-  const koreanSubtitle = await getStorage(KOREAN_SUBTITLE_STORAGE_KEY);
+  const koreanSubtitle = await getStorage('koreanSubtitle');
   const toggle = Toggle({
     isOn: koreanSubtitle?.enabled || false,
-    onChange: (enabled) => setStorage(KOREAN_SUBTITLE_STORAGE_KEY, { enabled }),
+    onChange: (enabled) => setStorage('koreanSubtitle', { enabled }),
   });
 
   document.getElementById('korean-toggle-container')?.appendChild(toggle);
 }
 
 async function initializeSkipTimeSetting() {
-  const skipTime = await getStorage(SKIP_TIME_STORAGE_KEY);
-  const timeInput = setupInput('skip-time', '10', skipTime?.toString());
+  const skipTime = await getStorage('skipTime');
+  const timeInput = setupInput('skip-time', DEFAULT_SKIP_TIME.toString(), skipTime?.toString());
 
   document.getElementById('save-skip-time')?.addEventListener('click', () => handleSaveSkipTime(timeInput));
 }
 
 async function initializeSubKeySetting() {
-  const subKey = await getStorage(SUB_KEY_STORAGE_KEY);
+  const subKey = await getStorage('subKey');
   const forwardInput = setupInput('sub-forward-key', '', subKey?.forward);
   const backwardInput = setupInput('sub-backward-key', '', subKey?.backward);
-  const timeInput = setupInput('sub-skip-time', '10', subKey?.skipTime?.toString());
+  const timeInput = setupInput('sub-skip-time', DEFAULT_SKIP_TIME.toString(), subKey?.skipTime?.toString());
 
   setupKeydownHandlers([forwardInput, backwardInput]);
   document
@@ -82,7 +77,7 @@ function setupKeydownHandlers(inputs: HTMLInputElement[]) {
 async function handleSaveSkipTime(timeInput: HTMLInputElement) {
   const seconds = parseInt(timeInput.value, 10);
   if (validateSkipTime(seconds)) {
-    await setStorage(SKIP_TIME_STORAGE_KEY, seconds);
+    await setStorage('skipTime', seconds);
     showFeedback('feedback_1_s');
   } else {
     showFeedback('feedback_1_e');
@@ -97,7 +92,7 @@ async function handleSaveSubKey(
   const seconds = parseInt(timeInput.value, 10);
 
   if (validateSkipTime(seconds) && forwardInput.value && backwardInput.value) {
-    await setStorage(SUB_KEY_STORAGE_KEY, {
+    await setStorage('subKey', {
       forward: forwardInput.value,
       backward: backwardInput.value,
       skipTime: seconds,
@@ -113,10 +108,10 @@ async function handleResetSubKey(
   backwardInput: HTMLInputElement,
   timeInput: HTMLInputElement
 ) {
-  await removeStorage(SUB_KEY_STORAGE_KEY);
+  await removeStorage('subKey');
   forwardInput.value = '';
   backwardInput.value = '';
-  timeInput.value = '10';
+  timeInput.value = DEFAULT_SKIP_TIME.toString();
 }
 
 function showFeedback(id: string) {

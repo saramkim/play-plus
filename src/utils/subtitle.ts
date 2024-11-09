@@ -1,3 +1,5 @@
+import { LANGUAGE_CODE } from './constants';
+
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
     return { ...obj, [item.name]: item.value };
@@ -36,7 +38,7 @@ const timeToSeconds = (time: string) => {
   return Number(hours) * 3600 + Number(minutes) * 60 + parseFloat(seconds);
 };
 
-export type SubtitleLanguage = 'en' | 'ko';
+export type SubtitleLanguage = (typeof LANGUAGE_CODE)[keyof typeof LANGUAGE_CODE];
 
 export type SubtitleApiInfo = {
   lang: SubtitleLanguage;

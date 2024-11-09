@@ -1,26 +1,24 @@
+import { DEFAULT_SKIP_TIME } from '../utils/constants';
 import { getStorage, SubKeyConfig } from '../utils/storage';
 
 type KeyBindings = { [key: string]: () => void };
 
-const SKIP_TIME_STORAGE_KEY = 'skipTime';
-const SUB_KEY_STORAGE_KEY = 'subKey';
-
-let mainSkipTime = 10;
+let mainSkipTime = DEFAULT_SKIP_TIME;
 let keyBindings: KeyBindings = {};
 
 export async function initializeSkipTimeSetting() {
-  mainSkipTime = (await getStorage(SKIP_TIME_STORAGE_KEY)) || 10;
+  mainSkipTime = (await getStorage('skipTime')) || DEFAULT_SKIP_TIME;
   chrome.storage.sync.onChanged.addListener(handleStorageChange);
 }
 
 export async function initializeKeyBindings() {
-  setKeyBindings(await getStorage(SUB_KEY_STORAGE_KEY));
+  setKeyBindings(await getStorage('subKey'));
   document.addEventListener('keydown', handleKeydown);
 }
 
 async function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }) {
-  const skipTimeChange = changes[SKIP_TIME_STORAGE_KEY];
-  const subKeyChange = changes[SUB_KEY_STORAGE_KEY];
+  const skipTimeChange = changes['skipTime'];
+  const subKeyChange = changes['subKey'];
 
   if (skipTimeChange && skipTimeChange.newValue) {
     mainSkipTime = skipTimeChange.newValue;
