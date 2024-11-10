@@ -1,5 +1,5 @@
 interface ToggleProps {
-  isOn: boolean;
+  isOn?: boolean;
   onChange: (isOn: boolean) => void;
 }
 

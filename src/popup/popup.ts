@@ -23,7 +23,7 @@ async function initializeEnglishSubtitleSetting() {
     isOn: englishSubtitle?.enabled || false,
     onChange: (enabled) => setStorage('englishSubtitle', { enabled }),
   });
-  document.getElementById('english-toggle-container')?.appendChild(toggle);
+  document.getElementById('english-toggle')?.appendChild(toggle);
 }
 
 async function initializeKoreanSubtitleSetting() {
@@ -33,7 +33,7 @@ async function initializeKoreanSubtitleSetting() {
     onChange: (enabled) => setStorage('koreanSubtitle', { enabled }),
   });
 
-  document.getElementById('korean-toggle-container')?.appendChild(toggle);
+  document.getElementById('korean-toggle')?.appendChild(toggle);
 }
 
 async function initializeSkipTimeSetting() {
