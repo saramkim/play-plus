@@ -1,0 +1,29 @@
+import { DEFAULT_COLOR } from '../utils/constants';
+
+interface ColorPickerProps {
+  color?: string;
+  onChange: (color: string) => void;
+}
+
+export function ColorPicker({ color = DEFAULT_COLOR, onChange }: ColorPickerProps) {
+  const colorPickerTemplate = (
+    document.getElementById('color-picker-template') as HTMLTemplateElement
+  ).content.cloneNode(true) as DocumentFragment;
+  const button = colorPickerTemplate.querySelector('[data-role="button"]') as HTMLButtonElement;
+  const colorPicker = button.querySelector('[data-role="color-picker"]') as HTMLInputElement;
+
+  button.style.backgroundColor = color;
+  colorPicker.value = color;
+
+  button.addEventListener('click', () => {
+    colorPicker.click();
+  });
+
+  colorPicker.addEventListener('input', (event: Event) => {
+    const selectedColor = (event.target as HTMLInputElement).value;
+    if (button) button.style.backgroundColor = selectedColor;
+    onChange(selectedColor);
+  });
+
+  return button;
+}
