@@ -1,11 +1,11 @@
-import { DEFAULT_COLOR } from '../utils/constants';
+import { DEFAULT_SUBTITLE_CONFIG } from '../utils/constants';
 
 interface ColorPickerProps {
   color?: string;
   onChange: (color: string) => void;
 }
 
-export function ColorPicker({ color = DEFAULT_COLOR, onChange }: ColorPickerProps) {
+export function ColorPicker({ color = DEFAULT_SUBTITLE_CONFIG.color, onChange }: ColorPickerProps) {
   const colorPickerTemplate = (
     document.getElementById('color-picker-template') as HTMLTemplateElement
   ).content.cloneNode(true) as DocumentFragment;

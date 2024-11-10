@@ -16,21 +16,35 @@
       </header>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center">
+        <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">영어 자막</h2>
+          <button id="save-english-setting" class="button bg-teal-500 hidden">저장</button>
           <div id="english-toggle"></div>
         </header>
+        <div id="english-subtitle-setting" class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label for="subtitle-color-picker" class="label">자막 색상:</label>
+            <div id="english-color-picker"></div>
+          </div>
+        </div>
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center">
+        <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">한국어 자막</h2>
+          <button id="save-korean-setting" class="button bg-teal-500 hidden">저장</button>
           <div id="korean-toggle"></div>
         </header>
+        <div id="korean-subtitle-setting" class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label for="subtitle-color-picker" class="label">자막 색상:</label>
+            <div id="korean-color-picker"></div>
+          </div>
+        </div>
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center">
+        <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
           <div class="flex items-center gap-2">
             <div id="feedback_1_s" class="hidden text-teal-500">✔</div>
@@ -45,7 +59,7 @@
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center">
+        <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
           <div class="flex items-center gap-2">
             <button id="reset-sub-key" class="button bg-rose-400">초기화</button>

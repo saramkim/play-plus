@@ -1,9 +1,16 @@
-import { LANGUAGE_CODE, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
+import {
+  DEFAULT_SUBTITLE_CONFIG,
+  SUBTITLE_CONTAINER_ID,
+  SUBTITLES,
+  TRACK_DISPLAY_CONTAINER_CLASS_NAME,
+} from '../utils/constants';
 import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
+  createSubtitleContainer,
   extractSubtitleApiInfoFromResponse,
   parseVTT,
+  selectVideoElement,
   SubtitleApiInfo,
   SubtitleData,
   SubtitleLanguage,
@@ -11,16 +18,21 @@ import {
 
 const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
 
-let englishSubtitle: SubtitleConfig | null;
-let koreanSubtitle: SubtitleConfig | null;
+const subtitleSettings = Object.values(SUBTITLES).reduce((acc, { LANGUAGE_CODE }) => {
+  acc[LANGUAGE_CODE] = DEFAULT_SUBTITLE_CONFIG;
+  return acc;
+}, {} as Record<SubtitleLanguage, SubtitleConfig>);
+
 let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
 let handleVideoTimeupdate: (() => void) | null;
 
 export async function initializeSubtitleSync() {
   onStorageChange(handleStorageChange);
-  englishSubtitle = (await getStorage('englishSubtitle')) || null;
-  koreanSubtitle = (await getStorage('koreanSubtitle')) || null;
+  for (const { LANGUAGE_CODE, STORAGE_KEY } of Object.values(SUBTITLES)) {
+    const data = await getStorage(STORAGE_KEY);
+    if (data) subtitleSettings[LANGUAGE_CODE] = data;
+  }
 }
 
 export async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -41,47 +53,27 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
     subtitleContainerObserver = null;
   }
 
-  if (englishSubtitle?.enabled || koreanSubtitle?.enabled) {
+  if (subtitleSettings['en'].enabled || subtitleSettings['ko'].enabled) {
     fetchAndSyncSubtitles(subtitleApiInfoList);
   }
 }
 
 async function handleStorageChange(changes: StorageChanges) {
-  const subtitles = [
-    { key: 'englishSubtitle', langCode: LANGUAGE_CODE.ENGLISH, setter: (value: any) => (englishSubtitle = value) },
-    { key: 'koreanSubtitle', langCode: LANGUAGE_CODE.KOREAN, setter: (value: any) => (koreanSubtitle = value) },
-  ] as const;
+  for (const { STORAGE_KEY, LANGUAGE_CODE } of Object.values(SUBTITLES)) {
+    const subtitleChanges = changes[STORAGE_KEY];
 
-  for (const { key, langCode, setter } of subtitles) {
-    if (changes[key] && changes[key].newValue) {
-      const { newValue } = changes[key];
-      setter(newValue);
+    if (subtitleChanges && subtitleChanges.newValue) {
+      subtitleSettings[LANGUAGE_CODE] = subtitleChanges.newValue;
 
-      if (newValue.enabled && subtitleApiInfoList) {
+      if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
         await fetchAndSyncSubtitles(subtitleApiInfoList);
-        showSubtitle(langCode);
-      } else if (!isSubtitleEnabled()) {
+      } else if (!subtitleSettings['en'].enabled && !subtitleSettings['ko'].enabled) {
         stopSubtitleSync();
-      } else {
-        hideSubtitle(langCode);
       }
+
+      if (handleVideoTimeupdate) handleVideoTimeupdate();
     }
   }
-}
-
-function showSubtitle(lang: SubtitleLanguage) {
-  const subtitleElement = selectSubtitleElement(lang);
-  if (subtitleElement) subtitleElement.style.display = 'block';
-}
-
-function hideSubtitle(lang: SubtitleLanguage) {
-  const subtitleElement = selectSubtitleElement(lang);
-  if (subtitleElement) subtitleElement.style.display = 'none';
-}
-
-function selectSubtitleElement(lang: SubtitleLanguage) {
-  const subtitleContainer = document.getElementById(SUBTITLE_CONTAINER_ID);
-  return subtitleContainer?.querySelector(`#${lang}`) as HTMLPreElement | null;
 }
 
 async function fetchAndSyncSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
@@ -89,17 +81,12 @@ async function fetchAndSyncSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
   if (!video) return;
 
   for (const { lang, url } of subtitleApiInfoList) {
-    if (isSubtitleEnabled(lang) && !subtitleCache.has(lang)) {
+    if (subtitleSettings[lang].enabled && !subtitleCache.has(lang)) {
       subtitleCache.set(lang, await fetchSubtitle(url));
     }
   }
 
   if (handleVideoTimeupdate === null) setupSubtitleSync(video);
-}
-
-function isSubtitleEnabled(lang?: SubtitleLanguage) {
-  if (lang) return { en: englishSubtitle?.enabled, ko: koreanSubtitle?.enabled }[lang];
-  return englishSubtitle?.enabled || koreanSubtitle?.enabled;
 }
 
 function stopSubtitleSync() {
@@ -117,20 +104,6 @@ function stopSubtitleSync() {
   if (subtitleContainer) {
     subtitleContainer.remove();
   }
-}
-
-function selectVideoElement(): Promise<HTMLVideoElement | null> {
-  return new Promise((resolve) => {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        const video = document.querySelector('video');
-        resolve(video);
-      });
-    } else {
-      const video = document.querySelector('video');
-      resolve(video);
-    }
-  });
 }
 
 async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
@@ -169,40 +142,18 @@ function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContain
 function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement) {
   const { currentTime } = video;
   const subtitleText = Array.from(subtitleCache.entries())
-    .sort(([langA], [langB]) => (langA === LANGUAGE_CODE.ENGLISH ? -1 : langB === LANGUAGE_CODE.ENGLISH ? 1 : 0))
+    .sort(([langA], [langB]) =>
+      langA === SUBTITLES.ENGLISH.LANGUAGE_CODE ? -1 : langB === SUBTITLES.ENGLISH.LANGUAGE_CODE ? 1 : 0
+    )
     .map(([lang, subtitles]) => {
       const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
       return subtitle
-        ? `<p id="${lang}" style="color: white; display: ${isSubtitleEnabled(lang) ? 'block' : 'none'}">${
-            subtitle.text
-          }</p>`
+        ? `<p id="${lang}" style="color: ${subtitleSettings[lang].color}; display: ${
+            subtitleSettings[lang].enabled ? 'block' : 'none'
+          }">${subtitle.text}</p>`
         : '';
     })
     .join('');
 
   subtitleContainer.innerHTML = subtitleText;
 }
-
-function createSubtitleContainer(id: string) {
-  const subtitleContainer = document.createElement('div');
-  subtitleContainer.id = id;
-  applyStyles(subtitleContainer, {
-    width: '100%',
-    whiteSpace: 'pre-line',
-    position: 'absolute',
-    bottom: '2vh',
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'min(1.8vw, 3vh)',
-    fontSize: 'min(1.8vw, 3vh)',
-    lineHeight: 'min(3vw, 5vh)',
-    color: 'white',
-    textShadow: 'black 2px 2px 2px',
-  });
-  return subtitleContainer;
-}
-
-const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
-  Object.assign(element.style, styles);
-};

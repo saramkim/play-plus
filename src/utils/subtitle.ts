@@ -1,5 +1,3 @@
-import { LANGUAGE_CODE } from './constants';
-
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
     return { ...obj, [item.name]: item.value };
@@ -33,12 +31,50 @@ export const parseVTT = (data: string) => {
   return subtitles;
 };
 
+export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
+  return new Promise((resolve) => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const video = document.querySelector('video');
+        resolve(video);
+      });
+    } else {
+      const video = document.querySelector('video');
+      resolve(video);
+    }
+  });
+};
+
+export const createSubtitleContainer = (id: string) => {
+  const subtitleContainer = document.createElement('div');
+  subtitleContainer.id = id;
+  applyStyles(subtitleContainer, {
+    width: '100%',
+    whiteSpace: 'pre-line',
+    position: 'absolute',
+    bottom: '2vh',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'min(1.8vw, 3vh)',
+    fontSize: 'min(1.8vw, 3vh)',
+    lineHeight: 'min(3vw, 5vh)',
+    color: 'white',
+    textShadow: 'black 2px 2px 2px',
+  });
+  return subtitleContainer;
+};
+
+const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
+  Object.assign(element.style, styles);
+};
+
 const timeToSeconds = (time: string) => {
   const [hours, minutes, seconds] = time.split(':');
   return Number(hours) * 3600 + Number(minutes) * 60 + parseFloat(seconds);
 };
 
-export type SubtitleLanguage = (typeof LANGUAGE_CODE)[keyof typeof LANGUAGE_CODE];
+export type SubtitleLanguage = 'en' | 'ko';
 
 export type SubtitleApiInfo = {
   lang: SubtitleLanguage;

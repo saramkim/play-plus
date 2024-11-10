@@ -1,5 +1,12 @@
-export type SubKeyConfig = { forward: string; backward: string; skipTime: number };
-export type SubtitleConfig = { enabled: boolean };
+export type SubKeyConfig = {
+  forward: string;
+  backward: string;
+  skipTime: number;
+};
+export type SubtitleConfig = {
+  enabled: boolean;
+  color: string;
+};
 
 type StorageSchema = {
   skipTime: number;

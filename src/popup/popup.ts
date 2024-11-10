@@ -1,14 +1,32 @@
-import { getStorage, removeStorage, setStorage } from '../utils/storage';
+import { getStorage, onStorageChange, removeStorage, setStorage, SubtitleConfig } from '../utils/storage';
 import '../style.css';
 import { Toggle } from '../components/toggle';
-import { DEFAULT_SKIP_TIME, FEEDBACK_DISPLAY_DURATION } from '../utils/constants';
+import { DEFAULT_SKIP_TIME, DEFAULT_SUBTITLE_CONFIG, FEEDBACK_DISPLAY_DURATION, SUBTITLES } from '../utils/constants';
+import { ColorPicker } from '../components/colorPicker';
 
 async function initializeSettings() {
+  initializeStorage();
   await loadTemplates();
-  await initializeEnglishSubtitleSetting();
-  await initializeKoreanSubtitleSetting();
+  await initializeSubtitleSetting();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
+}
+
+const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
+  acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
+  return acc;
+}, {} as Record<keyof typeof SUBTITLES, SubtitleConfig>);
+
+function initializeStorage() {
+  onStorageChange((changes) => {
+    for (const { STORAGE_KEY, CONTAINER_ID } of Object.values(SUBTITLES)) {
+      const subtitleChanges = changes[STORAGE_KEY];
+
+      if (subtitleChanges && subtitleChanges.newValue) {
+        setElementVisibility(CONTAINER_ID, subtitleChanges.newValue.enabled);
+      }
+    }
+  });
 }
 
 async function loadTemplates() {
@@ -17,23 +35,38 @@ async function loadTemplates() {
   document.body.insertAdjacentHTML('beforeend', text);
 }
 
-async function initializeEnglishSubtitleSetting() {
-  const englishSubtitle = await getStorage('englishSubtitle');
-  const toggle = Toggle({
-    isOn: englishSubtitle?.enabled || false,
-    onChange: (enabled) => setStorage('englishSubtitle', { enabled }),
-  });
-  document.getElementById('english-toggle')?.appendChild(toggle);
-}
+async function initializeSubtitleSetting() {
+  for (const [key, metadata] of Object.entries(SUBTITLES)) {
+    const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, COLOR_PICKER_ID, SAVE_BUTTON_ID } = metadata;
+    const subtitle = await getStorage(STORAGE_KEY);
+    if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-async function initializeKoreanSubtitleSetting() {
-  const koreanSubtitle = await getStorage('koreanSubtitle');
-  const toggle = Toggle({
-    isOn: koreanSubtitle?.enabled || false,
-    onChange: (enabled) => setStorage('koreanSubtitle', { enabled }),
-  });
+    const isEnabled = subtitle?.enabled || false;
 
-  document.getElementById('korean-toggle')?.appendChild(toggle);
+    const toggle = Toggle({
+      isOn: isEnabled,
+      onChange: async (enabled) => {
+        subtitleSettings[key].enabled = enabled;
+      },
+    });
+    const colorPicker = ColorPicker({
+      color: subtitle?.color,
+      onChange: (color) => {
+        subtitleSettings[key].color = color;
+      },
+    });
+
+    document.getElementById(TOGGLE_ID)?.appendChild(toggle);
+    document.getElementById(COLOR_PICKER_ID)?.appendChild(colorPicker);
+
+    document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {
+      await setStorage(STORAGE_KEY, subtitleSettings[key]);
+      setElementVisibility(SAVE_BUTTON_ID, false);
+      setElementVisibility(TOGGLE_ID, true);
+    });
+
+    setElementVisibility(CONTAINER_ID, isEnabled);
+  }
 }
 
 async function initializeSkipTimeSetting() {
@@ -56,6 +89,13 @@ async function initializeSubKeySetting() {
   document
     .getElementById('reset-sub-key')
     ?.addEventListener('click', () => handleResetSubKey(forwardInput, backwardInput, timeInput));
+}
+
+function setElementVisibility(id: string, isVisible: boolean) {
+  const element = document.getElementById(id);
+
+  if (isVisible) element?.classList.remove('hidden');
+  else element?.classList.add('hidden');
 }
 
 function setupInput(elementId: string, defaultValue: string, storageValue?: string): HTMLInputElement {
@@ -122,6 +162,24 @@ function showFeedback(id: string) {
 
 function validateSkipTime(seconds: number) {
   return !isNaN(seconds) && seconds > 0;
+}
+
+function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
+  return {
+    set(target: SubtitleConfig, prop: keyof SubtitleConfig, value: SubtitleConfig[keyof SubtitleConfig]) {
+      if (prop === 'enabled') {
+        setStorage(SUBTITLES[key].STORAGE_KEY, { ...target, enabled: value as boolean });
+      } else {
+        setElementVisibility(SUBTITLES[key].TOGGLE_ID, false);
+        setElementVisibility(SUBTITLES[key].SAVE_BUTTON_ID, true);
+      }
+      return Reflect.set(target, prop, value);
+    },
+
+    get(target: SubtitleConfig, prop: keyof SubtitleConfig) {
+      return Reflect.get(target, prop);
+    },
+  };
 }
 
 document.addEventListener('DOMContentLoaded', initializeSettings);
