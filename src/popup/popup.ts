@@ -50,6 +50,7 @@ async function initializeSubtitleSetting() {
       },
     });
     const colorPicker = ColorPicker({
+      id: `${COLOR_PICKER_ID}_input`,
       color: subtitle?.color,
       onChange: (color) => {
         subtitleSettings[key].color = color;
@@ -110,7 +111,7 @@ function setupKeydownHandlers(inputs: HTMLInputElement[]) {
       event.preventDefault();
       input.value = event.code;
       input.blur();
-    })
+    }),
   );
 }
 
@@ -127,7 +128,7 @@ async function handleSaveSkipTime(timeInput: HTMLInputElement) {
 async function handleSaveSubKey(
   forwardInput: HTMLInputElement,
   backwardInput: HTMLInputElement,
-  timeInput: HTMLInputElement
+  timeInput: HTMLInputElement,
 ) {
   const seconds = parseInt(timeInput.value, 10);
 
@@ -146,7 +147,7 @@ async function handleSaveSubKey(
 async function handleResetSubKey(
   forwardInput: HTMLInputElement,
   backwardInput: HTMLInputElement,
-  timeInput: HTMLInputElement
+  timeInput: HTMLInputElement,
 ) {
   await removeStorage('subKey');
   forwardInput.value = '';
