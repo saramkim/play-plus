@@ -1,4 +1,4 @@
-import { DEFAULT_SUBTITLE_CONFIG } from '../utils/constants';
+import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 
 interface ColorPickerProps {
   id?: string;

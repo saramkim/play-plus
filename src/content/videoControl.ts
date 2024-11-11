@@ -1,4 +1,5 @@
-import { DEFAULT_SKIP_TIME } from '../utils/constants';
+import { SKIP_TIME, SUB_KEY } from '../utils/constants';
+import { DEFAULT_SKIP_TIME } from '../utils/default';
 import { getStorage, onStorageChange, StorageChanges, SubKeyConfig } from '../utils/storage';
 
 type KeyBindings = { [key: string]: () => void };
@@ -7,18 +8,18 @@ let mainSkipTime = DEFAULT_SKIP_TIME;
 let keyBindings: KeyBindings = {};
 
 export async function initializeSkipTimeSetting() {
-  mainSkipTime = (await getStorage('skipTime')) || DEFAULT_SKIP_TIME;
+  mainSkipTime = (await getStorage(SKIP_TIME.STORAGE_KEY)) || DEFAULT_SKIP_TIME;
   onStorageChange(handleStorageChange);
 }
 
 export async function initializeKeyBindings() {
-  setKeyBindings(await getStorage('subKey'));
+  setKeyBindings(await getStorage(SUB_KEY.STORAGE_KEY));
   document.addEventListener('keydown', handleKeydown);
 }
 
 async function handleStorageChange(changes: StorageChanges) {
-  const skipTimeChange = changes['skipTime'];
-  const subKeyChange = changes['subKey'];
+  const skipTimeChange = changes[SKIP_TIME.STORAGE_KEY];
+  const subKeyChange = changes[SUB_KEY.STORAGE_KEY];
 
   if (skipTimeChange && skipTimeChange.newValue) {
     mainSkipTime = skipTimeChange.newValue;

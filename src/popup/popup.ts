@@ -1,8 +1,9 @@
-import { getStorage, onStorageChange, removeStorage, setStorage, SubtitleConfig } from '../utils/storage';
+import { getStorage, onStorageChange, removeStorage, setStorage, SubKeyConfig, SubtitleConfig } from '../utils/storage';
 import '../style.css';
 import { Toggle } from '../components/toggle';
-import { DEFAULT_SKIP_TIME, DEFAULT_SUBTITLE_CONFIG, FEEDBACK_DISPLAY_DURATION, SUBTITLES } from '../utils/constants';
+import { FEEDBACK_DISPLAY_DURATION, SKIP_TIME, SUB_KEY, SUBTITLES } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
+import { DEFAULT_SKIP_TIME, DEFAULT_SUB_KEY_CONFIG, DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 
 async function initializeSettings() {
   initializeStorage();
@@ -16,6 +17,22 @@ const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
   acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
   return acc;
 }, {} as Record<keyof typeof SUBTITLES, SubtitleConfig>);
+
+const subKeyProxyHandler = {
+  set(target: SubKeyConfig, prop: keyof SubKeyConfig, value: SubKeyConfig[keyof SubKeyConfig]) {
+    return Reflect.set(target, prop, value);
+  },
+
+  get(target: SubKeyConfig, prop: keyof SubKeyConfig) {
+    if (target[prop]) return Reflect.get(target, prop);
+    return DEFAULT_SUB_KEY_CONFIG[prop];
+  },
+};
+
+const keySettings = {
+  skipTime: DEFAULT_SKIP_TIME,
+  subKey: new Proxy(DEFAULT_SUB_KEY_CONFIG, subKeyProxyHandler),
+};
 
 function initializeStorage() {
   onStorageChange((changes) => {
@@ -41,10 +58,10 @@ async function initializeSubtitleSetting() {
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-    const isEnabled = subtitle?.enabled || false;
+    const { enabled, color, fontSize } = subtitleSettings[key];
 
     const toggle = Toggle({
-      isOn: isEnabled,
+      isOn: enabled,
       onChange: async (enabled) => {
         subtitleSettings[key].enabled = enabled;
       },
@@ -53,14 +70,14 @@ async function initializeSubtitleSetting() {
 
     const colorPicker = ColorPicker({
       id: `${COLOR_PICKER_ID}_input`,
-      color: subtitle?.color,
+      color: color,
       onChange: (color) => {
         subtitleSettings[key].color = color;
       },
     });
     document.getElementById(COLOR_PICKER_ID)?.appendChild(colorPicker);
 
-    const fontSizeInput = setupInput(FONT_SIZE_INPUT_ID, subtitleSettings[key].fontSize.toString());
+    const fontSizeInput = setupInput(FONT_SIZE_INPUT_ID, fontSize.toString());
     fontSizeInput.addEventListener('input', (event) => {
       const target = event.target as HTMLInputElement;
       subtitleSettings[key].fontSize = parseInt(target.value, 10);
@@ -72,29 +89,38 @@ async function initializeSubtitleSetting() {
       setElementVisibility(TOGGLE_ID, true);
     });
 
-    setElementVisibility(CONTAINER_ID, isEnabled);
+    setElementVisibility(CONTAINER_ID, enabled);
   }
 }
 
 async function initializeSkipTimeSetting() {
-  const skipTime = await getStorage('skipTime');
-  const timeInput = setupInput('skip-time', DEFAULT_SKIP_TIME.toString(), skipTime?.toString());
+  const { STORAGE_KEY, INPUT_ID, SAVE_BUTTON_ID } = SKIP_TIME;
+  const skipTime = await getStorage(STORAGE_KEY);
+  if (skipTime) keySettings.skipTime = skipTime;
 
-  document.getElementById('save-skip-time')?.addEventListener('click', () => handleSaveSkipTime(timeInput));
+  const timeInput = setupInput(INPUT_ID, keySettings.skipTime.toString());
+
+  document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', () => handleSaveSkipTime(timeInput));
 }
 
 async function initializeSubKeySetting() {
-  const subKey = await getStorage('subKey');
-  const forwardInput = setupInput('sub-forward-key', '', subKey?.forward);
-  const backwardInput = setupInput('sub-backward-key', '', subKey?.backward);
-  const timeInput = setupInput('sub-skip-time', DEFAULT_SKIP_TIME.toString(), subKey?.skipTime?.toString());
+  const { STORAGE_KEY, BACKWARD_INPUT_ID, FORWARD_INPUT_ID, SKIP_TIME_INPUT_ID, SAVE_BUTTON_ID, RESET_BUTTON_ID } =
+    SUB_KEY;
+  const subKey = await getStorage(STORAGE_KEY);
+  if (subKey) keySettings.subKey = new Proxy(subKey, subKeyProxyHandler);
+
+  const { backward, forward, skipTime } = keySettings.subKey;
+
+  const backwardInput = setupInput(BACKWARD_INPUT_ID, backward);
+  const forwardInput = setupInput(FORWARD_INPUT_ID, forward);
+  const timeInput = setupInput(SKIP_TIME_INPUT_ID, skipTime.toString());
 
   setupKeydownHandlers([forwardInput, backwardInput]);
   document
-    .getElementById('save-sub-key')
+    .getElementById(SAVE_BUTTON_ID)
     ?.addEventListener('click', () => handleSaveSubKey(forwardInput, backwardInput, timeInput));
   document
-    .getElementById('reset-sub-key')
+    .getElementById(RESET_BUTTON_ID)
     ?.addEventListener('click', () => handleResetSubKey(forwardInput, backwardInput, timeInput));
 }
 
@@ -105,9 +131,9 @@ function setElementVisibility(id: string, isVisible: boolean) {
   else element?.classList.add('hidden');
 }
 
-function setupInput(elementId: string, defaultValue: string, storageValue?: string): HTMLInputElement {
+function setupInput(elementId: string, defaultValue: string): HTMLInputElement {
   const input = document.getElementById(elementId) as HTMLInputElement;
-  input.value = storageValue || defaultValue;
+  input.value = defaultValue;
   return input;
 }
 
@@ -117,7 +143,7 @@ function setupKeydownHandlers(inputs: HTMLInputElement[]) {
       event.preventDefault();
       input.value = event.code;
       input.blur();
-    }),
+    })
   );
 }
 
@@ -134,7 +160,7 @@ async function handleSaveSkipTime(timeInput: HTMLInputElement) {
 async function handleSaveSubKey(
   forwardInput: HTMLInputElement,
   backwardInput: HTMLInputElement,
-  timeInput: HTMLInputElement,
+  timeInput: HTMLInputElement
 ) {
   const seconds = parseInt(timeInput.value, 10);
 
@@ -153,7 +179,7 @@ async function handleSaveSubKey(
 async function handleResetSubKey(
   forwardInput: HTMLInputElement,
   backwardInput: HTMLInputElement,
-  timeInput: HTMLInputElement,
+  timeInput: HTMLInputElement
 ) {
   await removeStorage('subKey');
   forwardInput.value = '';

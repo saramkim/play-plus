@@ -1,9 +1,5 @@
-import {
-  DEFAULT_SUBTITLE_CONFIG,
-  SUBTITLE_CONTAINER_ID,
-  SUBTITLES,
-  TRACK_DISPLAY_CONTAINER_CLASS_NAME,
-} from '../utils/constants';
+import { SUBTITLE_CONTAINER_ID, SUBTITLES, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
+import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
