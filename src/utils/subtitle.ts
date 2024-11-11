@@ -33,20 +33,6 @@ export const parseVTT = (data: string) => {
   return subtitles;
 };
 
-export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
-  return new Promise((resolve) => {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        const video = document.querySelector('video');
-        resolve(video);
-      });
-    } else {
-      const video = document.querySelector('video');
-      resolve(video);
-    }
-  });
-};
-
 export const createSubtitleContainer = (id: string) => {
   const subtitleContainer = document.createElement('div');
   subtitleContainer.id = id;

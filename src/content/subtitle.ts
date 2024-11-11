@@ -1,5 +1,6 @@
 import { SUBTITLE_CONTAINER_ID, SUBTITLES, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
+import { selectVideoElement } from '../utils/dom';
 import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
@@ -7,7 +8,6 @@ import {
   createSubtitleElement,
   extractSubtitleApiInfoFromResponse,
   parseVTT,
-  selectVideoElement,
   SubtitleApiInfo,
   SubtitleData,
   SubtitleLanguage,
