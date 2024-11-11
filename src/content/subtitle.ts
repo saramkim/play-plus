@@ -8,6 +8,7 @@ import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../
 import {
   arrayToHeadersObject,
   createSubtitleContainer,
+  createSubtitleElement,
   extractSubtitleApiInfoFromResponse,
   parseVTT,
   selectVideoElement,
@@ -141,19 +142,14 @@ function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContain
 
 function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement) {
   const { currentTime } = video;
-  const subtitleText = Array.from(subtitleCache.entries())
+  const subtitleElementList = Array.from(subtitleCache.entries())
     .sort(([langA], [langB]) =>
       langA === SUBTITLES.ENGLISH.LANGUAGE_CODE ? -1 : langB === SUBTITLES.ENGLISH.LANGUAGE_CODE ? 1 : 0
     )
     .map(([lang, subtitles]) => {
       const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
-      return subtitle
-        ? `<p id="${lang}" style="color: ${subtitleSettings[lang].color}; display: ${
-            subtitleSettings[lang].enabled ? 'block' : 'none'
-          }">${subtitle.text}</p>`
-        : '';
-    })
-    .join('');
+      return createSubtitleElement(subtitle?.text || '', subtitleSettings[lang]);
+    });
 
-  subtitleContainer.innerHTML = subtitleText;
+  subtitleContainer.replaceChildren(...subtitleElementList);
 }

@@ -6,6 +6,7 @@ export type SubKeyConfig = {
 export type SubtitleConfig = {
   enabled: boolean;
   color: string;
+  fontSize: number;
 };
 
 type StorageSchema = {

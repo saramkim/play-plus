@@ -37,7 +37,7 @@ async function loadTemplates() {
 
 async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {
-    const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, COLOR_PICKER_ID, SAVE_BUTTON_ID } = metadata;
+    const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, SAVE_BUTTON_ID } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
@@ -49,6 +49,8 @@ async function initializeSubtitleSetting() {
         subtitleSettings[key].enabled = enabled;
       },
     });
+    document.getElementById(TOGGLE_ID)?.appendChild(toggle);
+
     const colorPicker = ColorPicker({
       id: `${COLOR_PICKER_ID}_input`,
       color: subtitle?.color,
@@ -56,9 +58,13 @@ async function initializeSubtitleSetting() {
         subtitleSettings[key].color = color;
       },
     });
-
-    document.getElementById(TOGGLE_ID)?.appendChild(toggle);
     document.getElementById(COLOR_PICKER_ID)?.appendChild(colorPicker);
+
+    const fontSizeInput = setupInput(FONT_SIZE_INPUT_ID, subtitleSettings[key].fontSize.toString());
+    fontSizeInput.addEventListener('input', (event) => {
+      const target = event.target as HTMLInputElement;
+      subtitleSettings[key].fontSize = parseInt(target.value, 10);
+    });
 
     document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {
       await setStorage(STORAGE_KEY, subtitleSettings[key]);
@@ -178,7 +184,8 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
     },
 
     get(target: SubtitleConfig, prop: keyof SubtitleConfig) {
-      return Reflect.get(target, prop);
+      if (target[prop]) return Reflect.get(target, prop);
+      return DEFAULT_SUBTITLE_CONFIG[prop];
     },
   };
 }

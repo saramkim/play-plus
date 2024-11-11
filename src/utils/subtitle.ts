@@ -1,3 +1,5 @@
+import { SubtitleConfig } from './storage';
+
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
     return { ...obj, [item.name]: item.value };
@@ -58,11 +60,25 @@ export const createSubtitleContainer = (id: string) => {
     flexDirection: 'column',
     gap: 'min(1.8vw, 3vh)',
     fontSize: 'min(1.8vw, 3vh)',
-    lineHeight: 'min(3vw, 5vh)',
-    color: 'white',
     textShadow: 'black 2px 2px 2px',
   });
   return subtitleContainer;
+};
+
+export const createSubtitleElement = (text: string, config: SubtitleConfig) => {
+  const { enabled, color, fontSize } = config;
+  const subtitle = document.createElement('p');
+
+  subtitle.textContent = text;
+
+  applyStyles(subtitle, {
+    lineHeight: '1.5em',
+    display: enabled ? 'block' : 'none',
+    color: color,
+    fontSize: `${0.5 + 0.1 * fontSize}em`,
+  });
+
+  return subtitle;
 };
 
 const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
