@@ -55,8 +55,6 @@
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
           <div class="flex items-center gap-2">
-            <div id="feedback_1_s" class="hidden text-teal-500">✔</div>
-            <div id="feedback_1_e" class="hidden text-rose-400">✖</div>
             <button id="save-skip-time" class="button bg-teal-500">저장</button>
           </div>
         </header>
@@ -70,23 +68,23 @@
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
           <div class="flex items-center gap-2">
-            <button id="reset-sub-key" class="button bg-rose-400">초기화</button>
-            <div id="feedback_2_s" class="hidden text-teal-500">✔</div>
-            <div id="feedback_2_e" class="hidden text-rose-400">✖</div>
-            <button id="save-sub-key" class="button bg-teal-500">저장</button>
+            <button id="save-sub-key" class="button bg-teal-500 hidden">저장</button>
+            <div id="sub-key-toggle"></div>
           </div>
         </header>
-        <div class="flex items-center gap-2">
-          <label for="sub-backward-key" class="label">뒤로 이동 키:</label>
-          <input id="sub-backward-key" class="input" readonly />
-        </div>
-        <div class="flex items-center gap-2">
-          <label for="sub-forward-key" class="label">앞으로 이동 키:</label>
-          <input id="sub-forward-key" class="input" readonly />
-        </div>
-        <div class="flex items-center gap-2">
-          <label for="sub-skip-time" class="label">영상 이동 시간(초):</label>
-          <input type="number" id="sub-skip-time" value="10" min="1" class="input" />
+        <div id="sub-key-setting" class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label for="sub-backward-key" class="label">뒤로 이동 키:</label>
+            <input id="sub-backward-key" class="input" readonly />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="sub-forward-key" class="label">앞으로 이동 키:</label>
+            <input id="sub-forward-key" class="input" readonly />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="sub-skip-time" class="label">영상 이동 시간(초):</label>
+            <input type="number" id="sub-skip-time" value="10" min="1" class="input" />
+          </div>
         </div>
       </section>
     </div>

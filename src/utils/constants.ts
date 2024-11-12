@@ -2,8 +2,6 @@ export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 
-export const FEEDBACK_DISPLAY_DURATION = 800;
-
 export const SUBTITLES = {
   ENGLISH: {
     LANGUAGE_CODE: 'en',
@@ -33,9 +31,10 @@ export const SKIP_TIME = {
 
 export const SUB_KEY = {
   STORAGE_KEY: 'subKey',
+  CONTAINER_ID: 'sub-key-setting',
+  TOGGLE_ID: 'sub-key-toggle',
   BACKWARD_INPUT_ID: 'sub-backward-key',
   FORWARD_INPUT_ID: 'sub-forward-key',
   SKIP_TIME_INPUT_ID: 'sub-skip-time',
   SAVE_BUTTON_ID: 'save-sub-key',
-  RESET_BUTTON_ID: 'reset-sub-key',
 } as const;

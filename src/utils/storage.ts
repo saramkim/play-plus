@@ -1,4 +1,5 @@
 export type SubKeyConfig = {
+  enabled: boolean;
   forward: string;
   backward: string;
   skipTime: number;

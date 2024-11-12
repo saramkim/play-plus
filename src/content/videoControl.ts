@@ -13,7 +13,8 @@ export async function initializeSkipTimeSetting() {
 }
 
 export async function initializeKeyBindings() {
-  setKeyBindings(await getStorage(SUB_KEY.STORAGE_KEY));
+  const data = await getStorage(SUB_KEY.STORAGE_KEY);
+  if (data) setKeyBindings(data);
   document.addEventListener('keydown', handleKeydown);
 }
 
@@ -24,21 +25,21 @@ async function handleStorageChange(changes: StorageChanges) {
   if (skipTimeChange && skipTimeChange.newValue) {
     mainSkipTime = skipTimeChange.newValue;
   }
-  if (subKeyChange) {
+  if (subKeyChange && subKeyChange.newValue) {
     setKeyBindings(subKeyChange.newValue);
   }
 }
 
-async function setKeyBindings(subKeyConfig?: SubKeyConfig) {
+async function setKeyBindings(subKeyConfig: SubKeyConfig) {
   const bindings: KeyBindings = {
     ArrowRight: () => skipVideoTime(mainSkipTime),
     ArrowLeft: () => skipVideoTime(-mainSkipTime),
   };
+  const { enabled, forward, backward, skipTime } = subKeyConfig;
 
-  if (subKeyConfig) {
-    const { forward, backward, skipTime } = subKeyConfig;
-    bindings[forward] = () => skipVideoTime(skipTime);
+  if (enabled) {
     bindings[backward] = () => skipVideoTime(-skipTime);
+    bindings[forward] = () => skipVideoTime(skipTime);
   }
 
   keyBindings = bindings;

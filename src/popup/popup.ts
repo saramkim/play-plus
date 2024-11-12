@@ -1,9 +1,7 @@
 import '../style.css';
-import { SUBTITLES } from '../utils/constants';
-import { setElementVisibility } from '../utils/dom';
 import { onStorageChange } from '../utils/storage';
-import { initializeSubtitleSetting } from './subtitle';
-import { initializeSkipTimeSetting, initializeSubKeySetting } from './videoControl';
+import { initializeSubtitleSetting, onSubtitleStorageChange } from './subtitle';
+import { initializeSkipTimeSetting, initializeSubKeySetting, onSubKeyStorageChange } from './videoControl';
 
 async function initializeSettings() {
   initializeStorage();
@@ -15,13 +13,8 @@ async function initializeSettings() {
 
 function initializeStorage() {
   onStorageChange((changes) => {
-    for (const { STORAGE_KEY, CONTAINER_ID } of Object.values(SUBTITLES)) {
-      const subtitleChanges = changes[STORAGE_KEY];
-
-      if (subtitleChanges && subtitleChanges.newValue) {
-        setElementVisibility(CONTAINER_ID, subtitleChanges.newValue.enabled);
-      }
-    }
+    onSubtitleStorageChange(changes);
+    onSubKeyStorageChange(changes);
   });
 }
 

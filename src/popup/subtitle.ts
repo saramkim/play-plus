@@ -1,4 +1,4 @@
-import { getStorage, setStorage, SubtitleConfig } from '../utils/storage';
+import { getStorage, setStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
 import { Toggle } from '../components/toggle';
 import { SUBTITLES } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
@@ -9,6 +9,16 @@ const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
   acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
   return acc;
 }, {} as Record<keyof typeof SUBTITLES, SubtitleConfig>);
+
+export function onSubtitleStorageChange(changes: StorageChanges) {
+  for (const { STORAGE_KEY, CONTAINER_ID } of Object.values(SUBTITLES)) {
+    const subtitleChanges = changes[STORAGE_KEY];
+
+    if (subtitleChanges && subtitleChanges.newValue) {
+      setElementVisibility(CONTAINER_ID, subtitleChanges.newValue.enabled);
+    }
+  }
+}
 
 export async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {

@@ -9,6 +9,7 @@ export const DEFAULT_SUBTITLE_CONFIG: SubtitleConfig = {
 export const DEFAULT_SKIP_TIME = 10;
 
 export const DEFAULT_SUB_KEY_CONFIG: SubKeyConfig = {
+  enabled: false,
   forward: '',
   backward: '',
   skipTime: 10,
