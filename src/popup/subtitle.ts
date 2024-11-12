@@ -28,6 +28,8 @@ export async function initializeSubtitleSetting() {
 
     const { enabled, color, fontSize } = subtitleSettings[key];
 
+    setElementVisibility(CONTAINER_ID, enabled);
+
     const toggle = Toggle({
       isOn: enabled,
       onChange: async (enabled) => {
@@ -56,8 +58,6 @@ export async function initializeSubtitleSetting() {
       setElementVisibility(SAVE_BUTTON_ID, false);
       setElementVisibility(TOGGLE_ID, true);
     });
-
-    setElementVisibility(CONTAINER_ID, enabled);
   }
 }
 

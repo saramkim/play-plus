@@ -1,5 +1,14 @@
-import { fetchVideoMetadata, initializeSubtitleSync } from './subtitle';
-import { initializeKeyBindings, initializeSkipTimeSetting } from './videoControl';
+import { onStorageChange } from '../utils/storage';
+import { fetchVideoMetadata, initializeSubtitleSync, onSubtitleStorageChange } from './subtitle';
+import { initializeKeyBindings, initializeSkipTimeSetting, onSubKeyStorageChange } from './videoControl';
+
+async function init() {
+  initializeMessageListener();
+  initializeStorageChange();
+  await initializeSubtitleSync();
+  await initializeSkipTimeSetting();
+  await initializeKeyBindings();
+}
 
 function initializeMessageListener() {
   chrome.runtime.onMessage.addListener((message) => {
@@ -11,9 +20,11 @@ function initializeMessageListener() {
   });
 }
 
-(async function () {
-  initializeMessageListener();
-  await initializeSubtitleSync();
-  await initializeSkipTimeSetting();
-  await initializeKeyBindings();
-})();
+function initializeStorageChange() {
+  onStorageChange((changes) => {
+    onSubtitleStorageChange(changes);
+    onSubKeyStorageChange(changes);
+  });
+}
+
+init();

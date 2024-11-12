@@ -1,7 +1,7 @@
 import { SUBTITLE_CONTAINER_ID, SUBTITLES, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { selectVideoElement } from '../utils/dom';
-import { getStorage, onStorageChange, StorageChanges, SubtitleConfig } from '../utils/storage';
+import { getStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
   createSubtitleContainer,
@@ -24,8 +24,25 @@ let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
 let handleVideoTimeupdate: (() => void) | null;
 
+export function onSubtitleStorageChange(changes: StorageChanges) {
+  for (const { STORAGE_KEY, LANGUAGE_CODE } of Object.values(SUBTITLES)) {
+    const subtitleChanges = changes[STORAGE_KEY];
+
+    if (subtitleChanges && subtitleChanges.newValue) {
+      subtitleSettings[LANGUAGE_CODE] = subtitleChanges.newValue;
+
+      if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
+        fetchAndSyncSubtitles(subtitleApiInfoList);
+      } else if (!subtitleSettings['en'].enabled && !subtitleSettings['ko'].enabled) {
+        stopSubtitleSync();
+      }
+
+      if (handleVideoTimeupdate) handleVideoTimeupdate();
+    }
+  }
+}
+
 export async function initializeSubtitleSync() {
-  onStorageChange(handleStorageChange);
   for (const { LANGUAGE_CODE, STORAGE_KEY } of Object.values(SUBTITLES)) {
     const data = await getStorage(STORAGE_KEY);
     if (data) subtitleSettings[LANGUAGE_CODE] = data;
@@ -52,24 +69,6 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
 
   if (subtitleSettings['en'].enabled || subtitleSettings['ko'].enabled) {
     fetchAndSyncSubtitles(subtitleApiInfoList);
-  }
-}
-
-async function handleStorageChange(changes: StorageChanges) {
-  for (const { STORAGE_KEY, LANGUAGE_CODE } of Object.values(SUBTITLES)) {
-    const subtitleChanges = changes[STORAGE_KEY];
-
-    if (subtitleChanges && subtitleChanges.newValue) {
-      subtitleSettings[LANGUAGE_CODE] = subtitleChanges.newValue;
-
-      if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
-        await fetchAndSyncSubtitles(subtitleApiInfoList);
-      } else if (!subtitleSettings['en'].enabled && !subtitleSettings['ko'].enabled) {
-        stopSubtitleSync();
-      }
-
-      if (handleVideoTimeupdate) handleVideoTimeupdate();
-    }
   }
 }
 
@@ -140,7 +139,7 @@ function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElem
   const { currentTime } = video;
   const subtitleElementList = Array.from(subtitleCache.entries())
     .sort(([langA], [langB]) =>
-      langA === SUBTITLES.ENGLISH.LANGUAGE_CODE ? -1 : langB === SUBTITLES.ENGLISH.LANGUAGE_CODE ? 1 : 0
+      langA === SUBTITLES.ENGLISH.LANGUAGE_CODE ? -1 : langB === SUBTITLES.ENGLISH.LANGUAGE_CODE ? 1 : 0,
     )
     .map(([lang, subtitles]) => {
       const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);

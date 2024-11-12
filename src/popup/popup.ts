@@ -3,15 +3,15 @@ import { onStorageChange } from '../utils/storage';
 import { initializeSubtitleSetting, onSubtitleStorageChange } from './subtitle';
 import { initializeSkipTimeSetting, initializeSubKeySetting, onSubKeyStorageChange } from './videoControl';
 
-async function initializeSettings() {
-  initializeStorage();
+async function init() {
+  initializeStorageChange();
   await loadTemplates();
   await initializeSubtitleSetting();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
 }
 
-function initializeStorage() {
+function initializeStorageChange() {
   onStorageChange((changes) => {
     onSubtitleStorageChange(changes);
     onSubKeyStorageChange(changes);
@@ -24,4 +24,4 @@ async function loadTemplates() {
   document.body.insertAdjacentHTML('beforeend', text);
 }
 
-document.addEventListener('DOMContentLoaded', initializeSettings);
+document.addEventListener('DOMContentLoaded', init);

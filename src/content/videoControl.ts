@@ -1,24 +1,13 @@
 import { SKIP_TIME, SUB_KEY } from '../utils/constants';
 import { DEFAULT_SKIP_TIME } from '../utils/default';
-import { getStorage, onStorageChange, StorageChanges, SubKeyConfig } from '../utils/storage';
+import { getStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
 
 type KeyBindings = { [key: string]: () => void };
 
 let mainSkipTime = DEFAULT_SKIP_TIME;
 let keyBindings: KeyBindings = {};
 
-export async function initializeSkipTimeSetting() {
-  mainSkipTime = (await getStorage(SKIP_TIME.STORAGE_KEY)) || DEFAULT_SKIP_TIME;
-  onStorageChange(handleStorageChange);
-}
-
-export async function initializeKeyBindings() {
-  const data = await getStorage(SUB_KEY.STORAGE_KEY);
-  if (data) setKeyBindings(data);
-  document.addEventListener('keydown', handleKeydown);
-}
-
-async function handleStorageChange(changes: StorageChanges) {
+export function onSubKeyStorageChange(changes: StorageChanges) {
   const skipTimeChange = changes[SKIP_TIME.STORAGE_KEY];
   const subKeyChange = changes[SUB_KEY.STORAGE_KEY];
 
@@ -30,7 +19,18 @@ async function handleStorageChange(changes: StorageChanges) {
   }
 }
 
-async function setKeyBindings(subKeyConfig: SubKeyConfig) {
+export async function initializeSkipTimeSetting() {
+  const data = await getStorage(SKIP_TIME.STORAGE_KEY);
+  if (data) mainSkipTime = data;
+}
+
+export async function initializeKeyBindings() {
+  const data = await getStorage(SUB_KEY.STORAGE_KEY);
+  if (data) setKeyBindings(data);
+  document.addEventListener('keydown', handleKeydown);
+}
+
+function setKeyBindings(subKeyConfig: SubKeyConfig) {
   const bindings: KeyBindings = {
     ArrowRight: () => skipVideoTime(mainSkipTime),
     ArrowLeft: () => skipVideoTime(-mainSkipTime),
