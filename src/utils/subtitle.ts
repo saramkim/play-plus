@@ -47,12 +47,13 @@ export const createSubtitleContainer = (id: string) => {
     gap: 'min(1.8vw, 3vh)',
     fontSize: 'min(1.8vw, 3vh)',
     textShadow: 'black 2px 2px 2px',
+    fontFamily: 'Pretendard',
   });
   return subtitleContainer;
 };
 
 export const createSubtitleElement = (text: string, config: SubtitleConfig) => {
-  const { enabled, color, fontSize } = config;
+  const { enabled, color, fontSize, fontWeight } = config;
   const subtitle = document.createElement('p');
 
   subtitle.textContent = text;
@@ -62,6 +63,7 @@ export const createSubtitleElement = (text: string, config: SubtitleConfig) => {
     display: enabled ? 'block' : 'none',
     color: color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
+    fontWeight: `${200 + 100 * fontWeight}`,
   });
 
   return subtitle;

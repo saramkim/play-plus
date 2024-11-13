@@ -23,11 +23,19 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 
 export async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {
-    const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, SAVE_BUTTON_ID } = metadata;
+    const {
+      STORAGE_KEY,
+      CONTAINER_ID,
+      TOGGLE_ID,
+      COLOR_PICKER_ID,
+      FONT_SIZE_INPUT_ID,
+      FONT_WEIGHT_INPUT_ID,
+      SAVE_BUTTON_ID,
+    } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-    const { enabled, color, fontSize } = subtitleSettings[key];
+    const { enabled, color, fontSize, fontWeight } = subtitleSettings[key];
 
     setElementVisibility(CONTAINER_ID, enabled);
 
@@ -52,6 +60,12 @@ export async function initializeSubtitleSetting() {
     fontSizeInput.addEventListener('input', (event) => {
       const target = event.target as HTMLInputElement;
       subtitleSettings[key].fontSize = parseInt(target.value, 10);
+    });
+
+    const fontWeightInput = setupInput(FONT_WEIGHT_INPUT_ID, fontWeight.toString());
+    fontWeightInput.addEventListener('input', (event) => {
+      const target = event.target as HTMLInputElement;
+      subtitleSettings[key].fontWeight = parseInt(target.value, 10);
     });
 
     document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {

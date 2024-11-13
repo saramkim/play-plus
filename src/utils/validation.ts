@@ -2,6 +2,7 @@ import { SubKeyConfig, SubtitleConfig } from './storage';
 
 export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   fontSize: { type: 'number', min: 1, max: 10 },
+  fontWeight: { type: 'number', min: 1, max: 6 },
   forward: { type: 'string' },
   backward: { type: 'string' },
   skipTime: { type: 'number', min: 1 },

@@ -10,6 +10,7 @@ export const SUBTITLES = {
     TOGGLE_ID: 'english-toggle',
     COLOR_PICKER_ID: 'english-color-picker',
     FONT_SIZE_INPUT_ID: 'english-font-size',
+    FONT_WEIGHT_INPUT_ID: 'english-font-weight',
     SAVE_BUTTON_ID: 'save-english-setting',
   },
   KOREAN: {
@@ -19,6 +20,7 @@ export const SUBTITLES = {
     TOGGLE_ID: 'korean-toggle',
     COLOR_PICKER_ID: 'korean-color-picker',
     FONT_SIZE_INPUT_ID: 'korean-font-size',
+    FONT_WEIGHT_INPUT_ID: 'korean-font-weight',
     SAVE_BUTTON_ID: 'save-korean-setting',
   },
 } as const;
@@ -42,6 +44,8 @@ export const SUB_KEY = {
 export const INPUT_ID_TO_STORAGE_OPTION_KEY = {
   [SUBTITLES.ENGLISH.FONT_SIZE_INPUT_ID]: 'fontSize',
   [SUBTITLES.KOREAN.FONT_SIZE_INPUT_ID]: 'fontSize',
+  [SUBTITLES.ENGLISH.FONT_WEIGHT_INPUT_ID]: 'fontWeight',
+  [SUBTITLES.KOREAN.FONT_WEIGHT_INPUT_ID]: 'fontWeight',
   [SKIP_TIME.INPUT_ID]: 'skipTime',
   [SUB_KEY.BACKWARD_INPUT_ID]: 'backward',
   [SUB_KEY.FORWARD_INPUT_ID]: 'forward',

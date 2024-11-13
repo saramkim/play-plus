@@ -4,6 +4,7 @@ export const DEFAULT_SUBTITLE_CONFIG: SubtitleConfig = {
   enabled: false,
   color: '#ffffff',
   fontSize: 5,
+  fontWeight: 3,
 };
 
 export const DEFAULT_SKIP_TIME = 10;
