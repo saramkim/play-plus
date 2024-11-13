@@ -3,7 +3,8 @@ import { Toggle } from '../components/toggle';
 import { SUBTITLES } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
-import { setElementVisibility, setupInput } from '../utils/dom';
+import { setElementAvailability, setElementVisibility, setupInput } from '../utils/dom';
+import { validateAll } from '../utils/validation';
 
 const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
   acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
@@ -64,11 +65,14 @@ export async function initializeSubtitleSetting() {
 function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
   return {
     set(target: SubtitleConfig, prop: keyof SubtitleConfig, value: SubtitleConfig[keyof SubtitleConfig]) {
+      const { STORAGE_KEY, TOGGLE_ID, SAVE_BUTTON_ID } = SUBTITLES[key];
       if (prop === 'enabled') {
-        setStorage(SUBTITLES[key].STORAGE_KEY, { ...target, enabled: value as boolean });
+        setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
       } else {
-        setElementVisibility(SUBTITLES[key].TOGGLE_ID, false);
-        setElementVisibility(SUBTITLES[key].SAVE_BUTTON_ID, true);
+        const isValid = validateAll(target, prop, value);
+        setElementAvailability(SAVE_BUTTON_ID, isValid);
+        setElementVisibility(TOGGLE_ID, false);
+        setElementVisibility(SAVE_BUTTON_ID, true);
       }
       return Reflect.set(target, prop, value);
     },

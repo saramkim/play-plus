@@ -128,7 +128,7 @@ body {
 }
 
 .button {
-  @apply px-2 py-1 text-white outline-none rounded text-nowrap;
+  @apply px-2 py-1 text-white outline-none rounded text-nowrap disabled:opacity-30;
 }
 
 .label {

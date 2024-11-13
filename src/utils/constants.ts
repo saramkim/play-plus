@@ -38,3 +38,14 @@ export const SUB_KEY = {
   SKIP_TIME_INPUT_ID: 'sub-skip-time',
   SAVE_BUTTON_ID: 'save-sub-key',
 } as const;
+
+export const INPUT_ID_TO_STORAGE_OPTION_KEY = {
+  [SUBTITLES.ENGLISH.FONT_SIZE_INPUT_ID]: 'fontSize',
+  [SUBTITLES.KOREAN.FONT_SIZE_INPUT_ID]: 'fontSize',
+  [SKIP_TIME.INPUT_ID]: 'skipTime',
+  [SUB_KEY.BACKWARD_INPUT_ID]: 'backward',
+  [SUB_KEY.FORWARD_INPUT_ID]: 'forward',
+  [SUB_KEY.SKIP_TIME_INPUT_ID]: 'skipTime',
+} as const;
+
+export type InputId = keyof typeof INPUT_ID_TO_STORAGE_OPTION_KEY;

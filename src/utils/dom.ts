@@ -1,3 +1,6 @@
+import { INPUT_ID_TO_STORAGE_OPTION_KEY, InputId } from './constants';
+import { VALIDATION_RULE } from './validation';
+
 export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
   return new Promise((resolve) => {
     if (document.readyState === 'loading') {
@@ -19,8 +22,23 @@ export function setElementVisibility(id: string, isVisible: boolean) {
   else element?.classList.add('hidden');
 }
 
-export function setupInput(elementId: string, defaultValue: string): HTMLInputElement {
+export function setElementAvailability(id: string, isAvailable: boolean) {
+  const element = document.getElementById(id) as HTMLInputElement;
+  element.disabled = !isAvailable;
+}
+
+export function setupInput(elementId: InputId, defaultValue?: string): HTMLInputElement {
   const input = document.getElementById(elementId) as HTMLInputElement;
-  input.value = defaultValue;
+  const key = INPUT_ID_TO_STORAGE_OPTION_KEY[elementId];
+
+  if (key && VALIDATION_RULE[key]) {
+    const rule = VALIDATION_RULE[key];
+    input.type = rule.type;
+    if (rule.max) input.max = rule.max.toString();
+    if (rule.min) input.min = rule.min.toString();
+  }
+
+  if (defaultValue) input.value = defaultValue;
+
   return input;
 }

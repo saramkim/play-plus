@@ -18,7 +18,7 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">영어 자막</h2>
-          <button id="save-english-setting" class="button bg-teal-500 hidden">저장</button>
+          <button id="save-english-setting" class="button bg-teal-500 hidden" disabled>저장</button>
           <div id="english-toggle"></div>
         </header>
         <div id="english-subtitle-setting" class="flex flex-col gap-1">
@@ -28,7 +28,7 @@
           </div>
           <div class="flex items-center gap-2">
             <label for="english-font-size" class="label">자막 크기(1~10):</label>
-            <input type="number" id="english-font-size" min="1" max="10" class="input" />
+            <input type="number" id="english-font-size" class="input" />
           </div>
         </div>
       </section>
@@ -36,7 +36,7 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">한국어 자막</h2>
-          <button id="save-korean-setting" class="button bg-teal-500 hidden">저장</button>
+          <button id="save-korean-setting" class="button bg-teal-500 hidden" disabled>저장</button>
           <div id="korean-toggle"></div>
         </header>
         <div id="korean-subtitle-setting" class="flex flex-col gap-1">
@@ -46,7 +46,7 @@
           </div>
           <div class="flex items-center gap-2">
             <label for="korean-font-size" class="label">자막 크기(1~10):</label>
-            <input type="number" id="korean-font-size" min="1" max="10" class="input" />
+            <input type="number" id="korean-font-size" class="input" />
           </div>
         </div>
       </section>
@@ -55,12 +55,12 @@
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
           <div class="flex items-center gap-2">
-            <button id="save-skip-time" class="button bg-teal-500">저장</button>
+            <button id="save-skip-time" class="button bg-teal-500" disabled>저장</button>
           </div>
         </header>
         <div class="flex items-center gap-2">
           <label for="skip-time" class="label">영상 이동 시간(초):</label>
-          <input type="number" id="skip-time" value="10" min="1" class="input" />
+          <input type="number" id="skip-time" class="input" />
         </div>
       </section>
 
@@ -68,7 +68,7 @@
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
           <div class="flex items-center gap-2">
-            <button id="save-sub-key" class="button bg-teal-500 hidden">저장</button>
+            <button id="save-sub-key" class="button bg-teal-500 hidden" disabled>저장</button>
             <div id="sub-key-toggle"></div>
           </div>
         </header>
@@ -83,7 +83,7 @@
           </div>
           <div class="flex items-center gap-2">
             <label for="sub-skip-time" class="label">영상 이동 시간(초):</label>
-            <input type="number" id="sub-skip-time" value="10" min="1" class="input" />
+            <input type="number" id="sub-skip-time" class="input" />
           </div>
         </div>
       </section>

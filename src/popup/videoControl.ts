@@ -1,16 +1,20 @@
 import { getStorage, setStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
 import { SKIP_TIME, SUB_KEY } from '../utils/constants';
 import { DEFAULT_SKIP_TIME, DEFAULT_SUB_KEY_CONFIG } from '../utils/default';
-import { setElementVisibility, setupInput } from '../utils/dom';
+import { setElementAvailability, setElementVisibility, setupInput } from '../utils/dom';
 import { Toggle } from '../components/toggle';
+import { validate, validateAll } from '../utils/validation';
 
 const subKeyProxyHandler = {
   set(target: SubKeyConfig, prop: keyof SubKeyConfig, value: SubKeyConfig[keyof SubKeyConfig]) {
+    const { STORAGE_KEY, TOGGLE_ID, SAVE_BUTTON_ID } = SUB_KEY;
     if (prop === 'enabled') {
-      setStorage(SUB_KEY.STORAGE_KEY, { ...target, enabled: value as boolean });
+      setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
     } else {
-      setElementVisibility(SUB_KEY.TOGGLE_ID, false);
-      setElementVisibility(SUB_KEY.SAVE_BUTTON_ID, true);
+      const isValid = validateAll(target, prop, value);
+      setElementAvailability(SAVE_BUTTON_ID, isValid);
+      setElementVisibility(TOGGLE_ID, false);
+      setElementVisibility(SAVE_BUTTON_ID, true);
     }
     return Reflect.set(target, prop, value);
   },
@@ -44,6 +48,7 @@ export async function initializeSkipTimeSetting() {
   timeInput.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
     keySettings.skipTime = parseInt(target.value, 10);
+    setElementAvailability(SAVE_BUTTON_ID, validate('skipTime', keySettings.skipTime).valid);
   });
 
   document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', () => {
