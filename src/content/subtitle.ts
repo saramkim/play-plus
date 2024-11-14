@@ -7,6 +7,7 @@ import {
   createSubtitleContainer,
   createSubtitleElement,
   extractSubtitleApiInfoFromResponse,
+  findCurrentSubtitle,
   parseVTT,
   SubtitleApiInfo,
   SubtitleData,
@@ -22,7 +23,7 @@ const subtitleSettings = Object.values(SUBTITLES).reduce((acc, { LANGUAGE_CODE }
 
 let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
-let handleVideoTimeupdate: (() => void) | null;
+let handleVideoTimeupdate: ((arg?: Event | boolean) => void) | null;
 
 export function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY, LANGUAGE_CODE } of Object.values(SUBTITLES)) {
@@ -37,7 +38,7 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
         stopSubtitleSync();
       }
 
-      if (handleVideoTimeupdate) handleVideoTimeupdate();
+      if (handleVideoTimeupdate) handleVideoTimeupdate(true);
     }
   }
 }
@@ -116,7 +117,10 @@ function setupSubtitleSync(video: HTMLVideoElement) {
   observeSubtitleContainer(trackDisplayContainer, subtitleContainer);
   updateSubtitleText(video, subtitleContainer);
 
-  handleVideoTimeupdate = () => updateSubtitleText(video, subtitleContainer);
+  handleVideoTimeupdate = (arg) =>
+    typeof arg === 'boolean'
+      ? updateSubtitleText(video, subtitleContainer, arg)
+      : updateSubtitleText(video, subtitleContainer);
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 
@@ -135,16 +139,32 @@ function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContain
   }
 }
 
-function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement) {
+function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement, hasStyleChanged = false) {
   const { currentTime } = video;
-  const subtitleElementList = Array.from(subtitleCache.entries())
-    .sort(([langA], [langB]) =>
-      langA === SUBTITLES.ENGLISH.LANGUAGE_CODE ? -1 : langB === SUBTITLES.ENGLISH.LANGUAGE_CODE ? 1 : 0,
-    )
-    .map(([lang, subtitles]) => {
-      const subtitle = subtitles.find(({ start, end }) => currentTime >= start && currentTime <= end);
-      return createSubtitleElement(subtitle?.text || '', subtitleSettings[lang]);
-    });
 
-  subtitleContainer.replaceChildren(...subtitleElementList);
+  if (hasStyleChanged) {
+    const fragment = document.createDocumentFragment();
+
+    for (const [lang, subtitles] of subtitleCache) {
+      const subtitle = findCurrentSubtitle(subtitles, currentTime);
+      const subtitleElement = createSubtitleElement(lang, subtitle, subtitleSettings[lang]);
+
+      if (lang === 'en') fragment.prepend(subtitleElement);
+      else fragment.appendChild(subtitleElement);
+    }
+
+    subtitleContainer.replaceChildren(fragment);
+  } else {
+    for (const [lang, subtitles] of subtitleCache) {
+      const subtitle = findCurrentSubtitle(subtitles, currentTime);
+      const subtitleElement = subtitleContainer.querySelector(`#${lang}`);
+
+      if (subtitleElement) {
+        subtitleElement.innerHTML = subtitle;
+      } else {
+        updateSubtitleText(video, subtitleContainer, true);
+        break;
+      }
+    }
+  }
 }

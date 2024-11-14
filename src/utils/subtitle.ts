@@ -33,6 +33,23 @@ export const parseVTT = (data: string) => {
   return subtitles;
 };
 
+export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: number) => {
+  let left = 0;
+  let right = subtitles.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const { start, end, text } = subtitles[mid];
+
+    if (currentTime >= start && currentTime <= end) return text;
+
+    if (currentTime < start) right = mid - 1;
+    else left = mid + 1;
+  }
+
+  return '';
+};
+
 export const createSubtitleContainer = (id: string) => {
   const subtitleContainer = document.createElement('div');
   subtitleContainer.id = id;
@@ -52,11 +69,12 @@ export const createSubtitleContainer = (id: string) => {
   return subtitleContainer;
 };
 
-export const createSubtitleElement = (text: string, config: SubtitleConfig) => {
+export const createSubtitleElement = (id: string, text: string, config: SubtitleConfig) => {
   const { enabled, color, fontSize, fontWeight } = config;
   const subtitle = document.createElement('p');
 
-  subtitle.textContent = text;
+  subtitle.id = id;
+  subtitle.innerHTML = text;
 
   applyStyles(subtitle, {
     lineHeight: '1.5em',
