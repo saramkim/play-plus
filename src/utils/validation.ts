@@ -1,14 +1,15 @@
+import { RESERVED_KEY_CODE_LIST } from './constants';
 import { SubKeyConfig, SubtitleConfig } from './storage';
 
 export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   fontSize: { type: 'number', min: 1, max: 10 },
   fontWeight: { type: 'number', min: 1, max: 6 },
-  forward: { type: 'string' },
-  backward: { type: 'string' },
+  forward: { type: 'string', validate: validateNoReservedKey },
+  backward: { type: 'string', validate: validateNoReservedKey },
   skipTime: { type: 'number', min: 1 },
 };
 
-export const validate = (key: string, value: any): ValidationSuccess | ValidationFailure => {
+export const validate = (key: string, value: any): ValidationResult => {
   const rule = VALIDATION_RULE[key];
 
   if (!rule) return { valid: true };
@@ -33,7 +34,10 @@ export const validate = (key: string, value: any): ValidationSuccess | Validatio
     if (min !== undefined && value < min) return { valid: false, error: `최소값 ${min}보다 작습니다.` };
   }
 
-  if (rule.validate && !rule.validate(value)) return { valid: false, error: `입력값이 올바르지 않습니다.` };
+  if (rule.validate && !rule.validate(value).valid) {
+    const { valid, error } = rule.validate(value);
+    return valid ? { valid } : { valid, error };
+  }
 
   return { valid: true };
 };
@@ -45,13 +49,19 @@ export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string,
   );
 };
 
+function validateNoReservedKey(value: string): ValidationResult {
+  return RESERVED_KEY_CODE_LIST.includes(value)
+    ? { valid: false, error: '해당 키는 사용할 수 없습니다.' }
+    : { valid: true };
+}
+
 type ValidationRule = {
   type: 'string' | 'number';
   min?: number;
   max?: number;
   maxLength?: number;
   minLength?: number;
-  validate?: (value: any) => boolean;
+  validate?: (value: any) => ValidationResult;
 };
 
 type ValidationSuccess = {
@@ -63,3 +73,5 @@ type ValidationFailure = {
   valid: false;
   error: string;
 };
+
+type ValidationResult = ValidationSuccess | ValidationFailure;

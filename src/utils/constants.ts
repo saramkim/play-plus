@@ -2,6 +2,17 @@ export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 
+export const RESERVED_KEY_CODE_LIST = [
+  'ArrowRight',
+  'ArrowLeft',
+  'ArrowUp',
+  'ArrowDown',
+  'Enter',
+  'Space',
+  'Escape',
+  'KeyF',
+];
+
 export const SUBTITLES = {
   ENGLISH: {
     LANGUAGE_CODE: 'en',
