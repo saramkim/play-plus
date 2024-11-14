@@ -1,6 +1,8 @@
 import { RESERVED_KEY_CODE_LIST } from './constants';
 import { SubKeyConfig, SubtitleConfig } from './storage';
 
+export type ValidationResult = ValidationSuccess | ValidationFailure;
+
 export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   fontSize: { type: 'number', min: 1, max: 10 },
   fontWeight: { type: 'number', min: 1, max: 6 },
@@ -42,11 +44,17 @@ export const validate = (key: string, value: any): ValidationResult => {
   return { valid: true };
 };
 
-export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string, value: any) => {
-  return (
-    validate(prop, value).valid &&
-    Object.entries(target).every(([key, value]) => (key === prop ? true : validate(key, value).valid))
-  );
+export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string, value: any): ValidationResult => {
+  const result = validate(prop, value);
+  if (!result.valid) return result;
+
+  for (const [key, val] of Object.entries(target)) {
+    if (key === prop) continue;
+    const result = validate(key, val);
+    if (!result.valid) return result;
+  }
+
+  return { valid: true };
 };
 
 function validateNoReservedKey(value: string): ValidationResult {
@@ -73,5 +81,3 @@ type ValidationFailure = {
   valid: false;
   error: string;
 };
-
-type ValidationResult = ValidationSuccess | ValidationFailure;

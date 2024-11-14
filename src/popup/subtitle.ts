@@ -3,7 +3,7 @@ import { Toggle } from '../components/toggle';
 import { SUBTITLES } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
-import { setElementAvailability, setElementVisibility, setupInput } from '../utils/dom';
+import { setButtonAvailabilityWithTag, setElementVisibility, setupInput } from '../utils/dom';
 import { validateAll } from '../utils/validation';
 
 const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
@@ -83,8 +83,8 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
       if (prop === 'enabled') {
         setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
       } else {
-        const isValid = validateAll(target, prop, value);
-        setElementAvailability(SAVE_BUTTON_ID, isValid);
+        const result = validateAll(target, prop, value);
+        setButtonAvailabilityWithTag(SAVE_BUTTON_ID, result);
         setElementVisibility(TOGGLE_ID, false);
         setElementVisibility(SAVE_BUTTON_ID, true);
       }
