@@ -8,13 +8,16 @@
     "48": "icons/play-plus_48x.png",
     "128": "icons/play-plus_128x.png"
   },
-  "permissions": ["storage", "tabs", "webRequest"],
+  "permissions": ["storage", "tabs", "webRequest", "sidePanel"],
   "host_permissions": ["https://*.coupangplay.com/*"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Play Plus 열기"
+  },
+  "side_panel": {
+    "default_path": "index.html"
   },
   "content_scripts": [
     {

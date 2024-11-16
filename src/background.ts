@@ -1,6 +1,10 @@
 const loadedTabs = new Set<number>();
 const messageQueue: { [tabId: number]: any[] } = {};
 
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error('Error setting panel behavior:', error));
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
     loadedTabs.add(tabId);
