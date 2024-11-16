@@ -76,13 +76,13 @@ export async function initializeSubKeySetting() {
 
   setElementVisibility(CONTAINER_ID, enabled);
 
-  const toggle = Toggle({
+  Toggle({
+    id: TOGGLE_ID,
     isOn: enabled,
     onChange: async (enabled) => {
       subKey.enabled = enabled;
     },
   });
-  document.getElementById(TOGGLE_ID)?.appendChild(toggle);
 
   const backwardInput = setupInput(BACKWARD_INPUT_ID, backward);
   backwardInput.addEventListener('keydown', (event) => {

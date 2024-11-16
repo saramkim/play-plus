@@ -1,11 +1,13 @@
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
+import { replaceWithChildAndTransferId } from '../utils/dom';
 
 interface ToggleProps {
+  id: string;
   isOn?: boolean;
   onChange: (isOn: boolean) => void;
 }
 
-export function Toggle({ isOn = DEFAULT_SUBTITLE_CONFIG.enabled, onChange }: ToggleProps) {
+export function Toggle({ id, isOn = DEFAULT_SUBTITLE_CONFIG.enabled, onChange }: ToggleProps) {
   const template = (document.getElementById('toggle-template') as HTMLTemplateElement).content.cloneNode(
     true
   ) as DocumentFragment;
@@ -25,5 +27,5 @@ export function Toggle({ isOn = DEFAULT_SUBTITLE_CONFIG.enabled, onChange }: Tog
     indicator.classList.toggle('translate-x-4');
   });
 
-  return toggleButton;
+  return replaceWithChildAndTransferId(id, toggleButton);
 }

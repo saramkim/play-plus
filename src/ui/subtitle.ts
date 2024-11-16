@@ -39,22 +39,21 @@ export async function initializeSubtitleSetting() {
 
     setElementVisibility(CONTAINER_ID, enabled);
 
-    const toggle = Toggle({
+    Toggle({
+      id: TOGGLE_ID,
       isOn: enabled,
       onChange: async (enabled) => {
         subtitleSettings[key].enabled = enabled;
       },
     });
-    document.getElementById(TOGGLE_ID)?.appendChild(toggle);
 
-    const colorPicker = ColorPicker({
-      id: `${COLOR_PICKER_ID}_input`,
+    ColorPicker({
+      id: COLOR_PICKER_ID,
       color: color,
       onChange: (color) => {
         subtitleSettings[key].color = color;
       },
     });
-    document.getElementById(COLOR_PICKER_ID)?.appendChild(colorPicker);
 
     const fontSizeInput = setupInput(FONT_SIZE_INPUT_ID, fontSize.toString());
     fontSizeInput.addEventListener('input', (event) => {

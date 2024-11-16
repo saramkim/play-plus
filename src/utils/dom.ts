@@ -57,3 +57,30 @@ export function setupInput(elementId: InputId, defaultValue?: string): HTMLInput
 
   return input;
 }
+
+export const replaceWithChildAndTransferId = (
+  parentId: string,
+  child: HTMLElement,
+  targetSelector?: string
+): HTMLElement | null => {
+  const parentElement = document.getElementById(parentId);
+  if (!parentElement) {
+    console.error(`Element with id "${parentId}" not found.`);
+    return null;
+  }
+
+  if (targetSelector) {
+    const targetElement = child.querySelector(targetSelector) as HTMLElement;
+    if (!targetElement) {
+      console.error(`Target element "${targetSelector}" not found in child.`);
+      return null;
+    }
+    targetElement.id = parentElement.id;
+  } else {
+    child.id = parentElement.id;
+  }
+
+  parentElement.replaceWith(child);
+
+  return child;
+};
