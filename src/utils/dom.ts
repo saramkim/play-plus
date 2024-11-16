@@ -16,19 +16,19 @@ export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
   });
 };
 
-export function setElementVisibility(id: string, isVisible: boolean) {
+export const setElementVisibility = (id: string, isVisible: boolean) => {
   const element = document.getElementById(id);
 
   if (isVisible) element?.classList.remove('hidden');
   else element?.classList.add('hidden');
-}
+};
 
-export function setElementAvailability(id: string, isAvailable: boolean) {
+export const setElementAvailability = (id: string, isAvailable: boolean) => {
   const element = document.getElementById(id) as HTMLInputElement | HTMLButtonElement;
   element.disabled = !isAvailable;
-}
+};
 
-export function setButtonAvailabilityWithTag(id: string, { valid, error }: ValidationResult) {
+export const setButtonAvailabilityWithTag = (id: string, { valid, error }: ValidationResult) => {
   const button = document.getElementById(id) as HTMLButtonElement;
   const tooltip = document.getElementById(id + '_tooltip');
 
@@ -40,11 +40,11 @@ export function setButtonAvailabilityWithTag(id: string, { valid, error }: Valid
     if (tooltip) tooltip.textContent = error;
     else Tooltip({ id: id + '_tooltip', message: error, target: button });
   }
-}
+};
 
-export function setupInput(elementId: InputId, defaultValue?: string): HTMLInputElement {
-  const input = document.getElementById(elementId) as HTMLInputElement;
-  const key = INPUT_ID_TO_STORAGE_OPTION_KEY[elementId];
+export const setupInput = (id: InputId, defaultValue?: string): HTMLInputElement => {
+  const input = document.getElementById(id) as HTMLInputElement;
+  const key = INPUT_ID_TO_STORAGE_OPTION_KEY[id];
 
   if (key && VALIDATION_RULE[key]) {
     const rule = VALIDATION_RULE[key];
@@ -53,10 +53,10 @@ export function setupInput(elementId: InputId, defaultValue?: string): HTMLInput
     if (rule.min) input.min = rule.min.toString();
   }
 
-  if (defaultValue) input.value = defaultValue;
+  if (defaultValue) input.defaultValue = defaultValue;
 
   return input;
-}
+};
 
 export const replaceWithChildAndTransferId = (
   parentId: string,
@@ -83,4 +83,22 @@ export const replaceWithChildAndTransferId = (
   parentElement.replaceWith(child);
 
   return child;
+};
+
+export const resetInputValue = (id: string, options?: { triggerEvent?: boolean; eventType?: string }) => {
+  const input = document.getElementById(id) as HTMLInputElement;
+  const { defaultValue } = input;
+  const { triggerEvent = true, eventType = 'input' } = options || {};
+
+  input.value = defaultValue;
+
+  if (triggerEvent) {
+    const event =
+      eventType === 'keydown' || eventType === 'keyup'
+        ? new KeyboardEvent(eventType, { code: defaultValue, bubbles: true })
+        : new Event(eventType, { bubbles: true });
+    input.dispatchEvent(event);
+  }
+
+  return input;
 };

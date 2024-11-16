@@ -3,7 +3,7 @@ import { Toggle } from '../components/toggle';
 import { SUBTITLES } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
-import { setButtonAvailabilityWithTag, setElementVisibility, setupInput } from '../utils/dom';
+import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, setupInput } from '../utils/dom';
 import { validateAll } from '../utils/validation';
 
 const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
@@ -30,6 +30,7 @@ export async function initializeSubtitleSetting() {
       COLOR_PICKER_ID,
       FONT_SIZE_INPUT_ID,
       FONT_WEIGHT_INPUT_ID,
+      CANCEL_BUTTON_ID,
       SAVE_BUTTON_ID,
     } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
@@ -67,10 +68,14 @@ export async function initializeSubtitleSetting() {
       subtitleSettings[key].fontWeight = parseInt(target.value, 10);
     });
 
+    document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
+      resetInputsValue(key);
+      updateButtonsVisibility(key, false);
+    });
+
     document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {
       await setStorage(STORAGE_KEY, subtitleSettings[key]);
-      setElementVisibility(SAVE_BUTTON_ID, false);
-      setElementVisibility(TOGGLE_ID, true);
+      updateButtonsVisibility(key, false);
     });
   }
 }
@@ -78,14 +83,13 @@ export async function initializeSubtitleSetting() {
 function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
   return {
     set(target: SubtitleConfig, prop: keyof SubtitleConfig, value: SubtitleConfig[keyof SubtitleConfig]) {
-      const { STORAGE_KEY, TOGGLE_ID, SAVE_BUTTON_ID } = SUBTITLES[key];
+      const { STORAGE_KEY, SAVE_BUTTON_ID } = SUBTITLES[key];
       if (prop === 'enabled') {
         setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
       } else {
         const result = validateAll(target, prop, value);
         setButtonAvailabilityWithTag(SAVE_BUTTON_ID, result);
-        setElementVisibility(TOGGLE_ID, false);
-        setElementVisibility(SAVE_BUTTON_ID, true);
+        updateButtonsVisibility(key, true);
       }
       return Reflect.set(target, prop, value);
     },
@@ -95,4 +99,18 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
       return DEFAULT_SUBTITLE_CONFIG[prop];
     },
   };
+}
+
+function resetInputsValue(key: keyof typeof SUBTITLES) {
+  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID } = SUBTITLES[key];
+  resetInputValue(COLOR_PICKER_ID);
+  resetInputValue(FONT_SIZE_INPUT_ID);
+  resetInputValue(FONT_WEIGHT_INPUT_ID);
+}
+
+function updateButtonsVisibility(key: keyof typeof SUBTITLES, visible: boolean) {
+  const { TOGGLE_ID, CANCEL_BUTTON_ID, SAVE_BUTTON_ID } = SUBTITLES[key];
+  setElementVisibility(CANCEL_BUTTON_ID, visible);
+  setElementVisibility(SAVE_BUTTON_ID, visible);
+  setElementVisibility(TOGGLE_ID, !visible);
 }

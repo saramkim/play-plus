@@ -18,8 +18,11 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">영어 자막</h2>
-          <button id="save-english-setting" class="button bg-teal-500 hidden" disabled>저장</button>
-          <div id="english-toggle"></div>
+          <div class="flex items-center gap-1">
+            <button id="cancel-english-setting" class="button bg-gray-500 hidden">취소</button>
+            <button id="save-english-setting" class="button bg-teal-500 hidden" disabled>저장</button>
+            <div id="english-toggle"></div>
+          </div>
         </header>
         <div id="english-subtitle-setting" class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
@@ -40,8 +43,11 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">한국어 자막</h2>
-          <button id="save-korean-setting" class="button bg-teal-500 hidden" disabled>저장</button>
-          <div id="korean-toggle"></div>
+          <div class="flex items-center gap-1">
+            <button id="cancel-korean-setting" class="button bg-gray-500 hidden">취소</button>
+            <button id="save-korean-setting" class="button bg-teal-500 hidden" disabled>저장</button>
+            <div id="korean-toggle"></div>
+          </div>
         </header>
         <div id="korean-subtitle-setting" class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
@@ -62,7 +68,8 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
+            <button id="cancel-skip-time" class="button bg-gray-500" disabled>취소</button>
             <button id="save-skip-time" class="button bg-teal-500" disabled>저장</button>
           </div>
         </header>
@@ -75,7 +82,8 @@
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-[26px]">
           <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
+            <button id="cancel-sub-key" class="button bg-gray-500 hidden">취소</button>
             <button id="save-sub-key" class="button bg-teal-500 hidden" disabled>저장</button>
             <div id="sub-key-toggle"></div>
           </div>

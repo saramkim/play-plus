@@ -17,7 +17,7 @@ export function ColorPicker({ id, color = DEFAULT_SUBTITLE_CONFIG.color, onChang
   const colorPicker = button.querySelector(COLOR_PICKER_SELECTOR) as HTMLInputElement;
 
   button.style.backgroundColor = color;
-  colorPicker.value = color;
+  colorPicker.defaultValue = color;
 
   button.addEventListener('click', () => {
     colorPicker.click();
