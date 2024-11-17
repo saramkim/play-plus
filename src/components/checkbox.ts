@@ -33,5 +33,5 @@ export function Checkbox({ id, checked = false, onChange }: CheckboxProps) {
     onChange(checked);
   });
 
-  return replaceWithChildAndTransferId(id, box, '[data-role="checkbox-input"]');
+  return replaceWithChildAndTransferId(id, box, '[data-role="checkbox-input"]') as HTMLInputElement;
 }

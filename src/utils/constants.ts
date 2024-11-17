@@ -13,64 +13,91 @@ export const RESERVED_KEY_CODE_LIST = [
   'KeyF',
 ];
 
-export const SUBTITLES = {
-  ENGLISH: {
-    LANGUAGE_CODE: 'en',
-    STORAGE_KEY: 'englishSubtitle',
-    CONTAINER_ID: 'english-subtitle-setting',
-    TOGGLE_ID: 'english-toggle',
-    COLOR_PICKER_ID: 'english-color-picker',
-    FONT_SIZE_INPUT_ID: 'english-font-size',
-    FONT_WEIGHT_INPUT_ID: 'english-font-weight',
-    OPACITY_INPUT_ID: 'english-opacity',
-    LINE_BREAK_ID: 'english-line-break',
-    CANCEL_BUTTON_ID: 'cancel-english-setting',
-    SAVE_BUTTON_ID: 'save-english-setting',
+export const SETTINGS = {
+  SUBTITLES: {
+    ENGLISH: {
+      LANGUAGE_CODE: 'en',
+      STORAGE_KEY: 'englishSubtitle',
+      CONTAINER_ID: 'english-subtitle-setting',
+      TOGGLE_ID: 'english-toggle',
+      INPUTS: {
+        color: 'english-color-picker',
+        fontSize: 'english-font-size',
+        fontWeight: 'english-font-weight',
+        opacity: 'english-opacity',
+        lineBreak: 'english-line-break',
+      },
+      BUTTONS: {
+        CANCEL: 'cancel-english-setting',
+        SAVE: 'save-english-setting',
+      },
+    },
+    KOREAN: {
+      LANGUAGE_CODE: 'ko',
+      STORAGE_KEY: 'koreanSubtitle',
+      CONTAINER_ID: 'korean-subtitle-setting',
+      TOGGLE_ID: 'korean-toggle',
+      INPUTS: {
+        color: 'korean-color-picker',
+        fontSize: 'korean-font-size',
+        fontWeight: 'korean-font-weight',
+        opacity: 'korean-opacity',
+        lineBreak: 'korean-line-break',
+      },
+      BUTTONS: {
+        CANCEL: 'cancel-korean-setting',
+        SAVE: 'save-korean-setting',
+      },
+    },
   },
-  KOREAN: {
-    LANGUAGE_CODE: 'ko',
-    STORAGE_KEY: 'koreanSubtitle',
-    CONTAINER_ID: 'korean-subtitle-setting',
-    TOGGLE_ID: 'korean-toggle',
-    COLOR_PICKER_ID: 'korean-color-picker',
-    FONT_SIZE_INPUT_ID: 'korean-font-size',
-    FONT_WEIGHT_INPUT_ID: 'korean-font-weight',
-    OPACITY_INPUT_ID: 'korean-opacity',
-    LINE_BREAK_ID: 'korean-line-break',
-    CANCEL_BUTTON_ID: 'cancel-korean-setting',
-    SAVE_BUTTON_ID: 'save-korean-setting',
+  SKIP_TIME: {
+    STORAGE_KEY: 'skipTime',
+    INPUTS: {
+      skipTime: 'skip-time',
+    },
+    BUTTONS: {
+      CANCEL: 'cancel-skip-time',
+      SAVE: 'save-skip-time',
+    },
+  },
+  SUB_KEY: {
+    STORAGE_KEY: 'subKey',
+    CONTAINER_ID: 'sub-key-setting',
+    TOGGLE_ID: 'sub-key-toggle',
+    INPUTS: {
+      backward: 'sub-backward-key',
+      forward: 'sub-forward-key',
+      skipTime: 'sub-skip-time',
+    },
+    BUTTONS: {
+      CANCEL: 'cancel-sub-key',
+      SAVE: 'save-sub-key',
+    },
   },
 } as const;
 
-export const SKIP_TIME = {
-  STORAGE_KEY: 'skipTime',
-  INPUT_ID: 'skip-time',
-  CANCEL_BUTTON_ID: 'cancel-skip-time',
-  SAVE_BUTTON_ID: 'save-skip-time',
-} as const;
-
-export const SUB_KEY = {
-  STORAGE_KEY: 'subKey',
-  CONTAINER_ID: 'sub-key-setting',
-  TOGGLE_ID: 'sub-key-toggle',
-  BACKWARD_INPUT_ID: 'sub-backward-key',
-  FORWARD_INPUT_ID: 'sub-forward-key',
-  SKIP_TIME_INPUT_ID: 'sub-skip-time',
-  CANCEL_BUTTON_ID: 'cancel-sub-key',
-  SAVE_BUTTON_ID: 'save-sub-key',
-} as const;
-
-export const INPUT_ID_TO_STORAGE_OPTION_KEY = {
-  [SUBTITLES.ENGLISH.FONT_SIZE_INPUT_ID]: 'fontSize',
-  [SUBTITLES.KOREAN.FONT_SIZE_INPUT_ID]: 'fontSize',
-  [SUBTITLES.ENGLISH.FONT_WEIGHT_INPUT_ID]: 'fontWeight',
-  [SUBTITLES.KOREAN.FONT_WEIGHT_INPUT_ID]: 'fontWeight',
-  [SUBTITLES.ENGLISH.OPACITY_INPUT_ID]: 'opacity',
-  [SUBTITLES.KOREAN.OPACITY_INPUT_ID]: 'opacity',
-  [SKIP_TIME.INPUT_ID]: 'skipTime',
-  [SUB_KEY.BACKWARD_INPUT_ID]: 'backward',
-  [SUB_KEY.FORWARD_INPUT_ID]: 'forward',
-  [SUB_KEY.SKIP_TIME_INPUT_ID]: 'skipTime',
-} as const;
+export const INPUT_ID_TO_STORAGE_OPTION_KEY = generateInputToStorageKey(SETTINGS);
 
 export type InputId = keyof typeof INPUT_ID_TO_STORAGE_OPTION_KEY;
+
+function generateInputToStorageKey(settings: typeof SETTINGS): Record<string, string> {
+  const mapping: Record<string, string> = {};
+
+  Object.values(settings).forEach((category) => {
+    if ('INPUTS' in category) {
+      Object.entries(category.INPUTS).forEach(([storageKey, inputId]) => {
+        mapping[inputId] = storageKey;
+      });
+    } else {
+      Object.values(category).forEach((subCategory) => {
+        if ('INPUTS' in subCategory) {
+          Object.entries(subCategory.INPUTS).forEach(([storageKey, inputId]) => {
+            mapping[inputId] = storageKey;
+          });
+        }
+      });
+    }
+  });
+
+  return mapping;
+}

@@ -1,11 +1,14 @@
 import { getStorage, setStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
 import { Toggle } from '../components/toggle';
-import { SUBTITLES } from '../utils/constants';
+import { SETTINGS } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
-import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, setupInput } from '../utils/dom';
+import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
 import { validateAll } from '../utils/validation';
 import { Checkbox } from '../components/checkbox';
+import { NumberInput } from '../components/numberInput';
+
+const { SUBTITLES } = SETTINGS;
 
 const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
   acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
@@ -24,75 +27,34 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 
 export async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {
-    const {
-      STORAGE_KEY,
-      CONTAINER_ID,
-      TOGGLE_ID,
-      COLOR_PICKER_ID,
-      FONT_SIZE_INPUT_ID,
-      FONT_WEIGHT_INPUT_ID,
-      OPACITY_INPUT_ID,
-      LINE_BREAK_ID,
-      CANCEL_BUTTON_ID,
-      SAVE_BUTTON_ID,
-    } = metadata;
+    const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-    const { enabled, color, fontSize, fontWeight, opacity, lineBreak } = subtitleSettings[key];
+    const { enabled, ...settings } = subtitleSettings[key];
 
     setElementVisibility(CONTAINER_ID, enabled);
 
-    Toggle({
-      id: TOGGLE_ID,
-      isOn: enabled,
-      onChange: async (enabled) => {
-        subtitleSettings[key].enabled = enabled;
-      },
+    Toggle({ id: TOGGLE_ID, isOn: enabled, onChange: (enabled) => (subtitleSettings[key].enabled = enabled) });
+
+    const inputInstances: Record<string, HTMLInputElement> = {};
+
+    Object.entries(INPUTS).forEach(([storageKey, inputId]) => {
+      inputInstances[storageKey] = createInput(inputId, storageKey, settings, key);
     });
 
-    ColorPicker({
-      id: COLOR_PICKER_ID,
-      color: color,
-      onChange: (color) => {
-        subtitleSettings[key].color = color;
-      },
-    });
-
-    const fontSizeInput = setupInput(FONT_SIZE_INPUT_ID, fontSize.toString());
-    fontSizeInput.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement;
-      subtitleSettings[key].fontSize = parseInt(target.value, 10);
-    });
-
-    const fontWeightInput = setupInput(FONT_WEIGHT_INPUT_ID, fontWeight.toString());
-    fontWeightInput.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement;
-      subtitleSettings[key].fontWeight = parseInt(target.value, 10);
-    });
-
-    const opacityInput = setupInput(OPACITY_INPUT_ID, opacity.toString());
-    opacityInput.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement;
-      subtitleSettings[key].opacity = parseInt(target.value, 10);
-    });
-
-    Checkbox({
-      id: LINE_BREAK_ID,
-      checked: lineBreak,
-      onChange: (checked) => {
-        subtitleSettings[key].lineBreak = checked;
-      },
-    });
-
-    document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
-      resetInputsValue(key);
+    document.getElementById(BUTTONS.CANCEL)?.addEventListener('click', () => {
+      Object.values(INPUTS).forEach((id) => resetInputValue(id));
       updateButtonsVisibility(key, false);
     });
 
-    document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {
+    document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
       await setStorage(STORAGE_KEY, subtitleSettings[key]);
       updateButtonsVisibility(key, false);
+
+      Object.keys(INPUTS).forEach((storageKey) => {
+        updateDefaultValue(inputInstances[storageKey], subtitleSettings[key][storageKey]);
+      });
     });
   }
 }
@@ -100,12 +62,12 @@ export async function initializeSubtitleSetting() {
 function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
   return {
     set(target: SubtitleConfig, prop: keyof SubtitleConfig, value: SubtitleConfig[keyof SubtitleConfig]) {
-      const { STORAGE_KEY, SAVE_BUTTON_ID } = SUBTITLES[key];
+      const { STORAGE_KEY, BUTTONS } = SUBTITLES[key];
       if (prop === 'enabled') {
         setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
       } else {
         const result = validateAll(target, prop, value);
-        setButtonAvailabilityWithTag(SAVE_BUTTON_ID, result);
+        setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
         updateButtonsVisibility(key, true);
       }
       return Reflect.set(target, prop, value);
@@ -118,18 +80,43 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
   };
 }
 
-function resetInputsValue(key: keyof typeof SUBTITLES) {
-  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID, OPACITY_INPUT_ID, LINE_BREAK_ID } = SUBTITLES[key];
-  resetInputValue(COLOR_PICKER_ID);
-  resetInputValue(FONT_SIZE_INPUT_ID);
-  resetInputValue(FONT_WEIGHT_INPUT_ID);
-  resetInputValue(OPACITY_INPUT_ID);
-  resetInputValue(LINE_BREAK_ID);
+function createInput(
+  inputId: string,
+  storageKey: keyof Omit<SubtitleConfig, 'enabled'>,
+  settings: Omit<SubtitleConfig, 'enabled'>,
+  key: keyof typeof SUBTITLES
+) {
+  switch (storageKey) {
+    case 'color':
+      return ColorPicker({
+        id: inputId,
+        color: settings[storageKey],
+        onChange: (newColor) => {
+          subtitleSettings[key][storageKey] = newColor;
+        },
+      });
+    case 'lineBreak':
+      return Checkbox({
+        id: inputId,
+        checked: settings[storageKey],
+        onChange: (checked) => {
+          subtitleSettings[key][storageKey] = checked;
+        },
+      });
+    default:
+      return NumberInput({
+        id: inputId,
+        value: settings[storageKey],
+        onChange: (newValue) => {
+          subtitleSettings[key][storageKey] = newValue;
+        },
+      });
+  }
 }
 
 function updateButtonsVisibility(key: keyof typeof SUBTITLES, visible: boolean) {
-  const { TOGGLE_ID, CANCEL_BUTTON_ID, SAVE_BUTTON_ID } = SUBTITLES[key];
-  setElementVisibility(CANCEL_BUTTON_ID, visible);
-  setElementVisibility(SAVE_BUTTON_ID, visible);
+  const { BUTTONS, TOGGLE_ID } = SUBTITLES[key];
+  setElementVisibility(BUTTONS.CANCEL, visible);
+  setElementVisibility(BUTTONS.SAVE, visible);
   setElementVisibility(TOGGLE_ID, !visible);
 }

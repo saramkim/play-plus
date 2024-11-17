@@ -1,4 +1,4 @@
-import { SUBTITLE_CONTAINER_ID, SUBTITLES, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
+import { SETTINGS, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { selectVideoElement } from '../utils/dom';
 import { getStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
@@ -13,6 +13,8 @@ import {
   SubtitleData,
   SubtitleLanguage,
 } from '../utils/subtitle';
+
+const { SUBTITLES } = SETTINGS;
 
 const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
 

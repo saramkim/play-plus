@@ -29,5 +29,5 @@ export function ColorPicker({ id, color = DEFAULT_SUBTITLE_CONFIG.color, onChang
     onChange(selectedColor);
   });
 
-  return replaceWithChildAndTransferId(id, button, COLOR_PICKER_SELECTOR);
+  return replaceWithChildAndTransferId(id, button, COLOR_PICKER_SELECTOR) as HTMLInputElement;
 }

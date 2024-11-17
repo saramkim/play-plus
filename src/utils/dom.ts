@@ -76,10 +76,12 @@ export const replaceWithChildAndTransferId = (
       return null;
     }
     targetElement.id = parentElement.id;
-  } else {
-    child.id = parentElement.id;
+    parentElement.replaceWith(child);
+
+    return targetElement;
   }
 
+  child.id = parentElement.id;
   parentElement.replaceWith(child);
 
   return child;
@@ -102,4 +104,18 @@ export const resetInputValue = (id: string, options?: { triggerEvent?: boolean; 
   }
 
   return input;
+};
+
+export const updateDefaultValue = (instance: HTMLInputElement, value: string | number | boolean) => {
+  switch (typeof value) {
+    case 'string':
+      instance.defaultValue = value;
+      break;
+    case 'number':
+      instance.defaultValue = value.toString();
+      break;
+    case 'boolean':
+      instance.defaultChecked = value;
+      break;
+  }
 };

@@ -1,5 +1,5 @@
 import { getStorage, setStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
-import { SKIP_TIME, SUB_KEY } from '../utils/constants';
+import { SETTINGS } from '../utils/constants';
 import { DEFAULT_SKIP_TIME, DEFAULT_SUB_KEY_CONFIG } from '../utils/default';
 import {
   resetInputValue,
@@ -7,18 +7,23 @@ import {
   setElementAvailability,
   setElementVisibility,
   setupInput,
+  updateDefaultValue,
 } from '../utils/dom';
 import { Toggle } from '../components/toggle';
 import { validate, validateAll } from '../utils/validation';
+import { NumberInput } from '../components/numberInput';
+import { KeydownInput } from '../components/keydownInput';
+
+const { SUB_KEY, SKIP_TIME } = SETTINGS;
 
 const subKeyProxyHandler = {
   set(target: SubKeyConfig, prop: keyof SubKeyConfig, value: SubKeyConfig[keyof SubKeyConfig]) {
-    const { STORAGE_KEY, SAVE_BUTTON_ID } = SUB_KEY;
+    const { STORAGE_KEY, BUTTONS } = SUB_KEY;
     if (prop === 'enabled') {
       setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
     } else {
       const result = validateAll(target, prop, value);
-      setButtonAvailabilityWithTag(SAVE_BUTTON_ID, result);
+      setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
       updateButtonsVisibility(true);
     }
     return Reflect.set(target, prop, value);
@@ -45,105 +50,102 @@ export function onSubKeyStorageChange(changes: StorageChanges) {
 }
 
 export async function initializeSkipTimeSetting() {
-  const { STORAGE_KEY, INPUT_ID, CANCEL_BUTTON_ID, SAVE_BUTTON_ID } = SKIP_TIME;
+  const { STORAGE_KEY, INPUTS, BUTTONS } = SKIP_TIME;
   const skipTime = await getStorage(STORAGE_KEY);
   if (skipTime) keySettings.skipTime = skipTime;
 
-  const timeInput = setupInput(INPUT_ID, keySettings.skipTime.toString());
+  const timeInput = setupInput(INPUTS.skipTime, keySettings.skipTime.toString());
   timeInput.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
     keySettings.skipTime = parseInt(target.value, 10);
 
     const result = validate(STORAGE_KEY, keySettings.skipTime);
-    setElementAvailability(CANCEL_BUTTON_ID, true);
-    setButtonAvailabilityWithTag(SAVE_BUTTON_ID, result);
+    setElementAvailability(BUTTONS.CANCEL, true);
+    setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
   });
 
-  document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
-    keySettings.skipTime = skipTime || DEFAULT_SKIP_TIME;
-    resetInputValue(INPUT_ID);
-    setElementAvailability(CANCEL_BUTTON_ID, false);
-    setElementAvailability(SAVE_BUTTON_ID, false);
+  document.getElementById(BUTTONS.CANCEL)?.addEventListener('click', () => {
+    resetInputValue(INPUTS.skipTime);
+    setElementAvailability(BUTTONS.CANCEL, false);
+    setElementAvailability(BUTTONS.SAVE, false);
   });
 
-  document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', () => {
-    setStorage(STORAGE_KEY, keySettings.skipTime);
-    setElementAvailability(CANCEL_BUTTON_ID, false);
-    setElementAvailability(SAVE_BUTTON_ID, false);
+  document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
+    await setStorage(STORAGE_KEY, keySettings.skipTime);
+    setElementAvailability(BUTTONS.CANCEL, false);
+    setElementAvailability(BUTTONS.SAVE, false);
+    updateDefaultValue(timeInput, keySettings.skipTime);
   });
 }
 
 export async function initializeSubKeySetting() {
-  const {
-    STORAGE_KEY,
-    CONTAINER_ID,
-    TOGGLE_ID,
-    BACKWARD_INPUT_ID,
-    FORWARD_INPUT_ID,
-    SKIP_TIME_INPUT_ID,
-    CANCEL_BUTTON_ID,
-    SAVE_BUTTON_ID,
-  } = SUB_KEY;
+  const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = SUB_KEY;
   const subKeyStorage = await getStorage(STORAGE_KEY);
   if (subKeyStorage) keySettings.subKey = new Proxy(subKeyStorage, subKeyProxyHandler);
 
   const { subKey } = keySettings;
-  const { enabled, backward, forward, skipTime } = subKey;
+  const { enabled, ...settings } = subKey;
 
   setElementVisibility(CONTAINER_ID, enabled);
 
-  Toggle({
-    id: TOGGLE_ID,
-    isOn: enabled,
-    onChange: async (enabled) => {
-      subKey.enabled = enabled;
-    },
+  Toggle({ id: TOGGLE_ID, isOn: enabled, onChange: (enabled) => (subKey.enabled = enabled) });
+
+  const inputInstances: Record<string, HTMLInputElement> = {};
+
+  Object.entries(INPUTS).forEach(([storageKey, inputId]) => {
+    inputInstances[storageKey] = createInput(inputId, storageKey, settings);
   });
 
-  const backwardInput = setupInput(BACKWARD_INPUT_ID, backward);
-  backwardInput.addEventListener('keydown', (event) => {
-    event.preventDefault();
-    subKey.backward = event.code;
-    backwardInput.value = event.code;
-    backwardInput.blur();
-  });
-
-  const forwardInput = setupInput(FORWARD_INPUT_ID, forward);
-  forwardInput.addEventListener('keydown', (event) => {
-    event.preventDefault();
-    subKey.forward = event.code;
-    forwardInput.value = event.code;
-    forwardInput.blur();
-  });
-
-  const timeInput = setupInput(SKIP_TIME_INPUT_ID, skipTime.toString());
-  timeInput.addEventListener('input', (event) => {
-    const target = event.target as HTMLInputElement;
-    subKey.skipTime = parseInt(target.value, 10);
-  });
-
-  document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
+  document.getElementById(BUTTONS.CANCEL)?.addEventListener('click', () => {
     resetInputsValue();
     updateButtonsVisibility(false);
   });
 
-  document.getElementById(SAVE_BUTTON_ID)?.addEventListener('click', async () => {
+  document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
     await setStorage(STORAGE_KEY, subKey);
     updateButtonsVisibility(false);
+
+    Object.keys(INPUTS).forEach((storageKey) => {
+      updateDefaultValue(inputInstances[storageKey], subKey[storageKey]);
+    });
   });
 }
 
+function createInput(
+  inputId: string,
+  storageKey: keyof Omit<SubKeyConfig, 'enabled'>,
+  settings: Omit<SubKeyConfig, 'enabled'>
+) {
+  switch (storageKey) {
+    case 'skipTime':
+      return NumberInput({
+        id: inputId,
+        value: settings[storageKey],
+        onChange: (newValue) => {
+          keySettings.subKey[storageKey] = newValue;
+        },
+      });
+    default:
+      return KeydownInput({
+        id: inputId,
+        value: settings[storageKey],
+        onChange: (newValue) => {
+          keySettings.subKey[storageKey] = newValue;
+        },
+      });
+  }
+}
+
 function resetInputsValue() {
-  const { BACKWARD_INPUT_ID, FORWARD_INPUT_ID, SKIP_TIME_INPUT_ID } = SUB_KEY;
-  resetInputValue(BACKWARD_INPUT_ID, { eventType: 'keydown' });
-  resetInputValue(FORWARD_INPUT_ID, { eventType: 'keydown' });
-  resetInputValue(SKIP_TIME_INPUT_ID);
+  const { INPUTS } = SUB_KEY;
+  resetInputValue(INPUTS.backward, { eventType: 'keydown' });
+  resetInputValue(INPUTS.forward, { eventType: 'keydown' });
+  resetInputValue(INPUTS.skipTime);
 }
 
 function updateButtonsVisibility(visible: boolean) {
-  const { TOGGLE_ID, CANCEL_BUTTON_ID, SAVE_BUTTON_ID } = SUB_KEY;
-
-  setElementVisibility(CANCEL_BUTTON_ID, visible);
-  setElementVisibility(SAVE_BUTTON_ID, visible);
+  const { TOGGLE_ID, BUTTONS } = SUB_KEY;
+  setElementVisibility(BUTTONS.CANCEL, visible);
+  setElementVisibility(BUTTONS.SAVE, visible);
   setElementVisibility(TOGGLE_ID, !visible);
 }
