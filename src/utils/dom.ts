@@ -87,10 +87,11 @@ export const replaceWithChildAndTransferId = (
 
 export const resetInputValue = (id: string, options?: { triggerEvent?: boolean; eventType?: string }) => {
   const input = document.getElementById(id) as HTMLInputElement;
-  const { defaultValue } = input;
+  const { defaultValue, defaultChecked } = input;
   const { triggerEvent = true, eventType = 'input' } = options || {};
 
   input.value = defaultValue;
+  input.checked = defaultChecked;
 
   if (triggerEvent) {
     const event =
