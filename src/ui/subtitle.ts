@@ -5,6 +5,7 @@ import { ColorPicker } from '../components/colorPicker';
 import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, setupInput } from '../utils/dom';
 import { validateAll } from '../utils/validation';
+import { Checkbox } from '../components/checkbox';
 
 const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
   acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
@@ -31,13 +32,14 @@ export async function initializeSubtitleSetting() {
       FONT_SIZE_INPUT_ID,
       FONT_WEIGHT_INPUT_ID,
       OPACITY_INPUT_ID,
+      LINE_BREAK_ID,
       CANCEL_BUTTON_ID,
       SAVE_BUTTON_ID,
     } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-    const { enabled, color, fontSize, fontWeight, opacity } = subtitleSettings[key];
+    const { enabled, color, fontSize, fontWeight, opacity, lineBreak } = subtitleSettings[key];
 
     setElementVisibility(CONTAINER_ID, enabled);
 
@@ -75,6 +77,14 @@ export async function initializeSubtitleSetting() {
       subtitleSettings[key].opacity = parseInt(target.value, 10);
     });
 
+    Checkbox({
+      id: LINE_BREAK_ID,
+      checked: lineBreak,
+      onChange: (checked) => {
+        subtitleSettings[key].lineBreak = checked;
+      },
+    });
+
     document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
       resetInputsValue(key);
       updateButtonsVisibility(key, false);
@@ -109,11 +119,12 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
 }
 
 function resetInputsValue(key: keyof typeof SUBTITLES) {
-  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID, OPACITY_INPUT_ID } = SUBTITLES[key];
+  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID, OPACITY_INPUT_ID, LINE_BREAK_ID } = SUBTITLES[key];
   resetInputValue(COLOR_PICKER_ID);
   resetInputValue(FONT_SIZE_INPUT_ID);
   resetInputValue(FONT_WEIGHT_INPUT_ID);
   resetInputValue(OPACITY_INPUT_ID);
+  resetInputValue(LINE_BREAK_ID);
 }
 
 function updateButtonsVisibility(key: keyof typeof SUBTITLES, visible: boolean) {

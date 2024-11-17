@@ -55,7 +55,6 @@ export const createSubtitleContainer = (id: string) => {
   subtitleContainer.id = id;
   applyStyles(subtitleContainer, {
     width: '100%',
-    whiteSpace: 'pre-line',
     position: 'absolute',
     bottom: '2vh',
     textAlign: 'center',
@@ -70,7 +69,7 @@ export const createSubtitleContainer = (id: string) => {
 };
 
 export const createSubtitleElement = (id: string, text: string, config: SubtitleConfig) => {
-  const { enabled, color, fontSize, fontWeight, opacity } = config;
+  const { enabled, color, fontSize, fontWeight, opacity, lineBreak } = config;
   const subtitle = document.createElement('p');
 
   subtitle.id = id;
@@ -83,6 +82,7 @@ export const createSubtitleElement = (id: string, text: string, config: Subtitle
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
     opacity: `${opacity * 0.01}`,
+    whiteSpace: lineBreak ? 'pre-line' : 'normal',
   });
 
   return subtitle;
