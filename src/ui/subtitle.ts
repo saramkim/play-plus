@@ -30,13 +30,14 @@ export async function initializeSubtitleSetting() {
       COLOR_PICKER_ID,
       FONT_SIZE_INPUT_ID,
       FONT_WEIGHT_INPUT_ID,
+      OPACITY_INPUT_ID,
       CANCEL_BUTTON_ID,
       SAVE_BUTTON_ID,
     } = metadata;
     const subtitle = await getStorage(STORAGE_KEY);
     if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
 
-    const { enabled, color, fontSize, fontWeight } = subtitleSettings[key];
+    const { enabled, color, fontSize, fontWeight, opacity } = subtitleSettings[key];
 
     setElementVisibility(CONTAINER_ID, enabled);
 
@@ -68,6 +69,12 @@ export async function initializeSubtitleSetting() {
       subtitleSettings[key].fontWeight = parseInt(target.value, 10);
     });
 
+    const opacityInput = setupInput(OPACITY_INPUT_ID, opacity.toString());
+    opacityInput.addEventListener('input', (event) => {
+      const target = event.target as HTMLInputElement;
+      subtitleSettings[key].opacity = parseInt(target.value, 10);
+    });
+
     document.getElementById(CANCEL_BUTTON_ID)?.addEventListener('click', async () => {
       resetInputsValue(key);
       updateButtonsVisibility(key, false);
@@ -95,17 +102,18 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
     },
 
     get(target: SubtitleConfig, prop: keyof SubtitleConfig) {
-      if (target[prop]) return Reflect.get(target, prop);
+      if (target[prop] !== undefined) return Reflect.get(target, prop);
       return DEFAULT_SUBTITLE_CONFIG[prop];
     },
   };
 }
 
 function resetInputsValue(key: keyof typeof SUBTITLES) {
-  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID } = SUBTITLES[key];
+  const { COLOR_PICKER_ID, FONT_SIZE_INPUT_ID, FONT_WEIGHT_INPUT_ID, OPACITY_INPUT_ID } = SUBTITLES[key];
   resetInputValue(COLOR_PICKER_ID);
   resetInputValue(FONT_SIZE_INPUT_ID);
   resetInputValue(FONT_WEIGHT_INPUT_ID);
+  resetInputValue(OPACITY_INPUT_ID);
 }
 
 function updateButtonsVisibility(key: keyof typeof SUBTITLES, visible: boolean) {

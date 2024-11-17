@@ -70,7 +70,7 @@ export const createSubtitleContainer = (id: string) => {
 };
 
 export const createSubtitleElement = (id: string, text: string, config: SubtitleConfig) => {
-  const { enabled, color, fontSize, fontWeight } = config;
+  const { enabled, color, fontSize, fontWeight, opacity } = config;
   const subtitle = document.createElement('p');
 
   subtitle.id = id;
@@ -82,6 +82,7 @@ export const createSubtitleElement = (id: string, text: string, config: Subtitle
     color: color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
+    opacity: `${opacity * 0.01}`,
   });
 
   return subtitle;

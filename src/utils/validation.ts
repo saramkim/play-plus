@@ -6,6 +6,7 @@ export type ValidationResult = ValidationSuccess | ValidationFailure;
 export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   fontSize: { type: 'number', min: 1, max: 10 },
   fontWeight: { type: 'number', min: 1, max: 6 },
+  opacity: { type: 'number', min: 0, max: 100 },
   forward: { type: 'string', validate: validateNoReservedKey },
   backward: { type: 'string', validate: validateNoReservedKey },
   skipTime: { type: 'number', min: 1 },

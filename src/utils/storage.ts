@@ -9,6 +9,7 @@ export type SubtitleConfig = {
   color: string;
   fontSize: number;
   fontWeight: number;
+  opacity: number;
 };
 
 type StorageSchema = {
