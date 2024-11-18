@@ -35,11 +35,6 @@ const subKeyProxyHandler = {
   },
 };
 
-const keySettings = {
-  skipTime: DEFAULT_SKIP_TIME,
-  subKey: new Proxy(DEFAULT_SUB_KEY_CONFIG, subKeyProxyHandler),
-};
-
 export function onSubKeyStorageChange(changes: StorageChanges) {
   const { STORAGE_KEY, CONTAINER_ID } = SUB_KEY;
   const subKeyChanges = changes[STORAGE_KEY];
@@ -51,15 +46,14 @@ export function onSubKeyStorageChange(changes: StorageChanges) {
 
 export async function initializeSkipTimeSetting() {
   const { STORAGE_KEY, INPUTS, BUTTONS } = SKIP_TIME;
-  const skipTime = await getStorage(STORAGE_KEY);
-  if (skipTime) keySettings.skipTime = skipTime;
+  let skipTime = (await getStorage(STORAGE_KEY)) || DEFAULT_SKIP_TIME;
 
-  const timeInput = setupInput(INPUTS.skipTime, keySettings.skipTime.toString());
+  const timeInput = setupInput(INPUTS.skipTime, skipTime.toString());
   timeInput.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
-    keySettings.skipTime = parseInt(target.value, 10);
+    skipTime = parseInt(target.value, 10);
 
-    const result = validate(STORAGE_KEY, keySettings.skipTime);
+    const result = validate(STORAGE_KEY, skipTime);
     setElementAvailability(BUTTONS.CANCEL, true);
     setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
   });
@@ -71,26 +65,22 @@ export async function initializeSkipTimeSetting() {
   });
 
   document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
-    await setStorage(STORAGE_KEY, keySettings.skipTime);
+    await setStorage(STORAGE_KEY, skipTime);
     setElementAvailability(BUTTONS.CANCEL, false);
     setElementAvailability(BUTTONS.SAVE, false);
-    updateDefaultValue(timeInput, keySettings.skipTime);
+    updateDefaultValue(timeInput, skipTime);
   });
 }
 
 export async function initializeSubKeySetting() {
   const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = SUB_KEY;
-  const subKeyStorage = await getStorage(STORAGE_KEY);
-  if (subKeyStorage) keySettings.subKey = new Proxy(subKeyStorage, subKeyProxyHandler);
-
-  const { subKey } = keySettings;
-  const { enabled, ...settings } = subKey;
-
-  setElementVisibility(CONTAINER_ID, enabled);
-
-  Toggle({ id: TOGGLE_ID, isOn: enabled, onChange: (enabled) => (subKey.enabled = enabled) });
-
+  const data = (await getStorage(STORAGE_KEY)) || DEFAULT_SUB_KEY_CONFIG;
+  const settings = new Proxy(data, subKeyProxyHandler);
   const inputInstances: Record<string, HTMLInputElement> = {};
+
+  setElementVisibility(CONTAINER_ID, settings.enabled);
+
+  Toggle({ id: TOGGLE_ID, isOn: settings.enabled, onChange: (enabled) => (settings.enabled = enabled) });
 
   Object.entries(INPUTS).forEach(([storageKey, inputId]) => {
     inputInstances[storageKey] = createInput(inputId, storageKey, settings);
@@ -102,27 +92,23 @@ export async function initializeSubKeySetting() {
   });
 
   document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
-    await setStorage(STORAGE_KEY, subKey);
+    await setStorage(STORAGE_KEY, settings);
     updateButtonsVisibility(false);
 
     Object.keys(INPUTS).forEach((storageKey) => {
-      updateDefaultValue(inputInstances[storageKey], subKey[storageKey]);
+      updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
     });
   });
 }
 
-function createInput(
-  inputId: string,
-  storageKey: keyof Omit<SubKeyConfig, 'enabled'>,
-  settings: Omit<SubKeyConfig, 'enabled'>
-) {
+function createInput(inputId: string, storageKey: keyof Omit<SubKeyConfig, 'enabled'>, settings: SubKeyConfig) {
   switch (storageKey) {
     case 'skipTime':
       return NumberInput({
         id: inputId,
         value: settings[storageKey],
         onChange: (newValue) => {
-          keySettings.subKey[storageKey] = newValue;
+          settings[storageKey] = newValue;
         },
       });
     default:
@@ -130,7 +116,7 @@ function createInput(
         id: inputId,
         value: settings[storageKey],
         onChange: (newValue) => {
-          keySettings.subKey[storageKey] = newValue;
+          settings[storageKey] = newValue;
         },
       });
   }

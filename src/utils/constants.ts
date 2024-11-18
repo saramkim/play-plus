@@ -78,9 +78,7 @@ export const SETTINGS = {
 
 export const INPUT_ID_TO_STORAGE_OPTION_KEY = generateInputToStorageKey(SETTINGS);
 
-export type InputId = keyof typeof INPUT_ID_TO_STORAGE_OPTION_KEY;
-
-function generateInputToStorageKey(settings: typeof SETTINGS): Record<string, string> {
+function generateInputToStorageKey(settings: typeof SETTINGS) {
   const mapping: Record<string, string> = {};
 
   Object.values(settings).forEach((category) => {

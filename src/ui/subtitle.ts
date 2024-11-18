@@ -10,11 +10,6 @@ import { NumberInput } from '../components/numberInput';
 
 const { SUBTITLES } = SETTINGS;
 
-const subtitleSettings = Object.keys(SUBTITLES).reduce((acc, key) => {
-  acc[key] = new Proxy(DEFAULT_SUBTITLE_CONFIG, createSubtitleProxyHandler(key));
-  return acc;
-}, {} as Record<keyof typeof SUBTITLES, SubtitleConfig>);
-
 export function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY, CONTAINER_ID } of Object.values(SUBTITLES)) {
     const subtitleChanges = changes[STORAGE_KEY];
@@ -28,19 +23,16 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 export async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {
     const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = metadata;
-    const subtitle = await getStorage(STORAGE_KEY);
-    if (subtitle) subtitleSettings[key] = new Proxy(subtitle, createSubtitleProxyHandler(key));
-
-    const { enabled, ...settings } = subtitleSettings[key];
-
-    setElementVisibility(CONTAINER_ID, enabled);
-
-    Toggle({ id: TOGGLE_ID, isOn: enabled, onChange: (enabled) => (subtitleSettings[key].enabled = enabled) });
-
+    const data = (await getStorage(STORAGE_KEY)) || DEFAULT_SUBTITLE_CONFIG;
+    const settings = new Proxy(data, createSubtitleProxyHandler(key));
     const inputInstances: Record<string, HTMLInputElement> = {};
 
+    setElementVisibility(CONTAINER_ID, settings.enabled);
+
+    Toggle({ id: TOGGLE_ID, isOn: settings.enabled, onChange: (enabled) => (settings.enabled = enabled) });
+
     Object.entries(INPUTS).forEach(([storageKey, inputId]) => {
-      inputInstances[storageKey] = createInput(inputId, storageKey, settings, key);
+      inputInstances[storageKey] = createInput(inputId, storageKey, settings);
     });
 
     document.getElementById(BUTTONS.CANCEL)?.addEventListener('click', () => {
@@ -49,11 +41,11 @@ export async function initializeSubtitleSetting() {
     });
 
     document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
-      await setStorage(STORAGE_KEY, subtitleSettings[key]);
+      await setStorage(STORAGE_KEY, settings);
       updateButtonsVisibility(key, false);
 
       Object.keys(INPUTS).forEach((storageKey) => {
-        updateDefaultValue(inputInstances[storageKey], subtitleSettings[key][storageKey]);
+        updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
       });
     });
   }
@@ -80,19 +72,14 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
   };
 }
 
-function createInput(
-  inputId: string,
-  storageKey: keyof Omit<SubtitleConfig, 'enabled'>,
-  settings: Omit<SubtitleConfig, 'enabled'>,
-  key: keyof typeof SUBTITLES
-) {
+function createInput(inputId: string, storageKey: keyof Omit<SubtitleConfig, 'enabled'>, settings: SubtitleConfig) {
   switch (storageKey) {
     case 'color':
       return ColorPicker({
         id: inputId,
         color: settings[storageKey],
         onChange: (newColor) => {
-          subtitleSettings[key][storageKey] = newColor;
+          settings[storageKey] = newColor;
         },
       });
     case 'lineBreak':
@@ -100,7 +87,7 @@ function createInput(
         id: inputId,
         checked: settings[storageKey],
         onChange: (checked) => {
-          subtitleSettings[key][storageKey] = checked;
+          settings[storageKey] = checked;
         },
       });
     default:
@@ -108,7 +95,7 @@ function createInput(
         id: inputId,
         value: settings[storageKey],
         onChange: (newValue) => {
-          subtitleSettings[key][storageKey] = newValue;
+          settings[storageKey] = newValue;
         },
       });
   }

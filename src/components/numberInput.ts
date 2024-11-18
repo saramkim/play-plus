@@ -1,8 +1,7 @@
-import { InputId } from '../utils/constants';
 import { setupInput } from '../utils/dom';
 
 interface NumberInputProps {
-  id: InputId;
+  id: string;
   value: number;
   onChange: (value: number) => void;
 }

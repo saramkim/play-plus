@@ -1,5 +1,5 @@
 import { Tooltip } from '../components/tooltip';
-import { INPUT_ID_TO_STORAGE_OPTION_KEY, InputId } from './constants';
+import { INPUT_ID_TO_STORAGE_OPTION_KEY } from './constants';
 import { VALIDATION_RULE, ValidationResult } from './validation';
 
 export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
@@ -42,7 +42,7 @@ export const setButtonAvailabilityWithTag = (id: string, { valid, error }: Valid
   }
 };
 
-export const setupInput = (id: InputId, defaultValue?: string): HTMLInputElement => {
+export const setupInput = (id: string, defaultValue?: string): HTMLInputElement => {
   const input = document.getElementById(id) as HTMLInputElement;
   const key = INPUT_ID_TO_STORAGE_OPTION_KEY[id];
 

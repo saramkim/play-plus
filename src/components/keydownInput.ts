@@ -1,8 +1,7 @@
-import { InputId } from '../utils/constants';
 import { setupInput } from '../utils/dom';
 
 interface KeydownInputProps {
-  id: InputId;
+  id: string;
   value: string;
   onChange: (value: string) => void;
 }
