@@ -15,38 +15,38 @@ export const RESERVED_KEY_CODE_LIST = [
 
 export const SETTINGS = {
   SUBTITLES: {
-    ENGLISH: {
-      LANGUAGE_CODE: 'en',
-      STORAGE_KEY: 'englishSubtitle',
-      CONTAINER_ID: 'english-subtitle-setting',
-      TOGGLE_ID: 'english-toggle',
+    PRIMARY: {
+      STORAGE_KEY: 'primarySubtitle',
+      CONTAINER_ID: 'primary-subtitle-setting',
+      TOGGLE_ID: 'primary-subtitle-toggle',
       INPUTS: {
-        color: 'english-color-picker',
-        fontSize: 'english-font-size',
-        fontWeight: 'english-font-weight',
-        opacity: 'english-opacity',
-        lineBreak: 'english-line-break',
+        language: 'primary-subtitle-language',
+        color: 'primary-subtitle-color',
+        fontSize: 'primary-subtitle-font-size',
+        fontWeight: 'primary-subtitle-font-weight',
+        opacity: 'primary-subtitle-opacity',
+        lineBreak: 'primary-subtitle-line-break',
       },
       BUTTONS: {
-        CANCEL: 'cancel-english-setting',
-        SAVE: 'save-english-setting',
+        CANCEL: 'cancel-primary-subtitle-setting',
+        SAVE: 'save-primary-subtitle-setting',
       },
     },
-    KOREAN: {
-      LANGUAGE_CODE: 'ko',
-      STORAGE_KEY: 'koreanSubtitle',
-      CONTAINER_ID: 'korean-subtitle-setting',
-      TOGGLE_ID: 'korean-toggle',
+    SECONDARY: {
+      STORAGE_KEY: 'secondarySubtitle',
+      CONTAINER_ID: 'secondary-subtitle-setting',
+      TOGGLE_ID: 'secondary-subtitle-toggle',
       INPUTS: {
-        color: 'korean-color-picker',
-        fontSize: 'korean-font-size',
-        fontWeight: 'korean-font-weight',
-        opacity: 'korean-opacity',
-        lineBreak: 'korean-line-break',
+        language: 'secondary-subtitle-language',
+        color: 'secondary-subtitle-color',
+        fontSize: 'secondary-subtitle-font-size',
+        fontWeight: 'secondary-subtitle-font-weight',
+        opacity: 'secondary-subtitle-opacity',
+        lineBreak: 'secondary-subtitle-line-break',
       },
       BUTTONS: {
-        CANCEL: 'cancel-korean-setting',
-        SAVE: 'save-korean-setting',
+        CANCEL: 'cancel-secondary-subtitle-setting',
+        SAVE: 'save-secondary-subtitle-setting',
       },
     },
   },

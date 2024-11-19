@@ -1,19 +1,29 @@
-import { SubKeyConfig, SubtitleConfig } from './storage';
+import { StorageSchema } from './storage';
 
-export const DEFAULT_SUBTITLE_CONFIG: SubtitleConfig = {
-  enabled: false,
-  color: '#ffffff',
-  fontSize: 5,
-  fontWeight: 3,
-  opacity: 100,
-  lineBreak: true,
-};
-
-export const DEFAULT_SKIP_TIME = 10;
-
-export const DEFAULT_SUB_KEY_CONFIG: SubKeyConfig = {
-  enabled: false,
-  forward: '',
-  backward: '',
+export const DEFAULT_CONFIG: StorageSchema = {
+  primarySubtitle: {
+    enabled: false,
+    language: 'en',
+    color: '#ffffff',
+    fontSize: 5,
+    fontWeight: 3,
+    opacity: 100,
+    lineBreak: true,
+  },
+  secondarySubtitle: {
+    enabled: false,
+    language: 'ko',
+    color: '#ffffff',
+    fontSize: 5,
+    fontWeight: 3,
+    opacity: 100,
+    lineBreak: true,
+  },
   skipTime: 10,
+  subKey: {
+    enabled: false,
+    forward: '',
+    backward: '',
+    skipTime: 10,
+  },
 };

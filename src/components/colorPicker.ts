@@ -1,4 +1,3 @@
-import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { replaceWithChildAndTransferId } from '../utils/dom';
 
 const COLOR_PICKER_SELECTOR = '[data-role="color-picker"]';
@@ -8,7 +7,7 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
 }
 
-export function ColorPicker({ id, color = DEFAULT_SUBTITLE_CONFIG.color, onChange }: ColorPickerProps) {
+export function ColorPicker({ id, color = 'white', onChange }: ColorPickerProps) {
   const colorPickerTemplate = (
     document.getElementById('color-picker-template') as HTMLTemplateElement
   ).content.cloneNode(true) as DocumentFragment;

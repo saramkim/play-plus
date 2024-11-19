@@ -1,3 +1,5 @@
+import { SubtitleLanguage } from './subtitle';
+
 export type SubKeyConfig = {
   enabled: boolean;
   forward: string;
@@ -6,6 +8,7 @@ export type SubKeyConfig = {
 };
 export type SubtitleConfig = {
   enabled: boolean;
+  language: SubtitleLanguage;
   color: string;
   fontSize: number;
   fontWeight: number;
@@ -13,11 +16,11 @@ export type SubtitleConfig = {
   lineBreak: boolean;
 };
 
-type StorageSchema = {
+export type StorageSchema = {
   skipTime: number;
   subKey: SubKeyConfig;
-  englishSubtitle: SubtitleConfig;
-  koreanSubtitle: SubtitleConfig;
+  primarySubtitle: SubtitleConfig;
+  secondarySubtitle: SubtitleConfig;
 };
 type StorageKey = keyof StorageSchema;
 

@@ -2,11 +2,12 @@ import { getStorage, setStorage, StorageChanges, SubtitleConfig } from '../utils
 import { Toggle } from '../components/toggle';
 import { SETTINGS } from '../utils/constants';
 import { ColorPicker } from '../components/colorPicker';
-import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
+import { DEFAULT_CONFIG } from '../utils/default';
 import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
 import { validateAll } from '../utils/validation';
 import { Checkbox } from '../components/checkbox';
 import { NumberInput } from '../components/numberInput';
+import { Switch } from '../components/switch';
 
 const { SUBTITLES } = SETTINGS;
 
@@ -23,7 +24,7 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 export async function initializeSubtitleSetting() {
   for (const [key, metadata] of Object.entries(SUBTITLES)) {
     const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = metadata;
-    const data = (await getStorage(STORAGE_KEY)) || DEFAULT_SUBTITLE_CONFIG;
+    const data = (await getStorage(STORAGE_KEY)) || DEFAULT_CONFIG[STORAGE_KEY];
     const settings = new Proxy(data, createSubtitleProxyHandler(key));
     const inputInstances: Record<string, HTMLInputElement> = {};
 
@@ -66,8 +67,9 @@ function createSubtitleProxyHandler(key: keyof typeof SUBTITLES) {
     },
 
     get(target: SubtitleConfig, prop: keyof SubtitleConfig) {
+      const { STORAGE_KEY } = SUBTITLES[key];
       if (target[prop] !== undefined) return Reflect.get(target, prop);
-      return DEFAULT_SUBTITLE_CONFIG[prop];
+      return DEFAULT_CONFIG[STORAGE_KEY][prop];
     },
   };
 }
@@ -88,6 +90,18 @@ function createInput(inputId: string, storageKey: keyof Omit<SubtitleConfig, 'en
         checked: settings[storageKey],
         onChange: (checked) => {
           settings[storageKey] = checked;
+        },
+      });
+    case 'language':
+      return Switch({
+        id: inputId,
+        options: [
+          { label: '영어', value: 'en' },
+          { label: '한국어', value: 'ko' },
+        ],
+        initialValue: settings[storageKey],
+        onChange: (value) => {
+          settings[storageKey] = value;
         },
       });
     default:

@@ -1,4 +1,3 @@
-import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
 import { replaceWithChildAndTransferId } from '../utils/dom';
 
 interface ToggleProps {
@@ -7,7 +6,7 @@ interface ToggleProps {
   onChange: (isOn: boolean) => void;
 }
 
-export function Toggle({ id, isOn = DEFAULT_SUBTITLE_CONFIG.enabled, onChange }: ToggleProps) {
+export function Toggle({ id, isOn = false, onChange }: ToggleProps) {
   const template = (document.getElementById('toggle-template') as HTMLTemplateElement).content.cloneNode(
     true
   ) as DocumentFragment;

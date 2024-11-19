@@ -1,12 +1,12 @@
 import { SETTINGS } from '../utils/constants';
-import { DEFAULT_SKIP_TIME } from '../utils/default';
+import { DEFAULT_CONFIG } from '../utils/default';
 import { getStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
 
 type KeyBindings = { [key: string]: () => void };
 
 const { SKIP_TIME, SUB_KEY } = SETTINGS;
 
-let mainSkipTime = DEFAULT_SKIP_TIME;
+let mainSkipTime = DEFAULT_CONFIG[SKIP_TIME.STORAGE_KEY];
 let keyBindings: KeyBindings = {};
 
 export function onSubKeyStorageChange(changes: StorageChanges) {

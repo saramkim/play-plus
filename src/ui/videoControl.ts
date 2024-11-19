@@ -1,6 +1,6 @@
 import { getStorage, setStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
 import { SETTINGS } from '../utils/constants';
-import { DEFAULT_SKIP_TIME, DEFAULT_SUB_KEY_CONFIG } from '../utils/default';
+import { DEFAULT_CONFIG } from '../utils/default';
 import {
   resetInputValue,
   setButtonAvailabilityWithTag,
@@ -30,8 +30,9 @@ const subKeyProxyHandler = {
   },
 
   get(target: SubKeyConfig, prop: keyof SubKeyConfig) {
+    const { STORAGE_KEY } = SUB_KEY;
     if (target[prop]) return Reflect.get(target, prop);
-    return DEFAULT_SUB_KEY_CONFIG[prop];
+    return DEFAULT_CONFIG[STORAGE_KEY][prop];
   },
 };
 
@@ -46,7 +47,7 @@ export function onSubKeyStorageChange(changes: StorageChanges) {
 
 export async function initializeSkipTimeSetting() {
   const { STORAGE_KEY, INPUTS, BUTTONS } = SKIP_TIME;
-  let skipTime = (await getStorage(STORAGE_KEY)) || DEFAULT_SKIP_TIME;
+  let skipTime = (await getStorage(STORAGE_KEY)) || DEFAULT_CONFIG[STORAGE_KEY];
 
   const timeInput = setupInput(INPUTS.skipTime, skipTime.toString());
   timeInput.addEventListener('input', (event) => {
@@ -74,7 +75,7 @@ export async function initializeSkipTimeSetting() {
 
 export async function initializeSubKeySetting() {
   const { STORAGE_KEY, CONTAINER_ID, TOGGLE_ID, INPUTS, BUTTONS } = SUB_KEY;
-  const data = (await getStorage(STORAGE_KEY)) || DEFAULT_SUB_KEY_CONFIG;
+  const data = (await getStorage(STORAGE_KEY)) || DEFAULT_CONFIG[STORAGE_KEY];
   const settings = new Proxy(data, subKeyProxyHandler);
   const inputInstances: Record<string, HTMLInputElement> = {};
 

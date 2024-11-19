@@ -16,67 +16,75 @@
       </header>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-[26px]">
-          <h2 class="text-sm font-semibold">영어 자막</h2>
+        <header class="flex justify-between items-center h-7">
+          <h2 class="text-sm font-semibold">메인 자막</h2>
           <div class="flex items-center gap-1">
-            <button id="cancel-english-setting" class="button bg-gray-500 hidden">취소</button>
-            <button id="save-english-setting" class="button bg-teal-500 hidden" disabled>저장</button>
-            <div id="english-toggle"></div>
+            <button id="cancel-primary-subtitle-setting" class="button bg-gray-500 hidden">취소</button>
+            <button id="save-primary-subtitle-setting" class="button bg-teal-500 hidden" disabled>저장</button>
+            <div id="primary-subtitle-toggle"></div>
           </div>
         </header>
-        <div id="english-subtitle-setting" class="flex flex-col gap-1">
-          <div class="flex items-center gap-2 h-7">
-            <label for="english-color-picker" class="label">자막 색상:</label>
-            <div id="english-color-picker"></div>
-          </div>
+        <div id="primary-subtitle-setting" class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label for="english-font-size" class="label">자막 크기(1~10):</label>
-            <input type="number" id="english-font-size" class="input" />
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="english-font-weight" class="label">글씨 굵기(1~6):</label>
-            <input type="number" id="english-font-weight" class="input" />
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="english-opacity" class="label">투명도(%):</label>
-            <input type="number" id="english-opacity" class="input" />
+            <label for="primary-subtitle-language" class="label">언어:</label>
+            <div id="primary-subtitle-language"></div>
           </div>
           <div class="flex items-center gap-2 h-7">
-            <label for="english-line-break" class="label">줄바꿈 허용:</label>
-            <input type="checkbox" id="english-line-break" />
+            <label for="primary-subtitle-color" class="label">자막 색상:</label>
+            <div id="primary-subtitle-color"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="primary-subtitle-font-size" class="label">자막 크기(1~10):</label>
+            <input type="number" id="primary-subtitle-font-size" class="input" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="primary-subtitle-font-weight" class="label">글씨 굵기(1~6):</label>
+            <input type="number" id="primary-subtitle-font-weight" class="input" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="primary-subtitle-opacity" class="label">투명도(%):</label>
+            <input type="number" id="primary-subtitle-opacity" class="input" />
+          </div>
+          <div class="flex items-center gap-2 h-7">
+            <label for="primary-subtitle-line-break" class="label">줄바꿈 허용:</label>
+            <input type="checkbox" id="primary-subtitle-line-break" />
           </div>
         </div>
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-[26px]">
-          <h2 class="text-sm font-semibold">한국어 자막</h2>
+        <header class="flex justify-between items-center h-7">
+          <h2 class="text-sm font-semibold">서브 자막</h2>
           <div class="flex items-center gap-1">
-            <button id="cancel-korean-setting" class="button bg-gray-500 hidden">취소</button>
-            <button id="save-korean-setting" class="button bg-teal-500 hidden" disabled>저장</button>
-            <div id="korean-toggle"></div>
+            <button id="cancel-secondary-subtitle-setting" class="button bg-gray-500 hidden">취소</button>
+            <button id="save-secondary-subtitle-setting" class="button bg-teal-500 hidden" disabled>저장</button>
+            <div id="secondary-subtitle-toggle"></div>
           </div>
         </header>
-        <div id="korean-subtitle-setting" class="flex flex-col gap-1">
-          <div class="flex items-center gap-2 h-7">
-            <label for="korean-color-picker" class="label">자막 색상:</label>
-            <div id="korean-color-picker"></div>
-          </div>
+        <div id="secondary-subtitle-setting" class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <label for="korean-font-size" class="label">자막 크기(1~10):</label>
-            <input type="number" id="korean-font-size" class="input" />
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="korean-font-weight" class="label">글씨 굵기(1~6):</label>
-            <input type="number" id="korean-font-weight" class="input" />
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="korean-opacity" class="label">투명도(%):</label>
-            <input type="number" id="korean-opacity" class="input" />
+            <label for="secondary-subtitle-language" class="label">언어:</label>
+            <div id="secondary-subtitle-language"></div>
           </div>
           <div class="flex items-center gap-2 h-7">
-            <label for="korean-line-break" class="label">줄바꿈 허용:</label>
-            <input type="checkbox" id="korean-line-break" />
+            <label for="secondary-subtitle-color" class="label">자막 색상:</label>
+            <div id="secondary-subtitle-color"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="secondary-subtitle-font-size" class="label">자막 크기(1~10):</label>
+            <input type="number" id="secondary-subtitle-font-size" class="input" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="secondary-subtitle-font-weight" class="label">글씨 굵기(1~6):</label>
+            <input type="number" id="secondary-subtitle-font-weight" class="input" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="secondary-subtitle-opacity" class="label">투명도(%):</label>
+            <input type="number" id="secondary-subtitle-opacity" class="input" />
+          </div>
+          <div class="flex items-center gap-2 h-7">
+            <label for="secondary-subtitle-line-break" class="label">줄바꿈 허용:</label>
+            <input type="checkbox" id="secondary-subtitle-line-break" />
           </div>
         </div>
       </section>

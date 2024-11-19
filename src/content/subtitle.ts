@@ -1,7 +1,7 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
-import { DEFAULT_SUBTITLE_CONFIG } from '../utils/default';
+import { DEFAULT_CONFIG } from '../utils/default';
 import { selectVideoElement } from '../utils/dom';
-import { getStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
+import { getStorage, StorageChanges } from '../utils/storage';
 import {
   arrayToHeadersObject,
   createSubtitleContainer,
@@ -15,28 +15,29 @@ import {
 } from '../utils/subtitle';
 
 const { SUBTITLES } = SETTINGS;
+const { PRIMARY, SECONDARY } = SUBTITLES;
 
 const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
 
-const subtitleSettings = Object.values(SUBTITLES).reduce((acc, { LANGUAGE_CODE }) => {
-  acc[LANGUAGE_CODE] = DEFAULT_SUBTITLE_CONFIG;
-  return acc;
-}, {} as Record<SubtitleLanguage, SubtitleConfig>);
+const subtitleSettings = {
+  [PRIMARY.STORAGE_KEY]: DEFAULT_CONFIG[PRIMARY.STORAGE_KEY],
+  [SECONDARY.STORAGE_KEY]: DEFAULT_CONFIG[SECONDARY.STORAGE_KEY],
+};
 
 let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
 let handleVideoTimeupdate: ((arg?: Event | boolean) => void) | null;
 
 export function onSubtitleStorageChange(changes: StorageChanges) {
-  for (const { STORAGE_KEY, LANGUAGE_CODE } of Object.values(SUBTITLES)) {
+  for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const subtitleChanges = changes[STORAGE_KEY];
 
     if (subtitleChanges && subtitleChanges.newValue) {
-      subtitleSettings[LANGUAGE_CODE] = subtitleChanges.newValue;
+      subtitleSettings[STORAGE_KEY] = subtitleChanges.newValue;
 
       if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
         fetchAndSyncSubtitles(subtitleApiInfoList);
-      } else if (!subtitleSettings['en'].enabled && !subtitleSettings['ko'].enabled) {
+      } else if (Object.values(subtitleSettings).every(({ enabled }) => !enabled)) {
         stopSubtitleSync();
       }
 
@@ -46,9 +47,9 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 }
 
 export async function initializeSubtitleSync() {
-  for (const { LANGUAGE_CODE, STORAGE_KEY } of Object.values(SUBTITLES)) {
+  for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const data = await getStorage(STORAGE_KEY);
-    if (data) subtitleSettings[LANGUAGE_CODE] = data;
+    if (data) subtitleSettings[STORAGE_KEY] = data;
   }
 }
 
@@ -70,7 +71,7 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
     subtitleContainerObserver = null;
   }
 
-  if (subtitleSettings['en'].enabled || subtitleSettings['ko'].enabled) {
+  if (Object.values(subtitleSettings).some(({ enabled }) => enabled)) {
     fetchAndSyncSubtitles(subtitleApiInfoList);
   }
 }
@@ -80,7 +81,8 @@ async function fetchAndSyncSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
   if (!video) return;
 
   for (const { lang, url } of subtitleApiInfoList) {
-    if (subtitleSettings[lang].enabled && !subtitleCache.has(lang)) {
+    const isEnabled = Object.values(subtitleSettings).some(({ language, enabled }) => enabled && language === lang);
+    if (isEnabled && !subtitleCache.has(lang)) {
       subtitleCache.set(lang, await fetchSubtitle(url));
     }
   }
@@ -147,12 +149,17 @@ function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElem
   if (hasStyleChanged) {
     const fragment = document.createDocumentFragment();
 
-    for (const [lang, subtitles] of subtitleCache) {
-      const subtitle = findCurrentSubtitle(subtitles, currentTime);
-      const subtitleElement = createSubtitleElement(lang, subtitle, subtitleSettings[lang]);
+    for (const [key, config] of Object.entries(subtitleSettings)) {
+      const { language, enabled } = config;
+      const data = subtitleCache.get(language);
 
-      if (lang === 'en') fragment.prepend(subtitleElement);
-      else fragment.appendChild(subtitleElement);
+      if (data && enabled) {
+        const subtitle = findCurrentSubtitle(data, currentTime);
+        const subtitleElement = createSubtitleElement(language, subtitle, config);
+
+        if (key === PRIMARY.STORAGE_KEY) fragment.prepend(subtitleElement);
+        else fragment.appendChild(subtitleElement);
+      }
     }
 
     subtitleContainer.replaceChildren(fragment);
