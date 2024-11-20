@@ -74,6 +74,17 @@ export const SETTINGS = {
       SAVE: 'save-sub-key',
     },
   },
+  VIDEO: {
+    STORAGE_KEY: 'video',
+    INPUTS: {
+      subtitlePosition: 'subtitle-position',
+      subtitleGap: 'subtitle-gap',
+    },
+    BUTTONS: {
+      CANCEL: 'cancel-video-setting',
+      SAVE: 'save-video-setting',
+    },
+  },
 } as const;
 
 export const INPUT_ID_TO_STORAGE_OPTION_KEY = generateInputToStorageKey(SETTINGS);

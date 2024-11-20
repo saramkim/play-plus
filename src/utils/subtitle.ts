@@ -1,4 +1,4 @@
-import { SubtitleConfig } from './storage';
+import { SubtitleConfig, VideoConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
@@ -50,17 +50,18 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
   return '';
 };
 
-export const createSubtitleContainer = (id: string) => {
+export const createSubtitleContainer = (id: string, config: VideoConfig) => {
+  const { subtitlePosition, subtitleGap } = config;
   const subtitleContainer = document.createElement('div');
   subtitleContainer.id = id;
   applyStyles(subtitleContainer, {
     width: '100%',
     position: 'absolute',
-    bottom: '2vh',
+    bottom: `${subtitlePosition}px`,
+    gap: `${subtitleGap}px`,
     textAlign: 'center',
     display: 'flex',
     flexDirection: 'column',
-    gap: 'min(1.8vw, 3vh)',
     fontSize: 'min(1.8vw, 3vh)',
     textShadow: 'black 2px 2px 2px',
     fontFamily: 'Pretendard',
@@ -76,6 +77,7 @@ export const createSubtitleElement = (id: string, text: string, config: Subtitle
   subtitle.innerHTML = text;
 
   applyStyles(subtitle, {
+    minHeight: '1.5em',
     lineHeight: '1.5em',
     display: enabled ? 'block' : 'none',
     color: color,

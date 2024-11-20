@@ -1,7 +1,7 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { selectVideoElement } from '../utils/dom';
-import { getStorage, StorageChanges } from '../utils/storage';
+import { getStorage, StorageChanges, SubtitleConfig } from '../utils/storage';
 import {
   arrayToHeadersObject,
   createSubtitleContainer,
@@ -14,7 +14,7 @@ import {
   SubtitleLanguage,
 } from '../utils/subtitle';
 
-const { SUBTITLES } = SETTINGS;
+const { SUBTITLES, VIDEO } = SETTINGS;
 const { PRIMARY, SECONDARY } = SUBTITLES;
 
 const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
@@ -23,6 +23,8 @@ const subtitleSettings = {
   [PRIMARY.STORAGE_KEY]: DEFAULT_CONFIG[PRIMARY.STORAGE_KEY],
   [SECONDARY.STORAGE_KEY]: DEFAULT_CONFIG[SECONDARY.STORAGE_KEY],
 };
+
+let videoSettings = DEFAULT_CONFIG[VIDEO.STORAGE_KEY];
 
 let subtitleApiInfoList: SubtitleApiInfo[] | null;
 let subtitleContainerObserver: MutationObserver | null;
@@ -44,13 +46,28 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
       if (handleVideoTimeupdate) handleVideoTimeupdate(true);
     }
   }
+
+  const videoChanges = changes[VIDEO.STORAGE_KEY];
+  if (videoChanges && videoChanges.newValue) {
+    videoSettings = videoChanges.newValue;
+
+    const subtitleContainer = document.getElementById(SUBTITLE_CONTAINER_ID);
+
+    if (subtitleContainer) {
+      const { subtitlePosition, subtitleGap } = videoSettings;
+      subtitleContainer.style.bottom = `${subtitlePosition}px`;
+      subtitleContainer.style.gap = `${subtitleGap}px`;
+    }
+  }
 }
 
 export async function initializeSubtitleSync() {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const data = await getStorage(STORAGE_KEY);
-    if (data) subtitleSettings[STORAGE_KEY] = data;
+    if (data) subtitleSettings[STORAGE_KEY] = { ...subtitleSettings[STORAGE_KEY], ...data };
   }
+  const videoData = await getStorage(VIDEO.STORAGE_KEY);
+  if (videoData) videoSettings = { ...videoSettings, ...videoData };
 }
 
 export async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -115,7 +132,7 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
 function setupSubtitleSync(video: HTMLVideoElement) {
   const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
   const subtitleContainer =
-    document.getElementById(SUBTITLE_CONTAINER_ID) || createSubtitleContainer(SUBTITLE_CONTAINER_ID);
+    document.getElementById(SUBTITLE_CONTAINER_ID) || createSubtitleContainer(SUBTITLE_CONTAINER_ID, videoSettings);
 
   appendSubtitleContainer(trackDisplayContainer, subtitleContainer);
   observeSubtitleContainer(trackDisplayContainer, subtitleContainer);

@@ -17,11 +17,17 @@ export type SubtitleConfig = {
   lineBreak: boolean;
 };
 
+export type VideoConfig = {
+  subtitlePosition: number;
+  subtitleGap: number;
+};
+
 export type StorageSchema = {
   skipTime: number;
   subKey: SubKeyConfig;
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
+  video: VideoConfig;
 };
 type StorageKey = keyof StorageSchema;
 

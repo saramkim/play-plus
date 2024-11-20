@@ -26,4 +26,8 @@ export const DEFAULT_CONFIG: StorageSchema = {
     backward: '',
     skipTime: 10,
   },
+  video: {
+    subtitlePosition: 0,
+    subtitleGap: 0,
+  },
 };

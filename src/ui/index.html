@@ -7,13 +7,28 @@
   </head>
   <body class="p-4 select-none text-nowrap">
     <div class="flex flex-col gap-4">
-      <header class="flex flex-col gap-2">
-        <div class="flex gap-2 items-center">
-          <img src="icons/play-plus_48x.png" alt="logo" class="w-8" />
-          <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
-        </div>
-        <p class="text-gray-600">쿠팡플레이의 기능을 확장하고, 원하는 대로 커스텀하세요.</p>
+      <header class="flex gap-2 items-center">
+        <img src="icons/play-plus_48x.png" alt="logo" class="w-8" />
+        <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
       </header>
+
+      <section class="flex flex-col gap-1">
+        <header class="flex justify-between items-center h-7">
+          <h2 class="text-sm font-semibold">영상 설정</h2>
+          <div class="flex items-center gap-1">
+            <button id="cancel-video-setting" class="button bg-gray-500" disabled>취소</button>
+            <button id="save-video-setting" class="button bg-teal-500" disabled>저장</button>
+          </div>
+        </header>
+        <div class="flex items-center gap-2">
+          <label for="subtitle-position" class="label">자막 위치:</label>
+          <input type="number" id="subtitle-position" class="input" />
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="subtitle-gap" class="label">자막 간격:</label>
+          <input type="number" id="subtitle-gap" class="input" />
+        </div>
+      </section>
 
       <section class="flex flex-col gap-1">
         <header class="flex justify-between items-center h-7">
@@ -90,7 +105,7 @@
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-[26px]">
+        <header class="flex justify-between items-center h-7">
           <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
           <div class="flex items-center gap-1">
             <button id="cancel-skip-time" class="button bg-gray-500" disabled>취소</button>
@@ -104,7 +119,7 @@
       </section>
 
       <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-[26px]">
+        <header class="flex justify-between items-center h-7">
           <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
           <div class="flex items-center gap-1">
             <button id="cancel-sub-key" class="button bg-gray-500 hidden">취소</button>
