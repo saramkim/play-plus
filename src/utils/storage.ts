@@ -1,3 +1,4 @@
+import { SETTINGS } from './constants';
 import { SubtitleLanguage } from './subtitle';
 
 export type SubKeyConfig = {
@@ -51,4 +52,45 @@ export const removeStorage = <K extends StorageKey>(key: K) => {
 
 export const onStorageChange = (callback: (changes: StorageChanges) => void) => {
   chrome.storage.sync.onChanged.addListener(callback);
+};
+
+type LegacyMigration = {
+  newKey: StorageKey;
+  transform: (data: any) => any;
+};
+
+const LEGACY_MIGRATIONS: Record<string, LegacyMigration> = {
+  englishSubtitle: {
+    newKey: SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY,
+    transform: (oldData) => oldData,
+  },
+  koreanSubtitle: {
+    newKey: SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY,
+    transform: (oldData) => oldData,
+  },
+};
+
+export const migrateLegacyStorage = async () => {
+  const migrationPromises = Object.entries(LEGACY_MIGRATIONS).map(async ([legacyKey, { newKey, transform }]) => {
+    await migrateStorage(legacyKey, newKey, transform);
+  });
+  await Promise.all(migrationPromises);
+};
+
+const migrateStorage = async (oldKey: string, newKey: StorageKey, transform: (data: any) => any) => {
+  try {
+    const result = await chrome.storage.sync.get(oldKey);
+    const oldData = result[oldKey];
+
+    if (!oldData) return false;
+
+    const newData = transform(oldData);
+    await setStorage(newKey, newData);
+    await chrome.storage.sync.remove(oldKey);
+
+    return true;
+  } catch (error) {
+    console.error(`Migration failed for ${oldKey} to ${newKey}:`, error);
+    return false;
+  }
 };

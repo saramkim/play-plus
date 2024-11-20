@@ -1,5 +1,19 @@
+import { migrateLegacyStorage } from './utils/storage';
+
 const loadedTabs = new Set<number>();
 const messageQueue: { [tabId: number]: any[] } = {};
+
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+    console.log('Extension updated. Starting legacy storage migration...');
+    try {
+      await migrateLegacyStorage();
+      console.log('Legacy storage migration completed successfully.');
+    } catch (error) {
+      console.error('Error during legacy storage migration:', error);
+    }
+  }
+});
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
