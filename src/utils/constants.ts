@@ -77,6 +77,7 @@ export const SETTINGS = {
   VIDEO: {
     STORAGE_KEY: 'video',
     INPUTS: {
+      subtitlePositionReference: 'subtitle-position-reference',
       subtitlePosition: 'subtitle-position',
       subtitleGap: 'subtitle-gap',
     },

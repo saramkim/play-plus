@@ -18,6 +18,7 @@ export type SubtitleConfig = {
 };
 
 export type VideoConfig = {
+  subtitlePositionReference: 'top' | 'bottom';
   subtitlePosition: number;
   subtitleGap: number;
 };

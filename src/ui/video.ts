@@ -1,4 +1,5 @@
 import { NumberInput } from '../components/numberInput';
+import { Switch } from '../components/switch';
 import { SETTINGS } from '../utils/constants';
 import { DEFAULT_CONFIG } from '../utils/default';
 import {
@@ -54,6 +55,18 @@ export async function initializeVideoSetting() {
 
 function createInput(inputId: string, storageKey: keyof VideoConfig, settings: VideoConfig) {
   switch (storageKey) {
+    case 'subtitlePositionReference':
+      return Switch({
+        id: inputId,
+        options: [
+          { label: '위', value: 'top' },
+          { label: '아래', value: 'bottom' },
+        ],
+        initialValue: settings[storageKey],
+        onChange: (value) => {
+          settings[storageKey] = value;
+        },
+      });
     default:
       return NumberInput({
         id: inputId,

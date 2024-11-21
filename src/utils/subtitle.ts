@@ -51,13 +51,15 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
 };
 
 export const createSubtitleContainer = (id: string, config: VideoConfig) => {
-  const { subtitlePosition, subtitleGap } = config;
+  const { subtitlePositionReference, subtitlePosition, subtitleGap } = config;
   const subtitleContainer = document.createElement('div');
+
   subtitleContainer.id = id;
+
   applyStyles(subtitleContainer, {
     width: '100%',
     position: 'absolute',
-    bottom: `${subtitlePosition}px`,
+    [subtitlePositionReference]: `${subtitlePosition}px`,
     gap: `${subtitleGap}px`,
     textAlign: 'center',
     display: 'flex',
@@ -66,6 +68,7 @@ export const createSubtitleContainer = (id: string, config: VideoConfig) => {
     textShadow: 'black 2px 2px 2px',
     fontFamily: 'Pretendard',
   });
+
   return subtitleContainer;
 };
 
