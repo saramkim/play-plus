@@ -22,24 +22,6 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('./assets/fonts/Roboto-Italic.woff2') format('woff2');
-  font-weight: normal;
-  font-style: italic;
-  font-display: swap;
-  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('./assets/fonts/Roboto-LightItalic.woff2') format('woff2');
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
-}
-
-@font-face {
-  font-family: 'Roboto';
   src: url('./assets/fonts/Roboto-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
@@ -49,27 +31,9 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('./assets/fonts/Roboto-BoldItalic.woff2') format('woff2');
-  font-weight: bold;
-  font-style: italic;
-  font-display: swap;
-  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
-}
-
-@font-face {
-  font-family: 'Roboto';
   src: url('./assets/fonts/Roboto-Regular.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
-  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('./assets/fonts/Roboto-MediumItalic.woff2') format('woff2');
-  font-weight: 500;
-  font-style: italic;
   font-display: swap;
   unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
 }
@@ -105,15 +69,6 @@
   font-family: 'Noto Sans KR';
   src: url('./assets/fonts/NotoSansKR-Medium.woff2') format('woff2');
   font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+AC00-D7A3;
-}
-
-@font-face {
-  font-family: 'Noto Sans KR';
-  src: url('./assets/fonts/NotoSansKR-SemiBold.woff2') format('woff2');
-  font-weight: 600;
   font-style: normal;
   font-display: swap;
   unicode-range: U+AC00-D7A3;
