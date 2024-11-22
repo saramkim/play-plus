@@ -4,6 +4,8 @@ export const DEFAULT_CONFIG: StorageSchema = {
   primarySubtitle: {
     enabled: false,
     language: 'en',
+    positionReference: 'bottom',
+    positionOffset: 100,
     color: '#ffffff',
     fontSize: 5,
     fontWeight: 3,
@@ -13,6 +15,8 @@ export const DEFAULT_CONFIG: StorageSchema = {
   secondarySubtitle: {
     enabled: false,
     language: 'ko',
+    positionReference: 'bottom',
+    positionOffset: 0,
     color: '#ffffff',
     fontSize: 5,
     fontWeight: 3,
@@ -25,10 +29,5 @@ export const DEFAULT_CONFIG: StorageSchema = {
     forward: '',
     backward: '',
     skipTime: 10,
-  },
-  video: {
-    subtitlePositionReference: 'bottom',
-    subtitlePosition: 0,
-    subtitleGap: 0,
   },
 };

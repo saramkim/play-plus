@@ -104,6 +104,19 @@ function createInput(inputId: string, storageKey: keyof Omit<SubtitleConfig, 'en
           settings[storageKey] = value;
         },
       });
+    case 'positionReference':
+      return Switch({
+        id: inputId,
+        options: [
+          { label: '상단', value: 'top' },
+          { label: '중앙', value: 'center' },
+          { label: '하단', value: 'bottom' },
+        ],
+        initialValue: settings[storageKey],
+        onChange: (value) => {
+          settings[storageKey] = value;
+        },
+      });
     default:
       return NumberInput({
         id: inputId,

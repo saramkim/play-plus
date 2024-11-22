@@ -1,5 +1,5 @@
 import { RESERVED_KEY_CODE_LIST } from './constants';
-import { SubKeyConfig, SubtitleConfig, VideoConfig } from './storage';
+import { SubKeyConfig, SubtitleConfig } from './storage';
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
@@ -10,8 +10,7 @@ export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   forward: { type: 'string', validate: validateNoReservedKey },
   backward: { type: 'string', validate: validateNoReservedKey },
   skipTime: { type: 'number', min: 1 },
-  subtitlePosition: { type: 'number' },
-  subtitleGap: { type: 'number', min: 0 },
+  positionOffset: { type: 'number' },
 };
 
 export const validate = (key: string, value: any): ValidationResult => {
@@ -47,11 +46,7 @@ export const validate = (key: string, value: any): ValidationResult => {
   return { valid: true };
 };
 
-export const validateAll = (
-  target: SubKeyConfig | SubtitleConfig | VideoConfig,
-  prop: string,
-  value: any
-): ValidationResult => {
+export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string, value: any): ValidationResult => {
   const result = validate(prop, value);
   if (!result.valid) return result;
 

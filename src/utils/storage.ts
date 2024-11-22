@@ -10,6 +10,8 @@ export type SubKeyConfig = {
 export type SubtitleConfig = {
   enabled: boolean;
   language: SubtitleLanguage;
+  positionReference: 'top' | 'center' | 'bottom';
+  positionOffset: number;
   color: string;
   fontSize: number;
   fontWeight: number;
@@ -17,18 +19,11 @@ export type SubtitleConfig = {
   lineBreak: boolean;
 };
 
-export type VideoConfig = {
-  subtitlePositionReference: 'top' | 'bottom';
-  subtitlePosition: number;
-  subtitleGap: number;
-};
-
 export type StorageSchema = {
   skipTime: number;
   subKey: SubKeyConfig;
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
-  video: VideoConfig;
 };
 type StorageKey = keyof StorageSchema;
 

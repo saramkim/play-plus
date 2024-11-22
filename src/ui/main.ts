@@ -1,7 +1,6 @@
 import '../style.css';
 import { onStorageChange } from '../utils/storage';
 import { initializeSubtitleSetting, onSubtitleStorageChange } from './subtitle';
-import { initializeVideoSetting } from './video';
 import { initializeSkipTimeSetting, initializeSubKeySetting, onSubKeyStorageChange } from './videoControl';
 
 async function init() {
@@ -10,7 +9,6 @@ async function init() {
   await initializeSubtitleSetting();
   await initializeSkipTimeSetting();
   await initializeSubKeySetting();
-  await initializeVideoSetting();
 }
 
 function initializeStorageChange() {

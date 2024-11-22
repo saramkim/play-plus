@@ -1,4 +1,4 @@
-import { SubtitleConfig, VideoConfig } from './storage';
+import { SubtitleConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
@@ -50,17 +50,14 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
   return '';
 };
 
-export const createSubtitleContainer = (id: string, config: VideoConfig) => {
-  const { subtitlePositionReference, subtitlePosition, subtitleGap } = config;
+export const createSubtitleContainer = (id: string) => {
   const subtitleContainer = document.createElement('div');
 
   subtitleContainer.id = id;
 
   applyStyles(subtitleContainer, {
     width: '100%',
-    position: 'absolute',
-    [subtitlePositionReference]: `${subtitlePosition}px`,
-    gap: `${subtitleGap}px`,
+    height: '100%',
     textAlign: 'center',
     display: 'flex',
     flexDirection: 'column',
@@ -73,21 +70,31 @@ export const createSubtitleContainer = (id: string, config: VideoConfig) => {
 };
 
 export const createSubtitleElement = (id: string, text: string, config: SubtitleConfig) => {
-  const { enabled, color, fontSize, fontWeight, opacity, lineBreak } = config;
+  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
   const subtitle = document.createElement('p');
 
   subtitle.id = id;
   subtitle.innerHTML = text;
 
+  const positions = {
+    top: { top: `${positionOffset}px` },
+    center: { top: `calc(50% + ${positionOffset}px)` },
+    bottom: { bottom: `${positionOffset}px` },
+  };
+
   applyStyles(subtitle, {
+    ...positions[positionReference],
     minHeight: '1.5em',
     lineHeight: '1.5em',
     display: enabled ? 'block' : 'none',
-    color: color,
+    color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
     opacity: `${opacity * 0.01}`,
     whiteSpace: lineBreak ? 'pre-line' : 'normal',
+    position: 'absolute',
+    left: '50%',
+    transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
   });
 
   return subtitle;

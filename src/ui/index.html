@@ -14,28 +14,6 @@
 
       <section class="section">
         <header class="section-header">
-          <h2 class="section-title">영상 설정</h2>
-          <div class="row">
-            <button id="cancel-video-setting" class="button bg-gray-500" disabled>취소</button>
-            <button id="save-video-setting" class="button bg-teal-500" disabled>저장</button>
-          </div>
-        </header>
-        <div class="row">
-          <label for="subtitle-position-reference" class="label">자막 기준:</label>
-          <div id="subtitle-position-reference"></div>
-        </div>
-        <div class="row">
-          <label for="subtitle-position" class="label">자막 위치:</label>
-          <input type="number" id="subtitle-position" class="input" />
-        </div>
-        <div class="row">
-          <label for="subtitle-gap" class="label">자막 간격:</label>
-          <input type="number" id="subtitle-gap" class="input" />
-        </div>
-      </section>
-
-      <section class="section">
-        <header class="section-header">
           <h2 class="section-title">메인 자막</h2>
           <div class="row">
             <button id="cancel-primary-subtitle-setting" class="button bg-gray-500 hidden">취소</button>
@@ -47,6 +25,14 @@
           <div class="row">
             <label for="primary-subtitle-language" class="label">언어:</label>
             <div id="primary-subtitle-language"></div>
+          </div>
+          <div class="row">
+            <label for="primary-subtitle-position-reference" class="label">위치 기준:</label>
+            <div id="primary-subtitle-position-reference"></div>
+          </div>
+          <div class="row">
+            <label for="primary-subtitle-position-offset" class="label">위치 조정(px):</label>
+            <input type="number" id="primary-subtitle-position-offset" class="input" />
           </div>
           <div class="row">
             <label for="primary-subtitle-color" class="label">자막 색상:</label>
@@ -84,6 +70,14 @@
           <div class="row">
             <label for="secondary-subtitle-language" class="label">언어:</label>
             <div id="secondary-subtitle-language"></div>
+          </div>
+          <div class="row">
+            <label for="secondary-subtitle-position-reference" class="label">위치 기준:</label>
+            <div id="secondary-subtitle-position-reference"></div>
+          </div>
+          <div class="row">
+            <label for="secondary-subtitle-position-offset" class="label">위치 조정(px):</label>
+            <input type="number" id="secondary-subtitle-position-offset" class="input" />
           </div>
           <div class="row">
             <label for="secondary-subtitle-color" class="label">자막 색상:</label>

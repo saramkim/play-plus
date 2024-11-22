@@ -21,6 +21,8 @@ export const SETTINGS = {
       TOGGLE_ID: 'primary-subtitle-toggle',
       INPUTS: {
         language: 'primary-subtitle-language',
+        positionReference: 'primary-subtitle-position-reference',
+        positionOffset: 'primary-subtitle-position-offset',
         color: 'primary-subtitle-color',
         fontSize: 'primary-subtitle-font-size',
         fontWeight: 'primary-subtitle-font-weight',
@@ -38,6 +40,8 @@ export const SETTINGS = {
       TOGGLE_ID: 'secondary-subtitle-toggle',
       INPUTS: {
         language: 'secondary-subtitle-language',
+        positionReference: 'secondary-subtitle-position-reference',
+        positionOffset: 'secondary-subtitle-position-offset',
         color: 'secondary-subtitle-color',
         fontSize: 'secondary-subtitle-font-size',
         fontWeight: 'secondary-subtitle-font-weight',
@@ -72,18 +76,6 @@ export const SETTINGS = {
     BUTTONS: {
       CANCEL: 'cancel-sub-key',
       SAVE: 'save-sub-key',
-    },
-  },
-  VIDEO: {
-    STORAGE_KEY: 'video',
-    INPUTS: {
-      subtitlePositionReference: 'subtitle-position-reference',
-      subtitlePosition: 'subtitle-position',
-      subtitleGap: 'subtitle-gap',
-    },
-    BUTTONS: {
-      CANCEL: 'cancel-video-setting',
-      SAVE: 'save-video-setting',
     },
   },
 } as const;
