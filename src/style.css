@@ -78,14 +78,53 @@ body {
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: theme(colors.gray.500);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: theme(colors.gray.600);
+}
+
 .input {
-  @apply px-2 py-1 border outline-none rounded w-full focus:border-teal-500;
+  @apply px-3 border outline-none rounded w-full focus:border-teal-500 h-7;
 }
 
 .button {
-  @apply px-2 py-1 text-white outline-none rounded text-nowrap disabled:opacity-30;
+  @apply px-3 text-white font-medium outline-none rounded text-nowrap disabled:opacity-30 h-7;
 }
 
 .label {
-  @apply min-w-[100px] text-gray-800 text-nowrap;
+  @apply min-w-[110px] text-gray-800 text-nowrap;
+}
+
+.section {
+  @apply flex flex-col gap-1;
+}
+
+.section-header {
+  @apply flex justify-between items-center h-7;
+}
+
+.section-title {
+  @apply text-[15px] font-bold;
+}
+
+.row {
+  @apply flex items-center gap-1 h-7;
+}
+
+/* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
+.hidden {
+  display: none;
 }

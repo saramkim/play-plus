@@ -23,10 +23,13 @@ export function Tooltip({ id, message, target }: TooltipProps) {
     let top = targetRect.bottom + TOOLTIP_DISTANCE;
     let left = targetRect.left + TOOLTIP_DISTANCE;
 
-    if (left + tooltipRect.width > window.innerWidth) {
-      left = window.innerWidth - tooltipRect.width - TOOLTIP_DISTANCE;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const scrollbarHeight = window.innerHeight - document.documentElement.clientHeight;
+
+    if (left + tooltipRect.width > window.innerWidth - scrollbarWidth) {
+      left = window.innerWidth - tooltipRect.width - TOOLTIP_DISTANCE - scrollbarWidth;
     }
-    if (top + tooltipRect.height > window.innerHeight) {
+    if (top + tooltipRect.height > window.innerHeight - scrollbarHeight) {
       top = targetRect.top - tooltipRect.height - TOOLTIP_DISTANCE;
     }
 

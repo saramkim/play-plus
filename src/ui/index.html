@@ -5,142 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Play Plus</title>
   </head>
-  <body class="p-4 select-none text-nowrap">
-    <div class="flex flex-col gap-4">
+  <body class="p-4 select-none text-nowrap text-[13px]">
+    <div class="flex flex-col gap-5">
       <header class="flex gap-2 items-center">
         <img src="icons/play-plus_48x.png" alt="logo" class="w-8" />
         <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
       </header>
 
-      <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-7">
-          <h2 class="text-sm font-semibold">영상 설정</h2>
-          <div class="flex items-center gap-1">
+      <section class="section">
+        <header class="section-header">
+          <h2 class="section-title">영상 설정</h2>
+          <div class="row">
             <button id="cancel-video-setting" class="button bg-gray-500" disabled>취소</button>
             <button id="save-video-setting" class="button bg-teal-500" disabled>저장</button>
           </div>
         </header>
-        <div class="flex items-center gap-2">
+        <div class="row">
           <label for="subtitle-position-reference" class="label">자막 기준:</label>
           <div id="subtitle-position-reference"></div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="row">
           <label for="subtitle-position" class="label">자막 위치:</label>
           <input type="number" id="subtitle-position" class="input" />
         </div>
-        <div class="flex items-center gap-2">
+        <div class="row">
           <label for="subtitle-gap" class="label">자막 간격:</label>
           <input type="number" id="subtitle-gap" class="input" />
         </div>
       </section>
 
-      <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-7">
-          <h2 class="text-sm font-semibold">메인 자막</h2>
-          <div class="flex items-center gap-1">
+      <section class="section">
+        <header class="section-header">
+          <h2 class="section-title">메인 자막</h2>
+          <div class="row">
             <button id="cancel-primary-subtitle-setting" class="button bg-gray-500 hidden">취소</button>
             <button id="save-primary-subtitle-setting" class="button bg-teal-500 hidden" disabled>저장</button>
             <div id="primary-subtitle-toggle"></div>
           </div>
         </header>
-        <div id="primary-subtitle-setting" class="flex flex-col gap-1">
-          <div class="flex items-center gap-2">
+        <div id="primary-subtitle-setting" class="section">
+          <div class="row">
             <label for="primary-subtitle-language" class="label">언어:</label>
             <div id="primary-subtitle-language"></div>
           </div>
-          <div class="flex items-center gap-2 h-7">
+          <div class="row">
             <label for="primary-subtitle-color" class="label">자막 색상:</label>
             <div id="primary-subtitle-color"></div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="primary-subtitle-font-size" class="label">자막 크기(1~10):</label>
             <input type="number" id="primary-subtitle-font-size" class="input" />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="primary-subtitle-font-weight" class="label">글씨 굵기(1~6):</label>
             <input type="number" id="primary-subtitle-font-weight" class="input" />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="primary-subtitle-opacity" class="label">투명도(%):</label>
             <input type="number" id="primary-subtitle-opacity" class="input" />
           </div>
-          <div class="flex items-center gap-2 h-7">
+          <div class="row">
             <label for="primary-subtitle-line-break" class="label">줄바꿈 허용:</label>
             <input type="checkbox" id="primary-subtitle-line-break" />
           </div>
         </div>
       </section>
 
-      <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-7">
-          <h2 class="text-sm font-semibold">서브 자막</h2>
-          <div class="flex items-center gap-1">
+      <section class="section">
+        <header class="section-header">
+          <h2 class="section-title">서브 자막</h2>
+          <div class="row">
             <button id="cancel-secondary-subtitle-setting" class="button bg-gray-500 hidden">취소</button>
             <button id="save-secondary-subtitle-setting" class="button bg-teal-500 hidden" disabled>저장</button>
             <div id="secondary-subtitle-toggle"></div>
           </div>
         </header>
-        <div id="secondary-subtitle-setting" class="flex flex-col gap-1">
-          <div class="flex items-center gap-2">
+        <div id="secondary-subtitle-setting" class="section">
+          <div class="row">
             <label for="secondary-subtitle-language" class="label">언어:</label>
             <div id="secondary-subtitle-language"></div>
           </div>
-          <div class="flex items-center gap-2 h-7">
+          <div class="row">
             <label for="secondary-subtitle-color" class="label">자막 색상:</label>
             <div id="secondary-subtitle-color"></div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="secondary-subtitle-font-size" class="label">자막 크기(1~10):</label>
             <input type="number" id="secondary-subtitle-font-size" class="input" />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="secondary-subtitle-font-weight" class="label">글씨 굵기(1~6):</label>
             <input type="number" id="secondary-subtitle-font-weight" class="input" />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="secondary-subtitle-opacity" class="label">투명도(%):</label>
             <input type="number" id="secondary-subtitle-opacity" class="input" />
           </div>
-          <div class="flex items-center gap-2 h-7">
+          <div class="row">
             <label for="secondary-subtitle-line-break" class="label">줄바꿈 허용:</label>
             <input type="checkbox" id="secondary-subtitle-line-break" />
           </div>
         </div>
       </section>
 
-      <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-7">
-          <h2 class="text-sm font-semibold">메인 키 (←/→)</h2>
-          <div class="flex items-center gap-1">
+      <section class="section">
+        <header class="section-header">
+          <h2 class="section-title">메인 키 (←/→)</h2>
+          <div class="row">
             <button id="cancel-skip-time" class="button bg-gray-500" disabled>취소</button>
             <button id="save-skip-time" class="button bg-teal-500" disabled>저장</button>
           </div>
         </header>
-        <div class="flex items-center gap-2">
+        <div class="row">
           <label for="skip-time" class="label">영상 이동 시간(초):</label>
           <input type="number" id="skip-time" class="input" />
         </div>
       </section>
 
-      <section class="flex flex-col gap-1">
-        <header class="flex justify-between items-center h-7">
-          <h2 class="text-sm font-semibold">서브 키 (맞춤 설정)</h2>
-          <div class="flex items-center gap-1">
+      <section class="section">
+        <header class="section-header">
+          <h2 class="section-title">서브 키 (맞춤 설정)</h2>
+          <div class="row">
             <button id="cancel-sub-key" class="button bg-gray-500 hidden">취소</button>
             <button id="save-sub-key" class="button bg-teal-500 hidden" disabled>저장</button>
             <div id="sub-key-toggle"></div>
           </div>
         </header>
-        <div id="sub-key-setting" class="flex flex-col gap-1">
-          <div class="flex items-center gap-2">
+        <div id="sub-key-setting" class="section">
+          <div class="row">
             <label for="sub-backward-key" class="label">뒤로 이동 키:</label>
             <input id="sub-backward-key" class="input" readonly />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="sub-forward-key" class="label">앞으로 이동 키:</label>
             <input id="sub-forward-key" class="input" readonly />
           </div>
-          <div class="flex items-center gap-2">
+          <div class="row">
             <label for="sub-skip-time" class="label">영상 이동 시간(초):</label>
             <input type="number" id="sub-skip-time" class="input" />
           </div>

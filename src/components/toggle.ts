@@ -15,7 +15,7 @@ export function Toggle({ id, isOn = false, onChange }: ToggleProps) {
 
   if (isOn) {
     toggleButton.classList.replace('bg-gray-300', 'bg-teal-500');
-    indicator.classList.add('translate-x-4');
+    indicator.classList.add('translate-x-5');
   }
 
   toggleButton.addEventListener('click', () => {
@@ -23,7 +23,7 @@ export function Toggle({ id, isOn = false, onChange }: ToggleProps) {
     onChange(isOn);
     toggleButton.classList.toggle('bg-teal-500');
     toggleButton.classList.toggle('bg-gray-300');
-    indicator.classList.toggle('translate-x-4');
+    indicator.classList.toggle('translate-x-5');
   });
 
   return replaceWithChildAndTransferId(id, toggleButton);
