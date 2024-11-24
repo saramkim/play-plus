@@ -1,0 +1,49 @@
+{
+  "app_name": { "message": "Play Plus" },
+  "extension_name": { "message": "Play Plus - Coupang Play Feature Extension" },
+  "extension_description": { "message": "Enhance Coupang Play's features and customize them as you wish." },
+  "action_default_title": { "message": "Open Play Plus" },
+  "primary_subtitle_section_title": { "message": "Primary Subtitle" },
+  "secondary_subtitle_section_title": { "message": "Secondary Subtitle" },
+  "main_key_section_title": { "message": "Main Key(←/→)" },
+  "sub_key_section_title": { "message": "Sub Key(Custom)" },
+  "language_label": { "message": "Language" },
+  "position_reference_label": { "message": "Position Reference" },
+  "position_offset_label": { "message": "Position Offset(px)" },
+  "subtitle_color_label": { "message": "Subtitle Color" },
+  "subtitle_font_size_label": { "message": "Subtitle Size(1~10)" },
+  "subtitle_font_weight_label": { "message": "Font Weight(1~6)" },
+  "subtitle_opacity_label": { "message": "Opacity(%)" },
+  "line_break_label": { "message": "Allow Line Break" },
+  "cancel_button": { "message": "Cancel" },
+  "save_button": { "message": "Save" },
+  "video_skip_time_label": { "message": "Video Skip Time(s)" },
+  "backward_key_label": { "message": "Backward Key" },
+  "forward_key_label": { "message": "Forward Key" },
+
+  "english": { "message": "English" },
+  "korean": { "message": "Korean" },
+  "top": { "message": "Top" },
+  "center": { "message": "Center" },
+  "bottom": { "message": "Bottom" },
+
+  "error_text_type": { "message": "Only text is allowed." },
+  "error_number_type": { "message": "Only numbers are allowed." },
+  "error_max_length": {
+    "message": "Exceeds the maximum length of $maxLength$.",
+    "placeholders": { "maxLength": { "content": "$1" } }
+  },
+  "error_min_length": {
+    "message": "Shorter than the minimum length of $minLength$.",
+    "placeholders": { "minLength": { "content": "$1" } }
+  },
+  "error_max_value": {
+    "message": "Exceeds the maximum value of $maxValue$.",
+    "placeholders": { "maxValue": { "content": "$1" } }
+  },
+  "error_min_value": {
+    "message": "Smaller than the minimum value of $minValue$.",
+    "placeholders": { "minValue": { "content": "$1" } }
+  },
+  "error_reserved_key": { "message": "Reserved key." }
+}

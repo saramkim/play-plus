@@ -8,6 +8,7 @@ import { validateAll } from '../utils/validation';
 import { Checkbox } from '../components/checkbox';
 import { NumberInput } from '../components/numberInput';
 import { Switch } from '../components/switch';
+import { getMessage } from '../utils/i18n';
 
 const { SUBTITLES } = SETTINGS;
 
@@ -96,8 +97,8 @@ function createInput(inputId: string, storageKey: keyof Omit<SubtitleConfig, 'en
       return Switch({
         id: inputId,
         options: [
-          { label: '영어', value: 'en' },
-          { label: '한국어', value: 'ko' },
+          { label: getMessage('english'), value: 'en' },
+          { label: getMessage('korean'), value: 'ko' },
         ],
         initialValue: settings[storageKey],
         onChange: (value) => {
@@ -108,9 +109,9 @@ function createInput(inputId: string, storageKey: keyof Omit<SubtitleConfig, 'en
       return Switch({
         id: inputId,
         options: [
-          { label: '상단', value: 'top' },
-          { label: '중앙', value: 'center' },
-          { label: '하단', value: 'bottom' },
+          { label: getMessage('top'), value: 'top' },
+          { label: getMessage('center'), value: 'center' },
+          { label: getMessage('bottom'), value: 'bottom' },
         ],
         initialValue: settings[storageKey],
         onChange: (value) => {

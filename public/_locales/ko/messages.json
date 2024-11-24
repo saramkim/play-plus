@@ -1,0 +1,49 @@
+{
+  "app_name": { "message": "Play Plus" },
+  "extension_name": { "message": "Play Plus - 쿠팡플레이 기능 확장" },
+  "extension_description": { "message": "쿠팡플레이의 기능을 확장하고, 사용자가 원하는 대로 커스텀할 수 있습니다." },
+  "action_default_title": { "message": "Play Plus 열기" },
+  "primary_subtitle_section_title": { "message": "메인 자막" },
+  "secondary_subtitle_section_title": { "message": "서브 자막" },
+  "main_key_section_title": { "message": "메인 키(←/→)" },
+  "sub_key_section_title": { "message": "서브 키(맞춤 설정)" },
+  "language_label": { "message": "언어" },
+  "position_reference_label": { "message": "위치 기준" },
+  "position_offset_label": { "message": "위치 조정(px)" },
+  "subtitle_color_label": { "message": "자막 색상" },
+  "subtitle_font_size_label": { "message": "자막 크기(1~10)" },
+  "subtitle_font_weight_label": { "message": "글씨 굵기(1~6)" },
+  "subtitle_opacity_label": { "message": "투명도(%)" },
+  "line_break_label": { "message": "줄바꿈 허용" },
+  "cancel_button": { "message": "취소" },
+  "save_button": { "message": "저장" },
+  "video_skip_time_label": { "message": "영상 이동 시간(s)" },
+  "backward_key_label": { "message": "뒤로 이동 키" },
+  "forward_key_label": { "message": "앞으로 이동 키" },
+
+  "english": { "message": "영어" },
+  "korean": { "message": "한국어" },
+  "top": { "message": "상단" },
+  "center": { "message": "중앙" },
+  "bottom": { "message": "하단" },
+
+  "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
+  "error_number_type": { "message": "숫자만 입력할 수 있습니다." },
+  "error_max_length": {
+    "message": "최대 길이 $maxLength$를 초과합니다.",
+    "placeholders": { "maxLength": { "content": "$1" } }
+  },
+  "error_min_length": {
+    "message": "최소 길이 $minLength$보다 짧습니다.",
+    "placeholders": { "minLength": { "content": "$1" } }
+  },
+  "error_max_value": {
+    "message": "최대값 $maxValue$를 초과합니다.",
+    "placeholders": { "maxValue": { "content": "$1" } }
+  },
+  "error_min_value": {
+    "message": "최소값 $minValue$보다 작습니다.",
+    "placeholders": { "minValue": { "content": "$1" } }
+  },
+  "error_reserved_key": { "message": "예약된 키입니다." }
+}

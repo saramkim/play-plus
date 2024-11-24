@@ -1,4 +1,5 @@
 import { RESERVED_KEY_CODE_LIST } from './constants';
+import { getMessage } from './i18n';
 import { SubKeyConfig, SubtitleConfig } from './storage';
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
@@ -19,23 +20,40 @@ export const validate = (key: string, value: any): ValidationResult => {
   if (!rule) return { valid: true };
 
   if (typeof value !== rule.type) {
-    const MAP = { string: '텍스트', number: '숫자' };
-    return { valid: false, error: `${MAP[rule.type]}만 입력할 수 있습니다.` };
+    const MAP = {
+      string: getMessage('error_text_type'),
+      number: getMessage('error_number_type'),
+    };
+    return { valid: false, error: MAP[rule.type] };
   }
 
   if (typeof value === 'string') {
     const { minLength, maxLength } = rule;
     if (maxLength !== undefined && value.length > maxLength)
-      return { valid: false, error: `최대 길이 ${maxLength}를 초과합니다.` };
+      return {
+        valid: false,
+        error: getMessage('error_max_length', String(maxLength)),
+      };
     if (minLength !== undefined && value.length < minLength)
-      return { valid: false, error: `최소 길이 ${minLength}보다 짧습니다.` };
+      return {
+        valid: false,
+        error: getMessage('error_min_length', String(minLength)),
+      };
   }
 
   if (typeof value === 'number') {
     const { min, max } = rule;
-    if (Number.isNaN(value)) return { valid: false, error: '숫자만 입력할 수 있습니다.' };
-    if (max !== undefined && value > max) return { valid: false, error: `최대값 ${max}를 초과합니다.` };
-    if (min !== undefined && value < min) return { valid: false, error: `최소값 ${min}보다 작습니다.` };
+    if (Number.isNaN(value)) return { valid: false, error: getMessage('error_number_type') };
+    if (max !== undefined && value > max)
+      return {
+        valid: false,
+        error: getMessage('error_max_value', String(max)),
+      };
+    if (min !== undefined && value < min)
+      return {
+        valid: false,
+        error: getMessage('error_min_value', String(min)),
+      };
   }
 
   if (rule.validate && !rule.validate(value).valid) {
@@ -61,7 +79,7 @@ export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string,
 
 function validateNoReservedKey(value: string): ValidationResult {
   return RESERVED_KEY_CODE_LIST.includes(value)
-    ? { valid: false, error: '해당 키는 사용할 수 없습니다.' }
+    ? { valid: false, error: getMessage('error_reserved_key') }
     : { valid: true };
 }
 

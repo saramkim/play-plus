@@ -105,7 +105,7 @@ body {
 }
 
 .label {
-  @apply min-w-[110px] text-gray-800 text-nowrap;
+  @apply min-w-[120px] text-gray-800 text-nowrap;
 }
 
 .section {

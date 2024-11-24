@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Play Plus - 쿠팡플레이 기능 확장",
+  "name": "__MSG_extension_name__",
   "version": "1.2.1",
-  "description": "쿠팡플레이의 기능을 확장하고, 사용자가 원하는 대로 커스텀할 수 있습니다.",
+  "description": "__MSG_extension_description__",
   "icons": {
     "16": "icons/play-plus_16x.png",
     "48": "icons/play-plus_48x.png",
@@ -14,7 +14,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Play Plus 열기"
+    "default_title": "__MSG_action_default_title__"
   },
   "side_panel": {
     "default_path": "index.html"
@@ -24,5 +24,6 @@
       "matches": ["https://*.coupangplay.com/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "default_locale": "ko"
 }
