@@ -56,7 +56,16 @@ export const onStorageChange = (callback: (changes: StorageChanges) => void) => 
   chrome.storage.sync.onChanged.addListener(callback);
 };
 
-export type LocalStorageSchema = {};
+export type savedSubtitle = {
+  content: string;
+  url: string;
+  startTime: number;
+  savedAt: string;
+};
+
+export type LocalStorageSchema = {
+  savedSubtitles: savedSubtitle[];
+};
 type LocalStorageKey = keyof LocalStorageSchema;
 
 export type LocalStorageChanges = {

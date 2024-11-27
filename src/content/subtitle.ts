@@ -1,7 +1,14 @@
-import { SETTINGS, SUBTITLE_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
+import {
+  REVIEW,
+  SETTINGS,
+  SUBTITLE_CONTAINER_ID,
+  SUBTITLE_TOOLTIP_ID,
+  TRACK_DISPLAY_CONTAINER_CLASS_NAME,
+} from '../utils/constants';
 import { DEFAULT_CONFIG } from '../utils/default';
-import { selectVideoElement } from '../utils/dom';
-import { getStorage, StorageChanges } from '../utils/storage';
+import { createTooltip, selectVideoElement } from '../utils/dom';
+import { getMessage } from '../utils/i18n';
+import { getLocalStorage, getStorage, setLocalStorage, StorageChanges } from '../utils/storage';
 import {
   arrayToHeadersObject,
   createSubtitleContainer,
@@ -149,31 +156,97 @@ function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElem
   if (hasStyleChanged) {
     const fragment = document.createDocumentFragment();
 
-    for (const [key, config] of Object.entries(subtitleSettings)) {
+    for (const config of Object.values(subtitleSettings)) {
       const { language, enabled } = config;
       const data = subtitleCache.get(language);
 
       if (data && enabled) {
-        const subtitle = findCurrentSubtitle(data, currentTime);
-        const subtitleElement = createSubtitleElement(language, subtitle, config);
+        const subtitleElement = createSubtitleElement(language, config);
 
-        if (key === PRIMARY.STORAGE_KEY) fragment.prepend(subtitleElement);
-        else fragment.appendChild(subtitleElement);
+        setupSubtitle(subtitleElement, data, currentTime);
+        setupSubtitleSaveHandler(subtitleElement);
+
+        fragment.appendChild(subtitleElement);
       }
     }
 
     subtitleContainer.replaceChildren(fragment);
   } else {
     for (const [lang, subtitles] of subtitleCache) {
-      const subtitle = findCurrentSubtitle(subtitles, currentTime);
-      const subtitleElement = subtitleContainer.querySelector(`#${lang}`);
+      const subtitleElement = subtitleContainer.querySelector(`#${lang}`) as HTMLElement | null;
 
       if (subtitleElement) {
-        subtitleElement.innerHTML = subtitle;
+        setupSubtitle(subtitleElement, subtitles, currentTime);
       } else {
         updateSubtitleText(video, subtitleContainer, true);
         break;
       }
     }
   }
+}
+
+function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {
+  const { text, start } = findCurrentSubtitle(data, currentTime);
+
+  subtitleElement.innerHTML = text;
+
+  if (start) subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = start.toString();
+  else delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
+}
+
+function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
+  const tooltip = getTooltip();
+  const showTooltip = (event: MouseEvent) => {
+    subtitleElement.style.borderColor = 'currentColor';
+    tooltip.style.opacity = '1';
+    updateTooltipPosition(event);
+  };
+  const updateTooltipPosition = (event: MouseEvent) => {
+    tooltip.style.top = `${event.pageY + 10}px`;
+    tooltip.style.left = `${event.pageX + 10}px`;
+  };
+  const hideTooltip = () => {
+    subtitleElement.style.borderColor = 'transparent';
+    tooltip.style.opacity = '0';
+  };
+  const handleSubtitleClick = async (event: MouseEvent) => {
+    event.stopPropagation();
+    hideTooltip();
+    try {
+      await saveSubtitle(subtitleElement);
+      console.log('자막 저장 성공!');
+    } catch (error) {
+      console.error('자막 저장 실패:', error);
+    }
+  };
+
+  subtitleElement.addEventListener('mouseover', showTooltip);
+  subtitleElement.addEventListener('mousemove', updateTooltipPosition);
+  subtitleElement.addEventListener('mouseout', hideTooltip);
+  subtitleElement.addEventListener('click', handleSubtitleClick);
+}
+
+function getTooltip(): HTMLElement {
+  const existingTooltip = document.getElementById(SUBTITLE_TOOLTIP_ID);
+  if (existingTooltip) return existingTooltip;
+
+  const tooltip = createTooltip(getMessage('click_to_save'));
+  tooltip.id = SUBTITLE_TOOLTIP_ID;
+  document.body.appendChild(tooltip);
+  return tooltip;
+}
+
+async function saveSubtitle(subtitleElement: HTMLElement) {
+  const content = subtitleElement.textContent?.replace(/\n/g, ' ');
+  const startTimeDataAttribute = subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
+
+  if (!content || !startTimeDataAttribute) throw new Error('Invalid subtitle element');
+
+  const startTime = Number(startTimeDataAttribute);
+  const prevData = await getLocalStorage(REVIEW.STORAGE_KEY);
+  const isDuplicated = prevData?.some(({ content: prevContent }) => prevContent === content);
+  if (isDuplicated) throw new Error('Duplicated subtitle');
+
+  const data = { content, url: window.location.href, startTime, savedAt: new Date().toISOString() };
+  await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [...prevData, data] : [data]);
 }

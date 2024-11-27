@@ -119,3 +119,29 @@ export const updateDefaultValue = (instance: HTMLInputElement, value: string | n
       break;
   }
 };
+
+export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
+  Object.assign(element.style, styles);
+};
+
+export const createTooltip = (text?: string) => {
+  const tooltip = document.createElement('div');
+
+  applyStyles(tooltip, {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    color: 'white',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    lineHeight: '16px',
+    whiteSpace: 'nowrap',
+    zIndex: '1000',
+    pointerEvents: 'none',
+    opacity: '0',
+    transition: 'opacity 0.2s ease',
+  });
+  tooltip.textContent = text ?? '';
+
+  return tooltip;
+};

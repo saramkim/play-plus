@@ -1,6 +1,7 @@
 export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
+export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 
 export const RESERVED_KEY_CODE_LIST = [
   'ArrowRight',
@@ -77,6 +78,13 @@ export const SETTINGS = {
       CANCEL: 'cancel-sub-key',
       SAVE: 'save-sub-key',
     },
+  },
+} as const;
+
+export const REVIEW = {
+  STORAGE_KEY: 'savedSubtitles',
+  DATA_ATTRIBUTE: {
+    START_TIME: 'startTime',
   },
 } as const;
 

@@ -26,6 +26,7 @@
   "top": { "message": "상단" },
   "center": { "message": "중앙" },
   "bottom": { "message": "하단" },
+  "click_to_save": { "message": "클릭하여 저장" },
 
   "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
   "error_number_type": { "message": "숫자만 입력할 수 있습니다." },

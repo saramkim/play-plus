@@ -26,6 +26,7 @@
   "top": { "message": "Top" },
   "center": { "message": "Center" },
   "bottom": { "message": "Bottom" },
+  "click_to_save": { "message": "Click to save" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },

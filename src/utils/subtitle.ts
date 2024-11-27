@@ -1,3 +1,4 @@
+import { applyStyles } from './dom';
 import { SubtitleConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
@@ -13,6 +14,8 @@ export const extractSubtitleApiInfoFromResponse = (response: ApiResponse) => {
 };
 
 export const parseVTT = (data: string) => {
+  if (!data || !data.trim()) return [];
+
   const subtitles: SubtitleData[] = [];
   const lines = data.split('\n');
   let currentSubtitle = { start: 0, end: 0, text: '' };
@@ -23,12 +26,18 @@ export const parseVTT = (data: string) => {
       currentSubtitle.start = timeToSeconds(start.trim());
       currentSubtitle.end = timeToSeconds(end.trim());
     } else if (line.trim() === '') {
-      subtitles.push({ ...currentSubtitle });
+      if (currentSubtitle.text.trim()) {
+        subtitles.push({ ...currentSubtitle });
+      }
       currentSubtitle = { start: 0, end: 0, text: '' };
     } else {
-      currentSubtitle.text += line + '\n';
+      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line.trim();
     }
   });
+
+  if (currentSubtitle.text.trim()) {
+    subtitles.push({ ...currentSubtitle });
+  }
 
   return subtitles;
 };
@@ -41,13 +50,13 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
     const mid = Math.floor((left + right) / 2);
     const { start, end, text } = subtitles[mid];
 
-    if (currentTime >= start && currentTime <= end) return text;
+    if (currentTime >= start && currentTime <= end) return { text, start };
 
     if (currentTime < start) right = mid - 1;
     else left = mid + 1;
   }
 
-  return '';
+  return { text: '' };
 };
 
 export const createSubtitleContainer = (id: string) => {
@@ -69,12 +78,11 @@ export const createSubtitleContainer = (id: string) => {
   return subtitleContainer;
 };
 
-export const createSubtitleElement = (id: string, text: string, config: SubtitleConfig) => {
+export const createSubtitleElement = (id: string, config: SubtitleConfig) => {
   const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
   const subtitle = document.createElement('p');
 
   subtitle.id = id;
-  subtitle.innerHTML = text;
 
   const positions = {
     top: { top: `${positionOffset}px` },
@@ -84,7 +92,6 @@ export const createSubtitleElement = (id: string, text: string, config: Subtitle
 
   applyStyles(subtitle, {
     ...positions[positionReference],
-    minHeight: '1.5em',
     lineHeight: '1.5em',
     display: enabled ? 'block' : 'none',
     color,
@@ -95,13 +102,14 @@ export const createSubtitleElement = (id: string, text: string, config: Subtitle
     position: 'absolute',
     left: '50%',
     transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
+    pointerEvents: 'auto',
+    cursor: 'pointer',
+    zIndex: '1000',
+    padding: '0 0.5em',
+    border: '1px solid transparent',
   });
 
   return subtitle;
-};
-
-const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
-  Object.assign(element.style, styles);
 };
 
 const timeToSeconds = (time: string) => {
