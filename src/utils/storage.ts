@@ -56,6 +56,33 @@ export const onStorageChange = (callback: (changes: StorageChanges) => void) => 
   chrome.storage.sync.onChanged.addListener(callback);
 };
 
+export type LocalStorageSchema = {};
+type LocalStorageKey = keyof LocalStorageSchema;
+
+export type LocalStorageChanges = {
+  [K in LocalStorageKey]?: StorageChange<LocalStorageSchema[K]>;
+};
+
+export const setLocalStorage = <K extends LocalStorageKey>(key: K, value: LocalStorageSchema[K]) => {
+  return chrome.storage.local.set({ [key]: value });
+};
+
+export const getLocalStorage = <K extends LocalStorageKey>(key: K): Promise<LocalStorageSchema[K] | undefined> => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(key, (result) => {
+      resolve(result[key]);
+    });
+  });
+};
+
+export const removeLocalStorage = <K extends LocalStorageKey>(key: K) => {
+  return chrome.storage.local.remove(key);
+};
+
+export const onLocalStorageChange = (callback: (changes: LocalStorageChanges) => void) => {
+  chrome.storage.local.onChanged.addListener(callback);
+};
+
 type LegacyMigration = {
   newKey: StorageKey;
   transform: (data: any) => any;
