@@ -1,14 +1,32 @@
+import { Switch } from './components/switch';
 import './style.css';
+import { getMessage } from './utils/i18n';
+
+const defaultTab = 'setting';
 
 async function init() {
   await loadTemplates();
-  await loadContent('setting');
+  createTab();
+  await loadContent(defaultTab);
 }
 
 async function loadTemplates() {
   const response = await fetch('template.html');
   const text = await response.text();
   document.body.insertAdjacentHTML('beforeend', text);
+}
+
+function createTab() {
+  Switch({
+    id: 'nav-tab',
+    options: [
+      { label: getMessage('setting'), value: 'setting' },
+      { label: getMessage('review'), value: 'review' },
+    ],
+    initialValue: defaultTab,
+    onChange: loadContent,
+    className: ['h-8', 'text-[15px]', 'border-gray-300'],
+  });
 }
 
 async function loadContent(name: string) {

@@ -17,6 +17,7 @@
   "line_break_label": { "message": "Allow Line Break" },
   "cancel_button": { "message": "Cancel" },
   "save_button": { "message": "Save" },
+  "edit_button": { "message": "Edit" },
   "video_skip_time_label": { "message": "Video Skip Time(s)" },
   "backward_key_label": { "message": "Backward Key" },
   "forward_key_label": { "message": "Forward Key" },
@@ -27,6 +28,10 @@
   "center": { "message": "Center" },
   "bottom": { "message": "Bottom" },
   "click_to_save": { "message": "Click to save" },
+  "setting": { "message": "Settings" },
+  "review": { "message": "Review" },
+  "saved_subtitles": { "message": "Saved Subtitles" },
+  "watch_video": { "message": "Watch Video" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },

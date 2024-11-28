@@ -1,0 +1,24 @@
+<div class="flex flex-col h-full">
+  <header class="flex justify-between items-center pb-2 border-b">
+    <h2 class="section-title" data-i18n="saved_subtitles"></h2>
+    <div class="row">
+      <button id="cancel-saved-subtitle-setting" class="button bg-gray-500 hidden" data-i18n="cancel_button"></button>
+      <button id="save-saved-subtitle-setting" class="button bg-teal-500 hidden" data-i18n="save_button"></button>
+      <button id="edit-saved-subtitle-setting" class="button bg-gray-500" data-i18n="edit_button"></button>
+    </div>
+  </header>
+  <div id="saved-subtitle-container" class="flex flex-col gap-1 h-full overflow-auto"></div>
+</div>
+
+<template id="saved-subtitle-template">
+  <div data-role="saved-subtitle-item" class="flex flex-col gap-2 py-2 border-b">
+    <div class="flex justify-between items-center">
+      <p data-role="content" class="text-[15px] font-medium text-wrap select-text w-full"></p>
+      <button data-role="delete-button" class="text-rose-500 font-bold hidden">✖</button>
+    </div>
+    <div class="flex justify-between items-center">
+      <a data-role="url" href="" target="_blank" class="bg-gray-200 px-1 rounded"></a>
+      <p data-role="saved-at" class="text-gray-800"></p>
+    </div>
+  </div>
+</template>

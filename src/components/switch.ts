@@ -10,9 +10,10 @@ interface SwitchProps<Value extends string> {
   options: SwitchOption<Value>[];
   initialValue?: Value;
   onChange: (value: Value) => void;
+  className?: string[];
 }
 
-export function Switch<Value extends string>({ id, options, initialValue, onChange }: SwitchProps<Value>) {
+export function Switch<Value extends string>({ id, options, initialValue, onChange, className }: SwitchProps<Value>) {
   const template = (document.getElementById('switch-template') as HTMLTemplateElement).content.cloneNode(
     true
   ) as DocumentFragment;
@@ -37,6 +38,8 @@ export function Switch<Value extends string>({ id, options, initialValue, onChan
       }
     });
   };
+
+  if (className) box.classList.add(...className);
 
   options.forEach(({ label, value }, i) => {
     const button = document.createElement('div');

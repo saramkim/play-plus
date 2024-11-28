@@ -86,6 +86,13 @@ export const REVIEW = {
   DATA_ATTRIBUTE: {
     START_TIME: 'startTime',
   },
+  CONTAINER_ID: 'saved-subtitle-container',
+  TEMPLATE_ID: 'saved-subtitle-template',
+  BUTTONS: {
+    EDIT: 'edit-saved-subtitle-setting',
+    CANCEL: 'cancel-saved-subtitle-setting',
+    SAVE: 'save-saved-subtitle-setting',
+  },
 } as const;
 
 export const INPUT_ID_TO_STORAGE_OPTION_KEY = generateInputToStorageKey(SETTINGS);

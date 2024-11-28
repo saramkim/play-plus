@@ -17,6 +17,7 @@
   "line_break_label": { "message": "줄바꿈 허용" },
   "cancel_button": { "message": "취소" },
   "save_button": { "message": "저장" },
+  "edit_button": { "message": "편집" },
   "video_skip_time_label": { "message": "영상 이동 시간(s)" },
   "backward_key_label": { "message": "뒤로 이동 키" },
   "forward_key_label": { "message": "앞으로 이동 키" },
@@ -27,6 +28,10 @@
   "center": { "message": "중앙" },
   "bottom": { "message": "하단" },
   "click_to_save": { "message": "클릭하여 저장" },
+  "setting": { "message": "설정" },
+  "review": { "message": "복습" },
+  "saved_subtitles": { "message": "저장된 자막" },
+  "watch_video": { "message": "영상 보기" },
 
   "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
   "error_number_type": { "message": "숫자만 입력할 수 있습니다." },
