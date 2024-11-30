@@ -1,3 +1,4 @@
+import { COUPANG_PLAY_BASE_URL, REVIEW } from './utils/constants';
 import { migrateLegacyStorage } from './utils/storage';
 
 const loadedTabs = new Set<number>();
@@ -12,6 +13,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     } catch (error) {
       console.error('Error during legacy storage migration:', error);
     }
+  }
+});
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === REVIEW.ACTIONS.VIEW_VIDEO) {
+    handleViewVideo(message);
   }
 });
 
@@ -30,27 +37,38 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   }
 });
 
+chrome.tabs.onRemoved.addListener((tabId) => {
+  loadedTabs.delete(tabId);
+  delete messageQueue[tabId];
+});
+
 chrome.webRequest.onSendHeaders.addListener(
-  async (details) => {
-    const hasCustomHeader = details.requestHeaders?.some((header) => header.name === 'X-Extension-Request');
+  async ({ tabId, url, requestHeaders }) => {
+    const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) {
-      const message = { url: details.url, headers: details.requestHeaders };
-      sendMessageToContent(tab.id, message);
-    }
+    sendMessageToContent(tabId, { url, headers: requestHeaders });
   },
-  { urls: ['https://www.coupangplay.com/api/playback/play?*'] },
+  { urls: [`${COUPANG_PLAY_BASE_URL}/api/playback/play?*`] },
   ['requestHeaders']
 );
 
-function sendMessageToContent(tabId: number, message: any) {
-  if (loadedTabs.has(tabId)) {
-    chrome.tabs.sendMessage(tabId, message);
-  } else if (messageQueue[tabId]) {
-    messageQueue[tabId].push(message);
+const handleViewVideo = async ({ url, startTime }: { url: string; startTime: number }) => {
+  const tabs = await chrome.tabs.query({});
+  const matchingTab = tabs.find((tab) => tab.active && tab.url === url) || tabs.find((tab) => tab.url === url);
+  const message = { action: REVIEW.ACTIONS.PLAY_VIDEO, startTime };
+
+  if (matchingTab?.id) {
+    await chrome.tabs.update(matchingTab.id, { active: true });
+    chrome.tabs.sendMessage(matchingTab.id, message);
   } else {
-    messageQueue[tabId] = [message];
+    const newTab = await chrome.tabs.create({ url });
+    if (newTab.id) sendMessageToContent(newTab.id, message);
   }
-}
+};
+
+const sendMessageToContent = async (tabId: number, message: any) => {
+  if (loadedTabs.has(tabId)) chrome.tabs.sendMessage(tabId, message);
+  else if (messageQueue[tabId]) messageQueue[tabId].push(message);
+  else messageQueue[tabId] = [message];
+};

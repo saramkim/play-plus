@@ -1,18 +1,19 @@
 import './review.css';
-import { REVIEW } from '../utils/constants';
+import { COUPANG_PLAY_BASE_URL, REVIEW } from '../utils/constants';
 import { setElementVisibility } from '../utils/dom';
 import { getLocalStorage, onLocalStorageChange, savedSubtitle, setLocalStorage } from '../utils/storage';
 import { getMessage } from '../utils/i18n';
+import { Tooltip } from '../components/tooltip';
 
-const { STORAGE_KEY, CONTAINER_ID, TEMPLATE_ID, BUTTONS } = REVIEW;
+const { STORAGE_KEY, CONTAINER_ID, TEMPLATE_ID, BUTTONS, ACTIONS } = REVIEW;
 
 class ReviewManager {
   private savedSubtitleCache: savedSubtitle[] = [];
   private deletedSubtitleContentList: string[] = [];
-  private watchVideoText: string;
+  private viewVideoText: string;
 
   constructor() {
-    this.watchVideoText = getMessage('watch_video');
+    this.viewVideoText = getMessage('view_video');
   }
 
   async init() {
@@ -78,18 +79,29 @@ class ReviewManager {
     savedSubtitleContainer.replaceChildren(fragment);
   }
 
-  private createSavedSubtitleItem(template: HTMLTemplateElement, { content, savedAt, url }: savedSubtitle) {
+  private createSavedSubtitleItem(template: HTMLTemplateElement, { content, savedAt, url, startTime }: savedSubtitle) {
     const clone = template.content.cloneNode(true) as DocumentFragment;
     const savedSubtitleItem = clone.querySelector('[data-role="saved-subtitle-item"]') as HTMLElement;
     const contentElement = clone.querySelector('[data-role="content"]') as HTMLElement;
     const savedAtElement = clone.querySelector('[data-role="saved-at"]') as HTMLElement;
-    const urlElement = clone.querySelector('[data-role="url"]') as HTMLAnchorElement;
+    const viewButton = clone.querySelector('[data-role="view-button"]') as HTMLButtonElement;
     const deleteButton = clone.querySelector('[data-role="delete-button"]') as HTMLButtonElement;
 
     contentElement.textContent = content;
     savedAtElement.textContent = new Date(savedAt).toLocaleString();
-    urlElement.href = url;
-    urlElement.textContent = this.watchVideoText;
+    viewButton.textContent = this.viewVideoText;
+
+    if (url.startsWith(COUPANG_PLAY_BASE_URL)) {
+      viewButton.addEventListener('click', async () => {
+        viewButton.disabled = true;
+        await chrome.runtime.sendMessage({ action: ACTIONS.VIEW_VIDEO, url, startTime });
+        viewButton.disabled = false;
+      });
+    } else {
+      viewButton.disabled = true;
+      Tooltip({ message: `${getMessage('error_unsupported_url')} (${url})`, target: viewButton });
+    }
+
     deleteButton.addEventListener('click', () => {
       savedSubtitleItem.remove();
       this.deletedSubtitleContentList.push(content);

@@ -1,7 +1,7 @@
 const TOOLTIP_DISTANCE = 2;
 
 interface TooltipProps {
-  id: string;
+  id?: string;
   message: string;
   target: HTMLElement;
 }

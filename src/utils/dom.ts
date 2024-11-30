@@ -1,18 +1,37 @@
 import { Tooltip } from '../components/tooltip';
 import { INPUT_ID_TO_STORAGE_OPTION_KEY } from './constants';
+import { getMessage } from './i18n';
 import { VALIDATION_RULE, ValidationResult } from './validation';
 
-export const selectVideoElement = (): Promise<HTMLVideoElement | null> => {
-  return new Promise((resolve) => {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        const video = document.querySelector('video');
-        resolve(video);
-      });
-    } else {
-      const video = document.querySelector('video');
-      resolve(video);
+export const selectVideoElement = (): Promise<HTMLVideoElement> => {
+  return new Promise((resolve, reject) => {
+    const existingVideo = document.querySelector('video');
+    if (existingVideo) {
+      resolve(existingVideo);
+      return;
     }
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+          const addedNodes = Array.from(mutation.addedNodes);
+          const video = addedNodes.find((node) => node instanceof HTMLVideoElement);
+
+          if (video) {
+            observer.disconnect();
+            resolve(video);
+            return;
+          }
+        }
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      reject(new Error(getMessage('error_video_not_found')));
+    }, 5000);
   });
 };
 

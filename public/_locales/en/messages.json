@@ -31,7 +31,7 @@
   "setting": { "message": "Settings" },
   "review": { "message": "Review" },
   "saved_subtitles": { "message": "Saved Subtitles" },
-  "watch_video": { "message": "Watch Video" },
+  "view_video": { "message": "View Video" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },
@@ -51,5 +51,7 @@
     "message": "Smaller than the minimum value of $minValue$.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
-  "error_reserved_key": { "message": "Reserved key." }
+  "error_reserved_key": { "message": "Reserved key." },
+  "error_video_not_found": { "message": "Video not found." },
+  "error_unsupported_url": { "message": "Unsupported site." }
 }

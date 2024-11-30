@@ -1,3 +1,5 @@
+export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
+
 export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
@@ -92,6 +94,10 @@ export const REVIEW = {
     EDIT: 'edit-saved-subtitle-setting',
     CANCEL: 'cancel-saved-subtitle-setting',
     SAVE: 'save-saved-subtitle-setting',
+  },
+  ACTIONS: {
+    VIEW_VIDEO: 'viewVideo',
+    PLAY_VIDEO: 'playVideo',
   },
 } as const;
 
