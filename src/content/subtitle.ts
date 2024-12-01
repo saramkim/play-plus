@@ -3,15 +3,15 @@ import {
   SETTINGS,
   SUBTITLE_CONTAINER_ID,
   SUBTITLE_TOOLTIP_ID,
+  TOAST_CONTAINER_ID,
   TRACK_DISPLAY_CONTAINER_CLASS_NAME,
 } from '../utils/constants';
 import { DEFAULT_CONFIG } from '../utils/default';
-import { createTooltip, selectVideoElement } from '../utils/dom';
+import { createElement, createTooltip, selectVideoElement } from '../utils/dom';
 import { getMessage } from '../utils/i18n';
 import { getLocalStorage, getStorage, setLocalStorage, StorageChanges } from '../utils/storage';
 import {
   arrayToHeadersObject,
-  createSubtitleContainer,
   createSubtitleElement,
   extractSubtitleApiInfoFromResponse,
   findCurrentSubtitle,
@@ -121,11 +121,11 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
 
 function setupSubtitleSync(video: HTMLVideoElement) {
   const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
-  const subtitleContainer =
-    document.getElementById(SUBTITLE_CONTAINER_ID) || createSubtitleContainer(SUBTITLE_CONTAINER_ID);
+  const subtitleContainer = document.getElementById(SUBTITLE_CONTAINER_ID) || createElement(SUBTITLE_CONTAINER_ID);
+  const toastContainer = document.getElementById(TOAST_CONTAINER_ID) || createElement(TOAST_CONTAINER_ID);
 
-  appendSubtitleContainer(trackDisplayContainer, subtitleContainer);
-  observeSubtitleContainer(trackDisplayContainer, subtitleContainer);
+  appendContainer(trackDisplayContainer, [subtitleContainer, toastContainer]);
+  observeContainer(trackDisplayContainer, [subtitleContainer, toastContainer]);
   updateSubtitleText(video, subtitleContainer);
 
   handleVideoTimeupdate = (arg) =>
@@ -135,19 +135,22 @@ function setupSubtitleSync(video: HTMLVideoElement) {
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 
-function observeSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLElement) {
+function observeContainer(trackDisplayContainer: Element, containers: HTMLElement[]) {
   subtitleContainerObserver = new MutationObserver(() => {
-    appendSubtitleContainer(trackDisplayContainer, subtitleContainer);
+    appendContainer(trackDisplayContainer, containers);
   });
 
   subtitleContainerObserver.observe(trackDisplayContainer, { attributes: true });
 }
 
-function appendSubtitleContainer(trackDisplayContainer: Element, subtitleContainer: HTMLElement) {
+function appendContainer(trackDisplayContainer: Element, containers: HTMLElement[]) {
   const subtitleContainerWrapper = trackDisplayContainer.children[0];
-  if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(subtitleContainer)) {
-    subtitleContainerWrapper.appendChild(subtitleContainer);
-  }
+
+  containers.forEach((container) => {
+    if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(container)) {
+      subtitleContainerWrapper.appendChild(container);
+    }
+  });
 }
 
 function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElement, hasStyleChanged = false) {
@@ -213,10 +216,10 @@ function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
     event.stopPropagation();
     hideTooltip();
     try {
-      await saveSubtitle(subtitleElement);
-      console.log('자막 저장 성공!');
+      const subtitle = await saveSubtitle(subtitleElement);
+      showToast(getMessage('success_save_subtitle'), subtitle, 'success');
     } catch (error) {
-      console.error('자막 저장 실패:', error);
+      showToast(getMessage('error_save_subtitle'), (error as Error).message, 'error');
     }
   };
 
@@ -240,13 +243,35 @@ async function saveSubtitle(subtitleElement: HTMLElement) {
   const content = subtitleElement.textContent?.replace(/\n/g, ' ');
   const startTimeDataAttribute = subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
 
-  if (!content || !startTimeDataAttribute) throw new Error('Invalid subtitle element');
+  if (!content || !startTimeDataAttribute) throw new Error(getMessage('error_try_later'));
 
   const startTime = Number(startTimeDataAttribute);
   const prevData = await getLocalStorage(REVIEW.STORAGE_KEY);
   const isDuplicated = prevData?.some(({ content: prevContent }) => prevContent === content);
-  if (isDuplicated) throw new Error('Duplicated subtitle');
+  if (isDuplicated) throw new Error(getMessage('error_duplicate_subtitle'));
 
   const data = { content, url: window.location.href, startTime, savedAt: new Date().toISOString() };
-  await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [...prevData, data] : [data]);
+  await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [data, ...prevData] : [data]);
+
+  return content;
+}
+
+function showToast(title: string, message: string, type: 'success' | 'error') {
+  const container = document.getElementById(TOAST_CONTAINER_ID);
+  const toast = document.createElement('div');
+  const titleElement = document.createElement('span');
+  const messageElement = document.createElement('span');
+
+  toast.classList.add('toast', `toast-${type}`);
+  titleElement.classList.add('toast-title');
+  titleElement.textContent = title;
+  messageElement.textContent = message;
+
+  toast.appendChild(titleElement);
+  toast.appendChild(messageElement);
+  container?.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
 }

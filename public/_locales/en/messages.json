@@ -32,6 +32,8 @@
   "review": { "message": "Review" },
   "saved_subtitles": { "message": "Saved Subtitles" },
   "view_video": { "message": "View Video" },
+  "success_save_subtitle": { "message": "✔ Subtitle saved" },
+  "error_save_subtitle": { "message": "✖ Failed to save subtitle" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },
@@ -53,5 +55,7 @@
   },
   "error_reserved_key": { "message": "Reserved key." },
   "error_video_not_found": { "message": "Video not found." },
-  "error_unsupported_url": { "message": "Unsupported site." }
+  "error_unsupported_url": { "message": "Unsupported site." },
+  "error_try_later": { "message": "Please try again later." },
+  "error_duplicate_subtitle": { "message": "Already saved subtitle." }
 }

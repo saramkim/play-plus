@@ -1,4 +1,4 @@
-import { applyStyles } from './dom';
+import { applyStyles, createElement } from './dom';
 import { SubtitleConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
@@ -59,30 +59,9 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
   return { text: '' };
 };
 
-export const createSubtitleContainer = (id: string) => {
-  const subtitleContainer = document.createElement('div');
-
-  subtitleContainer.id = id;
-
-  applyStyles(subtitleContainer, {
-    width: '100%',
-    height: '100%',
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    fontSize: 'min(1.8vw, 3vh)',
-    textShadow: 'black 2px 2px 2px',
-    fontFamily: 'Pretendard',
-  });
-
-  return subtitleContainer;
-};
-
 export const createSubtitleElement = (id: string, config: SubtitleConfig) => {
   const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
-  const subtitle = document.createElement('p');
-
-  subtitle.id = id;
+  const subtitle = createElement(id, 'p');
 
   const positions = {
     top: { top: `${positionOffset}px` },

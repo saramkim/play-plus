@@ -4,6 +4,7 @@ export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
+export const TOAST_CONTAINER_ID = 'pp-toast-container';
 
 export const RESERVED_KEY_CODE_LIST = [
   'ArrowRight',

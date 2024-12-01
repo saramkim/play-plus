@@ -164,3 +164,9 @@ export const createTooltip = (text?: string) => {
 
   return tooltip;
 };
+
+export const createElement = (id: string, tagName: string = 'div') => {
+  const element = document.createElement(tagName);
+  element.id = id;
+  return element;
+};
