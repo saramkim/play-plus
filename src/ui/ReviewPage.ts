@@ -4,22 +4,52 @@ import { setElementVisibility } from '../utils/dom';
 import { getLocalStorage, onLocalStorageChange, savedSubtitle, setLocalStorage } from '../utils/storage';
 import { getMessage } from '../utils/i18n';
 import { Tooltip } from '../components/tooltip';
+import { html } from 'lit-html';
 
 const { STORAGE_KEY, CONTAINER_ID, TEMPLATE_ID, BUTTONS, ACTIONS } = REVIEW;
 
-class ReviewManager {
+export class ReviewPage implements Component {
   private savedSubtitleCache: savedSubtitle[] = [];
   private deletedSubtitleContentList: string[] = [];
-  private viewVideoText: string;
-
-  constructor() {
-    this.viewVideoText = getMessage('view_video');
-  }
+  private viewVideoText = getMessage('view_video');
 
   async init() {
     await this.initializeReviewData();
     this.initializeStorageChange();
     this.initializeButtons();
+  }
+
+  html() {
+    return html`
+      <div class="flex flex-col h-full">
+        <header class="flex justify-between items-center pb-2 border-b">
+          <h2 class="section-title">${getMessage('saved_subtitles')}</h2>
+          <div class="row">
+            <button id="cancel-saved-subtitle-setting" class="button bg-gray-500 hidden">
+              ${getMessage('cancel_button')}
+            </button>
+            <button id="save-saved-subtitle-setting" class="button bg-teal-500 hidden">
+              ${getMessage('save_button')}
+            </button>
+            <button id="edit-saved-subtitle-setting" class="button bg-gray-500">${getMessage('edit_button')}</button>
+          </div>
+        </header>
+        <div id="saved-subtitle-container" class="flex flex-col gap-1 h-full overflow-auto"></div>
+      </div>
+
+      <template id="saved-subtitle-template">
+        <div data-role="saved-subtitle-item" class="flex flex-col gap-2 py-2 border-b">
+          <div class="flex justify-between items-center">
+            <p data-role="content" class="text-[15px] font-medium text-wrap select-text w-full"></p>
+            <button data-role="delete-button" class="text-rose-500 font-bold hidden">✖</button>
+          </div>
+          <div class="flex justify-between items-center">
+            <button data-role="view-button" class="bg-gray-200 px-1 rounded disabled:opacity-30"></button>
+            <p data-role="saved-at" class="text-gray-800"></p>
+          </div>
+        </div>
+      </template>
+    `;
   }
 
   private initializeButtons() {
@@ -110,6 +140,3 @@ class ReviewManager {
     return clone;
   }
 }
-
-const reviewManager = new ReviewManager();
-reviewManager.init();

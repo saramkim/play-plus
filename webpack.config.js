@@ -8,8 +8,6 @@ module.exports = {
     main: path.resolve(__dirname, 'src/main.ts'),
     background: path.resolve(__dirname, 'src/background.ts'),
     content: path.resolve(__dirname, 'src/content/content.ts'),
-    setting: path.resolve(__dirname, 'src/ui/setting.ts'),
-    review: path.resolve(__dirname, 'src/ui/review.ts'),
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -37,18 +35,6 @@ module.exports = {
       template: 'src/index.html',
       filename: 'index.html',
       chunks: ['main'],
-    }),
-    new HtmlWebpackPlugin({
-      template: 'src/ui/setting.html',
-      filename: 'setting.html',
-      chunks: ['setting'],
-      inject: false,
-    }),
-    new HtmlWebpackPlugin({
-      template: 'src/ui/review.html',
-      filename: 'review.html',
-      chunks: ['review'],
-      inject: false,
     }),
     new CopyWebpackPlugin({
       patterns: [
