@@ -98,14 +98,15 @@ type LegacyMigration = {
 };
 
 const LEGACY_MIGRATIONS: Record<string, LegacyMigration> = {
-  englishSubtitle: {
-    newKey: SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY,
-    transform: (oldData) => oldData,
-  },
-  koreanSubtitle: {
-    newKey: SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY,
-    transform: (oldData) => oldData,
-  },
+  // 1.2.x => 1.3.x
+  // englishSubtitle: {
+  //   newKey: SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY,
+  //   transform: (oldData) => oldData,
+  // },
+  // koreanSubtitle: {
+  //   newKey: SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY,
+  //   transform: (oldData) => oldData,
+  // },
 };
 
 export const migrateLegacyStorage = async () => {
