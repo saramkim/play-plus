@@ -1,13 +1,9 @@
 import './style.css';
-import { render } from 'lit-html';
-import { Header } from './components/Header';
+import App from './App';
 
 async function init() {
-  const header = new Header('setting');
-
   await loadTemplates();
-  render(header.html(), document.getElementById('header')!);
-  await header.init();
+  new App(document.getElementById('app')!);
 }
 
 async function loadTemplates() {

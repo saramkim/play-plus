@@ -17,6 +17,11 @@ export const RESERVED_KEY_CODE_LIST = [
   'KeyF',
 ];
 
+export const PAGE_NAME = {
+  SETTING: 'setting',
+  REVIEW: 'review',
+} as const;
+
 export const SETTINGS = {
   SUBTITLES: {
     PRIMARY: {
@@ -89,13 +94,8 @@ export const REVIEW = {
   DATA_ATTRIBUTE: {
     START_TIME: 'startTime',
   },
+  HEADER_ID: 'saved-subtitle-header',
   CONTAINER_ID: 'saved-subtitle-container',
-  TEMPLATE_ID: 'saved-subtitle-template',
-  BUTTONS: {
-    EDIT: 'edit-saved-subtitle-setting',
-    CANCEL: 'cancel-saved-subtitle-setting',
-    SAVE: 'save-saved-subtitle-setting',
-  },
   ACTIONS: {
     VIEW_VIDEO: 'viewVideo',
     PLAY_VIDEO: 'playVideo',

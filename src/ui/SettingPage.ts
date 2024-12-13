@@ -3,14 +3,22 @@ import { onStorageChange } from '../utils/storage';
 import { initializeSubtitleSetting, onSubtitleStorageChange } from './subtitle';
 import { initializeSkipTimeSetting, initializeSubKeySetting, onSubKeyStorageChange } from './videoControl';
 import { getMessage } from '../utils/i18n';
+import Component from '../core/Component';
 
-export class SettingPage implements Component {
-  async init() {
-    await Promise.all([initializeSubtitleSetting(), initializeSkipTimeSetting(), initializeSubKeySetting()]);
-    this.initializeStorageChange();
+export default class SettingPage extends Component {
+  private removeStorageChangeListener?: () => void;
+
+  onMount() {
+    Promise.all([initializeSubtitleSetting(), initializeSkipTimeSetting(), initializeSubKeySetting()]).then(() => {
+      this.initializeStorageChange();
+    });
   }
 
-  html() {
+  onUnmount() {
+    this.removeStorageChangeListener?.();
+  }
+
+  template() {
     return html`
       <div class="flex flex-col gap-5">
         <section class="section">
@@ -164,9 +172,11 @@ export class SettingPage implements Component {
   }
 
   private initializeStorageChange() {
-    onStorageChange((changes) => {
+    const { remove } = onStorageChange((changes) => {
       onSubtitleStorageChange(changes);
       onSubKeyStorageChange(changes);
     });
+
+    this.removeStorageChangeListener = remove;
   }
 }

@@ -1,40 +1,31 @@
-import { html, render } from 'lit-html';
-import { ReviewPage } from '../ui/ReviewPage';
-import { SettingPage } from '../ui/SettingPage';
+import { html } from 'lit-html';
 import { Switch } from './switch';
 import { getMessage } from '../utils/i18n';
-
-type PageName = 'setting' | 'review';
+import Component from '../core/Component';
+import { PAGE_NAME } from '../utils/constants';
 
 const NAV_SWITCH_ID = 'nav-switch';
 
-export class Header implements Component {
-  private initailPage: PageName;
-  private pageMap = {
-    setting: new SettingPage(),
-    review: new ReviewPage(),
-  };
+type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
-  constructor(initailPage: PageName) {
-    this.initailPage = initailPage;
-  }
-
-  init() {
+type HeaderProps = {
+  onNavigate: (name: PageName) => void;
+};
+export default class Header extends Component<HeaderProps> {
+  afterRender() {
     Switch({
       id: NAV_SWITCH_ID,
       options: [
-        { label: getMessage('setting'), value: 'setting' },
-        { label: getMessage('review'), value: 'review' },
+        { label: getMessage('setting'), value: PAGE_NAME.SETTING },
+        { label: getMessage('review'), value: PAGE_NAME.REVIEW },
       ],
-      initialValue: this.initailPage,
-      onChange: (v) => this.navigate(v),
+      initialValue: PAGE_NAME.SETTING,
+      onChange: this.props.onNavigate.bind(this),
       className: ['h-8', 'text-[15px]', 'border-gray-300'],
     });
-
-    return this.navigate(this.initailPage);
   }
 
-  html() {
+  template() {
     return html`
       <div class="flex gap-2 items-center w-full">
         <img src="icons/play-plus_48x.png" alt="logo" class="w-8" />
@@ -43,12 +34,4 @@ export class Header implements Component {
       <div id=${NAV_SWITCH_ID}></div>
     `;
   }
-
-  private navigate = async (name: PageName) => {
-    const page = this.pageMap[name];
-
-    render(page.html(), document.getElementById('main')!);
-
-    return page.init();
-  };
 }

@@ -53,10 +53,12 @@ export const removeStorage = <K extends StorageKey>(key: K) => {
 };
 
 export const onStorageChange = (callback: (changes: StorageChanges) => void) => {
-  chrome.storage.sync.onChanged.addListener(callback);
+  const { onChanged } = chrome.storage.sync;
+  onChanged.addListener(callback);
+  return { remove: () => onChanged.removeListener(callback) };
 };
 
-export type savedSubtitle = {
+export type SavedSubtitle = {
   content: string;
   url: string;
   startTime: number;
@@ -64,7 +66,7 @@ export type savedSubtitle = {
 };
 
 export type LocalStorageSchema = {
-  savedSubtitles: savedSubtitle[];
+  savedSubtitles: SavedSubtitle[];
 };
 type LocalStorageKey = keyof LocalStorageSchema;
 
@@ -89,7 +91,9 @@ export const removeLocalStorage = <K extends LocalStorageKey>(key: K) => {
 };
 
 export const onLocalStorageChange = (callback: (changes: LocalStorageChanges) => void) => {
-  chrome.storage.local.onChanged.addListener(callback);
+  const { onChanged } = chrome.storage.local;
+  onChanged.addListener(callback);
+  return { remove: () => onChanged.removeListener(callback) };
 };
 
 type LegacyMigration = {
