@@ -26,6 +26,8 @@ export const SETTINGS = {
   SUBTITLES: {
     PRIMARY: {
       STORAGE_KEY: 'primarySubtitle',
+      SECTION_ID: 'primary-subtitle-section',
+      TITLE_MESSAGE_KEY: 'primary_subtitle_section_title',
       CONTAINER_ID: 'primary-subtitle-setting',
       TOGGLE_ID: 'primary-subtitle-toggle',
       INPUTS: {
@@ -45,6 +47,8 @@ export const SETTINGS = {
     },
     SECONDARY: {
       STORAGE_KEY: 'secondarySubtitle',
+      SECTION_ID: 'secondary-subtitle-section',
+      TITLE_MESSAGE_KEY: 'secondary_subtitle_section_title',
       CONTAINER_ID: 'secondary-subtitle-setting',
       TOGGLE_ID: 'secondary-subtitle-toggle',
       INPUTS: {
@@ -65,6 +69,7 @@ export const SETTINGS = {
   },
   SKIP_TIME: {
     STORAGE_KEY: 'skipTime',
+    SECTION_ID: 'skip-time-section',
     INPUTS: {
       skipTime: 'skip-time',
     },
@@ -75,6 +80,7 @@ export const SETTINGS = {
   },
   SUB_KEY: {
     STORAGE_KEY: 'subKey',
+    SECTION_ID: 'sub-key-section',
     CONTAINER_ID: 'sub-key-setting',
     TOGGLE_ID: 'sub-key-toggle',
     INPUTS: {

@@ -1,182 +1,34 @@
 import { html } from 'lit-html';
-import { onStorageChange } from '../utils/storage';
-import { initializeSubtitleSetting, onSubtitleStorageChange } from './subtitle';
-import { initializeSkipTimeSetting, initializeSubKeySetting, onSubKeyStorageChange } from './videoControl';
-import { getMessage } from '../utils/i18n';
 import Component from '../core/Component';
+import SubKeyConfigForm from './SubKeyConfigForm';
+import SkipTimeConfigForm from './SkipTimeConfigForm';
+import SubtitleConfigForm from './SubtitleConfigForm';
+import { SETTINGS } from '../utils/constants';
+
+const { SUBTITLES, SKIP_TIME, SUB_KEY } = SETTINGS;
 
 export default class SettingPage extends Component {
-  private removeStorageChangeListener?: () => void;
-
-  onMount() {
-    Promise.all([initializeSubtitleSetting(), initializeSkipTimeSetting(), initializeSubKeySetting()]).then(() => {
-      this.initializeStorageChange();
-    });
-  }
-
-  onUnmount() {
-    this.removeStorageChangeListener?.();
+  afterRender() {
+    this.initiaizeSettingComponents();
   }
 
   template() {
     return html`
       <div class="flex flex-col gap-5">
-        <section class="section">
-          <header class="section-header">
-            <h2 class="section-title">${getMessage('primary_subtitle_section_title')}</h2>
-            <div class="row">
-              <button id="cancel-primary-subtitle-setting" class="button bg-gray-500 hidden">
-                ${getMessage('cancel_button')}
-              </button>
-              <button id="save-primary-subtitle-setting" class="button bg-teal-500 hidden" disabled>
-                ${getMessage('save_button')}
-              </button>
-              <div id="primary-subtitle-toggle"></div>
-            </div>
-          </header>
-          <div id="primary-subtitle-setting" class="section">
-            <div class="row">
-              <label for="primary-subtitle-language" class="label">${getMessage('language_label')}</label>
-              <div id="primary-subtitle-language"></div>
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-position-reference" class="label"
-                >${getMessage('position_reference_label')}</label
-              >
-              <div id="primary-subtitle-position-reference"></div>
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-position-offset" class="label">${getMessage('position_offset_label')}</label>
-              <input type="number" id="primary-subtitle-position-offset" class="input" />
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-color" class="label">${getMessage('subtitle_color_label')}</label>
-              <div id="primary-subtitle-color"></div>
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-font-size" class="label">${getMessage('subtitle_font_size_label')}</label>
-              <input type="number" id="primary-subtitle-font-size" class="input" />
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-font-weight" class="label"
-                >${getMessage('subtitle_font_weight_label')}</label
-              >
-              <input type="number" id="primary-subtitle-font-weight" class="input" />
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-opacity" class="label">${getMessage('subtitle_opacity_label')}</label>
-              <input type="number" id="primary-subtitle-opacity" class="input" />
-            </div>
-            <div class="row">
-              <label for="primary-subtitle-line-break" class="label">${getMessage('line_break_label')}</label>
-              <input type="checkbox" id="primary-subtitle-line-break" />
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <header class="section-header">
-            <h2 class="section-title">${getMessage('secondary_subtitle_section_title')}</h2>
-            <div class="row">
-              <button id="cancel-secondary-subtitle-setting" class="button bg-gray-500 hidden">
-                ${getMessage('cancel_button')}
-              </button>
-              <button id="save-secondary-subtitle-setting" class="button bg-teal-500 hidden" disabled>
-                ${getMessage('save_button')}
-              </button>
-              <div id="secondary-subtitle-toggle"></div>
-            </div>
-          </header>
-          <div id="secondary-subtitle-setting" class="section">
-            <div class="row">
-              <label for="secondary-subtitle-language" class="label">${getMessage('language_label')}</label>
-              <div id="secondary-subtitle-language"></div>
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-position-reference" class="label"
-                >${getMessage('position_reference_label')}</label
-              >
-              <div id="secondary-subtitle-position-reference"></div>
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-position-offset" class="label"
-                >${getMessage('position_offset_label')}</label
-              >
-              <input type="number" id="secondary-subtitle-position-offset" class="input" />
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-color" class="label">${getMessage('subtitle_color_label')}</label>
-              <div id="secondary-subtitle-color"></div>
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-font-size" class="label">${getMessage('subtitle_font_size_label')}</label>
-              <input type="number" id="secondary-subtitle-font-size" class="input" />
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-font-weight" class="label"
-                >${getMessage('subtitle_font_weight_label')}</label
-              >
-              <input type="number" id="secondary-subtitle-font-weight" class="input" />
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-opacity" class="label">${getMessage('subtitle_opacity_label')}</label>
-              <input type="number" id="secondary-subtitle-opacity" class="input" />
-            </div>
-            <div class="row">
-              <label for="secondary-subtitle-line-break" class="label">${getMessage('line_break_label')}</label>
-              <input type="checkbox" id="secondary-subtitle-line-break" />
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <header class="section-header">
-            <h2 class="section-title">${getMessage('main_key_section_title')}</h2>
-            <div class="row">
-              <button id="cancel-skip-time" class="button bg-gray-500" disabled>${getMessage('cancel_button')}</button>
-              <button id="save-skip-time" class="button bg-teal-500" disabled>${getMessage('save_button')}</button>
-            </div>
-          </header>
-          <div class="row">
-            <label for="skip-time" class="label">${getMessage('video_skip_time_label')}</label>
-            <input type="number" id="skip-time" class="input" />
-          </div>
-        </section>
-
-        <section class="section">
-          <header class="section-header">
-            <h2 class="section-title">${getMessage('sub_key_section_title')}</h2>
-            <div class="row">
-              <button id="cancel-sub-key" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-              <button id="save-sub-key" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
-              <div id="sub-key-toggle"></div>
-            </div>
-          </header>
-          <div id="sub-key-setting" class="section">
-            <div class="row">
-              <label for="sub-backward-key" class="label">${getMessage('backward_key_label')}</label>
-              <input id="sub-backward-key" class="input" readonly />
-            </div>
-            <div class="row">
-              <label for="sub-forward-key" class="label">${getMessage('forward_key_label')}</label>
-              <input id="sub-forward-key" class="input" readonly />
-            </div>
-            <div class="row">
-              <label for="sub-skip-time" class="label">${getMessage('video_skip_time_label')}</label>
-              <input type="number" id="sub-skip-time" class="input" />
-            </div>
-          </div>
-        </section>
+        <section id="${SUBTITLES.PRIMARY.SECTION_ID}" class="section"></section>
+        <section id="${SUBTITLES.SECONDARY.SECTION_ID}" class="section"></section>
+        <section id="${SKIP_TIME.SECTION_ID}" class="section"></section>
+        <section id="${SUB_KEY.SECTION_ID}" class="section"></section>
       </div>
     `;
   }
 
-  private initializeStorageChange() {
-    const { remove } = onStorageChange((changes) => {
-      onSubtitleStorageChange(changes);
-      onSubKeyStorageChange(changes);
-    });
+  private initiaizeSettingComponents() {
+    const getContainer = (sectionId: string) => document.getElementById(sectionId)!;
 
-    this.removeStorageChangeListener = remove;
+    new SubtitleConfigForm(getContainer(SUBTITLES.PRIMARY.SECTION_ID), SUBTITLES.PRIMARY);
+    new SubtitleConfigForm(getContainer(SUBTITLES.SECONDARY.SECTION_ID), SUBTITLES.SECONDARY);
+    new SubKeyConfigForm(getContainer(SUB_KEY.SECTION_ID));
+    new SkipTimeConfigForm(getContainer(SKIP_TIME.SECTION_ID));
   }
 }
