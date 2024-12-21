@@ -3,7 +3,7 @@ import { html, render, TemplateResult } from 'lit-html';
 type State = Record<string, any>;
 
 export default abstract class Component<T extends State = never> {
-  private readonly container: HTMLElement;
+  protected readonly container: HTMLElement;
   protected readonly props: T;
   protected state: State = {};
 

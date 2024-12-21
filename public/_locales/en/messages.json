@@ -21,6 +21,7 @@
   "video_skip_time_label": { "message": "Video Skip Time(s)" },
   "backward_key_label": { "message": "Backward Key" },
   "forward_key_label": { "message": "Forward Key" },
+  "select": { "message": "Select" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },

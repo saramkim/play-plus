@@ -21,6 +21,7 @@
   "video_skip_time_label": { "message": "영상 이동 시간(s)" },
   "backward_key_label": { "message": "뒤로 이동 키" },
   "forward_key_label": { "message": "앞으로 이동 키" },
+  "select": { "message": "선택" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
