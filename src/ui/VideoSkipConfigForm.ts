@@ -2,7 +2,7 @@ import { html } from 'lit-html';
 import Component from '../core/Component';
 import { getMessage } from '../utils/i18n';
 import { DEFAULT_CONFIG } from '../utils/default';
-import { setStorage, SubKeyConfig } from '../utils/storage';
+import { setStorage, VideoSkipConfig } from '../utils/storage';
 import { getStorage } from '../utils/storage';
 import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
 import { SETTINGS } from '../utils/constants';
@@ -11,17 +11,20 @@ import { KeydownInput } from '../components/keydownInput';
 import { NumberInput } from '../components/numberInput';
 import { validateAll } from '../utils/validation';
 
-const { STORAGE_KEY, INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID } = SETTINGS.SUB_KEY;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
-export default class SubKeyConfigForm extends Component {
+type VideoSkipConfigFormProps = typeof VIDEO_SKIP | typeof SUB_VIDEO_SKIP;
+
+export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormProps> {
   afterRender() {
-    this.initializeSubKeySetting();
+    this.initializeSetting();
   }
 
   template() {
+    const { INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID } = this.props;
     return html`
       <header class="section-header">
-        <h2 class="section-title">${getMessage('sub_key_section_title')}</h2>
+        <h2 class="section-title">${getMessage('video_skip_section_title')}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
           <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
@@ -45,7 +48,8 @@ export default class SubKeyConfigForm extends Component {
     `;
   }
 
-  private async initializeSubKeySetting() {
+  private async initializeSetting() {
+    const { STORAGE_KEY, INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID } = this.props;
     const data = (await getStorage(STORAGE_KEY)) || DEFAULT_CONFIG[STORAGE_KEY];
     const settings = new Proxy(data, this.proxyHandler());
     const inputInstances: Record<string, HTMLInputElement> = {};
@@ -74,8 +78,9 @@ export default class SubKeyConfigForm extends Component {
   }
 
   private proxyHandler() {
+    const { STORAGE_KEY, BUTTONS, TOGGLE_ID, CONTAINER_ID } = this.props;
     return {
-      set(target: SubKeyConfig, prop: keyof SubKeyConfig, value: SubKeyConfig[keyof SubKeyConfig]) {
+      set(target: VideoSkipConfig, prop: keyof VideoSkipConfig, value: VideoSkipConfig[keyof VideoSkipConfig]) {
         if (prop === 'enabled') {
           setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
           setElementVisibility(CONTAINER_ID, value as boolean);
@@ -89,14 +94,14 @@ export default class SubKeyConfigForm extends Component {
         return Reflect.set(target, prop, value);
       },
 
-      get(target: SubKeyConfig, prop: keyof SubKeyConfig) {
+      get(target: VideoSkipConfig, prop: keyof VideoSkipConfig) {
         if (target[prop]) return Reflect.get(target, prop);
         return DEFAULT_CONFIG[STORAGE_KEY][prop];
       },
     };
   }
 
-  private createInput(inputId: string, storageKey: keyof Omit<SubKeyConfig, 'enabled'>, settings: SubKeyConfig) {
+  private createInput(inputId: string, storageKey: keyof Omit<VideoSkipConfig, 'enabled'>, settings: VideoSkipConfig) {
     switch (storageKey) {
       case 'skipTime':
         return NumberInput({
@@ -118,12 +123,14 @@ export default class SubKeyConfigForm extends Component {
   }
 
   private resetInputsValue() {
+    const { INPUTS } = this.props;
     resetInputValue(INPUTS.backward, { eventType: 'keydown' });
     resetInputValue(INPUTS.forward, { eventType: 'keydown' });
     resetInputValue(INPUTS.skipTime);
   }
 
   private updateButtonsVisibility(visible: boolean) {
+    const { BUTTONS, TOGGLE_ID } = this.props;
     setElementVisibility(BUTTONS.CANCEL, visible);
     setElementVisibility(BUTTONS.SAVE, visible);
     setElementVisibility(TOGGLE_ID, !visible);

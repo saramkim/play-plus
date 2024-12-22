@@ -23,8 +23,13 @@ export const DEFAULT_CONFIG: StorageSchema = {
     opacity: 100,
     lineBreak: true,
   },
-  skipTime: 10,
-  subKey: {
+  videoSkip: {
+    enabled: true,
+    forward: 'ArrowRight',
+    backward: 'ArrowLeft',
+    skipTime: 10,
+  },
+  subVideoSkip: {
     enabled: false,
     forward: '',
     backward: '',

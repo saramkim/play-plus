@@ -6,16 +6,7 @@ export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 export const TOAST_CONTAINER_ID = 'pp-toast-container';
 
-export const RESERVED_KEY_CODE_LIST = [
-  'ArrowRight',
-  'ArrowLeft',
-  'ArrowUp',
-  'ArrowDown',
-  'Enter',
-  'Space',
-  'Escape',
-  'KeyF',
-];
+export const RESERVED_KEY_CODE_LIST = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF'];
 
 export const PAGE_NAME = {
   SETTING: 'setting',
@@ -67,30 +58,34 @@ export const SETTINGS = {
       },
     },
   },
-  SKIP_TIME: {
-    STORAGE_KEY: 'skipTime',
-    SECTION_ID: 'skip-time-section',
+  VIDEO_SKIP: {
+    STORAGE_KEY: 'videoSkip',
+    SECTION_ID: 'video-skip-section',
+    CONTAINER_ID: 'video-skip-setting',
+    TOGGLE_ID: 'video-skip-toggle',
     INPUTS: {
-      skipTime: 'skip-time',
+      backward: 'video-skip-backward-key',
+      forward: 'video-skip-forward-key',
+      skipTime: 'video-skip-time',
     },
     BUTTONS: {
-      CANCEL: 'cancel-skip-time',
-      SAVE: 'save-skip-time',
+      CANCEL: 'cancel-video-skip',
+      SAVE: 'save-video-skip',
     },
   },
-  SUB_KEY: {
-    STORAGE_KEY: 'subKey',
-    SECTION_ID: 'sub-key-section',
-    CONTAINER_ID: 'sub-key-setting',
-    TOGGLE_ID: 'sub-key-toggle',
+  SUB_VIDEO_SKIP: {
+    STORAGE_KEY: 'subVideoSkip',
+    SECTION_ID: 'sub-video-skip-section',
+    CONTAINER_ID: 'sub-video-skip-setting',
+    TOGGLE_ID: 'sub-video-skip-toggle',
     INPUTS: {
       backward: 'sub-backward-key',
       forward: 'sub-forward-key',
       skipTime: 'sub-skip-time',
     },
     BUTTONS: {
-      CANCEL: 'cancel-sub-key',
-      SAVE: 'save-sub-key',
+      CANCEL: 'cancel-sub-video-skip',
+      SAVE: 'save-sub-video-skip',
     },
   },
 } as const;

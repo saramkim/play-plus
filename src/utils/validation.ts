@@ -1,6 +1,6 @@
 import { RESERVED_KEY_CODE_LIST } from './constants';
 import { getMessage } from './i18n';
-import { SubKeyConfig, SubtitleConfig } from './storage';
+import { SubtitleConfig, VideoSkipConfig } from './storage';
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
@@ -64,7 +64,7 @@ export const validate = (key: string, value: any): ValidationResult => {
   return { valid: true };
 };
 
-export const validateAll = (target: SubKeyConfig | SubtitleConfig, prop: string, value: any): ValidationResult => {
+export const validateAll = (target: VideoSkipConfig | SubtitleConfig, prop: string, value: any): ValidationResult => {
   const result = validate(prop, value);
   if (!result.valid) return result;
 

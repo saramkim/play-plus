@@ -1,7 +1,7 @@
 import { SETTINGS } from './constants';
 import { SubtitleLanguage } from './subtitle';
 
-export type SubKeyConfig = {
+export type VideoSkipConfig = {
   enabled: boolean;
   forward: string;
   backward: string;
@@ -20,14 +20,14 @@ export type SubtitleConfig = {
 };
 
 export type StorageSchema = {
-  skipTime: number;
-  subKey: SubKeyConfig;
+  videoSkip: VideoSkipConfig;
+  subVideoSkip: VideoSkipConfig;
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
 };
 type StorageKey = keyof StorageSchema;
 
-type StorageChange<T> = {
+export type StorageChange<T> = {
   oldValue?: T;
   newValue?: T;
 };

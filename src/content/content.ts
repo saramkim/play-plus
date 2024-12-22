@@ -3,14 +3,13 @@ import { REVIEW } from '../utils/constants';
 import { selectVideoElement } from '../utils/dom';
 import { onStorageChange } from '../utils/storage';
 import { fetchVideoMetadata, initializeSubtitleSync, onSubtitleStorageChange } from './subtitle';
-import { initializeKeyBindings, initializeSkipTimeSetting, onSubKeyStorageChange } from './videoControl';
+import { initializeVideoControlSetting, onVideoControlStorageChange } from './videoControl';
 
 async function init() {
   initializeMessageListener();
   initializeStorageChange();
   await initializeSubtitleSync();
-  await initializeSkipTimeSetting();
-  await initializeKeyBindings();
+  await initializeVideoControlSetting();
 }
 
 function initializeMessageListener() {
@@ -31,7 +30,7 @@ function initializeMessageListener() {
 function initializeStorageChange() {
   onStorageChange((changes) => {
     onSubtitleStorageChange(changes);
-    onSubKeyStorageChange(changes);
+    onVideoControlStorageChange(changes);
   });
 }
 

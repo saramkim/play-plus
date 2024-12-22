@@ -1,11 +1,10 @@
 import { html } from 'lit-html';
 import Component from '../core/Component';
-import SubKeyConfigForm from './SubKeyConfigForm';
-import SkipTimeConfigForm from './SkipTimeConfigForm';
+import VideoSkipConfigForm from './VideoSkipConfigForm';
 import SubtitleConfigForm from './SubtitleConfigForm';
 import { SETTINGS } from '../utils/constants';
 
-const { SUBTITLES, SKIP_TIME, SUB_KEY } = SETTINGS;
+const { SUBTITLES, VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
 export default class SettingPage extends Component {
   afterRender() {
@@ -17,8 +16,8 @@ export default class SettingPage extends Component {
       <div class="flex flex-col gap-5">
         <section id="${SUBTITLES.PRIMARY.SECTION_ID}" class="section"></section>
         <section id="${SUBTITLES.SECONDARY.SECTION_ID}" class="section"></section>
-        <section id="${SKIP_TIME.SECTION_ID}" class="section"></section>
-        <section id="${SUB_KEY.SECTION_ID}" class="section"></section>
+        <section id="${VIDEO_SKIP.SECTION_ID}" class="section"></section>
+        <section id="${SUB_VIDEO_SKIP.SECTION_ID}" class="section"></section>
       </div>
     `;
   }
@@ -28,7 +27,7 @@ export default class SettingPage extends Component {
 
     new SubtitleConfigForm(getContainer(SUBTITLES.PRIMARY.SECTION_ID), SUBTITLES.PRIMARY);
     new SubtitleConfigForm(getContainer(SUBTITLES.SECONDARY.SECTION_ID), SUBTITLES.SECONDARY);
-    new SubKeyConfigForm(getContainer(SUB_KEY.SECTION_ID));
-    new SkipTimeConfigForm(getContainer(SKIP_TIME.SECTION_ID));
+    new VideoSkipConfigForm(getContainer(VIDEO_SKIP.SECTION_ID), VIDEO_SKIP);
+    new VideoSkipConfigForm(getContainer(SUB_VIDEO_SKIP.SECTION_ID), SUB_VIDEO_SKIP);
   }
 }

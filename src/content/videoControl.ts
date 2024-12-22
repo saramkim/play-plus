@@ -1,50 +1,40 @@
 import { SETTINGS } from '../utils/constants';
-import { DEFAULT_CONFIG } from '../utils/default';
-import { getStorage, StorageChanges, SubKeyConfig } from '../utils/storage';
+import { getStorage, StorageChange, StorageChanges, VideoSkipConfig } from '../utils/storage';
 
 type KeyBindings = { [key: string]: () => void };
 
-const { SKIP_TIME, SUB_KEY } = SETTINGS;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
-let mainSkipTime = DEFAULT_CONFIG[SKIP_TIME.STORAGE_KEY];
 let keyBindings: KeyBindings = {};
 
-export function onSubKeyStorageChange(changes: StorageChanges) {
-  const skipTimeChange = changes[SKIP_TIME.STORAGE_KEY];
-  const subKeyChange = changes[SUB_KEY.STORAGE_KEY];
-
-  if (skipTimeChange && skipTimeChange.newValue) {
-    mainSkipTime = skipTimeChange.newValue;
-  }
-  if (subKeyChange && subKeyChange.newValue) {
-    setKeyBindings(subKeyChange.newValue);
-  }
+export function onVideoControlStorageChange(changes: StorageChanges) {
+  const videoSkipStorageKeys = [VIDEO_SKIP.STORAGE_KEY, SUB_VIDEO_SKIP.STORAGE_KEY];
+  videoSkipStorageKeys.forEach((key) => changes[key] && handleVideoSkipStorageChange(changes[key]));
 }
 
-export async function initializeSkipTimeSetting() {
-  const data = await getStorage(SKIP_TIME.STORAGE_KEY);
-  if (data) mainSkipTime = data;
-}
+export async function initializeVideoControlSetting() {
+  const configs = await Promise.all([getStorage(VIDEO_SKIP.STORAGE_KEY), getStorage(SUB_VIDEO_SKIP.STORAGE_KEY)]);
 
-export async function initializeKeyBindings() {
-  const data = await getStorage(SUB_KEY.STORAGE_KEY);
-  if (data) setKeyBindings(data);
+  configs.forEach((config) => config && setKeyBindingsForVideoSkip(config));
+
   document.addEventListener('keydown', handleKeydown);
 }
 
-function setKeyBindings(subKeyConfig: SubKeyConfig) {
-  const bindings: KeyBindings = {
-    ArrowRight: () => skipVideoTime(mainSkipTime),
-    ArrowLeft: () => skipVideoTime(-mainSkipTime),
-  };
-  const { enabled, forward, backward, skipTime } = subKeyConfig;
-
-  if (enabled) {
-    bindings[backward] = () => skipVideoTime(-skipTime);
-    bindings[forward] = () => skipVideoTime(skipTime);
+function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<VideoSkipConfig>) {
+  if (oldValue) {
+    const { backward, forward } = oldValue;
+    delete keyBindings[backward];
+    delete keyBindings[forward];
   }
+  if (newValue) setKeyBindingsForVideoSkip(newValue);
+}
 
-  keyBindings = bindings;
+function setKeyBindingsForVideoSkip(data: VideoSkipConfig) {
+  const { enabled, backward, forward, skipTime } = data;
+  if (enabled) {
+    keyBindings[backward] = () => skipVideoTime(-skipTime);
+    keyBindings[forward] = () => skipVideoTime(skipTime);
+  }
 }
 
 function handleKeydown(event: KeyboardEvent) {
