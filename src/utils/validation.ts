@@ -1,6 +1,6 @@
 import { RESERVED_KEY_CODE_LIST } from './constants';
 import { getMessage } from './i18n';
-import { SubtitleConfig, VideoSkipConfig } from './storage';
+import { StorageKey, StorageSchema } from './storage';
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
@@ -12,6 +12,8 @@ export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   backward: { type: 'string', validate: validateNoReservedKey },
   skipTime: { type: 'number', min: 1 },
   positionOffset: { type: 'number' },
+  savePrimary: { type: 'string', validate: validateNoReservedKey },
+  saveSecondary: { type: 'string', validate: validateNoReservedKey },
 };
 
 export const validate = (key: string, value: any): ValidationResult => {
@@ -64,7 +66,7 @@ export const validate = (key: string, value: any): ValidationResult => {
   return { valid: true };
 };
 
-export const validateAll = (target: VideoSkipConfig | SubtitleConfig, prop: string, value: any): ValidationResult => {
+export const validateAll = (target: StorageSchema[StorageKey], prop: string, value: any): ValidationResult => {
   const result = validate(prop, value);
   if (!result.valid) return result;
 

@@ -2,14 +2,12 @@ import {
   REVIEW,
   SETTINGS,
   SUBTITLE_CONTAINER_ID,
-  SUBTITLE_TOOLTIP_ID,
   TOAST_CONTAINER_ID,
   TRACK_DISPLAY_CONTAINER_CLASS_NAME,
 } from '../utils/constants';
 import { DEFAULT_CONFIG } from '../utils/default';
-import { createElement, createTooltip, selectVideoElement } from '../utils/dom';
-import { getMessage } from '../utils/i18n';
-import { getLocalStorage, getStorage, setLocalStorage, StorageChanges } from '../utils/storage';
+import { createElement, selectVideoElement } from '../utils/dom';
+import { getStorage, StorageChanges } from '../utils/storage';
 import {
   arrayToHeadersObject,
   createSubtitleElement,
@@ -20,6 +18,7 @@ import {
   SubtitleData,
   SubtitleLanguage,
 } from '../utils/subtitle';
+import { setupSubtitleSaveHandler } from './saveSubtitle';
 
 const { SUBTITLES } = SETTINGS;
 const { PRIMARY, SECONDARY } = SUBTITLES;
@@ -159,12 +158,12 @@ function updateSubtitleText(video: HTMLVideoElement, subtitleContainer: HTMLElem
   if (hasStyleChanged) {
     const fragment = document.createDocumentFragment();
 
-    for (const config of Object.values(subtitleSettings)) {
+    for (const [key, config] of Object.entries(subtitleSettings)) {
       const { language, enabled } = config;
       const data = subtitleCache.get(language);
 
       if (data && enabled) {
-        const subtitleElement = createSubtitleElement(language, config);
+        const subtitleElement = createSubtitleElement(language, config, key);
 
         setupSubtitle(subtitleElement, data, currentTime);
         setupSubtitleSaveHandler(subtitleElement);
@@ -195,83 +194,4 @@ function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], curre
 
   if (start) subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = start.toString();
   else delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
-}
-
-function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
-  const tooltip = getTooltip();
-  const showTooltip = (event: MouseEvent) => {
-    subtitleElement.style.borderColor = 'currentColor';
-    tooltip.style.opacity = '1';
-    updateTooltipPosition(event);
-  };
-  const updateTooltipPosition = (event: MouseEvent) => {
-    tooltip.style.top = `${event.pageY + 10}px`;
-    tooltip.style.left = `${event.pageX + 10}px`;
-  };
-  const hideTooltip = () => {
-    subtitleElement.style.borderColor = 'transparent';
-    tooltip.style.opacity = '0';
-  };
-  const handleSubtitleClick = async (event: MouseEvent) => {
-    event.stopPropagation();
-    hideTooltip();
-    try {
-      const subtitle = await saveSubtitle(subtitleElement);
-      showToast(getMessage('success_save_subtitle'), subtitle, 'success');
-    } catch (error) {
-      showToast(getMessage('error_save_subtitle'), (error as Error).message, 'error');
-    }
-  };
-
-  subtitleElement.addEventListener('mouseover', showTooltip);
-  subtitleElement.addEventListener('mousemove', updateTooltipPosition);
-  subtitleElement.addEventListener('mouseout', hideTooltip);
-  subtitleElement.addEventListener('click', handleSubtitleClick);
-}
-
-function getTooltip(): HTMLElement {
-  const existingTooltip = document.getElementById(SUBTITLE_TOOLTIP_ID);
-  if (existingTooltip) return existingTooltip;
-
-  const tooltip = createTooltip(getMessage('click_to_save'));
-  tooltip.id = SUBTITLE_TOOLTIP_ID;
-  document.body.appendChild(tooltip);
-  return tooltip;
-}
-
-async function saveSubtitle(subtitleElement: HTMLElement) {
-  const content = subtitleElement.textContent?.replace(/\n/g, ' ');
-  const startTimeDataAttribute = subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
-
-  if (!content || !startTimeDataAttribute) throw new Error(getMessage('error_try_later'));
-
-  const startTime = Number(startTimeDataAttribute);
-  const prevData = await getLocalStorage(REVIEW.STORAGE_KEY);
-  const isDuplicated = prevData?.some(({ content: prevContent }) => prevContent === content);
-  if (isDuplicated) throw new Error(getMessage('error_duplicate_subtitle'));
-
-  const data = { content, url: window.location.href, startTime, savedAt: new Date().toISOString() };
-  await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [data, ...prevData] : [data]);
-
-  return content;
-}
-
-function showToast(title: string, message: string, type: 'success' | 'error') {
-  const container = document.getElementById(TOAST_CONTAINER_ID);
-  const toast = document.createElement('div');
-  const titleElement = document.createElement('span');
-  const messageElement = document.createElement('span');
-
-  toast.classList.add('toast', `toast-${type}`);
-  titleElement.classList.add('toast-title');
-  titleElement.textContent = title;
-  messageElement.textContent = message;
-
-  toast.appendChild(titleElement);
-  toast.appendChild(messageElement);
-  container?.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
 }

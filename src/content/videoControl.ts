@@ -1,25 +1,66 @@
-import { SETTINGS } from '../utils/constants';
-import { getStorage, SkipTimeUnit, StorageChange, StorageChanges, VideoSkipConfig } from '../utils/storage';
+import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
+import {
+  getStorage,
+  ShortcutKeyConfig,
+  SkipTimeUnit,
+  StorageChange,
+  StorageChanges,
+  VideoSkipConfig,
+} from '../utils/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
+import { saveSubtitleWithToast } from './saveSubtitle';
 import { subtitleCache } from './subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 
-const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUT_KEY } = SETTINGS;
 
 const keyBindings: KeyBindings = {};
 
 export function onVideoControlStorageChange(changes: StorageChanges) {
   const videoSkipStorageKeys = [VIDEO_SKIP.STORAGE_KEY, SUB_VIDEO_SKIP.STORAGE_KEY];
   videoSkipStorageKeys.forEach((key) => changes[key] && handleVideoSkipStorageChange(changes[key]));
+
+  const shortcutChanges = changes[SHORTCUT_KEY.STORAGE_KEY];
+  if (shortcutChanges) handleShortcutKeyStorageChange(shortcutChanges);
 }
 
 export async function initializeVideoControlSetting() {
-  const configs = await Promise.all([getStorage(VIDEO_SKIP.STORAGE_KEY), getStorage(SUB_VIDEO_SKIP.STORAGE_KEY)]);
+  const [videoSkipConfig, subVideoSkipConfig, shortcutKeyConfig] = await Promise.all([
+    getStorage(VIDEO_SKIP.STORAGE_KEY),
+    getStorage(SUB_VIDEO_SKIP.STORAGE_KEY),
+    getStorage(SHORTCUT_KEY.STORAGE_KEY),
+  ]);
 
-  configs.forEach((config) => config && setKeyBindingsForVideoSkip(config));
+  if (videoSkipConfig) setKeyBindingsForVideoSkip(videoSkipConfig);
+  if (subVideoSkipConfig) setKeyBindingsForVideoSkip(subVideoSkipConfig);
+  if (shortcutKeyConfig) setKeyBindingsForShortcutKey(shortcutKeyConfig);
 
   document.addEventListener('keydown', handleKeydown);
+}
+
+function handleShortcutKeyStorageChange({ oldValue, newValue }: StorageChange<ShortcutKeyConfig>) {
+  if (oldValue) {
+    const { savePrimary, saveSecondary } = oldValue;
+    delete keyBindings[savePrimary];
+    delete keyBindings[saveSecondary];
+  }
+  if (newValue) setKeyBindingsForShortcutKey(newValue);
+}
+
+function setKeyBindingsForShortcutKey(data: ShortcutKeyConfig) {
+  const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
+  const { savePrimary, saveSecondary } = data;
+
+  const saveSubtitleByStorageKey = (storageKey: string) => {
+    const container = document.getElementById(SUBTITLE_CONTAINER_ID);
+    const subtitle = container?.querySelector(`p[data-storage-key="${storageKey}"]`);
+    if (!subtitle) return;
+    saveSubtitleWithToast(subtitle as HTMLElement);
+  };
+
+  keyBindings[savePrimary] = () => saveSubtitleByStorageKey(PRIMARY.STORAGE_KEY);
+  keyBindings[saveSecondary] = () => saveSubtitleByStorageKey(SECONDARY.STORAGE_KEY);
 }
 
 function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<VideoSkipConfig>) {

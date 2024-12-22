@@ -19,12 +19,18 @@ export type SubtitleConfig = {
   opacity: number;
   lineBreak: boolean;
 };
+export type ShortcutKeyConfig = {
+  enabled: boolean;
+  savePrimary: string;
+  saveSecondary: string;
+};
 
 export type StorageSchema = {
   videoSkip: VideoSkipConfig;
   subVideoSkip: VideoSkipConfig;
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
+  shortcutKey: ShortcutKeyConfig;
 };
 export type StorageKey = keyof StorageSchema;
 

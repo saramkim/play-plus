@@ -1,5 +1,6 @@
+import { SETTINGS } from './constants';
 import { applyStyles, createElement } from './dom';
-import { SubtitleConfig } from './storage';
+import { StorageKey, SubtitleConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
@@ -87,9 +88,10 @@ export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime:
   return -1; // 시간 범위를 벗어난 경우
 };
 
-export const createSubtitleElement = (id: string, config: SubtitleConfig) => {
+export const createSubtitleElement = (id: string, config: SubtitleConfig, storageKey: StorageKey) => {
   const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
   const subtitle = createElement(id, 'p');
+  subtitle.dataset.storageKey = storageKey;
 
   const positions = {
     top: { top: `${positionOffset}px` },

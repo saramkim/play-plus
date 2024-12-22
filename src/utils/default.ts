@@ -37,4 +37,9 @@ export const DEFAULT_CONFIG: StorageSchema = {
     skipTime: 10,
     skipTimeUnit: 'seconds',
   },
+  shortcutKey: {
+    enabled: false,
+    savePrimary: '',
+    saveSecondary: '',
+  },
 };

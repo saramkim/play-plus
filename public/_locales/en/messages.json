@@ -24,6 +24,9 @@
   "seconds": { "message": "Seconds" },
   "minutes": { "message": "Minutes" },
   "subtitles": { "message": "Subtitles" },
+  "shortcut_key_section_title": { "message": "Shortcut Key Settings" },
+  "save_primary_key_label": { "message": "Primary Subtitle Save" },
+  "save_secondary_key_label": { "message": "Secondary Subtitle Save" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
@@ -60,5 +63,6 @@
   "error_video_not_found": { "message": "Video not found." },
   "error_unsupported_url": { "message": "Unsupported site." },
   "error_try_later": { "message": "Please try again later." },
-  "error_duplicate_subtitle": { "message": "Already saved subtitle." }
+  "error_duplicate_subtitle": { "message": "Already saved subtitle." },
+  "error_no_subtitle": { "message": "No subtitle." }
 }

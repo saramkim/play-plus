@@ -24,6 +24,9 @@
   "seconds": { "message": "초" },
   "minutes": { "message": "분" },
   "subtitles": { "message": "자막" },
+  "shortcut_key_section_title": { "message": "단축키 설정" },
+  "save_primary_key_label": { "message": "메인 자막 저장 키" },
+  "save_secondary_key_label": { "message": "서브 자막 저장 키" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
@@ -60,5 +63,6 @@
   "error_video_not_found": { "message": "영상을 찾을 수 없습니다." },
   "error_unsupported_url": { "message": "지원하지 않는 사이트입니다." },
   "error_try_later": { "message": "나중에 다시 시도해주세요." },
-  "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." }
+  "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
+  "error_no_subtitle": { "message": "자막이 없습니다." }
 }

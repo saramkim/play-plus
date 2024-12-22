@@ -90,6 +90,20 @@ export const SETTINGS = {
       SAVE: 'save-sub-video-skip',
     },
   },
+  SHORTCUT_KEY: {
+    STORAGE_KEY: 'shortcutKey',
+    SECTION_ID: 'shortcut-key-section',
+    CONTAINER_ID: 'shortcut-key-setting',
+    TOGGLE_ID: 'shortcut-key-toggle',
+    INPUTS: {
+      savePrimary: 'save-primary-shortcut-key',
+      saveSecondary: 'save-secondary-shortcut-key',
+    },
+    BUTTONS: {
+      CANCEL: 'cancel-shortcut-key',
+      SAVE: 'save-shortcut-key',
+    },
+  },
 } as const;
 
 export const REVIEW = {
