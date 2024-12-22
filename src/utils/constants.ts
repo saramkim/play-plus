@@ -68,6 +68,7 @@ export const SETTINGS = {
       forward: 'video-skip-forward-key',
       skipTime: 'video-skip-time',
     },
+    SKIP_TIME_UNIT: 'video-skip-time-unit',
     BUTTONS: {
       CANCEL: 'cancel-video-skip',
       SAVE: 'save-video-skip',
@@ -83,6 +84,7 @@ export const SETTINGS = {
       forward: 'sub-forward-key',
       skipTime: 'sub-skip-time',
     },
+    SKIP_TIME_UNIT: 'sub-skip-time-unit',
     BUTTONS: {
       CANCEL: 'cancel-sub-video-skip',
       SAVE: 'save-sub-video-skip',

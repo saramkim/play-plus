@@ -28,11 +28,13 @@ export const DEFAULT_CONFIG: StorageSchema = {
     forward: 'ArrowRight',
     backward: 'ArrowLeft',
     skipTime: 10,
+    skipTimeUnit: 'seconds',
   },
   subVideoSkip: {
     enabled: false,
     forward: '',
     backward: '',
     skipTime: 10,
+    skipTimeUnit: 'seconds',
   },
 };

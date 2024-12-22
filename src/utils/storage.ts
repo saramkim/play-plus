@@ -1,11 +1,13 @@
 import { SETTINGS } from './constants';
 import { SubtitleLanguage } from './subtitle';
 
+export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
 export type VideoSkipConfig = {
   enabled: boolean;
   forward: string;
   backward: string;
   skipTime: number;
+  skipTimeUnit: SkipTimeUnit;
 };
 export type SubtitleConfig = {
   enabled: boolean;

@@ -1,11 +1,13 @@
 import { SETTINGS } from '../utils/constants';
-import { getStorage, StorageChange, StorageChanges, VideoSkipConfig } from '../utils/storage';
+import { getStorage, SkipTimeUnit, StorageChange, StorageChanges, VideoSkipConfig } from '../utils/storage';
+import { findCurrentSubtitleIndex } from '../utils/subtitle';
+import { subtitleCache } from './subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
-let keyBindings: KeyBindings = {};
+const keyBindings: KeyBindings = {};
 
 export function onVideoControlStorageChange(changes: StorageChanges) {
   const videoSkipStorageKeys = [VIDEO_SKIP.STORAGE_KEY, SUB_VIDEO_SKIP.STORAGE_KEY];
@@ -30,10 +32,13 @@ function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<Vide
 }
 
 function setKeyBindingsForVideoSkip(data: VideoSkipConfig) {
-  const { enabled, backward, forward, skipTime } = data;
+  const { enabled, backward, forward, skipTime, skipTimeUnit } = data;
   if (enabled) {
-    keyBindings[backward] = () => skipVideoTime(-skipTime);
-    keyBindings[forward] = () => skipVideoTime(skipTime);
+    keyBindings[backward] = () => skipVideoTime(-skipTime, skipTimeUnit);
+    keyBindings[forward] = () => skipVideoTime(skipTime, skipTimeUnit);
+  } else {
+    delete keyBindings[backward];
+    delete keyBindings[forward];
   }
 }
 
@@ -53,9 +58,28 @@ function isInputField(): boolean {
   return ['INPUT', 'TEXTAREA'].includes(activeElementTag);
 }
 
-function skipVideoTime(seconds: number) {
+function skipVideoTime(skipTime: number, skipTimeUnit: SkipTimeUnit) {
   const video = document.querySelector('video');
-  if (video) {
-    video.currentTime = Math.min(Math.max(video.currentTime + seconds, 0), video.duration - 1);
+  if (!video) return;
+
+  const { currentTime, duration } = video;
+
+  if (skipTimeUnit === 'subtitles') {
+    const subtitles = [...subtitleCache.values()]?.[0];
+    if (!subtitles || subtitles.length === 0) return;
+
+    const index = findCurrentSubtitleIndex(subtitles, currentTime);
+
+    if (skipTime > 0) {
+      video.currentTime = subtitles[Math.floor(index) + skipTime]
+        ? subtitles[Math.floor(index) + skipTime].start
+        : duration - 1;
+    } else {
+      video.currentTime = subtitles[Math.ceil(index) + skipTime] ? subtitles[Math.ceil(index) + skipTime].start : 0;
+    }
+  } else {
+    const unitMap = { seconds: 1, minutes: 60 };
+    const time = currentTime + skipTime * unitMap[skipTimeUnit];
+    video.currentTime = Math.min(Math.max(time, 0), duration - 1);
   }
 }

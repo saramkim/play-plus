@@ -24,7 +24,7 @@ import {
 const { SUBTITLES } = SETTINGS;
 const { PRIMARY, SECONDARY } = SUBTITLES;
 
-const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
+export const subtitleCache = new Map<SubtitleLanguage, SubtitleData[]>();
 
 const subtitleSettings = {
   [PRIMARY.STORAGE_KEY]: DEFAULT_CONFIG[PRIMARY.STORAGE_KEY],

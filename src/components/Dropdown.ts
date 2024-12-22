@@ -5,22 +5,23 @@ import { getMessage } from '../utils/i18n';
 type Option<Value extends string> = { label: string; value: Value };
 interface DropdownProps<Value extends string> {
   options: Option<Value>[];
-  initialValue?: Value;
+  initialValue: Value;
   onChange: (value: Value) => void;
 }
 
 export default class Dropdown<Value extends string> extends Component<DropdownProps<Value>> {
   initialize() {
-    this.state = {
-      value: this.props.initialValue || '',
-      isOpen: false,
-    };
+    this.state = { value: this.props.initialValue, isOpen: false };
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
     document.addEventListener('click', this.handleDocumentClick);
   }
 
   onUnmount() {
     document.removeEventListener('click', this.handleDocumentClick);
+  }
+
+  reset() {
+    this.setState({ value: this.props.initialValue, isOpen: false });
   }
 
   template() {
@@ -49,7 +50,7 @@ export default class Dropdown<Value extends string> extends Component<DropdownPr
 
   private optionsTemplate() {
     return html`
-      <ul class="absolute bg-white mt-1 w-full border rounded shadow-lg z-10">
+      <ul class="absolute bg-white mt-1 w-full border rounded shadow-lg z-10 overflow-hidden">
         ${this.props.options.map((v) => this.optionTemplate(v))}
       </ul>
     `;
@@ -76,7 +77,7 @@ export default class Dropdown<Value extends string> extends Component<DropdownPr
   }
 
   private handleOptionClick(value: Value) {
+    if (this.state.value !== value) this.props.onChange(value);
     this.setState({ value, isOpen: false });
-    this.props.onChange(value);
   }
 }

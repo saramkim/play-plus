@@ -10,6 +10,7 @@ import { Toggle } from '../components/toggle';
 import { KeydownInput } from '../components/keydownInput';
 import { NumberInput } from '../components/numberInput';
 import { validateAll } from '../utils/validation';
+import Dropdown from '../components/Dropdown';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
@@ -21,7 +22,7 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
   }
 
   template() {
-    const { INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID } = this.props;
+    const { INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID, SKIP_TIME_UNIT } = this.props;
     return html`
       <header class="section-header">
         <h2 class="section-title">${getMessage('video_skip_section_title')}</h2>
@@ -43,13 +44,14 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
         <div class="row">
           <label for="${INPUTS.skipTime}" class="label">${getMessage('video_skip_time_label')}</label>
           <input id="${INPUTS.skipTime}" class="input" type="number" />
+          <div id="${SKIP_TIME_UNIT}"></div>
         </div>
       </div>
     `;
   }
 
   private async initializeSetting() {
-    const { STORAGE_KEY, INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID } = this.props;
+    const { STORAGE_KEY, INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID, SKIP_TIME_UNIT } = this.props;
     const data = (await getStorage(STORAGE_KEY)) || DEFAULT_CONFIG[STORAGE_KEY];
     const settings = new Proxy(data, this.proxyHandler());
     const inputInstances: Record<string, HTMLInputElement> = {};
@@ -58,6 +60,16 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
 
     Toggle({ id: TOGGLE_ID, isOn: settings.enabled, onChange: (enabled) => (settings.enabled = enabled) });
 
+    const skipTimeUnitDropdown = new Dropdown(document.getElementById(SKIP_TIME_UNIT)!, {
+      options: [
+        { label: getMessage('seconds'), value: 'seconds' },
+        { label: getMessage('minutes'), value: 'minutes' },
+        { label: getMessage('subtitles'), value: 'subtitles' },
+      ],
+      initialValue: settings.skipTimeUnit,
+      onChange: (value) => (settings.skipTimeUnit = value),
+    });
+
     Object.entries(INPUTS).forEach(([storageKey, inputId]) => {
       inputInstances[storageKey] = this.createInput(inputId, storageKey, settings);
     });
@@ -65,6 +77,7 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
     document.getElementById(BUTTONS.CANCEL)?.addEventListener('click', () => {
       this.resetInputsValue();
       this.updateButtonsVisibility(false);
+      skipTimeUnitDropdown.reset();
     });
 
     document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
@@ -95,13 +108,17 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
       },
 
       get(target: VideoSkipConfig, prop: keyof VideoSkipConfig) {
-        if (target[prop]) return Reflect.get(target, prop);
+        if (target[prop] !== undefined) return Reflect.get(target, prop);
         return DEFAULT_CONFIG[STORAGE_KEY][prop];
       },
     };
   }
 
-  private createInput(inputId: string, storageKey: keyof Omit<VideoSkipConfig, 'enabled'>, settings: VideoSkipConfig) {
+  private createInput(
+    inputId: string,
+    storageKey: keyof Omit<VideoSkipConfig, 'enabled' | 'skipTimeUnit'>,
+    settings: VideoSkipConfig
+  ) {
     switch (storageKey) {
       case 'skipTime':
         return NumberInput({

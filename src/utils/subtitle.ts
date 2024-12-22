@@ -59,6 +59,34 @@ export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: numb
   return { text: '' };
 };
 
+export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime: number): number => {
+  let left = 0;
+  let right = subtitles.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const { start, end } = subtitles[mid];
+
+    // 1️⃣ 현재 자막 범위 내에 있을 때
+    if (currentTime >= start && currentTime <= end) return mid;
+
+    // 2️⃣ 왼쪽 탐색
+    if (currentTime < start) {
+      if (mid === 0) return 0 - 0.5; // 첫 번째 자막 이전
+      if (currentTime > subtitles[mid - 1].end) return mid - 0.5; // 자막 사이
+      right = mid - 1;
+    }
+    // 3️⃣ 오른쪽 탐색
+    else {
+      if (mid === subtitles.length - 1) return subtitles.length - 1 + 0.5; // 마지막 자막 이후
+      if (currentTime < subtitles[mid + 1].start) return mid + 0.5; // 자막 사이
+      left = mid + 1;
+    }
+  }
+
+  return -1; // 시간 범위를 벗어난 경우
+};
+
 export const createSubtitleElement = (id: string, config: SubtitleConfig) => {
   const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
   const subtitle = createElement(id, 'p');
