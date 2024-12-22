@@ -1,4 +1,3 @@
-import { SETTINGS } from './constants';
 import { SubtitleLanguage } from './subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
@@ -27,7 +26,7 @@ export type StorageSchema = {
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
 };
-type StorageKey = keyof StorageSchema;
+export type StorageKey = keyof StorageSchema;
 
 export type StorageChange<T> = {
   oldValue?: T;
@@ -96,46 +95,4 @@ export const onLocalStorageChange = (callback: (changes: LocalStorageChanges) =>
   const { onChanged } = chrome.storage.local;
   onChanged.addListener(callback);
   return { remove: () => onChanged.removeListener(callback) };
-};
-
-type LegacyMigration = {
-  newKey: StorageKey;
-  transform: (data: any) => any;
-};
-
-const LEGACY_MIGRATIONS: Record<string, LegacyMigration> = {
-  // 1.2.x => 1.3.x
-  // englishSubtitle: {
-  //   newKey: SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY,
-  //   transform: (oldData) => oldData,
-  // },
-  // koreanSubtitle: {
-  //   newKey: SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY,
-  //   transform: (oldData) => oldData,
-  // },
-};
-
-export const migrateLegacyStorage = async () => {
-  const migrationPromises = Object.entries(LEGACY_MIGRATIONS).map(async ([legacyKey, { newKey, transform }]) => {
-    await migrateStorage(legacyKey, newKey, transform);
-  });
-  await Promise.all(migrationPromises);
-};
-
-const migrateStorage = async (oldKey: string, newKey: StorageKey, transform: (data: any) => any) => {
-  try {
-    const result = await chrome.storage.sync.get(oldKey);
-    const oldData = result[oldKey];
-
-    if (!oldData) return false;
-
-    const newData = transform(oldData);
-    await setStorage(newKey, newData);
-    await chrome.storage.sync.remove(oldKey);
-
-    return true;
-  } catch (error) {
-    console.error(`Migration failed for ${oldKey} to ${newKey}:`, error);
-    return false;
-  }
 };

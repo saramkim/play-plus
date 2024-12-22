@@ -1,20 +1,21 @@
 import { COUPANG_PLAY_BASE_URL, REVIEW } from './utils/constants';
-import { migrateLegacyStorage } from './utils/storage';
+import { migrateLegacyStorage } from './utils/migration';
 
 const loadedTabs = new Set<number>();
 const messageQueue: { [tabId: number]: any[] } = {};
 
-// chrome.runtime.onInstalled.addListener(async (details) => {
-//   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-//     console.log('Extension updated. Starting legacy storage migration...');
-//     try {
-//       await migrateLegacyStorage();
-//       console.log('Legacy storage migration completed successfully.');
-//     } catch (error) {
-//       console.error('Error during legacy storage migration:', error);
-//     }
-//   }
-// });
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+    console.log('Extension updated. Starting legacy storage migration...');
+    try {
+      const results = await migrateLegacyStorage();
+      if (results.some((result) => result)) console.log('Legacy storage migration completed successfully.');
+      else console.log('No legacy storage found.');
+    } catch (error) {
+      console.error('Error during legacy storage migration:', error);
+    }
+  }
+});
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === REVIEW.ACTIONS.VIEW_VIDEO) {
