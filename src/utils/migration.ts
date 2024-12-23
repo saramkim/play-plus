@@ -13,7 +13,7 @@ const createMigration = <T extends StorageKey>(migration: LegacyMigration<T>) =>
 
 const LEGACY_MIGRATIONS = {
   // 1.4.x => 1.5.x
-  videoSkip: createMigration({
+  skipTime: createMigration({
     newKey: SETTINGS.VIDEO_SKIP.STORAGE_KEY,
     transform: (oldData) => ({
       ...DEFAULT_CONFIG[SETTINGS.VIDEO_SKIP.STORAGE_KEY],
@@ -40,13 +40,10 @@ const migrateStorage = async <T extends StorageKey>(oldKey: string, newKey: T, t
   try {
     const result = await chrome.storage.sync.get(oldKey);
     const oldData = result[oldKey];
-
     if (!oldData) return false;
 
-    const newData = transform(oldData);
-    await setStorage(newKey, newData);
     await chrome.storage.sync.remove(oldKey);
-
+    await setStorage(newKey, transform(oldData));
     return true;
   } catch (error) {
     console.error(`Migration failed for ${oldKey} to ${newKey}:`, error);
