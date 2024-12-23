@@ -12,6 +12,7 @@ export const PAGE_NAME = {
   SETTING: 'setting',
   REVIEW: 'review',
 } as const;
+export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
 export const SETTINGS = {
   SUBTITLES: {

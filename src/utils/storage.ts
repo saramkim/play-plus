@@ -1,3 +1,4 @@
+import { PageName } from './constants';
 import { SubtitleLanguage } from './subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
@@ -74,6 +75,7 @@ export type SavedSubtitle = {
 
 export type LocalStorageSchema = {
   savedSubtitles: SavedSubtitle[];
+  lastViewedPage: PageName;
 };
 type LocalStorageKey = keyof LocalStorageSchema;
 

@@ -1,11 +1,10 @@
 import { html } from 'lit-html';
 import ReviewPage from './ui/ReviewPage';
 import SettingPage from './ui/SettingPage';
-import { PAGE_NAME } from './utils/constants';
+import { PAGE_NAME, PageName } from './utils/constants';
 import Header from './components/Header';
 import Component from './core/Component';
-
-type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
+import { getLocalStorage, setLocalStorage } from './utils/storage';
 
 const PAGE_MAP = {
   [PAGE_NAME.SETTING]: SettingPage,
@@ -18,9 +17,10 @@ const MAIN_ID = 'main';
 export default class App extends Component {
   private removePage?: () => void;
 
-  onMount(): void {
-    this.renderHeader();
-    this.navigate(PAGE_NAME.SETTING);
+  async onMount() {
+    const initialPage = (await getLocalStorage('lastViewedPage')) || PAGE_NAME.SETTING;
+    this.renderHeader(initialPage);
+    this.navigate(initialPage);
   }
 
   template() {
@@ -30,8 +30,11 @@ export default class App extends Component {
     `;
   }
 
-  private renderHeader() {
-    const props = { onNavigate: this.navigate.bind(this) };
+  private renderHeader(initialPage: PageName) {
+    const props = {
+      initialPage,
+      onNavigate: this.navigate.bind(this),
+    };
     new Header(document.getElementById(HEADER_ID)!, props);
   }
 
@@ -40,5 +43,6 @@ export default class App extends Component {
     const Page = PAGE_MAP[name];
     const page = new Page(document.getElementById(MAIN_ID)!);
     this.removePage = () => page.destroy();
+    setLocalStorage('lastViewedPage', name);
   }
 }

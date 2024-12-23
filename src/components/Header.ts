@@ -9,6 +9,7 @@ const NAV_SWITCH_ID = 'nav-switch';
 type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
 type HeaderProps = {
+  initialPage: PageName;
   onNavigate: (name: PageName) => void;
 };
 export default class Header extends Component<HeaderProps> {
@@ -19,7 +20,7 @@ export default class Header extends Component<HeaderProps> {
         { label: getMessage('setting'), value: PAGE_NAME.SETTING },
         { label: getMessage('review'), value: PAGE_NAME.REVIEW },
       ],
-      initialValue: PAGE_NAME.SETTING,
+      initialValue: this.props.initialPage,
       onChange: this.props.onNavigate.bind(this),
       className: ['h-8', 'text-[15px]', 'border-gray-300'],
     });
