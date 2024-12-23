@@ -5,6 +5,7 @@ import {
   SkipTimeUnit,
   StorageChange,
   StorageChanges,
+  updateStorage,
   VideoSkipConfig,
 } from '../utils/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
@@ -41,26 +42,29 @@ export async function initializeVideoControlSetting() {
 
 function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<ShortcutsConfig>) {
   if (oldValue) {
-    const { savePrimary, saveSecondary } = oldValue;
-    delete keyBindings[savePrimary];
-    delete keyBindings[saveSecondary];
+    const { enabled, ...shortcuts } = oldValue;
+    Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }
   if (newValue) setKeyBindingsForShortcuts(newValue);
 }
 
-function setKeyBindingsForShortcuts(data: ShortcutsConfig) {
-  const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
-  const { savePrimary, saveSecondary } = data;
-
-  const saveSubtitleByStorageKey = (storageKey: string) => {
-    const container = document.getElementById(SUBTITLE_CONTAINER_ID);
-    const subtitle = container?.querySelector(`p[data-storage-key="${storageKey}"]`);
-    if (!subtitle) return;
-    saveSubtitleWithToast(subtitle as HTMLElement);
-  };
-
-  keyBindings[savePrimary] = () => saveSubtitleByStorageKey(PRIMARY.STORAGE_KEY);
-  keyBindings[saveSecondary] = () => saveSubtitleByStorageKey(SECONDARY.STORAGE_KEY);
+function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) {
+  if (enabled) {
+    const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
+    const { savePrimary, saveSecondary, togglePrimary, toggleSecondary } = shortcuts;
+    const saveSubtitleByStorageKey = (storageKey: string) => {
+      const container = document.getElementById(SUBTITLE_CONTAINER_ID);
+      const subtitle = container?.querySelector(`p[data-storage-key="${storageKey}"]`);
+      if (!subtitle) return;
+      saveSubtitleWithToast(subtitle as HTMLElement);
+    };
+    keyBindings[savePrimary] = () => saveSubtitleByStorageKey(PRIMARY.STORAGE_KEY);
+    keyBindings[saveSecondary] = () => saveSubtitleByStorageKey(SECONDARY.STORAGE_KEY);
+    keyBindings[togglePrimary] = () => updateStorage(PRIMARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
+    keyBindings[toggleSecondary] = () => updateStorage(SECONDARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
+  } else {
+    Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
+  }
 }
 
 function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<VideoSkipConfig>) {

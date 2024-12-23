@@ -41,5 +41,7 @@ export const DEFAULT_CONFIG: StorageSchema = {
     enabled: false,
     savePrimary: '',
     saveSecondary: '',
+    togglePrimary: '',
+    toggleSecondary: '',
   },
 };

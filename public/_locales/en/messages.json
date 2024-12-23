@@ -28,6 +28,8 @@
   "shortcuts_section_title": { "message": "Shortcuts" },
   "primary_subtitle_save_shortcuts_label": { "message": "Primary Subtitle Save" },
   "secondary_subtitle_save_shortcuts_label": { "message": "Secondary Subtitle Save" },
+  "primary_subtitle_toggle_shortcuts_label": { "message": "Primary Subtitle On/Off" },
+  "secondary_subtitle_toggle_shortcuts_label": { "message": "Secondary Subtitle On/Off" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },

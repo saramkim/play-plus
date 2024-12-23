@@ -101,6 +101,8 @@ export const SETTINGS = {
     INPUTS: {
       savePrimary: 'save-primary-shortcuts',
       saveSecondary: 'save-secondary-shortcuts',
+      togglePrimary: 'toggle-primary-shortcuts',
+      toggleSecondary: 'toggle-secondary-shortcuts',
     },
     BUTTONS: {
       CANCEL: 'cancel-shortcuts',

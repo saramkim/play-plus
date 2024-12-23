@@ -28,16 +28,28 @@ export default class ShortcutsConfigForm extends Component {
       </header>
       <div id="${CONTAINER_ID}" class="section">
         <div class="row">
-          <label for="${INPUTS.savePrimary}" class="label"
-            >${getMessage('primary_subtitle_save_shortcuts_label')}</label
-          >
+          <label for="${INPUTS.savePrimary}" class="label">
+            ${getMessage('primary_subtitle_save_shortcuts_label')}
+          </label>
           <input id="${INPUTS.savePrimary}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.saveSecondary}" class="label"
-            >${getMessage('secondary_subtitle_save_shortcuts_label')}</label
-          >
+          <label for="${INPUTS.saveSecondary}" class="label">
+            ${getMessage('secondary_subtitle_save_shortcuts_label')}
+          </label>
           <input id="${INPUTS.saveSecondary}" class="input" readonly />
+        </div>
+        <div class="row">
+          <label for="${INPUTS.togglePrimary}" class="label">
+            ${getMessage('primary_subtitle_toggle_shortcuts_label')}
+          </label>
+          <input id="${INPUTS.togglePrimary}" class="input" readonly />
+        </div>
+        <div class="row">
+          <label for="${INPUTS.toggleSecondary}" class="label">
+            ${getMessage('secondary_subtitle_toggle_shortcuts_label')}
+          </label>
+          <input id="${INPUTS.toggleSecondary}" class="input" readonly />
         </div>
       </div>
     `;

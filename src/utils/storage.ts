@@ -25,6 +25,8 @@ export type ShortcutsConfig = {
   enabled: boolean;
   savePrimary: string;
   saveSecondary: string;
+  togglePrimary: string;
+  toggleSecondary: string;
 };
 
 export type StorageSchema = {
