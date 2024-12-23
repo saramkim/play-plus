@@ -1,4 +1,5 @@
 import { PageName } from './constants';
+import { DEFAULT_CONFIG } from './default';
 import { SubtitleLanguage } from './subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
@@ -54,6 +55,14 @@ export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[
       resolve(result[key]);
     });
   });
+};
+
+export const updateStorage = async <K extends StorageKey>(
+  key: K,
+  updates: (value: StorageSchema[K]) => Partial<StorageSchema[K]>
+) => {
+  const value = (await getStorage(key)) || DEFAULT_CONFIG[key];
+  return await setStorage(key, { ...value, ...updates(value) });
 };
 
 export const removeStorage = <K extends StorageKey>(key: K) => {
