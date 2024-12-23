@@ -54,7 +54,10 @@ export default class ReviewPage extends Component {
   private renderHeader() {
     const container = document.getElementById(HEADER_ID)!;
     new SavedSubtitleHeader(container, {
-      onCancel: () => this.renderItems(this.subtitles.original, false),
+      onCancel: () => {
+        this.subtitles.current = [...this.subtitles.original];
+        this.renderItems(this.subtitles.original, false);
+      },
       onSave: this.saveSubtitles.bind(this),
       onEdit: () => this.renderItems(this.subtitles.original, true),
     });
