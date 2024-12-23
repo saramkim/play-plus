@@ -62,6 +62,7 @@ export const SETTINGS = {
   VIDEO_SKIP: {
     STORAGE_KEY: 'videoSkip',
     SECTION_ID: 'video-skip-section',
+    TITLE_MESSAGE_KEY: 'video_skip_section_title',
     CONTAINER_ID: 'video-skip-setting',
     TOGGLE_ID: 'video-skip-toggle',
     INPUTS: {
@@ -78,6 +79,7 @@ export const SETTINGS = {
   SUB_VIDEO_SKIP: {
     STORAGE_KEY: 'subVideoSkip',
     SECTION_ID: 'sub-video-skip-section',
+    TITLE_MESSAGE_KEY: 'sub_video_skip_section_title',
     CONTAINER_ID: 'sub-video-skip-setting',
     TOGGLE_ID: 'sub-video-skip-toggle',
     INPUTS: {
@@ -91,18 +93,18 @@ export const SETTINGS = {
       SAVE: 'save-sub-video-skip',
     },
   },
-  SHORTCUT_KEY: {
-    STORAGE_KEY: 'shortcutKey',
-    SECTION_ID: 'shortcut-key-section',
-    CONTAINER_ID: 'shortcut-key-setting',
-    TOGGLE_ID: 'shortcut-key-toggle',
+  SHORTCUTS: {
+    STORAGE_KEY: 'shortcuts',
+    SECTION_ID: 'shortcuts-section',
+    CONTAINER_ID: 'shortcuts-setting',
+    TOGGLE_ID: 'shortcuts-toggle',
     INPUTS: {
-      savePrimary: 'save-primary-shortcut-key',
-      saveSecondary: 'save-secondary-shortcut-key',
+      savePrimary: 'save-primary-shortcuts',
+      saveSecondary: 'save-secondary-shortcuts',
     },
     BUTTONS: {
-      CANCEL: 'cancel-shortcut-key',
-      SAVE: 'save-shortcut-key',
+      CANCEL: 'cancel-shortcuts',
+      SAVE: 'save-shortcuts',
     },
   },
 } as const;

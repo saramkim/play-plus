@@ -3,15 +3,15 @@ import Component from '../core/Component';
 import { SETTINGS } from '../utils/constants';
 import { getMessage } from '../utils/i18n';
 import { Toggle } from '../components/toggle';
-import { getStorage, setStorage, ShortcutKeyConfig } from '../utils/storage';
+import { getStorage, setStorage, ShortcutsConfig } from '../utils/storage';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { KeydownInput } from '../components/keydownInput';
 import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
 import { validateAll } from '../utils/validation';
 
-const { STORAGE_KEY, BUTTONS, INPUTS, TOGGLE_ID, CONTAINER_ID } = SETTINGS.SHORTCUT_KEY;
+const { STORAGE_KEY, BUTTONS, INPUTS, TOGGLE_ID, CONTAINER_ID } = SETTINGS.SHORTCUTS;
 
-export default class ShortuctKeyConfigForm extends Component {
+export default class ShortcutsConfigForm extends Component {
   onMount() {
     this.init();
   }
@@ -19,7 +19,7 @@ export default class ShortuctKeyConfigForm extends Component {
   template() {
     return html`
       <header class="section-header">
-        <h2 class="section-title">${getMessage('shortcut_key_section_title')}</h2>
+        <h2 class="section-title">${getMessage('shortcuts_section_title')}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
           <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
@@ -28,11 +28,15 @@ export default class ShortuctKeyConfigForm extends Component {
       </header>
       <div id="${CONTAINER_ID}" class="section">
         <div class="row">
-          <label for="${INPUTS.savePrimary}" class="label">${getMessage('save_primary_key_label')}</label>
+          <label for="${INPUTS.savePrimary}" class="label"
+            >${getMessage('primary_subtitle_save_shortcuts_label')}</label
+          >
           <input id="${INPUTS.savePrimary}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.saveSecondary}" class="label">${getMessage('save_secondary_key_label')}</label>
+          <label for="${INPUTS.saveSecondary}" class="label"
+            >${getMessage('secondary_subtitle_save_shortcuts_label')}</label
+          >
           <input id="${INPUTS.saveSecondary}" class="input" readonly />
         </div>
       </div>
@@ -69,7 +73,7 @@ export default class ShortuctKeyConfigForm extends Component {
 
   private proxyHandler() {
     return {
-      set(target: ShortcutKeyConfig, prop: keyof ShortcutKeyConfig, value: ShortcutKeyConfig[keyof ShortcutKeyConfig]) {
+      set(target: ShortcutsConfig, prop: keyof ShortcutsConfig, value: ShortcutsConfig[keyof ShortcutsConfig]) {
         if (prop === 'enabled') {
           setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
           setElementVisibility(CONTAINER_ID, value as boolean);
@@ -83,18 +87,14 @@ export default class ShortuctKeyConfigForm extends Component {
         return Reflect.set(target, prop, value);
       },
 
-      get(target: ShortcutKeyConfig, prop: keyof ShortcutKeyConfig) {
+      get(target: ShortcutsConfig, prop: keyof ShortcutsConfig) {
         if (target[prop] !== undefined) return Reflect.get(target, prop);
         return DEFAULT_CONFIG[STORAGE_KEY][prop];
       },
     };
   }
 
-  private createInput(
-    inputId: string,
-    storageKey: keyof Omit<ShortcutKeyConfig, 'enabled'>,
-    settings: ShortcutKeyConfig
-  ) {
+  private createInput(inputId: string, storageKey: keyof Omit<ShortcutsConfig, 'enabled'>, settings: ShortcutsConfig) {
     return KeydownInput({
       id: inputId,
       value: settings[storageKey],

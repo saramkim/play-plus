@@ -3,9 +3,9 @@ import Component from '../core/Component';
 import VideoSkipConfigForm from './VideoSkipConfigForm';
 import SubtitleConfigForm from './SubtitleConfigForm';
 import { SETTINGS } from '../utils/constants';
-import ShortuctKeyConfigForm from './ShortuctKeyConfigForm';
+import ShortcutsConfigForm from './ShortcutsConfigForm';
 
-const { SUBTITLES, VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUT_KEY } = SETTINGS;
+const { SUBTITLES, VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS } = SETTINGS;
 
 export default class SettingPage extends Component {
   afterRender() {
@@ -19,7 +19,7 @@ export default class SettingPage extends Component {
         <section id="${SUBTITLES.SECONDARY.SECTION_ID}" class="section"></section>
         <section id="${VIDEO_SKIP.SECTION_ID}" class="section"></section>
         <section id="${SUB_VIDEO_SKIP.SECTION_ID}" class="section"></section>
-        <section id="${SHORTCUT_KEY.SECTION_ID}" class="section"></section>
+        <section id="${SHORTCUTS.SECTION_ID}" class="section"></section>
       </div>
     `;
   }
@@ -31,6 +31,6 @@ export default class SettingPage extends Component {
     new SubtitleConfigForm(getContainer(SUBTITLES.SECONDARY.SECTION_ID), SUBTITLES.SECONDARY);
     new VideoSkipConfigForm(getContainer(VIDEO_SKIP.SECTION_ID), VIDEO_SKIP);
     new VideoSkipConfigForm(getContainer(SUB_VIDEO_SKIP.SECTION_ID), SUB_VIDEO_SKIP);
-    new ShortuctKeyConfigForm(getContainer(SHORTCUT_KEY.SECTION_ID));
+    new ShortcutsConfigForm(getContainer(SHORTCUTS.SECTION_ID));
   }
 }

@@ -1,7 +1,7 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
 import {
   getStorage,
-  ShortcutKeyConfig,
+  ShortcutsConfig,
   SkipTimeUnit,
   StorageChange,
   StorageChanges,
@@ -13,7 +13,7 @@ import { subtitleCache } from './subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 
-const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUT_KEY } = SETTINGS;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS } = SETTINGS;
 
 const keyBindings: KeyBindings = {};
 
@@ -21,34 +21,34 @@ export function onVideoControlStorageChange(changes: StorageChanges) {
   const videoSkipStorageKeys = [VIDEO_SKIP.STORAGE_KEY, SUB_VIDEO_SKIP.STORAGE_KEY];
   videoSkipStorageKeys.forEach((key) => changes[key] && handleVideoSkipStorageChange(changes[key]));
 
-  const shortcutChanges = changes[SHORTCUT_KEY.STORAGE_KEY];
-  if (shortcutChanges) handleShortcutKeyStorageChange(shortcutChanges);
+  const shortcutsChanges = changes[SHORTCUTS.STORAGE_KEY];
+  if (shortcutsChanges) handleShortcutsStorageChange(shortcutsChanges);
 }
 
 export async function initializeVideoControlSetting() {
-  const [videoSkipConfig, subVideoSkipConfig, shortcutKeyConfig] = await Promise.all([
+  const [videoSkipConfig, subVideoSkipConfig, shortcutsConfig] = await Promise.all([
     getStorage(VIDEO_SKIP.STORAGE_KEY),
     getStorage(SUB_VIDEO_SKIP.STORAGE_KEY),
-    getStorage(SHORTCUT_KEY.STORAGE_KEY),
+    getStorage(SHORTCUTS.STORAGE_KEY),
   ]);
 
   if (videoSkipConfig) setKeyBindingsForVideoSkip(videoSkipConfig);
   if (subVideoSkipConfig) setKeyBindingsForVideoSkip(subVideoSkipConfig);
-  if (shortcutKeyConfig) setKeyBindingsForShortcutKey(shortcutKeyConfig);
+  if (shortcutsConfig) setKeyBindingsForShortcuts(shortcutsConfig);
 
   document.addEventListener('keydown', handleKeydown);
 }
 
-function handleShortcutKeyStorageChange({ oldValue, newValue }: StorageChange<ShortcutKeyConfig>) {
+function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<ShortcutsConfig>) {
   if (oldValue) {
     const { savePrimary, saveSecondary } = oldValue;
     delete keyBindings[savePrimary];
     delete keyBindings[saveSecondary];
   }
-  if (newValue) setKeyBindingsForShortcutKey(newValue);
+  if (newValue) setKeyBindingsForShortcuts(newValue);
 }
 
-function setKeyBindingsForShortcutKey(data: ShortcutKeyConfig) {
+function setKeyBindingsForShortcuts(data: ShortcutsConfig) {
   const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
   const { savePrimary, saveSecondary } = data;
 

@@ -22,10 +22,10 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
   }
 
   template() {
-    const { INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID, SKIP_TIME_UNIT } = this.props;
+    const { INPUTS, BUTTONS, TOGGLE_ID, CONTAINER_ID, SKIP_TIME_UNIT, TITLE_MESSAGE_KEY } = this.props;
     return html`
       <header class="section-header">
-        <h2 class="section-title">${getMessage('video_skip_section_title')}</h2>
+        <h2 class="section-title">${getMessage(TITLE_MESSAGE_KEY)}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
           <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
