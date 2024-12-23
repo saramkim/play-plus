@@ -9,7 +9,7 @@ type SavedSubtitleHeaderProps = {
 };
 
 export default class SavedSubtitleHeader extends Component<SavedSubtitleHeaderProps> {
-  initialize(): void {
+  async initialize() {
     this.state = {
       isEditMode: false,
     };

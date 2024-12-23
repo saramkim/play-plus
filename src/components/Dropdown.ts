@@ -10,7 +10,7 @@ interface DropdownProps<Value extends string> {
 }
 
 export default class Dropdown<Value extends string> extends Component<DropdownProps<Value>> {
-  initialize() {
+  async initialize() {
     this.state = { value: this.props.initialValue, isOpen: false };
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
     document.addEventListener('click', this.handleDocumentClick);

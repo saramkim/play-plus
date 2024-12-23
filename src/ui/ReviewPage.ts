@@ -11,7 +11,7 @@ export default class ReviewPage extends Component {
   private subtitles: { original: SavedSubtitle[]; current: SavedSubtitle[] } = { original: [], current: [] };
   private removeStorageChangeListener?: () => void;
 
-  initialize() {
+  async initialize() {
     this.setupStorageListener();
   }
 

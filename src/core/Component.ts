@@ -10,14 +10,15 @@ export default abstract class Component<T extends State = never> {
   constructor(container: HTMLElement, props?: T) {
     this.container = container;
     this.props = props ? Object.freeze(props) : (undefined as never);
-    this.initialize();
-    this.render();
-    this.onMount();
+    this.initialize().then(() => {
+      this.render();
+      this.onMount();
+    });
   }
 
   abstract template(): TemplateResult;
 
-  initialize() {}
+  async initialize() {}
   render() {
     render(this.template(), this.container);
     this.afterRender();
