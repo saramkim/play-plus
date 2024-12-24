@@ -132,7 +132,7 @@ function generateInputToStorageKey(settings: typeof SETTINGS) {
   Object.values(settings).forEach((category) => {
     if ('INPUTS' in category) {
       Object.entries(category.INPUTS).forEach(([storageKey, inputId]) => {
-        mapping[inputId] = storageKey;
+        mapping[inputId as string] = storageKey;
       });
     } else {
       Object.values(category).forEach((subCategory) => {
