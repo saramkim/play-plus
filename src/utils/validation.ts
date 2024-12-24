@@ -14,6 +14,8 @@ export const VALIDATION_RULE: { [key: string]: ValidationRule } = {
   positionOffset: { type: 'number' },
   savePrimary: { type: 'string', validate: validateNoReservedKey },
   saveSecondary: { type: 'string', validate: validateNoReservedKey },
+  togglePrimary: { type: 'string', validate: validateNoReservedKey },
+  toggleSecondary: { type: 'string', validate: validateNoReservedKey },
 };
 
 export const validate = (key: string, value: any): ValidationResult => {

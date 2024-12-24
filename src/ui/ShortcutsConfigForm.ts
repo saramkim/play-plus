@@ -117,8 +117,7 @@ export default class ShortcutsConfigForm extends Component {
   }
 
   private resetInputsValue() {
-    resetInputValue(INPUTS.savePrimary, { eventType: 'keydown' });
-    resetInputValue(INPUTS.saveSecondary, { eventType: 'keydown' });
+    Object.values(INPUTS).forEach((id) => resetInputValue(id, { eventType: 'keydown' }));
   }
 
   private updateButtonsVisibility(visible: boolean) {
