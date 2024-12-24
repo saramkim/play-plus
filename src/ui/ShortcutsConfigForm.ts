@@ -6,8 +6,7 @@ import { Toggle } from '../components/toggle';
 import { getStorage, setStorage, ShortcutsConfig } from '../utils/storage';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { KeydownInput } from '../components/keydownInput';
-import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
-import { validateAll } from '../utils/validation';
+import { resetInputValue, setElementVisibility, updateDefaultValue } from '../utils/dom';
 
 const { STORAGE_KEY, BUTTONS, INPUTS, TOGGLE_ID, CONTAINER_ID } = SETTINGS.SHORTCUTS;
 
@@ -22,7 +21,7 @@ export default class ShortcutsConfigForm extends Component {
         <h2 class="section-title">${getMessage('shortcuts_section_title')}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
@@ -90,8 +89,6 @@ export default class ShortcutsConfigForm extends Component {
           setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
           setElementVisibility(CONTAINER_ID, value as boolean);
         } else {
-          const result = validateAll(target, prop, value);
-          setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
           setElementVisibility(BUTTONS.CANCEL, true);
           setElementVisibility(BUTTONS.SAVE, true);
           setElementVisibility(TOGGLE_ID, false);

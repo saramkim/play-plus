@@ -1,7 +1,5 @@
-import { Tooltip } from '../components/tooltip';
 import { INPUT_ID_TO_STORAGE_OPTION_KEY } from './constants';
 import { getMessage } from './i18n';
-import { VALIDATION_RULE, ValidationResult } from './validation';
 
 export const selectVideoElement = (): Promise<HTMLVideoElement> => {
   return new Promise((resolve, reject) => {
@@ -47,30 +45,9 @@ export const setElementAvailability = (id: string, isAvailable: boolean) => {
   element.disabled = !isAvailable;
 };
 
-export const setButtonAvailabilityWithTag = (id: string, { valid, error }: ValidationResult) => {
-  const button = document.getElementById(id) as HTMLButtonElement;
-  const tooltip = document.getElementById(id + '_tooltip');
-
-  if (valid) {
-    button.disabled = false;
-    tooltip?.remove();
-  } else {
-    button.disabled = true;
-    if (tooltip) tooltip.textContent = error;
-    else Tooltip({ id: id + '_tooltip', message: error, target: button });
-  }
-};
-
 export const setupInput = (id: string, defaultValue?: string): HTMLInputElement => {
   const input = document.getElementById(id) as HTMLInputElement;
   const key = INPUT_ID_TO_STORAGE_OPTION_KEY[id];
-
-  if (key && VALIDATION_RULE[key]) {
-    const rule = VALIDATION_RULE[key];
-    input.type = rule.type;
-    if (rule.max) input.max = rule.max.toString();
-    if (rule.min) input.min = rule.min.toString();
-  }
 
   if (defaultValue) input.defaultValue = defaultValue;
 

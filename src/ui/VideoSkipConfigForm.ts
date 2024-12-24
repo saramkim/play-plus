@@ -4,12 +4,11 @@ import { getMessage } from '../utils/i18n';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { setStorage, VideoSkipConfig } from '../utils/storage';
 import { getStorage } from '../utils/storage';
-import { resetInputValue, setButtonAvailabilityWithTag, setElementVisibility, updateDefaultValue } from '../utils/dom';
+import { resetInputValue, setElementVisibility, updateDefaultValue } from '../utils/dom';
 import { SETTINGS } from '../utils/constants';
 import { Toggle } from '../components/toggle';
 import { KeydownInput } from '../components/keydownInput';
 import { NumberInput } from '../components/numberInput';
-import { validateAll } from '../utils/validation';
 import Dropdown from '../components/Dropdown';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
@@ -28,7 +27,7 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
         <h2 class="section-title">${getMessage(TITLE_MESSAGE_KEY)}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
@@ -43,7 +42,7 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
         </div>
         <div class="row">
           <label for="${INPUTS.skipTime}" class="label">${getMessage('video_skip_time_label')}</label>
-          <input id="${INPUTS.skipTime}" class="input" type="number" />
+          <input id="${INPUTS.skipTime}" class="input" type="number" min="1" />
           <div id="${SKIP_TIME_UNIT}"></div>
         </div>
       </div>
@@ -98,8 +97,6 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
           setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
           setElementVisibility(CONTAINER_ID, value as boolean);
         } else {
-          const result = validateAll(target, prop, value);
-          setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
           setElementVisibility(BUTTONS.CANCEL, true);
           setElementVisibility(BUTTONS.SAVE, true);
           setElementVisibility(TOGGLE_ID, false);

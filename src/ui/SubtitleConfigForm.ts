@@ -3,13 +3,12 @@ import Component from '../core/Component';
 import { getMessage } from '../utils/i18n';
 import { SETTINGS } from '../utils/constants';
 import { setStorage, SubtitleConfig } from '../utils/storage';
-import { resetInputValue, setButtonAvailabilityWithTag, updateDefaultValue } from '../utils/dom';
+import { resetInputValue, updateDefaultValue } from '../utils/dom';
 import { getStorage } from '../utils/storage';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { setElementVisibility } from '../utils/dom';
 import { Toggle } from '../components/toggle';
 import { NumberInput } from '../components/numberInput';
-import { validateAll } from '../utils/validation';
 import { Switch } from '../components/switch';
 import { Checkbox } from '../components/checkbox';
 import { ColorPicker } from '../components/colorPicker';
@@ -30,7 +29,7 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
         <h2 class="section-title">${getMessage(TITLE_MESSAGE_KEY)}</h2>
         <div class="row">
           <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden" disabled>${getMessage('save_button')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
@@ -53,15 +52,15 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
         </div>
         <div class="row">
           <label for="${INPUTS.fontSize}" class="label">${getMessage('subtitle_font_size_label')}</label>
-          <input id="${INPUTS.fontSize}" class="input" type="number" />
+          <input id="${INPUTS.fontSize}" class="input" type="number" min="1" max="10" />
         </div>
         <div class="row">
           <label for="${INPUTS.fontWeight}" class="label">${getMessage('subtitle_font_weight_label')}</label>
-          <input id="${INPUTS.fontWeight}" class="input" type="number" />
+          <input id="${INPUTS.fontWeight}" class="input" type="number" min="1" max="6" />
         </div>
         <div class="row">
           <label for="${INPUTS.opacity}" class="label">${getMessage('subtitle_opacity_label')}</label>
-          <input id="${INPUTS.opacity}" class="input" type="number" />
+          <input id="${INPUTS.opacity}" class="input" type="number" min="0" max="100" />
         </div>
         <div class="row">
           <label for="${INPUTS.lineBreak}" class="label">${getMessage('line_break_label')}</label>
@@ -108,8 +107,6 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
           setStorage(STORAGE_KEY, { ...target, enabled: value as boolean });
           setElementVisibility(CONTAINER_ID, value as boolean);
         } else {
-          const result = validateAll(target, prop, value);
-          setButtonAvailabilityWithTag(BUTTONS.SAVE, result);
           setElementVisibility(BUTTONS.CANCEL, true);
           setElementVisibility(BUTTONS.SAVE, true);
           setElementVisibility(TOGGLE_ID, false);
