@@ -31,6 +31,12 @@
   "primary_subtitle_toggle_shortcuts_label": { "message": "메인 자막 켜기/끄기" },
   "secondary_subtitle_toggle_shortcuts_label": { "message": "서브 자막 켜기/끄기" },
 
+  "success": { "message": "성공" },
+  "error": { "message": "실패" },
+  "info": { "message": "알림" },
+  "confirm": { "message": "확인" },
+  "cancel": { "message": "취소" },
+
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
   "top": { "message": "상단" },

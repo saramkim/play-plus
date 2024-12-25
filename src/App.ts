@@ -1,7 +1,7 @@
 import { html } from 'lit-html';
 import ReviewPage from './ui/ReviewPage';
 import SettingPage from './ui/SettingPage';
-import { PAGE_NAME, PageName } from './utils/constants';
+import { PAGE_NAME, PageName, POPUP_CONTAINER_ID } from './utils/constants';
 import Header from './components/Header';
 import Component from './core/Component';
 import { getLocalStorage, setLocalStorage } from './utils/storage';
@@ -27,6 +27,7 @@ export default class App extends Component {
     return html`
       <header id="${HEADER_ID}" class="flex justify-between items-center p-4 border-b border-b-gray-300"></header>
       <main id="${MAIN_ID}" class="h-full overflow-auto p-4"></main>
+      <div id="${POPUP_CONTAINER_ID}" class="absolute"></div>
     `;
   }
 

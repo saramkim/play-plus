@@ -31,6 +31,12 @@
   "primary_subtitle_toggle_shortcuts_label": { "message": "Primary Subtitle On/Off" },
   "secondary_subtitle_toggle_shortcuts_label": { "message": "Secondary Subtitle On/Off" },
 
+  "success": { "message": "Success" },
+  "error": { "message": "Error" },
+  "info": { "message": "Info" },
+  "confirm": { "message": "Confirm" },
+  "cancel": { "message": "Cancel" },
+
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
   "top": { "message": "Top" },

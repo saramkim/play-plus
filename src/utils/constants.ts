@@ -6,6 +6,8 @@ export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 export const TOAST_CONTAINER_ID = 'pp-toast-container';
 
+export const POPUP_CONTAINER_ID = 'popup-container';
+
 export const PAGE_NAME = {
   SETTING: 'setting',
   REVIEW: 'review',
