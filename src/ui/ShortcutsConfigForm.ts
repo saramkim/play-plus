@@ -1,12 +1,13 @@
 import { html } from 'lit-html';
 import Component from '../core/Component';
-import { SETTINGS } from '../utils/constants';
+import { POPUP_CONTAINER_ID, SETTINGS } from '../utils/constants';
 import { getMessage } from '../utils/i18n';
 import { Toggle } from '../components/toggle';
 import { getStorage, setStorage, ShortcutsConfig } from '../utils/storage';
 import { DEFAULT_CONFIG } from '../utils/default';
 import { KeydownInput } from '../components/keydownInput';
 import { resetInputValue, setElementVisibility, updateDefaultValue } from '../utils/dom';
+import Popup from '../components/Popup';
 
 const { STORAGE_KEY, BUTTONS, INPUTS, TOGGLE_ID, CONTAINER_ID } = SETTINGS.SHORTCUTS;
 
@@ -79,7 +80,13 @@ export default class ShortcutsConfigForm extends Component {
         Object.keys(INPUTS).forEach((storageKey) => {
           updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
         });
-      } else alert(response.error.message);
+      } else {
+        new Popup(document.getElementById(POPUP_CONTAINER_ID)!, {
+          message: response.error.message,
+          status: 'error',
+          type: 'alert',
+        });
+      }
     });
   }
 

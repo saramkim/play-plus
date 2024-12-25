@@ -5,11 +5,12 @@ import { DEFAULT_CONFIG } from '../utils/default';
 import { setStorage, VideoSkipConfig } from '../utils/storage';
 import { getStorage } from '../utils/storage';
 import { resetInputValue, setElementVisibility, updateDefaultValue } from '../utils/dom';
-import { SETTINGS } from '../utils/constants';
+import { POPUP_CONTAINER_ID, SETTINGS } from '../utils/constants';
 import { Toggle } from '../components/toggle';
 import { KeydownInput } from '../components/keydownInput';
 import { NumberInput } from '../components/numberInput';
 import Dropdown from '../components/Dropdown';
+import Popup from '../components/Popup';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
@@ -86,7 +87,13 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
         Object.keys(INPUTS).forEach((storageKey) => {
           updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
         });
-      } else alert(response.error.message);
+      } else {
+        new Popup(document.getElementById(POPUP_CONTAINER_ID)!, {
+          message: response.error.message,
+          status: 'error',
+          type: 'alert',
+        });
+      }
     });
   }
 

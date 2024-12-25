@@ -1,7 +1,7 @@
 import { html } from 'lit-html';
 import Component from '../core/Component';
 import { getMessage } from '../utils/i18n';
-import { SETTINGS } from '../utils/constants';
+import { POPUP_CONTAINER_ID, SETTINGS } from '../utils/constants';
 import { setStorage, SubtitleConfig } from '../utils/storage';
 import { resetInputValue, updateDefaultValue } from '../utils/dom';
 import { getStorage } from '../utils/storage';
@@ -12,6 +12,7 @@ import { NumberInput } from '../components/numberInput';
 import { Switch } from '../components/switch';
 import { Checkbox } from '../components/checkbox';
 import { ColorPicker } from '../components/colorPicker';
+import Popup from '../components/Popup';
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
@@ -96,7 +97,13 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
         Object.keys(INPUTS).forEach((storageKey) => {
           updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
         });
-      } else alert(response.error.message);
+      } else {
+        new Popup(document.getElementById(POPUP_CONTAINER_ID)!, {
+          message: response.error.message,
+          status: 'error',
+          type: 'alert',
+        });
+      }
     });
   }
 
