@@ -40,21 +40,25 @@ function validateType<K extends StorageKey>(key: K, value: StorageSchema[K]) {
 
     if (Array.isArray(defaultValue)) {
       if (!defaultValue.includes(actualValue)) {
-        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(key)}`);
+        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
       }
     } else if (typeof defaultValue === 'object' && defaultValue !== null) {
       if (typeof actualValue !== 'object' || actualValue === null) {
-        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(key)}`);
+        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
       }
       validateType(actualValue as any, defaultValue as any);
     } else if (typeof actualValue !== typeof defaultValue) {
       if (typeof defaultValue === 'string') {
-        throw new Error(`${getMessage('error_text_type')}\n${getMessageByKey(key)}`);
+        throw new Error(`${getMessage('error_text_type')}\n${getMessageByKey(k)}`);
       }
       if (typeof defaultValue === 'number') {
-        throw new Error(`${getMessage('error_number_type')}\n${getMessageByKey(key)}`);
+        throw new Error(`${getMessage('error_number_type')}\n${getMessageByKey(k)}`);
       }
-      throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(key)}`);
+      throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
+    } else if (typeof defaultValue === 'number') {
+      if (isNaN(actualValue as number)) {
+        throw new Error(`${getMessage('error_number_type')}\n${getMessageByKey(k)}`);
+      }
     }
   });
 }
@@ -74,7 +78,7 @@ function validateDuplicateShortcuts<K extends StorageKey>(data: StorageSchema[K]
   });
 }
 
-const getMessageByKey = (key: string) => {
+const getMessageByKey = (key: KeyOfUnion<StorageSchema[StorageKey]>) => {
   return {
     forward: getMessage('forward_key_label'),
     backward: getMessage('backward_key_label'),
@@ -82,5 +86,21 @@ const getMessageByKey = (key: string) => {
     saveSecondary: getMessage('secondary_subtitle_save_shortcuts_label'),
     togglePrimary: getMessage('primary_subtitle_toggle_shortcuts_label'),
     toggleSecondary: getMessage('secondary_subtitle_toggle_shortcuts_label'),
+    enabled: '',
+    skipTime: getMessage('video_skip_time_label'),
+    skipTimeUnit: '',
+    language: getMessage('language_label'),
+    positionReference: getMessage('position_reference_label'),
+    positionOffset: getMessage('position_offset_label'),
+    color: getMessage('subtitle_color_label'),
+    fontSize: getMessage('subtitle_font_size_label'),
+    fontWeight: getMessage('subtitle_font_weight_label'),
+    opacity: getMessage('subtitle_opacity_label'),
+    lineBreak: getMessage('line_break_label'),
+    videoSkip: getMessage('video_skip_section_title'),
+    subVideoSkip: getMessage('sub_video_skip_section_title'),
+    shortcuts: getMessage('shortcuts_section_title'),
+    primarySubtitle: getMessage('primary_subtitle_section_title'),
+    secondarySubtitle: getMessage('secondary_subtitle_section_title'),
   }[key];
 };
