@@ -62,10 +62,12 @@
     "message": "Smaller than the minimum value of $minValue$.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
-  "error_reserved_key": { "message": "Reserved key." },
+  "error_reserved_shortcuts": { "message": "Reserved Shortcuts." },
   "error_video_not_found": { "message": "Video not found." },
   "error_unsupported_url": { "message": "Unsupported site." },
   "error_try_later": { "message": "Please try again later." },
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },
-  "error_no_subtitle": { "message": "No subtitle." }
+  "error_no_subtitle": { "message": "No subtitle." },
+  "error_duplicate_shortcuts": { "message": "Shortcuts are duplicated." },
+  "error_unknown": { "message": "Unknown error" }
 }

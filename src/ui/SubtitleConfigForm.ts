@@ -90,12 +90,13 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
     });
 
     document.getElementById(BUTTONS.SAVE)?.addEventListener('click', async () => {
-      await setStorage(STORAGE_KEY, settings);
-      this.updateButtonsVisibility(false);
-
-      Object.keys(INPUTS).forEach((storageKey) => {
-        updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
-      });
+      const response = await setStorage(STORAGE_KEY, settings);
+      if (response.success) {
+        this.updateButtonsVisibility(false);
+        Object.keys(INPUTS).forEach((storageKey) => {
+          updateDefaultValue(inputInstances[storageKey], settings[storageKey]);
+        });
+      } else alert(response.error.message);
     });
   }
 

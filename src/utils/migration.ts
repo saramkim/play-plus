@@ -1,6 +1,6 @@
 import { SETTINGS } from './constants';
 import { DEFAULT_CONFIG } from './default';
-import { setStorage, StorageSchema } from './storage';
+import { StorageSchema } from './storage';
 import { StorageKey } from './storage';
 
 type TransformFunction<T extends StorageKey> = (oldData: any) => StorageSchema[T];
@@ -43,7 +43,7 @@ const migrateStorage = async <T extends StorageKey>(oldKey: string, newKey: T, t
     if (!oldData) return false;
 
     await chrome.storage.sync.remove(oldKey);
-    await setStorage(newKey, transform(oldData));
+    await chrome.storage.sync.set({ [newKey]: transform(oldData) });
     return true;
   } catch (error) {
     console.error(`Migration failed for ${oldKey} to ${newKey}:`, error);

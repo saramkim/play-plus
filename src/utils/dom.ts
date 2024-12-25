@@ -1,4 +1,3 @@
-import { INPUT_ID_TO_STORAGE_OPTION_KEY } from './constants';
 import { getMessage } from './i18n';
 
 export const selectVideoElement = (): Promise<HTMLVideoElement> => {
@@ -47,7 +46,6 @@ export const setElementAvailability = (id: string, isAvailable: boolean) => {
 
 export const setupInput = (id: string, defaultValue?: string): HTMLInputElement => {
   const input = document.getElementById(id) as HTMLInputElement;
-  const key = INPUT_ID_TO_STORAGE_OPTION_KEY[id];
 
   if (defaultValue) input.defaultValue = defaultValue;
 

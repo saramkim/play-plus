@@ -6,8 +6,6 @@ export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 export const TOAST_CONTAINER_ID = 'pp-toast-container';
 
-export const RESERVED_KEY_CODE_LIST = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF'];
-
 export const PAGE_NAME = {
   SETTING: 'setting',
   REVIEW: 'review',
@@ -123,27 +121,3 @@ export const REVIEW = {
     PLAY_VIDEO: 'playVideo',
   },
 } as const;
-
-export const INPUT_ID_TO_STORAGE_OPTION_KEY = generateInputToStorageKey(SETTINGS);
-
-function generateInputToStorageKey(settings: typeof SETTINGS) {
-  const mapping: Record<string, string> = {};
-
-  Object.values(settings).forEach((category) => {
-    if ('INPUTS' in category) {
-      Object.entries(category.INPUTS).forEach(([storageKey, inputId]) => {
-        mapping[inputId as string] = storageKey;
-      });
-    } else {
-      Object.values(category).forEach((subCategory) => {
-        if ('INPUTS' in subCategory) {
-          Object.entries(subCategory.INPUTS).forEach(([storageKey, inputId]) => {
-            mapping[inputId] = storageKey;
-          });
-        }
-      });
-    }
-  });
-
-  return mapping;
-}

@@ -1,6 +1,8 @@
 import { PageName } from './constants';
 import { DEFAULT_CONFIG } from './default';
+import { getMessage } from './i18n';
 import { SubtitleLanguage } from './subtitle';
+import { validate } from './validation';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
 export type VideoSkipConfig = {
@@ -47,14 +49,28 @@ export type StorageChanges = {
   [K in StorageKey]?: StorageChange<StorageSchema[K]>;
 };
 
-export const setStorage = <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
-  return chrome.storage.sync.set({ [key]: value });
+const storageCache = new Map<StorageKey, StorageSchema[StorageKey]>();
+
+type Response = { success: true } | { success: false; error: Error };
+
+export const setStorage = async <K extends StorageKey>(key: K, value: StorageSchema[K]): Promise<Response> => {
+  try {
+    validate(storageCache, key, value);
+    await chrome.storage.sync.set({ [key]: value });
+    storageCache.set(key, value);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error : new Error(getMessage('error_unknown')) };
+  }
 };
 
 export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[K] | undefined> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(key, (result) => {
-      resolve(result[key]);
+      const value = result[key];
+      resolve(value);
+      if (value) storageCache.set(key, value);
+      else storageCache.delete(key);
     });
   });
 };
