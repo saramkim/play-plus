@@ -20,7 +20,7 @@ export const SETTINGS = {
     PRIMARY: {
       STORAGE_KEY: 'primarySubtitle',
       SECTION_ID: 'primary-subtitle-section',
-      TITLE_MESSAGE_KEY: 'primary_subtitle_section_title',
+      TITLE_MESSAGE_KEY: 'primary_subtitle',
       CONTAINER_ID: 'primary-subtitle-setting',
       TOGGLE_ID: 'primary-subtitle-toggle',
       INPUTS: {
@@ -41,7 +41,7 @@ export const SETTINGS = {
     SECONDARY: {
       STORAGE_KEY: 'secondarySubtitle',
       SECTION_ID: 'secondary-subtitle-section',
-      TITLE_MESSAGE_KEY: 'secondary_subtitle_section_title',
+      TITLE_MESSAGE_KEY: 'secondary_subtitle',
       CONTAINER_ID: 'secondary-subtitle-setting',
       TOGGLE_ID: 'secondary-subtitle-toggle',
       INPUTS: {
@@ -63,7 +63,7 @@ export const SETTINGS = {
   VIDEO_SKIP: {
     STORAGE_KEY: 'videoSkip',
     SECTION_ID: 'video-skip-section',
-    TITLE_MESSAGE_KEY: 'video_skip_section_title',
+    TITLE_MESSAGE_KEY: 'video_skip',
     CONTAINER_ID: 'video-skip-setting',
     TOGGLE_ID: 'video-skip-toggle',
     INPUTS: {
@@ -80,7 +80,7 @@ export const SETTINGS = {
   SUB_VIDEO_SKIP: {
     STORAGE_KEY: 'subVideoSkip',
     SECTION_ID: 'sub-video-skip-section',
-    TITLE_MESSAGE_KEY: 'sub_video_skip_section_title',
+    TITLE_MESSAGE_KEY: 'sub_video_skip',
     CONTAINER_ID: 'sub-video-skip-setting',
     TOGGLE_ID: 'sub-video-skip-toggle',
     INPUTS: {

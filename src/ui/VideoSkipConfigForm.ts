@@ -27,22 +27,22 @@ export default class VideoSkipConfigForm extends Component<VideoSkipConfigFormPr
       <header class="section-header">
         <h2 class="section-title">${getMessage(TITLE_MESSAGE_KEY)}</h2>
         <div class="row">
-          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
+          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
       <div id="${CONTAINER_ID}" class="section">
         <div class="row">
-          <label for="${INPUTS.backward}" class="label">${getMessage('backward_key_label')}</label>
+          <label for="${INPUTS.backward}" class="label">${getMessage('backward_key')}</label>
           <input id="${INPUTS.backward}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.forward}" class="label">${getMessage('forward_key_label')}</label>
+          <label for="${INPUTS.forward}" class="label">${getMessage('forward_key')}</label>
           <input id="${INPUTS.forward}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.skipTime}" class="label">${getMessage('video_skip_time_label')}</label>
+          <label for="${INPUTS.skipTime}" class="label">${getMessage('skip_unit')}</label>
           <input id="${INPUTS.skipTime}" class="input" type="number" min="1" />
           <div id="${SKIP_TIME_UNIT}"></div>
         </div>

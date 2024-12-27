@@ -29,42 +29,42 @@ export default class SubtitleConfigForm extends Component<SubtitleConfigFormProp
       <header class="section-header">
         <h2 class="section-title">${getMessage(TITLE_MESSAGE_KEY)}</h2>
         <div class="row">
-          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
+          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
       <div id="${CONTAINER_ID}" class="section">
         <div class="row">
-          <label for="${INPUTS.language}" class="label">${getMessage('language_label')}</label>
+          <label for="${INPUTS.language}" class="label">${getMessage('language')}</label>
           <div id="${INPUTS.language}"></div>
         </div>
         <div class="row">
-          <label for="${INPUTS.positionReference}" class="label">${getMessage('position_reference_label')}</label>
+          <label for="${INPUTS.positionReference}" class="label">${getMessage('position_reference')}</label>
           <div id="${INPUTS.positionReference}"></div>
         </div>
         <div class="row">
-          <label for="${INPUTS.positionOffset}" class="label">${getMessage('position_offset_label')}</label>
+          <label for="${INPUTS.positionOffset}" class="label">${getMessage('position_offset')}(px)</label>
           <input id="${INPUTS.positionOffset}" class="input" type="number" />
         </div>
         <div class="row">
-          <label for="${INPUTS.color}" class="label">${getMessage('subtitle_color_label')}</label>
+          <label for="${INPUTS.color}" class="label">${getMessage('subtitle_color')}</label>
           <div id="${INPUTS.color}"></div>
         </div>
         <div class="row">
-          <label for="${INPUTS.fontSize}" class="label">${getMessage('subtitle_font_size_label')}</label>
+          <label for="${INPUTS.fontSize}" class="label">${getMessage('subtitle_size')}(1~10)</label>
           <input id="${INPUTS.fontSize}" class="input" type="number" min="1" max="10" />
         </div>
         <div class="row">
-          <label for="${INPUTS.fontWeight}" class="label">${getMessage('subtitle_font_weight_label')}</label>
+          <label for="${INPUTS.fontWeight}" class="label">${getMessage('font_weight')}(1~6)</label>
           <input id="${INPUTS.fontWeight}" class="input" type="number" min="1" max="6" />
         </div>
         <div class="row">
-          <label for="${INPUTS.opacity}" class="label">${getMessage('subtitle_opacity_label')}</label>
+          <label for="${INPUTS.opacity}" class="label">${getMessage('opacity')}(%)</label>
           <input id="${INPUTS.opacity}" class="input" type="number" min="0" max="100" />
         </div>
         <div class="row">
-          <label for="${INPUTS.lineBreak}" class="label">${getMessage('line_break_label')}</label>
+          <label for="${INPUTS.lineBreak}" class="label">${getMessage('allow_line_break')}</label>
           <input id="${INPUTS.lineBreak}" type="checkbox" />
         </div>
       </div>

@@ -19,36 +19,28 @@ export default class ShortcutsConfigForm extends Component {
   template() {
     return html`
       <header class="section-header">
-        <h2 class="section-title">${getMessage('shortcuts_section_title')}</h2>
+        <h2 class="section-title">${getMessage('shortcuts')}</h2>
         <div class="row">
-          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel_button')}</button>
-          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save_button')}</button>
+          <button id="${BUTTONS.CANCEL}" class="button bg-gray-500 hidden">${getMessage('cancel')}</button>
+          <button id="${BUTTONS.SAVE}" class="button bg-teal-500 hidden">${getMessage('save')}</button>
           <div id="${TOGGLE_ID}"></div>
         </div>
       </header>
       <div id="${CONTAINER_ID}" class="section">
         <div class="row">
-          <label for="${INPUTS.savePrimary}" class="label">
-            ${getMessage('primary_subtitle_save_shortcuts_label')}
-          </label>
+          <label for="${INPUTS.savePrimary}" class="label"> ${getMessage('save_primary_subtitle')} </label>
           <input id="${INPUTS.savePrimary}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.saveSecondary}" class="label">
-            ${getMessage('secondary_subtitle_save_shortcuts_label')}
-          </label>
+          <label for="${INPUTS.saveSecondary}" class="label"> ${getMessage('save_secondary_subtitle')} </label>
           <input id="${INPUTS.saveSecondary}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.togglePrimary}" class="label">
-            ${getMessage('primary_subtitle_toggle_shortcuts_label')}
-          </label>
+          <label for="${INPUTS.togglePrimary}" class="label"> ${getMessage('toggle_primary_subtitle')} </label>
           <input id="${INPUTS.togglePrimary}" class="input" readonly />
         </div>
         <div class="row">
-          <label for="${INPUTS.toggleSecondary}" class="label">
-            ${getMessage('secondary_subtitle_toggle_shortcuts_label')}
-          </label>
+          <label for="${INPUTS.toggleSecondary}" class="label"> ${getMessage('toggle_secondary_subtitle')} </label>
           <input id="${INPUTS.toggleSecondary}" class="input" readonly />
         </div>
       </div>

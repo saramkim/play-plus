@@ -28,7 +28,7 @@ export default class SavedSubtitleHeader extends Component<SavedSubtitleHeaderPr
             this.setState({ isEditMode: false });
           }}"
         >
-          ${getMessage('cancel_button')}
+          ${getMessage('cancel')}
         </button>
         <button
           class="button bg-teal-500 ${isEditMode ? '' : 'hidden'}"
@@ -37,7 +37,7 @@ export default class SavedSubtitleHeader extends Component<SavedSubtitleHeaderPr
             this.setState({ isEditMode: false });
           }}"
         >
-          ${getMessage('save_button')}
+          ${getMessage('save')}
         </button>
         <button
           class="button bg-gray-500 ${isEditMode ? 'hidden' : ''}"
@@ -46,7 +46,7 @@ export default class SavedSubtitleHeader extends Component<SavedSubtitleHeaderPr
             this.setState({ isEditMode: true });
           }}"
         >
-          ${getMessage('edit_button')}
+          ${getMessage('edit')}
         </button>
       </div>
     `;
