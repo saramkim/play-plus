@@ -43,9 +43,11 @@
   "center": { "message": "중앙" },
   "bottom": { "message": "하단" },
   "click_to_save": { "message": "클릭하여 저장" },
-  "setting": { "message": "설정" },
-  "review": { "message": "복습" },
+
+  "subtitle_setting": { "message": "자막 설정" },
+  "video_setting": { "message": "영상 설정" },
   "saved_subtitles": { "message": "저장된 자막" },
+
   "view_video": { "message": "영상 보기" },
   "success_save_subtitle": { "message": "✔ 자막 저장 완료" },
   "error_save_subtitle": { "message": "✖ 자막 저장 실패" },

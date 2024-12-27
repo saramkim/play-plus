@@ -1,13 +1,12 @@
 import { html } from 'lit-html';
 import Component from '../core/Component';
 import VideoSkipConfigForm from './VideoSkipConfigForm';
-import SubtitleConfigForm from './SubtitleConfigForm';
 import { SETTINGS } from '../utils/constants';
 import ShortcutsConfigForm from './ShortcutsConfigForm';
 
-const { SUBTITLES, VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS } = SETTINGS;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS } = SETTINGS;
 
-export default class SettingPage extends Component {
+export default class VideoSettingPage extends Component {
   afterRender() {
     this.initiaizeSettingComponents();
   }
@@ -15,8 +14,6 @@ export default class SettingPage extends Component {
   template() {
     return html`
       <div class="flex flex-col gap-5">
-        <section id="${SUBTITLES.PRIMARY.SECTION_ID}" class="section"></section>
-        <section id="${SUBTITLES.SECONDARY.SECTION_ID}" class="section"></section>
         <section id="${VIDEO_SKIP.SECTION_ID}" class="section"></section>
         <section id="${SUB_VIDEO_SKIP.SECTION_ID}" class="section"></section>
         <section id="${SHORTCUTS.SECTION_ID}" class="section"></section>
@@ -27,8 +24,6 @@ export default class SettingPage extends Component {
   private initiaizeSettingComponents() {
     const getContainer = (sectionId: string) => document.getElementById(sectionId)!;
 
-    new SubtitleConfigForm(getContainer(SUBTITLES.PRIMARY.SECTION_ID), SUBTITLES.PRIMARY);
-    new SubtitleConfigForm(getContainer(SUBTITLES.SECONDARY.SECTION_ID), SUBTITLES.SECONDARY);
     new VideoSkipConfigForm(getContainer(VIDEO_SKIP.SECTION_ID), VIDEO_SKIP);
     new VideoSkipConfigForm(getContainer(SUB_VIDEO_SKIP.SECTION_ID), SUB_VIDEO_SKIP);
     new ShortcutsConfigForm(getContainer(SHORTCUTS.SECTION_ID));

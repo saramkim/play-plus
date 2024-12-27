@@ -43,9 +43,11 @@
   "center": { "message": "Center" },
   "bottom": { "message": "Bottom" },
   "click_to_save": { "message": "Click to save" },
-  "setting": { "message": "Settings" },
-  "review": { "message": "Review" },
+
+  "subtitle_setting": { "message": "Subtitle Setting" },
+  "video_setting": { "message": "Video Setting" },
   "saved_subtitles": { "message": "Saved Subtitles" },
+
   "view_video": { "message": "View Video" },
   "success_save_subtitle": { "message": "✔ Subtitle saved" },
   "error_save_subtitle": { "message": "✖ Failed to save subtitle" },

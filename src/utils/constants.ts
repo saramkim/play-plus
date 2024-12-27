@@ -9,8 +9,9 @@ export const TOAST_CONTAINER_ID = 'pp-toast-container';
 export const POPUP_CONTAINER_ID = 'popup-container';
 
 export const PAGE_NAME = {
-  SETTING: 'setting',
-  REVIEW: 'review',
+  SUBTITLE_SETTING: 'subtitle-setting',
+  VIDEO_SETTING: 'video-setting',
+  SAVED_SUBTITLES: 'saved-subtitles',
 } as const;
 export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 

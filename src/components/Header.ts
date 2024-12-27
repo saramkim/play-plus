@@ -1,10 +1,9 @@
 import { html } from 'lit-html';
-import { Switch } from './switch';
 import { getMessage } from '../utils/i18n';
 import Component from '../core/Component';
 import { PAGE_NAME } from '../utils/constants';
 
-const NAV_SWITCH_ID = 'nav-switch';
+const { SUBTITLE_SETTING, VIDEO_SETTING, SAVED_SUBTITLES } = PAGE_NAME;
 
 type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
@@ -13,26 +12,44 @@ type HeaderProps = {
   onNavigate: (name: PageName) => void;
 };
 export default class Header extends Component<HeaderProps> {
-  afterRender() {
-    Switch({
-      id: NAV_SWITCH_ID,
-      options: [
-        { label: getMessage('setting'), value: PAGE_NAME.SETTING },
-        { label: getMessage('review'), value: PAGE_NAME.REVIEW },
-      ],
-      initialValue: this.props.initialPage,
-      onChange: this.props.onNavigate.bind(this),
-      className: ['h-8', 'text-[15px]', 'border-gray-300'],
-    });
+  private pageMap = {
+    [SUBTITLE_SETTING]: getMessage('subtitle_setting'),
+    [VIDEO_SETTING]: getMessage('video_setting'),
+    [SAVED_SUBTITLES]: getMessage('saved_subtitles'),
+  };
+
+  async initialize() {
+    this.state = {
+      currentPage: this.props.initialPage,
+    };
   }
 
   template() {
     return html`
-      <div class="flex gap-2 items-center w-full">
-        <img src="icons/play-plus_48x.png" alt="logo" class="w-8" />
-        <h1 class="text-2xl font-bold text-teal-500">Play Plus</h1>
+      <div class="flex flex-col px-4 pt-4">
+        <div class="flex justify-between items-center gap-2">
+          ${Object.entries(this.pageMap).map(([page, text]) => this.buttonTemplate(page, text))}
+        </div>
       </div>
-      <div id=${NAV_SWITCH_ID}></div>
     `;
+  }
+
+  private buttonTemplate(page: PageName, text: string) {
+    const { currentPage } = this.state;
+    return html`
+      <div
+        class="w-full px-1 text-center cursor-pointer text-[15px] ${currentPage === page
+          ? 'text-black border-b-2 border-b-black font-bold translate-y-[1px]'
+          : 'text-gray-500 font-medium hover:text-black'}"
+        @click=${() => this.navigate(page)}
+      >
+        ${text}
+      </div>
+    `;
+  }
+
+  private navigate(name: PageName) {
+    this.setState({ currentPage: name });
+    this.props.onNavigate(name);
   }
 }
