@@ -22,6 +22,7 @@ const FOOTER_ID = 'footer';
 
 export default class App extends Component {
   private removePage?: () => void;
+  private currentPage?: PageName;
 
   async onMount() {
     const lastViewedPage = await getLocalStorage('lastViewedPage');
@@ -54,10 +55,15 @@ export default class App extends Component {
   }
 
   private navigate(name: PageName) {
+    if (this.currentPage === name) return;
+
     this.removePage?.();
+
     const Page = PAGE_MAP[name];
     const page = new Page(document.getElementById(MAIN_ID)!);
+
     this.removePage = () => page.destroy();
+    this.currentPage = name;
     setLocalStorage('lastViewedPage', name);
   }
 }
