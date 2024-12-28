@@ -8,6 +8,7 @@
   "video_setting": { "message": "Video Setting" },
   "saved_subtitles": { "message": "Saved Subtitles" },
 
+  "all_list": { "message": "All List" },
   "backward_key": { "message": "Backward Key" },
   "bottom": { "message": "Bottom" },
   "cancel": { "message": "Cancel" },
@@ -31,6 +32,8 @@
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
   "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
   "save": { "message": "Save" },
+  "search": { "message": "Search" },
+  "search_term": { "message": "Search Term" },
   "secondary_subtitle": { "message": "Secondary Subtitle" },
   "seconds": { "message": "Seconds" },
   "select": { "message": "Select" },

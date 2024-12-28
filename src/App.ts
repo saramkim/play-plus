@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import ReviewPage from './ui/ReviewPage';
+import SavedSubtitlesPage from './ui/SavedSubtitlesPage';
 import SubtitleSettingPage from './ui/SubtitleSettingPage';
 import VideoSettingPage from './ui/VideoSettingPage';
 import { PAGE_NAME, PageName, POPUP_CONTAINER_ID } from './utils/constants';
@@ -13,7 +13,7 @@ const { SUBTITLE_SETTING, VIDEO_SETTING, SAVED_SUBTITLES } = PAGE_NAME;
 const PAGE_MAP = {
   [SUBTITLE_SETTING]: SubtitleSettingPage,
   [VIDEO_SETTING]: VideoSettingPage,
-  [SAVED_SUBTITLES]: ReviewPage,
+  [SAVED_SUBTITLES]: SavedSubtitlesPage,
 };
 
 const HEADER_ID = 'header';

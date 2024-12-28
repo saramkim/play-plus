@@ -117,8 +117,6 @@ export const REVIEW = {
   DATA_ATTRIBUTE: {
     START_TIME: 'startTime',
   },
-  HEADER_ID: 'saved-subtitle-header',
-  CONTAINER_ID: 'saved-subtitle-container',
   ACTIONS: {
     VIEW_VIDEO: 'viewVideo',
     PLAY_VIDEO: 'playVideo',

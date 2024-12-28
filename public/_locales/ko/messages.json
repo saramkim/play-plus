@@ -8,6 +8,7 @@
   "video_setting": { "message": "영상 설정" },
   "saved_subtitles": { "message": "저장된 자막" },
 
+  "all_list": { "message": "전체 목록" },
   "backward_key": { "message": "뒤로 이동 키" },
   "bottom": { "message": "하단" },
   "cancel": { "message": "취소" },
@@ -31,6 +32,8 @@
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
   "save": { "message": "저장" },
+  "search": { "message": "검색" },
+  "search_term": { "message": "검색어" },
   "secondary_subtitle": { "message": "서브 자막" },
   "seconds": { "message": "초" },
   "select": { "message": "선택" },
