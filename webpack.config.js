@@ -16,9 +16,28 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
-        use: 'ts-loader',
+        test: /\.(ts|tsx)$/,
+        include: path.resolve(__dirname, 'src'),
         exclude: /node_modules/,
+        oneOf: [
+          {
+            test: /\.tsx$/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: [
+                  '@babel/preset-env',
+                  ['@babel/preset-react', { runtime: 'automatic' }],
+                  '@babel/preset-typescript',
+                ],
+              },
+            },
+          },
+          {
+            test: /\.ts$/,
+            use: 'ts-loader',
+          },
+        ],
       },
       {
         test: /\.css$/,
@@ -27,9 +46,9 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js'],
   },
-  devtool: false,
+  devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/index.html',
