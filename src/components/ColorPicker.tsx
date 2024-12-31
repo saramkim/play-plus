@@ -1,0 +1,20 @@
+interface ColorPickerProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function ColorPicker({ value, onChange }: ColorPickerProps) {
+  return (
+    <div className='relative inline-block w-7 h-7'>
+      <input
+        type='color'
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+      />
+      <div className='w-full h-full rounded-full border border-gray-300' style={{ backgroundColor: value }} />
+    </div>
+  );
+}
+
+export default ColorPicker;

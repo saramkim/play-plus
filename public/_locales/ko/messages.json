@@ -28,6 +28,7 @@
   "opacity": { "message": "투명도" },
   "position_offset": { "message": "위치 조정" },
   "position_reference": { "message": "위치 기준" },
+  "press_any_key": { "message": "키 입력" },
   "primary_subtitle": { "message": "메인 자막" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
