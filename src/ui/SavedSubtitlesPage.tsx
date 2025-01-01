@@ -9,15 +9,17 @@ function SavedSubtitlesPage() {
   const [subtitles, setSubtitles] = useState<SavedSubtitle[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [sort, setSort] = useState<'latest' | 'oldest'>('latest');
   const originalSubtitles = useRef<SavedSubtitle[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const filteredSubtitles = useMemo(
-    () =>
-      searchText
-        ? subtitles.filter(({ content }) => content.toLowerCase().includes(searchText.toLowerCase()))
-        : subtitles,
-    [subtitles, searchText]
-  );
+  const filteredSubtitles = useMemo(() => {
+    const filtered = searchText
+      ? subtitles.filter(({ content }) => content.toLowerCase().includes(searchText.toLowerCase()))
+      : subtitles;
+    return sort === 'latest'
+      ? filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+      : filtered.sort((a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime());
+  }, [subtitles, searchText, sort]);
 
   useEffect(() => {
     (async () => {
@@ -78,7 +80,7 @@ function SavedSubtitlesPage() {
 
   return (
     <div className='flex flex-col h-full'>
-      <header className='flex flex-col gap-1 pb-1 border-b'>
+      <header className='flex flex-col gap-2 pb-2 border-b'>
         <div className='flex justify-between items-center gap-2'>
           <form className='flex items-center gap-1' onSubmit={search}>
             <input className='input' ref={searchInputRef} />
@@ -103,25 +105,36 @@ function SavedSubtitlesPage() {
             )}
           </div>
         </div>
-        <div>
+        <div className='flex justify-between items-center'>
           {searchText ? (
             <div className='flex items-center gap-1'>
               <button className='text-rose-500' onClick={clearSearch}>
                 ✖
               </button>
-              <div className='text-gray-500'>
-                {getMessage('search_term')}:<span className='font-medium'>{searchText}</span>
+              <div className='text-gray-800 flex items-center gap-1'>
+                <span>{getMessage('search_term')}:</span>
+                <span className='font-bold'>{searchText}</span>
               </div>
             </div>
           ) : (
-            <div className='text-gray-500'>
+            <div className='text-gray-800'>
               <span className='font-medium'>{getMessage('all_list')}</span>
               <span>({subtitles.length})</span>
             </div>
           )}
+
+          <div className='flex items-center gap-1'>
+            <button className={sort === 'latest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('latest')}>
+              {getMessage('latest')}
+            </button>
+            <span className='text-gray-300'>|</span>
+            <button className={sort === 'oldest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('oldest')}>
+              {getMessage('oldest')}
+            </button>
+          </div>
         </div>
       </header>
-      <ul className='flex flex-col gap-1 h-full overflow-auto'>
+      <ul className='flex flex-col h-full overflow-auto'>
         {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDlete: deleteSubtitle }))}
       </ul>
     </div>
