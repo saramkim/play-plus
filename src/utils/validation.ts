@@ -67,7 +67,7 @@ function validateDuplicateShortcuts<K extends StorageKey>(data: StorageSchema[K]
   const otherShortcuts = [...existingShortcuts];
 
   Object.entries(data).forEach(([key, value]) => {
-    if (SHORTCUT_DATA_KEYS.includes(key) && typeof value === 'string') {
+    if (SHORTCUT_DATA_KEYS.includes(key) && typeof value === 'string' && value !== '') {
       if (otherShortcuts.includes(value))
         throw new Error(`${getMessage('error_duplicate_shortcuts')}\n${getMessageByKey(key)}`);
       if (RESERVED_SHORTCUTS.includes(value))
