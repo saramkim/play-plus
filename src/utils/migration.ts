@@ -13,20 +13,20 @@ const createMigration = <T extends StorageKey>(migration: LegacyMigration<T>) =>
 
 const LEGACY_MIGRATIONS = {
   // 1.4.x => 1.5.x
-  skipTime: createMigration({
-    newKey: SETTINGS.VIDEO_SKIP.STORAGE_KEY,
-    transform: (oldData) => ({
-      ...DEFAULT_CONFIG[SETTINGS.VIDEO_SKIP.STORAGE_KEY],
-      skipTime: oldData,
-    }),
-  }),
-  subKey: createMigration({
-    newKey: SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY,
-    transform: (oldData) => ({
-      ...DEFAULT_CONFIG[SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY],
-      ...oldData,
-    }),
-  }),
+  // skipTime: createMigration({
+  //   newKey: SETTINGS.VIDEO_SKIP.STORAGE_KEY,
+  //   transform: (oldData) => ({
+  //     ...DEFAULT_CONFIG[SETTINGS.VIDEO_SKIP.STORAGE_KEY],
+  //     skipTime: oldData,
+  //   }),
+  // }),
+  // subKey: createMigration({
+  //   newKey: SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY,
+  //   transform: (oldData) => ({
+  //     ...DEFAULT_CONFIG[SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY],
+  //     ...oldData,
+  //   }),
+  // }),
 } as const;
 
 export const migrateLegacyStorage = () => {
