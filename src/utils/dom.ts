@@ -1,3 +1,4 @@
+import { TOAST_CONTAINER_ID } from './constants';
 import { getMessage } from './i18n';
 
 export const selectVideoElement = (): Promise<HTMLVideoElement> => {
@@ -63,3 +64,29 @@ export const createElement = (id: string, tagName: string = 'div') => {
   element.id = id;
   return element;
 };
+
+export function showToast(title: string, message: string, type: 'success' | 'error') {
+  const container = document.getElementById(TOAST_CONTAINER_ID);
+
+  if (!container) {
+    console.error('Toast container not found');
+    return;
+  }
+
+  const toast = document.createElement('div');
+  const titleElement = document.createElement('span');
+  const messageElement = document.createElement('span');
+
+  toast.classList.add('toast', `toast-${type}`);
+  titleElement.classList.add('toast-title');
+  titleElement.textContent = title;
+  messageElement.textContent = message;
+
+  toast.appendChild(titleElement);
+  toast.appendChild(messageElement);
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}

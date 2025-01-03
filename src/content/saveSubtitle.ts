@@ -1,6 +1,6 @@
-import { REVIEW, SUBTITLE_TOOLTIP_ID, TOAST_CONTAINER_ID } from '../utils/constants';
+import { REVIEW, SUBTITLE_TOOLTIP_ID } from '../utils/constants';
 import { setLocalStorage } from '../utils/storage';
-import { createTooltip } from '../utils/dom';
+import { createTooltip, showToast } from '../utils/dom';
 import { getMessage } from '../utils/i18n';
 import { getLocalStorage } from '../utils/storage';
 
@@ -65,24 +65,4 @@ async function saveSubtitle(subtitleElement: HTMLElement) {
   await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [data, ...prevData] : [data]);
 
   return content;
-}
-
-function showToast(title: string, message: string, type: 'success' | 'error') {
-  const container = document.getElementById(TOAST_CONTAINER_ID);
-  const toast = document.createElement('div');
-  const titleElement = document.createElement('span');
-  const messageElement = document.createElement('span');
-
-  toast.classList.add('toast', `toast-${type}`);
-  titleElement.classList.add('toast-title');
-  titleElement.textContent = title;
-  messageElement.textContent = message;
-
-  toast.appendChild(titleElement);
-  toast.appendChild(messageElement);
-  container?.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
 }

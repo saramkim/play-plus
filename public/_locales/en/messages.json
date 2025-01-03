@@ -55,6 +55,7 @@
 
   "success_save_subtitle": { "message": "✔ Subtitle saved" },
   "error_save_subtitle": { "message": "✖ Failed to save subtitle" },
+  "error_skip_video": { "message": "✖ Failed to skip video" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },

@@ -55,6 +55,7 @@
 
   "success_save_subtitle": { "message": "✔ 자막 저장 완료" },
   "error_save_subtitle": { "message": "✖ 자막 저장 실패" },
+  "error_skip_video": { "message": "✖ 영상 이동 실패" },
 
   "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
   "error_number_type": { "message": "숫자만 입력할 수 있습니다." },

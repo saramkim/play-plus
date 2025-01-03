@@ -1,4 +1,6 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
+import { showToast } from '../utils/dom';
+import { getMessage } from '../utils/i18n';
 import {
   getStorage,
   ShortcutsConfig,
@@ -111,7 +113,10 @@ function skipVideoTime(skipTime: number, skipTimeUnit: SkipTimeUnit) {
 
   if (skipTimeUnit === 'subtitles') {
     const subtitles = [...subtitleCache.values()]?.[0];
-    if (!subtitles || subtitles.length === 0) return;
+    if (!subtitles || subtitles.length === 0) {
+      showToast(getMessage('error_skip_video'), getMessage('error_no_subtitle'), 'error');
+      return;
+    }
 
     const index = findCurrentSubtitleIndex(subtitles, currentTime);
 
