@@ -105,16 +105,14 @@ function SavedSubtitlesPage() {
             )}
           </div>
         </div>
-        <div className='flex justify-between items-center'>
+        <div className='flex justify-between items-center gap-2'>
           {searchText ? (
-            <div className='flex items-center gap-1'>
+            <div className='flex items-center gap-1 w-full overflow-hidden'>
               <button className='text-rose-500' onClick={clearSearch}>
                 ✖
               </button>
-              <div className='text-gray-800 flex items-center gap-1'>
-                <span>{getMessage('search_term')}:</span>
-                <span className='font-bold'>{searchText}</span>
-              </div>
+              <span className='text-gray-800'>{getMessage('search_term')}:</span>
+              <span className='font-bold truncate'>{searchText}</span>
             </div>
           ) : (
             <div className='text-gray-800'>
