@@ -2,8 +2,16 @@ import './content.css';
 import { REVIEW } from '../utils/constants';
 import { selectVideoElement } from '../utils/dom';
 import { onStorageChange } from '../utils/storage';
-import { fetchVideoMetadata, initializeSubtitleSync, onSubtitleStorageChange } from './subtitle';
+import {
+  fetchAndSyncSubtitles,
+  fetchVideoMetadata,
+  initializeSubtitleSync,
+  onSubtitleStorageChange,
+  setupSubtitleSync,
+} from './subtitle';
 import { initializeVideoControlSetting, onVideoControlStorageChange } from './videoControl';
+import { initializeElementStore } from './elementStore';
+import { initializeSubtitleStore } from './subtitleStore';
 
 async function init() {
   initializeMessageListener();
@@ -16,7 +24,17 @@ function initializeMessageListener() {
   chrome.runtime.onMessage.addListener(async (message) => {
     if (message) {
       if (message.url && message.headers) {
-        fetchVideoMetadata(message.url, message.headers);
+        const [subtitleApiInfoList, video] = await Promise.all([
+          fetchVideoMetadata(message.url, message.headers),
+          initializeElementStore(),
+        ]);
+
+        initializeSubtitleStore(subtitleApiInfoList);
+
+        if (subtitleApiInfoList && video) {
+          await fetchAndSyncSubtitles(subtitleApiInfoList);
+          setupSubtitleSync(video);
+        }
       }
       if (message.action === REVIEW.ACTIONS.PLAY_VIDEO) {
         const video = await selectVideoElement();

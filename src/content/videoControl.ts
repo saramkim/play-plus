@@ -11,8 +11,9 @@ import {
   VideoSkipConfig,
 } from '../utils/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
+import { getVideoElement } from './elementStore';
 import { saveSubtitleWithToast } from './saveSubtitle';
-import { subtitleCache } from './subtitle';
+import { getSubtitleCache } from './subtitleStore';
 
 type KeyBindings = { [key: string]: () => void };
 
@@ -106,13 +107,13 @@ function isInputField(): boolean {
 }
 
 function skipVideoTime(skipTime: number, skipTimeUnit: SkipTimeUnit) {
-  const video = document.querySelector('video');
+  const video = getVideoElement();
   if (!video) return;
 
   const { currentTime, duration } = video;
 
   if (skipTimeUnit === 'subtitles') {
-    const subtitles = [...subtitleCache.values()]?.[0];
+    const subtitles = [...getSubtitleCache().values()]?.[0];
     if (!subtitles || subtitles.length === 0) {
       showToast(getMessage('error_skip_video'), getMessage('error_no_subtitle'), 'error');
       return;
