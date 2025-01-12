@@ -65,6 +65,7 @@
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },
+  "error_type_mismatch": { "message": "Type is not correct." },
   "error_max_length": {
     "message": "Exceeds the maximum length of $maxLength$.",
     "placeholders": { "maxLength": { "content": "$1" } }
