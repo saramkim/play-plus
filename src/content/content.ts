@@ -12,12 +12,14 @@ import {
 import { initializeVideoControlSetting, onVideoControlStorageChange } from './videoControl';
 import { initializeElementStore } from './elementStore';
 import { initializeSubtitleStore } from './subtitleStore';
+import { initializeLoopSetting, onLoopStorageChange, setupLoopHandler } from './loop';
 
 async function init() {
   initializeMessageListener();
   initializeStorageChange();
-  await initializeSubtitleSync();
-  await initializeVideoControlSetting();
+  initializeSubtitleSync();
+  initializeVideoControlSetting();
+  initializeLoopSetting();
 }
 
 function initializeMessageListener() {
@@ -30,6 +32,7 @@ function initializeMessageListener() {
         ]);
 
         initializeSubtitleStore(subtitleApiInfoList);
+        setupLoopHandler(video);
 
         if (subtitleApiInfoList && video) {
           await fetchAndSyncSubtitles(subtitleApiInfoList);
@@ -49,6 +52,7 @@ function initializeStorageChange() {
   onStorageChange((changes) => {
     onSubtitleStorageChange(changes);
     onVideoControlStorageChange(changes);
+    onLoopStorageChange(changes);
   });
 }
 

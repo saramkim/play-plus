@@ -44,4 +44,10 @@ export const DEFAULT_CONFIG: StorageSchema = {
     togglePrimary: '',
     toggleSecondary: '',
   },
+  loop: {
+    enabled: false,
+    toggleLoop: '',
+    startPoint: '',
+    endPoint: '',
+  },
 };

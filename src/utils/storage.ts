@@ -30,6 +30,12 @@ export type ShortcutsConfig = {
   togglePrimary: string;
   toggleSecondary: string;
 };
+export type LoopConfig = {
+  enabled: boolean;
+  toggleLoop: string;
+  startPoint: string;
+  endPoint: string;
+};
 
 export type StorageSchema = {
   videoSkip: VideoSkipConfig;
@@ -37,6 +43,7 @@ export type StorageSchema = {
   primarySubtitle: SubtitleConfig;
   secondarySubtitle: SubtitleConfig;
   shortcuts: ShortcutsConfig;
+  loop: LoopConfig;
 };
 export type StorageKey = keyof StorageSchema;
 

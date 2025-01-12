@@ -38,9 +38,94 @@
   background-color: theme(colors.rose.500 / 50%);
 }
 
+#pp-toast-container .toast-info {
+  background-color: theme(colors.amber.500 / 50%);
+}
+
 #pp-toast-container .toast .toast-title {
   font-size: 14px;
   font-weight: 600;
+}
+
+#pp-loop-marker-container {
+  position: absolute;
+  top: -30px;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  pointer-events: none;
+  display: none;
+}
+#pp-loop-marker-container.show {
+  display: block;
+}
+#pp-loop-marker-container .loop-marker {
+  position: absolute;
+  cursor: pointer;
+  pointer-events: all;
+  width: 15px;
+  height: 30px;
+  opacity: 0.8;
+  color: theme(colors.teal.500);
+}
+#pp-loop-marker-container .loop-marker:hover {
+  opacity: 1;
+  z-index: 1000;
+}
+#pp-loop-marker-container .loop-marker-text {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+#pp-loop-marker-container #loop-marker-start {
+  left: 0%;
+}
+#pp-loop-marker-container #loop-marker-end {
+  left: 10%;
+}
+
+#pp-loop-status-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+}
+#pp-loop-status-container.show {
+  opacity: 1;
+}
+#pp-loop-status-container.spin #pp-loop-icon {
+  animation: pp-spin 5s linear infinite;
+}
+#pp-loop-status-container #pp-loop-icon {
+  width: 48px;
+  height: 48px;
+}
+
+#pp-loop-button {
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  display: none;
+}
+#pp-loop-button:hover {
+  opacity: 0.5;
+}
+#pp-loop-button.show {
+  display: block;
+}
+#pp-loop-button.active {
+  color: theme(colors.teal.500);
 }
 
 @keyframes pp-fade-in-out {
@@ -59,5 +144,14 @@
   100% {
     opacity: 0;
     transform: translateY(10px);
+  }
+}
+
+@keyframes pp-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

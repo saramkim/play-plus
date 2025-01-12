@@ -17,6 +17,7 @@
   "click_to_save": { "message": "Click to save" },
   "confirm": { "message": "Confirm" },
   "edit": { "message": "Edit" },
+  "end_point_key": { "message": "End Point Key" },
   "english": { "message": "English" },
   "error": { "message": "Error" },
   "font_weight": { "message": "Font Weight" },
@@ -25,6 +26,7 @@
   "korean": { "message": "Korean" },
   "language": { "message": "Language" },
   "latest": { "message": "Latest" },
+  "loop": { "message": "Loop" },
   "minutes": { "message": "Minutes" },
   "oldest": { "message": "Oldest" },
   "opacity": { "message": "Opacity" },
@@ -42,11 +44,13 @@
   "select": { "message": "Select" },
   "shortcuts": { "message": "Shortcuts" },
   "skip_unit": { "message": "Skip Unit" },
+  "start_point_key": { "message": "Start Point Key" },
   "sub_video_skip": { "message": "Video Skip(2)" },
   "subtitle_color": { "message": "Subtitle Color" },
   "subtitle_size": { "message": "Subtitle Size" },
   "subtitles": { "message": "Subtitles" },
   "success": { "message": "Success" },
+  "toggle_loop_key": { "message": "Loop On/Off" },
   "toggle_primary_subtitle": { "message": "Primary Subtitle On/Off" },
   "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },
   "top": { "message": "Top" },
@@ -56,6 +60,8 @@
   "success_save_subtitle": { "message": "✔ Subtitle saved" },
   "error_save_subtitle": { "message": "✖ Failed to save subtitle" },
   "error_skip_video": { "message": "✖ Failed to skip video" },
+  "error_loop": { "message": "✖ Failed to loop" },
+  "info_loop_stop": { "message": "Loop is stopped" },
 
   "error_text_type": { "message": "Only text is allowed." },
   "error_number_type": { "message": "Only numbers are allowed." },
@@ -82,5 +88,7 @@
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },
   "error_no_subtitle": { "message": "No subtitle." },
   "error_duplicate_shortcuts": { "message": "Shortcuts are duplicated." },
-  "error_unknown": { "message": "Unknown error" }
+  "error_unknown": { "message": "Unknown error" },
+  "error_loop_time_message": { "message": "Start time is greater than end time." },
+  "info_loop_stop_message": { "message": "Loop is stopped because it is out of range." }
 }

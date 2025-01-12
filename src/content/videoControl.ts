@@ -3,6 +3,7 @@ import { showToast } from '../utils/dom';
 import { getMessage } from '../utils/i18n';
 import {
   getStorage,
+  LoopConfig,
   ShortcutsConfig,
   SkipTimeUnit,
   StorageChange,
@@ -12,12 +13,13 @@ import {
 } from '../utils/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
 import { getVideoElement } from './elementStore';
+import { toggleLoop, setEndPoint, setStartPoint } from './loop';
 import { saveSubtitleWithToast } from './saveSubtitle';
 import { getSubtitleCache } from './subtitleStore';
 
 type KeyBindings = { [key: string]: () => void };
 
-const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS } = SETTINGS;
+const { VIDEO_SKIP, SUB_VIDEO_SKIP, SHORTCUTS, LOOP } = SETTINGS;
 
 const keyBindings: KeyBindings = {};
 
@@ -27,18 +29,23 @@ export function onVideoControlStorageChange(changes: StorageChanges) {
 
   const shortcutsChanges = changes[SHORTCUTS.STORAGE_KEY];
   if (shortcutsChanges) handleShortcutsStorageChange(shortcutsChanges);
+
+  const loopChanges = changes[LOOP.STORAGE_KEY];
+  if (loopChanges) handleLoopStorageChange(loopChanges);
 }
 
 export async function initializeVideoControlSetting() {
-  const [videoSkipConfig, subVideoSkipConfig, shortcutsConfig] = await Promise.all([
+  const [videoSkipConfig, subVideoSkipConfig, shortcutsConfig, loopConfig] = await Promise.all([
     getStorage(VIDEO_SKIP.STORAGE_KEY),
     getStorage(SUB_VIDEO_SKIP.STORAGE_KEY),
     getStorage(SHORTCUTS.STORAGE_KEY),
+    getStorage(LOOP.STORAGE_KEY),
   ]);
 
   if (videoSkipConfig) setKeyBindingsForVideoSkip(videoSkipConfig);
   if (subVideoSkipConfig) setKeyBindingsForVideoSkip(subVideoSkipConfig);
   if (shortcutsConfig) setKeyBindingsForShortcuts(shortcutsConfig);
+  if (loopConfig) setKeyBindingsForLoop(loopConfig);
 
   document.addEventListener('keydown', handleKeydown);
 }
@@ -98,6 +105,25 @@ function handleKeydown(event: KeyboardEvent) {
     event.preventDefault();
     event.stopImmediatePropagation();
     action();
+  }
+}
+
+function handleLoopStorageChange({ oldValue, newValue }: StorageChange<LoopConfig>) {
+  if (oldValue) {
+    const { enabled, ...shortcuts } = oldValue;
+    Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
+  }
+  if (newValue) setKeyBindingsForLoop(newValue);
+}
+
+function setKeyBindingsForLoop({ enabled, ...shortcuts }: LoopConfig) {
+  const { toggleLoop: toggleLoopKey, startPoint, endPoint } = shortcuts;
+  if (enabled) {
+    keyBindings[toggleLoopKey] = toggleLoop;
+    keyBindings[startPoint] = setStartPoint;
+    keyBindings[endPoint] = setEndPoint;
+  } else {
+    Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }
 }
 

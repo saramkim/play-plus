@@ -17,6 +17,7 @@
   "click_to_save": { "message": "클릭하여 저장" },
   "confirm": { "message": "확인" },
   "edit": { "message": "편집" },
+  "end_point_key": { "message": "종료 시점 지정 키" },
   "english": { "message": "영어" },
   "error": { "message": "실패" },
   "font_weight": { "message": "글씨 굵기" },
@@ -25,6 +26,7 @@
   "korean": { "message": "한국어" },
   "language": { "message": "언어" },
   "latest": { "message": "최신순" },
+  "loop": { "message": "구간 반복" },
   "minutes": { "message": "분" },
   "oldest": { "message": "오래된 순" },
   "opacity": { "message": "투명도" },
@@ -42,11 +44,13 @@
   "select": { "message": "선택" },
   "shortcuts": { "message": "단축키" },
   "skip_unit": { "message": "이동 단위" },
+  "start_point_key": { "message": "시작 시점 지정 키" },
   "sub_video_skip": { "message": "영상 이동(2)" },
   "subtitle_color": { "message": "자막 색상" },
   "subtitle_size": { "message": "자막 크기" },
   "subtitles": { "message": "자막" },
   "success": { "message": "성공" },
+  "toggle_loop_key": { "message": "구간 반복 켜기/끄기" },
   "toggle_primary_subtitle": { "message": "메인 자막 켜기/끄기" },
   "toggle_secondary_subtitle": { "message": "서브 자막 켜기/끄기" },
   "top": { "message": "상단" },
@@ -56,6 +60,8 @@
   "success_save_subtitle": { "message": "✔ 자막 저장 완료" },
   "error_save_subtitle": { "message": "✖ 자막 저장 실패" },
   "error_skip_video": { "message": "✖ 영상 이동 실패" },
+  "error_loop": { "message": "✖ 구간 반복 실패" },
+  "info_loop_stop": { "message": "구간 반복 해제" },
 
   "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
   "error_number_type": { "message": "숫자만 입력할 수 있습니다." },
@@ -83,5 +89,7 @@
   "error_try_later": { "message": "나중에 다시 시도해주세요." },
   "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
   "error_no_subtitle": { "message": "자막이 없습니다." },
-  "error_unknown": { "message": "알 수 없는 오류" }
+  "error_unknown": { "message": "알 수 없는 오류" },
+  "error_loop_time_message": { "message": "시작 시점이 종료 시점보다 큽니다." },
+  "info_loop_stop_message": { "message": "반복 구간을 벗어나 반복을 해제합니다." }
 }

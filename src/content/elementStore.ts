@@ -1,12 +1,23 @@
-import { TOAST_CONTAINER_ID, TRACK_DISPLAY_CONTAINER_CLASS_NAME } from '../utils/constants';
+import {
+  LOOP_BUTTON_ID,
+  LOOP_MARKER_CONTAINER_ID,
+  LOOP_STATUS_CONTAINER_ID,
+  TOAST_CONTAINER_ID,
+  TRACK_DISPLAY_CONTAINER_CLASS_NAME,
+} from '../utils/constants';
 import { SUBTITLE_CONTAINER_ID } from '../utils/constants';
-import { createElement, selectVideoElement } from '../utils/dom';
+import { createElement, createLoopIcon, selectVideoElement } from '../utils/dom';
 
 type ElementStore = {
   videoElement: HTMLVideoElement | null;
   trackDisplayContainer: HTMLElement | null;
   subtitleContainer: HTMLElement;
   toastContainer: HTMLElement;
+  sliderContainer: HTMLElement | null;
+  controlsLeft: HTMLElement | null;
+  loopMarkerContainer: HTMLElement;
+  loopStatusContainer: HTMLElement;
+  loopButton: HTMLElement;
   subtitleContainerObserver: MutationObserver | null;
 };
 
@@ -15,23 +26,24 @@ const elementStore: ElementStore = {
   trackDisplayContainer: null,
   subtitleContainer: createElement(SUBTITLE_CONTAINER_ID),
   toastContainer: createElement(TOAST_CONTAINER_ID),
+  sliderContainer: null,
+  controlsLeft: null,
+  loopMarkerContainer: createElement(LOOP_MARKER_CONTAINER_ID),
+  loopStatusContainer: createElement(LOOP_STATUS_CONTAINER_ID),
+  loopButton: createElement(LOOP_BUTTON_ID),
   subtitleContainerObserver: null,
 };
 
+function init() {
+  elementStore.loopButton.appendChild(createLoopIcon());
+}
+
 export async function initializeElementStore() {
   const video = await setVideoElement();
-
   setTrackDisplayContainer();
-
-  if (elementStore.subtitleContainerObserver) {
-    elementStore.subtitleContainerObserver.disconnect();
-    elementStore.subtitleContainerObserver = null;
-  }
+  setSliderContainer();
   setupContainer();
-
-  elementStore.subtitleContainer.replaceChildren();
-  elementStore.toastContainer.replaceChildren();
-
+  setupControls();
   return video;
 }
 
@@ -51,15 +63,51 @@ export function getToastContainer() {
   return elementStore.toastContainer;
 }
 
+export function getLoopMarkerContainer() {
+  return elementStore.loopMarkerContainer;
+}
+
+export function getLoopStatusContainer() {
+  return elementStore.loopStatusContainer;
+}
+
+export function getLoopButton() {
+  return elementStore.loopButton;
+}
+
+export function resetLoopStatus() {
+  const { loopMarkerContainer, loopStatusContainer, loopButton } = elementStore;
+  loopMarkerContainer.classList.remove('show');
+  loopStatusContainer.classList.remove('show');
+  loopStatusContainer.classList.remove('spin');
+  loopButton.classList.remove('active');
+}
+
 function setupContainer() {
-  const trackDisplayContainer = getTrackDisplayContainer();
-  const subtitleContainer = getSubtitleContainer();
-  const toastContainer = getToastContainer();
+  const {
+    trackDisplayContainer,
+    subtitleContainer,
+    toastContainer,
+    loopStatusContainer,
+    sliderContainer,
+    loopMarkerContainer,
+  } = elementStore;
 
-  if (!trackDisplayContainer) return;
+  resetLoopStatus();
 
-  appendContainer(trackDisplayContainer, [subtitleContainer, toastContainer]);
-  observeContainer(trackDisplayContainer, [subtitleContainer, toastContainer]);
+  if (elementStore.subtitleContainerObserver) {
+    elementStore.subtitleContainerObserver.disconnect();
+    elementStore.subtitleContainerObserver = null;
+  }
+
+  if (trackDisplayContainer) {
+    appendContainer(trackDisplayContainer, [subtitleContainer, toastContainer, loopStatusContainer]);
+    observeContainer(trackDisplayContainer, [subtitleContainer, toastContainer, loopStatusContainer]);
+  }
+
+  if (sliderContainer) {
+    sliderContainer.appendChild(loopMarkerContainer);
+  }
 }
 
 function observeContainer(trackDisplayContainer: Element, containers: HTMLElement[]) {
@@ -91,3 +139,16 @@ function setTrackDisplayContainer() {
     TRACK_DISPLAY_CONTAINER_CLASS_NAME
   )[0] as HTMLElement;
 }
+
+function setSliderContainer() {
+  elementStore.sliderContainer = document.querySelector('div.slider');
+}
+
+function setupControls() {
+  const controlsLeft = document.querySelector('.controls-left');
+  if (!controlsLeft) return;
+
+  controlsLeft.appendChild(elementStore.loopButton);
+}
+
+init();
