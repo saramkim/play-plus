@@ -17,7 +17,7 @@ const { SUBTITLES } = SETTINGS;
 
 let handleVideoTimeupdate: ((arg?: Event | boolean) => void) | null;
 
-export function onSubtitleStorageChange(changes: StorageChanges) {
+export async function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const subtitleChanges = changes[STORAGE_KEY];
 
@@ -26,7 +26,10 @@ export function onSubtitleStorageChange(changes: StorageChanges) {
 
       const subtitleApiInfoList = getSubtitleApiInfoList();
       if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
-        fetchAndSyncSubtitles(subtitleApiInfoList);
+        await fetchAndSyncSubtitles(subtitleApiInfoList);
+
+        const video = getVideoElement();
+        if (video && !handleVideoTimeupdate) setupSubtitleSync(video);
       } else if (Object.values(getSubtitleSettings()).every(({ enabled }) => !enabled)) {
         stopSubtitleSync();
       }
@@ -80,6 +83,9 @@ function stopSubtitleSync() {
   if (video && handleVideoTimeupdate) {
     video.removeEventListener('timeupdate', handleVideoTimeupdate);
     handleVideoTimeupdate = null;
+
+    const subtitleContainer = getSubtitleContainer();
+    subtitleContainer.replaceChildren();
   }
 }
 
