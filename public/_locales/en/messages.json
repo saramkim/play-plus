@@ -27,6 +27,7 @@
   "language": { "message": "Language" },
   "latest": { "message": "Latest" },
   "loop": { "message": "Loop" },
+  "loop_current_subtitle": { "message": "Loop Current Subtitle" },
   "minutes": { "message": "Minutes" },
   "oldest": { "message": "Oldest" },
   "opacity": { "message": "Opacity" },

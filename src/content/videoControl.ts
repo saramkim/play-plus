@@ -13,7 +13,7 @@ import {
 } from '../utils/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
 import { getVideoElement } from './elementStore';
-import { toggleLoop, setEndPoint, setStartPoint } from './loop';
+import { toggleLoop, setEndPoint, setStartPoint, loopCurrentSubtitle } from './loop';
 import { saveSubtitleWithToast } from './saveSubtitle';
 import { getSubtitleCache } from './subtitleStore';
 
@@ -122,6 +122,7 @@ function setKeyBindingsForLoop({ enabled, ...shortcuts }: LoopConfig) {
     keyBindings[toggleLoopKey] = toggleLoop;
     keyBindings[startPoint] = setStartPoint;
     keyBindings[endPoint] = setEndPoint;
+    keyBindings[shortcuts.loopCurrentSubtitle] = loopCurrentSubtitle;
   } else {
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }

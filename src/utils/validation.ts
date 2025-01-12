@@ -105,5 +105,6 @@ const getMessageByKey = (key: KeyOfUnion<StorageSchema[StorageKey]>) => {
     toggleLoop: getMessage('toggle_loop_key'),
     startPoint: getMessage('start_point_key'),
     endPoint: getMessage('end_point_key'),
+    loopCurrentSubtitle: getMessage('loop_current_subtitle'),
   }[key];
 };

@@ -41,6 +41,10 @@ function LoopConfigForm() {
           <label className='label'>{getMessage('end_point_key')} </label>
           <KeydownInput value={state.endPoint} onChange={handleChange('endPoint')} />
         </div>
+        <div className='row'>
+          <label className='label'>{getMessage('loop_current_subtitle')} </label>
+          <KeydownInput value={state.loopCurrentSubtitle} onChange={handleChange('loopCurrentSubtitle')} />
+        </div>
       </div>
     </section>
   );

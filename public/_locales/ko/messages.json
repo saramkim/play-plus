@@ -26,6 +26,7 @@
   "korean": { "message": "한국어" },
   "language": { "message": "언어" },
   "latest": { "message": "최신순" },
+  "loop_current_subtitle": { "message": "현재 자막 반복" },
   "loop": { "message": "구간 반복" },
   "minutes": { "message": "분" },
   "oldest": { "message": "오래된 순" },

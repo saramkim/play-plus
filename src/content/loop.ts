@@ -3,6 +3,7 @@ import { createElement, createLoopIcon, createMarker, showToast } from '../utils
 import { formatTime } from '../utils/helper';
 import { getMessage } from '../utils/i18n';
 import { getStorage, StorageChanges } from '../utils/storage';
+import { findCurrentSubtitleIndex } from '../utils/subtitle';
 import {
   getLoopButton,
   getLoopMarkerContainer,
@@ -10,6 +11,7 @@ import {
   getVideoElement,
   resetLoopStatus,
 } from './elementStore';
+import { getSubtitleCache } from './subtitleStore';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';
@@ -112,6 +114,31 @@ export const setupLoopHandler = (video: HTMLVideoElement) => {
   state.isLooping = false;
 
   state.handleTimeUpdate = () => timeUpdateHandler(video);
+};
+
+export const loopCurrentSubtitle = () => {
+  try {
+    const video = getVideoElement();
+    if (!video) throw new Error(getMessage('error_video_not_found'));
+
+    const subtitles = [...getSubtitleCache().values()]?.[0];
+    if (!subtitles || subtitles.length === 0) throw new Error(getMessage('error_no_subtitle'));
+
+    const index = findCurrentSubtitleIndex(subtitles, video.currentTime);
+    const currentSubtitle = subtitles[index];
+    if (!currentSubtitle) throw new Error(getMessage('error_no_subtitle'));
+
+    const { start, end } = currentSubtitle;
+    if (state.isLooping && markerState[START_MARKER_ID].time === start && markerState[END_MARKER_ID].time === end) {
+      loop(false);
+    } else {
+      setStartPoint(start);
+      setEndPoint(end);
+      loop(true);
+    }
+  } catch (e) {
+    handleLoopError(e);
+  }
 };
 
 const initializeLoopUI = () => {
@@ -232,6 +259,8 @@ const getPositionByTime = (video: HTMLVideoElement, time: number) => {
 
 const updateTime = (markerId: string, time: number) => {
   const markerData = markerState[markerId];
+  if (markerData.time === time) return;
+
   markerData.time = time;
   markerData.status.textContent = formatTime(time);
 

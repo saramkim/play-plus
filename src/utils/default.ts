@@ -49,5 +49,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
     toggleLoop: '',
     startPoint: '',
     endPoint: '',
+    loopCurrentSubtitle: '',
   },
 };

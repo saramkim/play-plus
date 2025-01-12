@@ -35,6 +35,7 @@ export type LoopConfig = {
   toggleLoop: string;
   startPoint: string;
   endPoint: string;
+  loopCurrentSubtitle: string;
 };
 
 export type StorageSchema = {
