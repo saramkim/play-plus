@@ -115,7 +115,7 @@ function observeContainer(trackDisplayContainer: Element, containers: HTMLElemen
     appendContainer(trackDisplayContainer, containers);
   });
 
-  elementStore.subtitleContainerObserver.observe(trackDisplayContainer, { attributes: true });
+  elementStore.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
 }
 
 function appendContainer(trackDisplayContainer: Element, containers: HTMLElement[]) {
