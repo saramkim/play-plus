@@ -3,8 +3,19 @@ import { getMessage } from './i18n';
 import { StorageKey } from './storage';
 import { DEFAULT_CONFIG } from './default';
 
-const SHORTCUT_STORAGE_KEYS: StorageKey[] = ['shortcuts', 'videoSkip', 'subVideoSkip'];
-const SHORTCUT_DATA_KEYS = ['forward', 'backward', 'savePrimary', 'saveSecondary', 'togglePrimary', 'toggleSecondary'];
+const SHORTCUT_STORAGE_KEYS: StorageKey[] = ['shortcuts', 'videoSkip', 'subVideoSkip', 'loop'];
+const SHORTCUT_DATA_KEYS: KeyOfUnion<StorageSchema[StorageKey]>[] = [
+  'forward',
+  'backward',
+  'savePrimary',
+  'saveSecondary',
+  'togglePrimary',
+  'toggleSecondary',
+  'toggleLoop',
+  'startPoint',
+  'endPoint',
+  'loopCurrentSubtitle',
+];
 const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
 
 export const validate = <K extends StorageKey>(
