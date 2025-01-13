@@ -42,7 +42,7 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
 export async function initializeSubtitleSync() {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const data = await getStorage(STORAGE_KEY);
-    if (data) setSubtitleSetting(STORAGE_KEY, data);
+    setSubtitleSetting(STORAGE_KEY, data);
   }
 }
 

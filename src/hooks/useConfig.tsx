@@ -14,10 +14,8 @@ function useConfig<K extends StorageKey>(key: K) {
   useEffect(() => {
     (async () => {
       const data = await getStorage(key);
-      if (data) {
-        originalState.current = { ...DEFAULT_CONFIG[key], ...data };
-        setState(originalState.current);
-      }
+      originalState.current = data;
+      setState(originalState.current);
     })();
 
     const { remove } = onStorageChange((changes) => {

@@ -74,13 +74,12 @@ export const setStorage = async <K extends StorageKey>(key: K, value: StorageSch
   }
 };
 
-export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[K] | undefined> => {
+export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[K]> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(key, (result) => {
-      const value = result[key];
+      const value = { ...DEFAULT_CONFIG[key], ...result[key] };
+      storageCache.set(key, value);
       resolve(value);
-      if (value) storageCache.set(key, value);
-      else storageCache.delete(key);
     });
   });
 };
@@ -89,7 +88,7 @@ export const updateStorage = async <K extends StorageKey>(
   key: K,
   updates: (value: StorageSchema[K]) => Partial<StorageSchema[K]>
 ) => {
-  const value = (await getStorage(key)) || DEFAULT_CONFIG[key];
+  const value = await getStorage(key);
   return await setStorage(key, { ...value, ...updates(value) });
 };
 

@@ -63,7 +63,7 @@ const markerState: Record<string, MarkerState> = {
 
 export const initializeLoopSetting = async () => {
   const data = await getStorage(STORAGE_KEY);
-  if (data) state.enabled = data.enabled;
+  state.enabled = data.enabled;
 
   initializeLoopUI();
 };
