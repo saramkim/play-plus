@@ -11,6 +11,8 @@ export type VideoSkipConfig = {
   backward: string;
   skipTime: number;
   skipTimeUnit: SkipTimeUnit;
+  fallbackTime: number;
+  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>;
 };
 export type SubtitleConfig = {
   enabled: boolean;

@@ -54,6 +54,20 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
             onChange={handleChange('skipTimeUnit')}
           />
         </div>
+        {state.skipTimeUnit === 'subtitles' && (
+          <div className='row'>
+            <label className='label'>{getMessage('fallback_unit')}</label>
+            <NumberInput value={state.fallbackTime} onChange={handleChange('fallbackTime')} min={1} />
+            <Dropdown
+              options={[
+                { label: getMessage('seconds'), value: 'seconds' },
+                { label: getMessage('minutes'), value: 'minutes' },
+              ]}
+              value={state.fallbackUnit}
+              onChange={handleChange('fallbackUnit')}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

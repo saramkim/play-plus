@@ -20,6 +20,7 @@
   "end_point_key": { "message": "End Point Key" },
   "english": { "message": "English" },
   "error": { "message": "Error" },
+  "fallback_unit": { "message": "Fallback Unit" },
   "font_weight": { "message": "Font Weight" },
   "forward_key": { "message": "Forward Key" },
   "info": { "message": "Info" },

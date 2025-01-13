@@ -29,6 +29,8 @@ export const DEFAULT_CONFIG: StorageSchema = {
     backward: 'ArrowLeft',
     skipTime: 10,
     skipTimeUnit: 'seconds',
+    fallbackTime: 10,
+    fallbackUnit: 'seconds',
   },
   subVideoSkip: {
     enabled: false,
@@ -36,6 +38,8 @@ export const DEFAULT_CONFIG: StorageSchema = {
     backward: '',
     skipTime: 10,
     skipTimeUnit: 'seconds',
+    fallbackTime: 10,
+    fallbackUnit: 'seconds',
   },
   shortcuts: {
     enabled: false,

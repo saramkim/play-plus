@@ -20,6 +20,7 @@
   "end_point_key": { "message": "종료 시점 지정 키" },
   "english": { "message": "영어" },
   "error": { "message": "실패" },
+  "fallback_unit": { "message": "대체 단위" },
   "font_weight": { "message": "글씨 굵기" },
   "forward_key": { "message": "앞으로 이동 키" },
   "info": { "message": "알림" },

@@ -1,6 +1,4 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
-import { showToast } from '../utils/dom';
-import { getMessage } from '../utils/i18n';
 import {
   getStorage,
   LoopConfig,
@@ -87,10 +85,10 @@ function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<Vide
 }
 
 function setKeyBindingsForVideoSkip(data: VideoSkipConfig) {
-  const { enabled, backward, forward, skipTime, skipTimeUnit } = data;
+  const { enabled, backward, forward, skipTime, skipTimeUnit, fallbackTime, fallbackUnit } = data;
   if (enabled) {
-    keyBindings[backward] = () => skipVideoTime(-skipTime, skipTimeUnit);
-    keyBindings[forward] = () => skipVideoTime(skipTime, skipTimeUnit);
+    keyBindings[backward] = () => skipVideoTime(-skipTime, skipTimeUnit, -fallbackTime, fallbackUnit);
+    keyBindings[forward] = () => skipVideoTime(skipTime, skipTimeUnit, fallbackTime, fallbackUnit);
   } else {
     delete keyBindings[backward];
     delete keyBindings[forward];
@@ -133,31 +131,54 @@ function isInputField(): boolean {
   return ['INPUT', 'TEXTAREA'].includes(activeElementTag);
 }
 
-function skipVideoTime(skipTime: number, skipTimeUnit: SkipTimeUnit) {
+function skipVideoTime(
+  skipTime: number,
+  skipTimeUnit: SkipTimeUnit,
+  fallbackTime: number,
+  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
+) {
   const video = getVideoElement();
   if (!video) return;
 
-  const { currentTime, duration } = video;
-
   if (skipTimeUnit === 'subtitles') {
-    const subtitles = [...getSubtitleCache().values()]?.[0];
-    if (!subtitles || subtitles.length === 0) {
-      showToast(getMessage('error_skip_video'), getMessage('error_no_subtitle'), 'error');
-      return;
-    }
+    skipVideoBySubtitles(video, skipTime, fallbackTime, fallbackUnit);
+  } else {
+    skipVideoByTime(video, skipTime, skipTimeUnit);
+  }
+}
 
+const skipVideoBySubtitles = (
+  video: HTMLVideoElement,
+  skipTime: number,
+  fallbackTime: number,
+  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
+) => {
+  const { currentTime, duration } = video;
+  const subtitles = [...getSubtitleCache().values()]?.[0];
+
+  if (subtitles && subtitles.length > 0) {
     const index = findCurrentSubtitleIndex(subtitles, currentTime);
 
     if (skipTime > 0) {
-      video.currentTime = subtitles[Math.floor(index) + skipTime]
-        ? subtitles[Math.floor(index) + skipTime].start
-        : duration - 1;
+      const nextSubtitle = subtitles[Math.floor(index) + skipTime];
+      video.currentTime = nextSubtitle ? nextSubtitle.start : duration - 1;
     } else {
-      video.currentTime = subtitles[Math.ceil(index) + skipTime] ? subtitles[Math.ceil(index) + skipTime].start : 0;
+      const prevSubtitle = subtitles[Math.ceil(index) + skipTime];
+      video.currentTime = prevSubtitle ? prevSubtitle.start : 0;
     }
   } else {
-    const unitMap = { seconds: 1, minutes: 60 };
-    const time = currentTime + skipTime * unitMap[skipTimeUnit];
-    video.currentTime = Math.min(Math.max(time, 0), duration - 1);
+    skipVideoByTime(video, fallbackTime, fallbackUnit);
   }
-}
+};
+
+const skipVideoByTime = (
+  video: HTMLVideoElement,
+  skipTime: number,
+  skipTimeUnit: Exclude<SkipTimeUnit, 'subtitles'>
+) => {
+  const { currentTime, duration } = video;
+  const unitMap = { seconds: 1, minutes: 60 };
+  const time = currentTime + skipTime * unitMap[skipTimeUnit];
+
+  video.currentTime = Math.min(Math.max(time, 0), duration - 1);
+};
