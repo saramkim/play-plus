@@ -1,6 +1,6 @@
 {
   "name": "play-plus",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Enhance your Coupang Play experience with custom features.",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode production",
