@@ -89,24 +89,30 @@ export const setStartPoint = (time?: number) => {
   const video = getVideoElement();
   if (!video) return;
 
+  const { currentTime } = video;
+  const startTime = time !== undefined ? Math.max(time, 0) : currentTime;
+
   if (!state.isMarkerShowing) {
     showLoopMarkers();
-    setEndPoint(video.currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
+    setEndPoint(currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
   }
 
-  updateTime(START_MARKER_ID, time ?? video.currentTime);
+  updateTime(START_MARKER_ID, startTime);
 };
 
 export const setEndPoint = (time?: number) => {
   const video = getVideoElement();
   if (!video) return;
 
+  const { currentTime, duration } = video;
+  const endTime = time !== undefined ? Math.min(time, duration - 1) : currentTime;
+
   if (!state.isMarkerShowing) {
     showLoopMarkers();
-    setStartPoint(video.currentTime - LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
+    setStartPoint(currentTime - LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
   }
 
-  updateTime(END_MARKER_ID, time ?? video.currentTime);
+  updateTime(END_MARKER_ID, endTime);
 };
 
 export const setupLoopHandler = (video: HTMLVideoElement) => {
