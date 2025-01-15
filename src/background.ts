@@ -1,5 +1,5 @@
 import { COUPANG_PLAY_BASE_URL, REVIEW } from './utils/constants';
-import { migrateLegacyStorage } from './utils/migration';
+import { migrateLegacyStorage } from './storage/migration';
 
 const loadedTabs = new Set<number>();
 const messageQueue: { [tabId: number]: any[] } = {};

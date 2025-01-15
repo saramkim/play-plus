@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PAGE_NAME, PageName } from './utils/constants';
-import { getLocalStorage, setLocalStorage } from './utils/storage';
+import { getLocalStorage, setLocalStorage } from './storage/storage';
 import Header from './ui/Header';
 import Footer from './ui/Footer';
 import SavedSubtitlesPage from './ui/SavedSubtitlesPage';

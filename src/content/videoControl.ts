@@ -1,19 +1,18 @@
 import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
-import {
-  getStorage,
-  LoopConfig,
-  ShortcutsConfig,
-  SkipTimeUnit,
-  StorageChange,
-  StorageChanges,
-  updateStorage,
-  VideoSkipConfig,
-} from '../utils/storage';
+import { getStorage, updateStorage } from '../storage/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
 import { getVideoElement } from './elementStore';
 import { toggleLoop, setEndPoint, setStartPoint, loopCurrentSubtitle } from './loop';
 import { saveSubtitleWithToast } from './saveSubtitle';
 import { getSubtitleCache } from './subtitleStore';
+import {
+  LoopConfig,
+  ShortcutsConfig,
+  SkipTimeUnit,
+  StorageChange,
+  StorageChanges,
+  VideoSkipConfig,
+} from '../storage/type';
 
 type KeyBindings = { [key: string]: () => void };
 

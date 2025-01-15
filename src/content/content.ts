@@ -1,7 +1,7 @@
 import './content.css';
 import { REVIEW } from '../utils/constants';
 import { selectVideoElement } from '../utils/dom';
-import { onStorageChange } from '../utils/storage';
+import { onStorageChange } from '../storage/storage';
 import {
   fetchAndSyncSubtitles,
   fetchVideoMetadata,

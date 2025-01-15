@@ -1,6 +1,5 @@
-import { StorageSchema } from './storage';
-import { getMessage } from './i18n';
-import { StorageKey } from './storage';
+import { getMessage } from '../utils/i18n';
+import { StorageSchema, StorageKey } from './type';
 import { DEFAULT_CONFIG } from './default';
 
 const SHORTCUT_STORAGE_KEYS: StorageKey[] = ['shortcuts', 'videoSkip', 'subVideoSkip', 'loop'];

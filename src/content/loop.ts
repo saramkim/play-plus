@@ -2,7 +2,8 @@ import { SETTINGS } from '../utils/constants';
 import { createElement, createLoopIcon, createMarker, showToast } from '../utils/dom';
 import { formatTime } from '../utils/helper';
 import { getMessage } from '../utils/i18n';
-import { getStorage, StorageChanges } from '../utils/storage';
+import { getStorage } from '../storage/storage';
+import { StorageChanges } from '../storage/type';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
 import {
   getLoopButton,

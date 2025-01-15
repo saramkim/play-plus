@@ -1,6 +1,5 @@
-import { SETTINGS } from './constants';
+import { StorageKey, SubtitleConfig } from '../storage/type';
 import { applyStyles, createElement } from './dom';
-import { StorageKey, SubtitleConfig } from './storage';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {

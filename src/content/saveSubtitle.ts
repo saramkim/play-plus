@@ -1,8 +1,8 @@
 import { REVIEW, SUBTITLE_TOOLTIP_ID } from '../utils/constants';
-import { setLocalStorage } from '../utils/storage';
+import { setLocalStorage } from '../storage/storage';
 import { createTooltip, showToast } from '../utils/dom';
 import { getMessage } from '../utils/i18n';
-import { getLocalStorage } from '../utils/storage';
+import { getLocalStorage } from '../storage/storage';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
   const tooltip = getTooltip();

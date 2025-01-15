@@ -1,7 +1,6 @@
-import { SETTINGS } from './constants';
+import { SETTINGS } from '../utils/constants';
 import { DEFAULT_CONFIG } from './default';
-import { StorageSchema } from './storage';
-import { StorageKey } from './storage';
+import { StorageSchema, StorageKey } from './type';
 
 type TransformFunction<T extends StorageKey> = (oldData: any) => StorageSchema[T];
 type LegacyMigration<T extends StorageKey> = {

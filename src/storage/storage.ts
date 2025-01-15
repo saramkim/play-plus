@@ -1,63 +1,17 @@
-import { PageName } from './constants';
 import { DEFAULT_CONFIG } from './default';
-import { getMessage } from './i18n';
-import { SubtitleLanguage } from './subtitle';
+import { getMessage } from '../utils/i18n';
+import {
+  LocalStorageChanges,
+  LocalStorageKey,
+  LocalStorageSchema,
+  SessionStorageChanges,
+  SessionStorageKey,
+  SessionStorageSchema,
+  StorageChanges,
+  StorageKey,
+  StorageSchema,
+} from './type';
 import { validate } from './validation';
-
-export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
-export type VideoSkipConfig = {
-  enabled: boolean;
-  forward: string;
-  backward: string;
-  skipTime: number;
-  skipTimeUnit: SkipTimeUnit;
-  fallbackTime: number;
-  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>;
-};
-export type SubtitleConfig = {
-  enabled: boolean;
-  language: SubtitleLanguage;
-  positionReference: 'top' | 'center' | 'bottom';
-  positionOffset: number;
-  color: string;
-  fontSize: number;
-  fontWeight: number;
-  opacity: number;
-  lineBreak: boolean;
-};
-export type ShortcutsConfig = {
-  enabled: boolean;
-  savePrimary: string;
-  saveSecondary: string;
-  togglePrimary: string;
-  toggleSecondary: string;
-};
-export type LoopConfig = {
-  enabled: boolean;
-  toggleLoop: string;
-  startPoint: string;
-  endPoint: string;
-  loopCurrentSubtitle: string;
-};
-
-export type StorageSchema = {
-  videoSkip: VideoSkipConfig;
-  subVideoSkip: VideoSkipConfig;
-  primarySubtitle: SubtitleConfig;
-  secondarySubtitle: SubtitleConfig;
-  shortcuts: ShortcutsConfig;
-  loop: LoopConfig;
-};
-export type StorageKey = keyof StorageSchema;
-
-export type StorageChange<T> = {
-  oldValue?: T;
-  newValue?: T;
-};
-
-export type StorageChanges = {
-  [K in StorageKey]?: StorageChange<StorageSchema[K]>;
-};
 
 const storageCache = new Map<StorageKey, StorageSchema[StorageKey]>();
 
@@ -102,23 +56,6 @@ export const onStorageChange = (callback: (changes: StorageChanges) => void) => 
   return { remove: () => onChanged.removeListener(callback) };
 };
 
-export type SavedSubtitle = {
-  content: string;
-  url: string;
-  startTime: number;
-  savedAt: string;
-};
-
-export type LocalStorageSchema = {
-  savedSubtitles: SavedSubtitle[];
-  lastViewedPage: PageName;
-};
-type LocalStorageKey = keyof LocalStorageSchema;
-
-export type LocalStorageChanges = {
-  [K in LocalStorageKey]?: StorageChange<LocalStorageSchema[K]>;
-};
-
 export const setLocalStorage = <K extends LocalStorageKey>(key: K, value: LocalStorageSchema[K]) => {
   return chrome.storage.local.set({ [key]: value });
 };
@@ -137,6 +74,30 @@ export const removeLocalStorage = <K extends LocalStorageKey>(key: K) => {
 
 export const onLocalStorageChange = (callback: (changes: LocalStorageChanges) => void) => {
   const { onChanged } = chrome.storage.local;
+  onChanged.addListener(callback);
+  return { remove: () => onChanged.removeListener(callback) };
+};
+
+export const setSessionStorage = <K extends SessionStorageKey>(key: K, value: SessionStorageSchema[K]) => {
+  return chrome.storage.session.set({ [key]: value });
+};
+
+export const getSessionStorage = <K extends SessionStorageKey>(
+  key: K
+): Promise<SessionStorageSchema[K] | undefined> => {
+  return new Promise((resolve) => {
+    chrome.storage.session.get(key, (result) => {
+      resolve(result[key]);
+    });
+  });
+};
+
+export const removeSessionStorage = <K extends SessionStorageKey>(key: K) => {
+  return chrome.storage.session.remove(key);
+};
+
+export const onSessionStorageChange = (callback: (changes: SessionStorageChanges) => void) => {
+  const { onChanged } = chrome.storage.session;
   onChanged.addListener(callback);
   return { remove: () => onChanged.removeListener(callback) };
 };

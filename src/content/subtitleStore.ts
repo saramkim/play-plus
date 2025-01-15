@@ -1,6 +1,6 @@
 import { SETTINGS } from '../utils/constants';
-import { DEFAULT_CONFIG } from '../utils/default';
-import { SubtitleConfig } from '../utils/storage';
+import { DEFAULT_CONFIG } from '../storage/default';
+import { SubtitleConfig } from '../storage/type';
 import { SubtitleApiInfo, SubtitleLanguage } from '../utils/subtitle';
 import { SubtitleData } from '../utils/subtitle';
 

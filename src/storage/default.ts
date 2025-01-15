@@ -1,4 +1,4 @@
-import { StorageSchema } from './storage';
+import { StorageSchema } from './type';
 
 export const DEFAULT_CONFIG: StorageSchema = {
   primarySubtitle: {

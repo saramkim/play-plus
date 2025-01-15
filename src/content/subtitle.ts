@@ -1,5 +1,5 @@
 import { REVIEW, SETTINGS } from '../utils/constants';
-import { getStorage, StorageChanges } from '../utils/storage';
+import { getStorage } from '../storage/storage';
 import {
   arrayToHeadersObject,
   createSubtitleElement,
@@ -12,6 +12,7 @@ import {
 import { getSubtitleContainer, getVideoElement } from './elementStore';
 import { setupSubtitleSaveHandler } from './saveSubtitle';
 import { getSubtitleApiInfoList, getSubtitleCache, getSubtitleSettings, setSubtitleSetting } from './subtitleStore';
+import { StorageChanges } from '../storage/type';
 
 const { SUBTITLES } = SETTINGS;
 

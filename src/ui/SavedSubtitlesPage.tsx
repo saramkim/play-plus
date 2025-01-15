@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { COUPANG_PLAY_BASE_URL, REVIEW } from '../utils/constants';
 import { getMessage } from '../utils/i18n';
-import { getLocalStorage, onLocalStorageChange, SavedSubtitle, setLocalStorage } from '../utils/storage';
+import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
+import { SavedSubtitle } from '../storage/type';
 
 const { STORAGE_KEY, ACTIONS } = REVIEW;
 
