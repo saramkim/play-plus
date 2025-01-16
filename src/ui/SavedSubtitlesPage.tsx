@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { COUPANG_PLAY_BASE_URL, REVIEW } from '../utils/constants';
+import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION, REVIEW } from '../utils/constants';
 import { getMessage } from '../utils/i18n';
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
 import { SavedSubtitle } from '../storage/type';
 
-const { STORAGE_KEY, ACTIONS } = REVIEW;
+const { STORAGE_KEY } = REVIEW;
 
 function SavedSubtitlesPage() {
   const [subtitles, setSubtitles] = useState<SavedSubtitle[]>([]);
@@ -147,7 +147,7 @@ interface SubtitleItemProps extends SavedSubtitle {
 
 function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDlete }: SubtitleItemProps) {
   const viewVideo = () => {
-    chrome.runtime.sendMessage({ action: ACTIONS.VIEW_VIDEO, url, startTime });
+    chrome.runtime.sendMessage({ action: MESSAGE_ACTION.VIEW_VIDEO, url, startTime });
   };
 
   return (

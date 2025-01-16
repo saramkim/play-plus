@@ -1,4 +1,4 @@
-import { COUPANG_PLAY_BASE_URL, REVIEW } from './utils/constants';
+import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION } from './utils/constants';
 import { migrateLegacyStorage } from './storage/migration';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -15,7 +15,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.action === REVIEW.ACTIONS.VIEW_VIDEO) {
+  if (message.action === MESSAGE_ACTION.VIEW_VIDEO) {
     handleViewVideo(message);
   }
 });
@@ -29,7 +29,7 @@ chrome.webRequest.onSendHeaders.addListener(
     const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
-    chrome.tabs.sendMessage(tabId, { url, headers: requestHeaders });
+    chrome.tabs.sendMessage(tabId, { action: MESSAGE_ACTION.FETCH_VIDEO_METADATA, url, headers: requestHeaders });
   },
   { urls: [`${COUPANG_PLAY_BASE_URL}/api/playback/play?*`] },
   ['requestHeaders']
@@ -38,7 +38,7 @@ chrome.webRequest.onSendHeaders.addListener(
 const handleViewVideo = async ({ url, startTime }: { url: string; startTime: number }) => {
   const tabs = await chrome.tabs.query({});
   const matchingTab = tabs.find((tab) => tab.active && tab.url === url) || tabs.find((tab) => tab.url === url);
-  const message = { action: REVIEW.ACTIONS.PLAY_VIDEO, startTime };
+  const message = { action: MESSAGE_ACTION.PLAY_VIDEO, startTime };
 
   if (matchingTab?.id) {
     await chrome.tabs.update(matchingTab.id, { active: true });

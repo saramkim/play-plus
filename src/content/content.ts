@@ -1,5 +1,5 @@
 import './content.css';
-import { REVIEW } from '../utils/constants';
+import { MESSAGE_ACTION } from '../utils/constants';
 import { selectVideoElement } from '../utils/dom';
 import { onStorageChange } from '../storage/storage';
 import {
@@ -25,7 +25,7 @@ async function init() {
 function initializeMessageListener() {
   chrome.runtime.onMessage.addListener(async (message) => {
     if (message) {
-      if (message.url && message.headers) {
+      if (message.action === MESSAGE_ACTION.FETCH_VIDEO_METADATA) {
         const [subtitleApiInfoList, video] = await Promise.all([
           fetchVideoMetadata(message.url, message.headers),
           initializeElementStore(),
@@ -39,7 +39,7 @@ function initializeMessageListener() {
           setupSubtitleSync(video);
         }
       }
-      if (message.action === REVIEW.ACTIONS.PLAY_VIDEO) {
+      if (message.action === MESSAGE_ACTION.PLAY_VIDEO) {
         const video = await selectVideoElement();
         if (video.readyState >= 3) video.currentTime = message.startTime;
         else video.addEventListener('canplay', () => (video.currentTime = message.startTime), { once: true });

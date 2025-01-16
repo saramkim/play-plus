@@ -48,8 +48,10 @@ export const REVIEW = {
   DATA_ATTRIBUTE: {
     START_TIME: 'startTime',
   },
-  ACTIONS: {
-    VIEW_VIDEO: 'viewVideo',
-    PLAY_VIDEO: 'playVideo',
-  },
+} as const;
+
+export const MESSAGE_ACTION = {
+  FETCH_VIDEO_METADATA: 'fetchVideoMetadata',
+  VIEW_VIDEO: 'viewVideo',
+  PLAY_VIDEO: 'playVideo',
 } as const;
