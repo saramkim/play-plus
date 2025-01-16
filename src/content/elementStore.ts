@@ -39,6 +39,8 @@ function init() {
 }
 
 export async function initializeElementStore() {
+  resetContainers();
+
   const video = await setVideoElement();
   setTrackDisplayContainer();
   setSliderContainer();
@@ -83,6 +85,19 @@ export function resetLoopStatus() {
   loopButton.classList.remove('active');
 }
 
+function resetContainers() {
+  const { subtitleContainer, toastContainer, subtitleContainerObserver } = elementStore;
+
+  subtitleContainer.replaceChildren();
+  toastContainer.replaceChildren();
+  resetLoopStatus();
+
+  if (subtitleContainerObserver) {
+    subtitleContainerObserver.disconnect();
+    elementStore.subtitleContainerObserver = null;
+  }
+}
+
 function setupContainer() {
   const {
     trackDisplayContainer,
@@ -92,13 +107,6 @@ function setupContainer() {
     sliderContainer,
     loopMarkerContainer,
   } = elementStore;
-
-  resetLoopStatus();
-
-  if (elementStore.subtitleContainerObserver) {
-    elementStore.subtitleContainerObserver.disconnect();
-    elementStore.subtitleContainerObserver = null;
-  }
 
   if (trackDisplayContainer) {
     appendContainer(trackDisplayContainer, [subtitleContainer, toastContainer, loopStatusContainer]);
