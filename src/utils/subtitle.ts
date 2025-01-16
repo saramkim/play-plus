@@ -18,9 +18,11 @@ export const parseVTT = (data: string) => {
 
   const subtitles: SubtitleData[] = [];
   const lines = data.split('\n');
+  const startIndex = lines[0].includes('WEBVTT') ? 1 : 0;
   let currentSubtitle = { start: 0, end: 0, text: '' };
 
-  lines.forEach((line) => {
+  for (let i = startIndex; i < lines.length; i++) {
+    const line = lines[i];
     if (line.includes('-->')) {
       const [start, end] = line.split(' --> ');
       currentSubtitle.start = timeToSeconds(start.trim());
@@ -33,7 +35,7 @@ export const parseVTT = (data: string) => {
     } else {
       currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line.trim();
     }
-  });
+  }
 
   if (currentSubtitle.text.trim()) {
     subtitles.push({ ...currentSubtitle });
