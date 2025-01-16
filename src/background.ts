@@ -1,9 +1,6 @@
 import { COUPANG_PLAY_BASE_URL, REVIEW } from './utils/constants';
 import { migrateLegacyStorage } from './storage/migration';
 
-const loadedTabs = new Set<number>();
-const messageQueue: { [tabId: number]: any[] } = {};
-
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
     console.log('Extension updated. Starting legacy storage migration...');
@@ -27,28 +24,12 @@ chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
   .catch((error) => console.error('Error setting panel behavior:', error));
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'complete') {
-    loadedTabs.add(tabId);
-
-    if (messageQueue[tabId]) {
-      messageQueue[tabId].forEach((msg) => chrome.tabs.sendMessage(tabId, msg));
-      delete messageQueue[tabId];
-    }
-  }
-});
-
-chrome.tabs.onRemoved.addListener((tabId) => {
-  loadedTabs.delete(tabId);
-  delete messageQueue[tabId];
-});
-
 chrome.webRequest.onSendHeaders.addListener(
   async ({ tabId, url, requestHeaders }) => {
     const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
-    sendMessageToContent(tabId, { url, headers: requestHeaders });
+    chrome.tabs.sendMessage(tabId, { url, headers: requestHeaders });
   },
   { urls: [`${COUPANG_PLAY_BASE_URL}/api/playback/play?*`] },
   ['requestHeaders']
@@ -64,12 +45,6 @@ const handleViewVideo = async ({ url, startTime }: { url: string; startTime: num
     chrome.tabs.sendMessage(matchingTab.id, message);
   } else {
     const newTab = await chrome.tabs.create({ url });
-    if (newTab.id) sendMessageToContent(newTab.id, message);
+    if (newTab.id) chrome.tabs.sendMessage(newTab.id, message);
   }
-};
-
-const sendMessageToContent = async (tabId: number, message: any) => {
-  if (loadedTabs.has(tabId)) chrome.tabs.sendMessage(tabId, message);
-  else if (messageQueue[tabId]) messageQueue[tabId].push(message);
-  else messageQueue[tabId] = [message];
 };
