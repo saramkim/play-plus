@@ -1,3 +1,4 @@
+import { XMarkIcon } from '@heroicons/react/16/solid';
 import { getMessage } from '../utils/i18n';
 
 interface KeydownInputProps {
@@ -21,7 +22,7 @@ const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
           className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hidden group-hover:block group-focus-within:block'
           onClick={() => onChange('')}
         >
-          ✖
+          <XMarkIcon className='size-4' />
         </button>
       )}
     </div>

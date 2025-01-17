@@ -1,3 +1,4 @@
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/16/solid';
 import { getMessage } from '../utils/i18n';
 import { useEffect, useRef, useState } from 'react';
 
@@ -38,7 +39,9 @@ function Dropdown<V extends string>({ options, value, onChange }: DropdownProps<
         className='w-full h-7 px-2 flex justify-between items-center border rounded focus:outline-none focus:border-teal-500'
       >
         <span>{label || getMessage('select')}</span>
-        <span className='text-gray-500'>{isOpen ? '▲' : '▼'}</span>
+        <span className='text-gray-500'>
+          {isOpen ? <ChevronUpIcon className='size-4' /> : <ChevronDownIcon className='size-4' />}
+        </span>
       </button>
 
       {isOpen && (

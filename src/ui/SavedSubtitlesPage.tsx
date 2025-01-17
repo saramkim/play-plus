@@ -3,6 +3,8 @@ import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION, REVIEW } from '../utils/constant
 import { getMessage } from '../utils/i18n';
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
 import { SavedSubtitle } from '../storage/type';
+import { XMarkIcon } from '@heroicons/react/16/solid';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 const { STORAGE_KEY } = REVIEW;
 
@@ -106,11 +108,11 @@ function SavedSubtitlesPage() {
             )}
           </div>
         </div>
-        <div className='flex justify-between items-center gap-2'>
+        <div className='flex justify-between items-center gap-2 h-5'>
           {searchText ? (
             <div className='flex items-center gap-1 w-full overflow-hidden'>
               <button className='text-rose-500' onClick={clearSearch}>
-                ✖
+                <XMarkIcon className='size-4' />
               </button>
               <span className='text-gray-800'>{getMessage('search_term')}:</span>
               <span className='font-bold truncate'>{searchText}</span>
@@ -133,7 +135,7 @@ function SavedSubtitlesPage() {
           </div>
         </div>
       </header>
-      <ul className='flex flex-col h-full overflow-auto'>
+      <ul className='flex flex-col h-full overflow-auto pr-1'>
         {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDlete: deleteSubtitle }))}
       </ul>
     </div>
@@ -155,8 +157,8 @@ function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDlete }:
       <div className='flex justify-between items-center'>
         <p className='text-[15px] font-medium text-wrap select-text w-full'>{content}</p>
         {isEditMode && (
-          <button className='text-rose-500 font-bold' onClick={() => onDlete(content)}>
-            ✖
+          <button className='text-rose-500' onClick={() => onDlete(content)}>
+            <TrashIcon className='size-4' />
           </button>
         )}
       </div>
