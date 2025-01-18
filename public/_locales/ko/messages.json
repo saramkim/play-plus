@@ -36,6 +36,8 @@
   "position_reference": { "message": "위치 기준" },
   "press_any_key": { "message": "키 입력" },
   "primary_subtitle": { "message": "메인 자막" },
+  "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
+  "reset_settings": { "message": "설정 초기화" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
   "save": { "message": "저장" },

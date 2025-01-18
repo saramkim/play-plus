@@ -13,6 +13,7 @@ import { getSubtitleContainer, getVideoElement } from './elementStore';
 import { setupSubtitleSaveHandler } from './saveSubtitle';
 import { getSubtitleApiInfoList, getSubtitleCache, getSubtitleSettings, setSubtitleSetting } from './subtitleStore';
 import { StorageChanges } from '../storage/type';
+import { DEFAULT_CONFIG } from '../storage/default';
 
 const { SUBTITLES } = SETTINGS;
 
@@ -22,11 +23,12 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const subtitleChanges = changes[STORAGE_KEY];
 
-    if (subtitleChanges && subtitleChanges.newValue) {
-      setSubtitleSetting(STORAGE_KEY, subtitleChanges.newValue);
+    if (subtitleChanges) {
+      const newValue = subtitleChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
+      setSubtitleSetting(STORAGE_KEY, newValue);
 
       const subtitleApiInfoList = getSubtitleApiInfoList();
-      if (subtitleChanges.newValue.enabled && subtitleApiInfoList) {
+      if (newValue.enabled && subtitleApiInfoList) {
         await fetchAndSyncSubtitles(subtitleApiInfoList);
 
         const video = getVideoElement();

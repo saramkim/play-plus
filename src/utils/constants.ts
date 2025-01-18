@@ -55,3 +55,7 @@ export const MESSAGE_ACTION = {
   VIEW_VIDEO: 'viewVideo',
   PLAY_VIDEO: 'playVideo',
 } as const;
+
+export const MORE_MENU_OPTIONS = {
+  RESET_SETTINGS: 'resetSettings',
+} as const;

@@ -1,4 +1,4 @@
-import { CheckCircleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/react/20/solid';
+import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/20/solid';
 import { XMarkIcon as XMarkIconSolid } from '@heroicons/react/16/solid';
 import { usePopup } from '../contexts/PopupContext';
 import { PopupStatus } from '../contexts/PopupContext';
@@ -8,12 +8,14 @@ const colorMap: Record<PopupStatus, string> = {
   success: 'text-teal-500',
   error: 'text-rose-500',
   info: '',
+  confirm: 'text-amber-500',
 };
 
 const iconMap: Record<PopupStatus, ReactElement> = {
   success: <CheckCircleIcon className='size-5' />,
   error: <XCircleIcon className='size-5' />,
   info: <InformationCircleIcon className='size-5' />,
+  confirm: <QuestionMarkCircleIcon className='size-5' />,
 };
 
 function GlobalPopup() {

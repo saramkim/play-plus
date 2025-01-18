@@ -36,6 +36,8 @@
   "position_reference": { "message": "Position Reference" },
   "press_any_key": { "message": "Press Any Key" },
   "primary_subtitle": { "message": "Primary Subtitle" },
+  "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
+  "reset_settings": { "message": "Reset Settings" },
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
   "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
   "save": { "message": "Save" },

@@ -13,6 +13,7 @@ import {
   StorageChanges,
   VideoSkipConfig,
 } from '../storage/type';
+import { DEFAULT_CONFIG } from '../storage/default';
 
 type KeyBindings = { [key: string]: () => void };
 
@@ -52,7 +53,7 @@ function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<Shor
     const { enabled, ...shortcuts } = oldValue;
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }
-  if (newValue) setKeyBindingsForShortcuts(newValue);
+  setKeyBindingsForShortcuts(newValue || DEFAULT_CONFIG[SHORTCUTS.STORAGE_KEY]);
 }
 
 function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) {
@@ -80,7 +81,7 @@ function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<Vide
     delete keyBindings[backward];
     delete keyBindings[forward];
   }
-  if (newValue) setKeyBindingsForVideoSkip(newValue);
+  setKeyBindingsForVideoSkip(newValue || DEFAULT_CONFIG[VIDEO_SKIP.STORAGE_KEY]);
 }
 
 function setKeyBindingsForVideoSkip(data: VideoSkipConfig) {
@@ -110,7 +111,7 @@ function handleLoopStorageChange({ oldValue, newValue }: StorageChange<LoopConfi
     const { enabled, ...shortcuts } = oldValue;
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }
-  if (newValue) setKeyBindingsForLoop(newValue);
+  setKeyBindingsForLoop(newValue || DEFAULT_CONFIG[LOOP.STORAGE_KEY]);
 }
 
 function setKeyBindingsForLoop({ enabled, ...shortcuts }: LoopConfig) {

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-export type PopupStatus = 'success' | 'error' | 'info';
+export type PopupStatus = 'success' | 'error' | 'info' | 'confirm';
 type PopupContent = {
   title: string;
   content: ReactNode;

@@ -13,6 +13,7 @@ import {
   resetLoopStatus,
 } from './elementStore';
 import { getSubtitleCache } from './subtitleStore';
+import { DEFAULT_CONFIG } from '../storage/default';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';
@@ -71,8 +72,8 @@ export const initializeLoopSetting = async () => {
 
 export const onLoopStorageChange = (changes: StorageChanges) => {
   const loopChanges = changes[STORAGE_KEY];
-  if (loopChanges && loopChanges.newValue) {
-    const { enabled } = loopChanges.newValue;
+  if (loopChanges) {
+    const { enabled } = loopChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
     if (!enabled) {
       loop(false);
       resetLoopStatus();

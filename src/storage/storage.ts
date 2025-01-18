@@ -50,6 +50,10 @@ export const removeStorage = <K extends StorageKey>(key: K) => {
   return chrome.storage.sync.remove(key);
 };
 
+export const clearStorage = () => {
+  return chrome.storage.sync.clear();
+};
+
 export const onStorageChange = (callback: (changes: StorageChanges) => void) => {
   const { onChanged } = chrome.storage.sync;
   onChanged.addListener(callback);

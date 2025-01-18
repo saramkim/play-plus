@@ -21,8 +21,8 @@ function useConfig<K extends StorageKey>(key: K) {
 
     const { remove } = onStorageChange((changes) => {
       const data = changes[key];
-      if (data?.newValue) {
-        originalState.current = data.newValue;
+      if (data) {
+        originalState.current = data.newValue || DEFAULT_CONFIG[key];
         setState(originalState.current);
       }
     });
