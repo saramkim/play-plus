@@ -28,6 +28,11 @@ export const setStorage = async <K extends StorageKey>(key: K, value: StorageSch
   }
 };
 
+export const setStorageAll = async (config: StorageSchema) => {
+  Object.entries(config).forEach(([key, value]) => storageCache.set(key, value));
+  return chrome.storage.sync.set(config);
+};
+
 export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[K]> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(key, (result) => {

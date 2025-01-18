@@ -1,0 +1,58 @@
+import { StorageSchema } from './type';
+
+export const LEARNING_CONFIG: StorageSchema = {
+  primarySubtitle: {
+    enabled: true,
+    language: 'en',
+    positionReference: 'center',
+    positionOffset: 0,
+    color: '#ffffff',
+    fontSize: 5,
+    fontWeight: 3,
+    opacity: 100,
+    lineBreak: true,
+  },
+  secondarySubtitle: {
+    enabled: true,
+    language: 'ko',
+    positionReference: 'center',
+    positionOffset: 80,
+    color: '#c9c9c9',
+    fontSize: 3,
+    fontWeight: 2,
+    opacity: 100,
+    lineBreak: false,
+  },
+  videoSkip: {
+    enabled: true,
+    forward: 'ArrowRight',
+    backward: 'ArrowLeft',
+    skipTime: 10,
+    skipTimeUnit: 'seconds',
+    fallbackTime: 10,
+    fallbackUnit: 'seconds',
+  },
+  subVideoSkip: {
+    enabled: true,
+    forward: 'KeyD',
+    backward: 'KeyA',
+    skipTime: 1,
+    skipTimeUnit: 'subtitles',
+    fallbackTime: 3,
+    fallbackUnit: 'seconds',
+  },
+  shortcuts: {
+    enabled: true,
+    savePrimary: 'KeyE',
+    saveSecondary: 'KeyR',
+    togglePrimary: 'KeyQ',
+    toggleSecondary: 'KeyW',
+  },
+  loop: {
+    enabled: true,
+    toggleLoop: 'KeyL',
+    startPoint: 'BracketLeft',
+    endPoint: 'BracketRight',
+    loopCurrentSubtitle: 'KeyS',
+  },
+};

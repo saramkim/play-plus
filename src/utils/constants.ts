@@ -58,4 +58,5 @@ export const MESSAGE_ACTION = {
 
 export const MORE_MENU_OPTIONS = {
   RESET_SETTINGS: 'resetSettings',
+  SET_LEARNING_CONFIG: 'setLearningConfig',
 } as const;

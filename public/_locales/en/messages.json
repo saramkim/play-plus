@@ -32,6 +32,8 @@
   "minutes": { "message": "Minutes" },
   "oldest": { "message": "Oldest" },
   "opacity": { "message": "Opacity" },
+  "optimize_for_learning_confirm": { "message": "Are you sure you want to apply the learning optimized settings?" },
+  "optimize_for_learning": { "message": "Optimize for Learning" },
   "position_offset": { "message": "Position Offset" },
   "position_reference": { "message": "Position Reference" },
   "press_any_key": { "message": "Press Any Key" },

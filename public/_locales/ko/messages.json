@@ -32,6 +32,8 @@
   "minutes": { "message": "분" },
   "oldest": { "message": "오래된 순" },
   "opacity": { "message": "투명도" },
+  "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
+  "optimize_for_learning": { "message": "학습 최적화" },
   "position_offset": { "message": "위치 조정" },
   "position_reference": { "message": "위치 기준" },
   "press_any_key": { "message": "키 입력" },

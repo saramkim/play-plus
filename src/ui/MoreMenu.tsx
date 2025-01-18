@@ -2,19 +2,23 @@ import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
 import Dropdown, { Direction } from '../components/Dropdown';
 import { getMessage } from '../utils/i18n';
 import { MORE_MENU_OPTIONS } from '../utils/constants';
-import { clearStorage } from '../storage/storage';
+import { clearStorage, setStorageAll } from '../storage/storage';
 import { usePopup } from '../contexts/PopupContext';
 import MessagePopup from '../components/MessagePopup';
+import { LEARNING_CONFIG } from '../storage/preset';
 
 interface MoreMenuProps {
   direction: Direction;
 }
 
-const { RESET_SETTINGS } = MORE_MENU_OPTIONS;
+const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
 function MoreMenu({ direction }: MoreMenuProps) {
   const { showPopup, hidePopup } = usePopup();
-  const options = [{ label: getMessage('reset_settings'), value: RESET_SETTINGS }];
+  const options = [
+    { label: getMessage('reset_settings'), value: RESET_SETTINGS },
+    { label: getMessage('optimize_for_learning'), value: SET_LEARNING_CONFIG },
+  ];
 
   const resetSettings = () => {
     showPopup({
@@ -31,8 +35,24 @@ function MoreMenu({ direction }: MoreMenuProps) {
     });
   };
 
+  const optimizeForLearning = () => {
+    showPopup({
+      title: getMessage('optimize_for_learning'),
+      content: (
+        <MessagePopup
+          message={getMessage('optimize_for_learning_confirm')}
+          type='confirm'
+          onConfirm={() => setStorageAll(LEARNING_CONFIG)}
+          hidePopup={hidePopup}
+        />
+      ),
+      status: 'confirm',
+    });
+  };
+
   const menuMap = {
     [RESET_SETTINGS]: resetSettings,
+    [SET_LEARNING_CONFIG]: optimizeForLearning,
   };
 
   return (
