@@ -5,7 +5,7 @@ interface ColorPickerProps {
 
 function ColorPicker({ value, onChange }: ColorPickerProps) {
   return (
-    <div className='relative inline-block w-7 h-7'>
+    <div className='relative inline-block size-8'>
       <input
         type='color'
         value={value}

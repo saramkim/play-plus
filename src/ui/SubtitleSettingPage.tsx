@@ -5,7 +5,7 @@ const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
 function SubtitleSettingPage() {
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-5 p-4'>
       <SubtitleConfigForm {...PRIMARY} />
       <SubtitleConfigForm {...SECONDARY} />
     </div>

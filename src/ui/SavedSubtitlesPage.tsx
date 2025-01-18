@@ -82,7 +82,7 @@ function SavedSubtitlesPage() {
   };
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col h-full px-5 pt-4'>
       <header className='flex flex-col gap-2 pb-2 border-b'>
         <div className='flex justify-between items-center gap-2'>
           <form className='flex items-center gap-1' onSubmit={search}>
@@ -135,7 +135,7 @@ function SavedSubtitlesPage() {
           </div>
         </div>
       </header>
-      <ul className='flex flex-col h-full overflow-auto pr-1'>
+      <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
         {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDlete: deleteSubtitle }))}
       </ul>
     </div>
@@ -162,7 +162,7 @@ function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDlete }:
           </button>
         )}
       </div>
-      <div className='flex justify-between items-center'>
+      <div className='flex justify-between items-center text-[13px]'>
         <button
           className='bg-gray-200 px-1 rounded disabled:opacity-30'
           disabled={!url.startsWith(COUPANG_PLAY_BASE_URL)}

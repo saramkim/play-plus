@@ -7,7 +7,7 @@ const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
 function VideoSettingPage() {
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-5 p-4'>
       <VideoSkipConfigForm {...VIDEO_SKIP} />
       <VideoSkipConfigForm {...SUB_VIDEO_SKIP} />
       <ShortcutsConfigForm />

@@ -39,9 +39,9 @@ function App() {
   if (!page) return null;
 
   return (
-    <div className='h-screen flex flex-col select-none text-nowrap text-[13px]'>
+    <div className='h-screen flex flex-col select-none text-nowrap'>
       <Header pageList={pageList} currentPage={page} navigate={navigate} />
-      <main className='h-full overflow-auto p-4'>{pageMap[page]}</main>
+      <main className='h-full overflow-auto'>{pageMap[page]}</main>
       <Footer />
     </div>
   );

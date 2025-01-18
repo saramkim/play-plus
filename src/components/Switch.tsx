@@ -11,7 +11,7 @@ interface SwitchProps<V extends string> {
 
 function Switch<V extends string>({ options, value, onChange }: SwitchProps<V>) {
   return (
-    <div className='w-full h-7 select-none border rounded overflow-hidden font-medium'>
+    <div className='w-full h-8 select-none border rounded overflow-hidden font-medium'>
       <div className='flex items-center w-full h-full'>
         {options.map((option, i) => (
           <button

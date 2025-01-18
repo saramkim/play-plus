@@ -40,11 +40,11 @@ function MoreMenu({ direction }: MoreMenuProps) {
       {({ isOpen, toggleDropdown }) => (
         <button
           onClick={toggleDropdown}
-          className={`flex items-center justify-center size-7 rounded-full ${
+          className={`flex items-center justify-center size-8 rounded-full ${
             isOpen ? 'bg-gray-200' : 'hover:bg-gray-100'
           }`}
         >
-          <EllipsisHorizontalIcon className='size-6 text-gray-800' />
+          <EllipsisHorizontalIcon className='size-7 text-gray-800' />
         </button>
       )}
     </Dropdown>

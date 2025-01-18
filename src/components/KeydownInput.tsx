@@ -13,7 +13,6 @@ const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
         className='input'
         type='text'
         value={value}
-        placeholder={getMessage('press_any_key')}
         onKeyDown={({ code }) => code !== value && onChange(code)}
         readOnly
       />
@@ -25,6 +24,13 @@ const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
           <XMarkIcon className='size-4' />
         </button>
       )}
+      <span
+        className={`absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hidden ${
+          value ? '' : 'group-focus-within:block'
+        }`}
+      >
+        {getMessage('press_any_key')}
+      </span>
     </div>
   );
 };
