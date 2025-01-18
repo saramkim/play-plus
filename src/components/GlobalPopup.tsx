@@ -23,11 +23,17 @@ function GlobalPopup() {
 
   if (!isOpen || !popup) return null;
 
-  const { title, content, status } = popup;
+  const { title, content, status, preventOutsideClick } = popup;
 
   return (
-    <div className='fixed inset-0 flex justify-center items-center bg-black/50 z-50' onClick={hidePopup}>
-      <div className='relative bg-white rounded-md shadow-md p-4 min-w-[220px]' onClick={(e) => e.stopPropagation()}>
+    <div
+      className='fixed inset-0 flex justify-center items-center bg-black/50 z-50'
+      onClick={preventOutsideClick ? undefined : hidePopup}
+    >
+      <div
+        className='relative bg-white rounded-md shadow-md p-4 min-w-[220px] mx-4'
+        onClick={(e) => e.stopPropagation()}
+      >
         <button className='absolute top-2 right-2 text-gray-500' onClick={hidePopup}>
           <XMarkIconSolid className='size-4' />
         </button>

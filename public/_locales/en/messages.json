@@ -4,6 +4,18 @@
   "extension_description": { "message": "Enhance Coupang Play's features and customize them as you wish." },
   "action_default_title": { "message": "Open Play Plus" },
 
+  "onboarding_title": { "message": "Welcome to Play Plus!" },
+  "onboarding_description_1": {
+    "message": "Play Plus provides a feature to finely adjust the subtitles and video settings of Coupang Play."
+  },
+  "onboarding_description_2": {
+    "message": "You can apply the learning optimized settings or customize them from the beginning."
+  },
+  "onboarding_description_3": { "message": "Which method would you like to choose?" },
+  "onboarding_description_4": {
+    "message": "The learning optimized settings can be applied again at any time in the bottom more menu."
+  },
+
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
   "saved_subtitles": { "message": "Saved Subtitles" },
@@ -48,6 +60,7 @@
   "secondary_subtitle": { "message": "Secondary Subtitle" },
   "seconds": { "message": "Seconds" },
   "select": { "message": "Select" },
+  "set_up_manually": { "message": "Set Up Manually" },
   "shortcuts": { "message": "Shortcuts" },
   "skip_unit": { "message": "Skip Unit" },
   "start_point_key": { "message": "Start Point Key" },

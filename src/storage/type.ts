@@ -66,6 +66,7 @@ export type SavedSubtitle = {
 export type LocalStorageSchema = {
   savedSubtitles: SavedSubtitle[];
   lastViewedPage: PageName;
+  isOnboardingComplete: boolean;
 };
 export type LocalStorageKey = keyof LocalStorageSchema;
 

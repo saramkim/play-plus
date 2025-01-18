@@ -6,6 +6,9 @@ import Footer from './ui/Footer';
 import SavedSubtitlesPage from './ui/SavedSubtitlesPage';
 import SubtitleSettingPage from './ui/SubtitleSettingPage';
 import VideoSettingPage from './ui/VideoSettingPage';
+import { usePopup } from './contexts/PopupContext';
+import OnboardingContent from './ui/OnboardingContent';
+import { getMessage } from './utils/i18n';
 
 const pageList = Object.values(PAGE_NAME);
 
@@ -19,9 +22,20 @@ const pageMap = {
 
 function App() {
   const [page, setPage] = useState<PageName | null>(null);
+  const { showPopup, hidePopup } = usePopup();
 
   useEffect(() => {
     (async () => {
+      const isOnboardingComplete = await getLocalStorage('isOnboardingComplete');
+      if (!isOnboardingComplete) {
+        showPopup({
+          title: getMessage('onboarding_title'),
+          content: <OnboardingContent hidePopup={hidePopup} />,
+          status: 'info',
+          preventOutsideClick: true,
+        });
+      }
+
       const lastViewedPage = await getLocalStorage('lastViewedPage');
       if (lastViewedPage && pageList.includes(lastViewedPage)) {
         setPage(lastViewedPage);

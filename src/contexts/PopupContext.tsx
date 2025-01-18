@@ -5,6 +5,7 @@ type PopupContent = {
   title: string;
   content: ReactNode;
   status?: PopupStatus;
+  preventOutsideClick?: boolean;
 };
 
 interface PopupContextType {
