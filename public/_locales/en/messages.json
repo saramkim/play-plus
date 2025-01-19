@@ -16,6 +16,9 @@
     "message": "The learning optimized settings can be applied again at any time in the bottom more menu."
   },
 
+  "no_saved_subtitles": { "message": "No saved subtitles." },
+  "no_saved_subtitles_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
+
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
   "saved_subtitles": { "message": "Saved Subtitles" },

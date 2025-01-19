@@ -135,9 +135,17 @@ function SavedSubtitlesPage() {
           </div>
         </div>
       </header>
-      <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
-        {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDelete: deleteSubtitle }))}
-      </ul>
+
+      {subtitles.length > 0 ? (
+        <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
+          {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDelete: deleteSubtitle }))}
+        </ul>
+      ) : (
+        <div className='flex flex-col justify-center items-center h-full gap-2'>
+          <p className='text-gray-500'>{getMessage('no_saved_subtitles')}</p>
+          <p className='text-gray-500'>{getMessage('no_saved_subtitles_description')}</p>
+        </div>
+      )}
     </div>
   );
 }

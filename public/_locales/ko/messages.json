@@ -16,6 +16,9 @@
     "message": "학습 최적화 설정은 하단 더보기 메뉴에서 언제든 다시 적용할 수 있습니다."
   },
 
+  "no_saved_subtitles": { "message": "저장된 자막이 없습니다." },
+  "no_saved_subtitles_description": { "message": "자막을 클릭하거나 단축키를 사용해 저장해보세요!" },
+
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
   "saved_subtitles": { "message": "저장된 자막" },
