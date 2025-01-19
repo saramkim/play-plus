@@ -136,7 +136,7 @@ function SavedSubtitlesPage() {
         </div>
       </header>
       <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
-        {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDlete: deleteSubtitle }))}
+        {filteredSubtitles.map((item) => SubtitleItem({ ...item, isEditMode, onDelete: deleteSubtitle }))}
       </ul>
     </div>
   );
@@ -144,10 +144,10 @@ function SavedSubtitlesPage() {
 
 interface SubtitleItemProps extends SavedSubtitle {
   isEditMode: boolean;
-  onDlete: (content: string) => void;
+  onDelete: (content: string) => void;
 }
 
-function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDlete }: SubtitleItemProps) {
+function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDelete }: SubtitleItemProps) {
   const viewVideo = () => {
     chrome.runtime.sendMessage({ action: MESSAGE_ACTION.VIEW_VIDEO, url, startTime });
   };
@@ -157,7 +157,7 @@ function SubtitleItem({ content, savedAt, url, startTime, isEditMode, onDlete }:
       <div className='flex justify-between items-center'>
         <p className='text-[15px] font-medium text-wrap select-text w-full'>{content}</p>
         {isEditMode && (
-          <button className='text-rose-500' onClick={() => onDlete(content)}>
+          <button className='text-rose-500' onClick={() => onDelete(content)}>
             <TrashIcon className='size-4' />
           </button>
         )}
