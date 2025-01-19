@@ -45,6 +45,14 @@ const handleViewVideo = async ({ url, startTime }: { url: string; startTime: num
     chrome.tabs.sendMessage(matchingTab.id, message);
   } else {
     const newTab = await chrome.tabs.create({ url });
-    if (newTab.id) chrome.tabs.sendMessage(newTab.id, message);
+    if (newTab.id) {
+      const listener = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
+        if (tabId === newTab.id && changeInfo.status === 'complete') {
+          chrome.tabs.sendMessage(tabId, message);
+          chrome.tabs.onUpdated.removeListener(listener);
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    }
   }
 };
