@@ -53,6 +53,7 @@
   "position_reference": { "message": "Position Reference" },
   "press_any_key": { "message": "Press Any Key" },
   "primary_subtitle": { "message": "Primary Subtitle" },
+  "register": { "message": "Register" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
@@ -76,6 +77,7 @@
   "toggle_primary_subtitle": { "message": "Primary Subtitle On/Off" },
   "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },
   "top": { "message": "Top" },
+  "upload_subtitle_file": { "message": "Upload Subtitle File" },
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },
 
@@ -104,6 +106,8 @@
     "message": "Smaller than the minimum value of $minValue$.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
+  "error_file_size": { "message": "File size is too large. Please upload a file less than 1MB." },
+  "error_unsupported_file_type": { "message": "Unsupported file type. Please upload SRT or VTT files." },
   "error_reserved_shortcuts": { "message": "Reserved Shortcuts." },
   "error_video_not_found": { "message": "Video not found." },
   "error_unsupported_url": { "message": "Unsupported site." },
