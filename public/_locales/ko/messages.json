@@ -21,7 +21,6 @@
 
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
-  "saved_subtitles": { "message": "저장된 자막" },
 
   "all_list": { "message": "전체 목록" },
   "allow_line_break": { "message": "줄바꿈 허용" },
@@ -31,6 +30,7 @@
   "center": { "message": "중앙" },
   "click_to_save": { "message": "클릭하여 저장" },
   "confirm": { "message": "확인" },
+  "delete": { "message": "삭제" },
   "edit": { "message": "편집" },
   "end_point_key": { "message": "종료 시점 지정 키" },
   "english": { "message": "영어" },
@@ -56,6 +56,7 @@
   "register": { "message": "등록" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
+  "review": { "message": "복습" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
   "save": { "message": "저장" },
@@ -80,6 +81,8 @@
   "upload_subtitle_file": { "message": "자막 파일 업로드" },
   "video_skip": { "message": "영상 이동(1)" },
   "view_video": { "message": "영상 보기" },
+
+  "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
 
   "success_save_subtitle": { "message": "✔ 자막 저장 완료" },
   "error_save_subtitle": { "message": "✖ 자막 저장 실패" },

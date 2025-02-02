@@ -21,7 +21,6 @@
 
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
-  "saved_subtitles": { "message": "Saved Subtitles" },
 
   "all_list": { "message": "All List" },
   "allow_line_break": { "message": "Allow Line Break" },
@@ -31,6 +30,7 @@
   "center": { "message": "Center" },
   "click_to_save": { "message": "Click to save" },
   "confirm": { "message": "Confirm" },
+  "delete": { "message": "Delete" },
   "edit": { "message": "Edit" },
   "end_point_key": { "message": "End Point Key" },
   "english": { "message": "English" },
@@ -56,6 +56,7 @@
   "register": { "message": "Register" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
+  "review": { "message": "Review" },
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
   "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
   "save": { "message": "Save" },
@@ -80,6 +81,8 @@
   "upload_subtitle_file": { "message": "Upload Subtitle File" },
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },
+
+  "confirm_delete": { "message": "Are you sure you want to delete?" },
 
   "success_save_subtitle": { "message": "✔ Subtitle saved" },
   "error_save_subtitle": { "message": "✖ Failed to save subtitle" },

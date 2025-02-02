@@ -3,7 +3,7 @@ import { PAGE_NAME, PageName } from './utils/constants';
 import { getLocalStorage, setLocalStorage } from './storage/storage';
 import Header from './ui/Header';
 import Footer from './ui/Footer';
-import SavedSubtitlesPage from './ui/SavedSubtitlesPage';
+import ReviewPage from './ui/ReviewPage';
 import SubtitleSettingPage from './ui/SubtitleSettingPage';
 import VideoSettingPage from './ui/VideoSettingPage';
 import { usePopup } from './contexts/PopupContext';
@@ -12,12 +12,12 @@ import { getMessage } from './utils/i18n';
 
 const pageList = Object.values(PAGE_NAME);
 
-const { SAVED_SUBTITLES, SUBTITLE_SETTING, VIDEO_SETTING } = PAGE_NAME;
+const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW } = PAGE_NAME;
 
 const pageMap = {
-  [SAVED_SUBTITLES]: <SavedSubtitlesPage />,
   [SUBTITLE_SETTING]: <SubtitleSettingPage />,
   [VIDEO_SETTING]: <VideoSettingPage />,
+  [REVIEW]: <ReviewPage />,
 };
 
 function App() {

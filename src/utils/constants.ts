@@ -12,7 +12,7 @@ export const LOOP_BUTTON_ID = 'pp-loop-button';
 export const PAGE_NAME = {
   SUBTITLE_SETTING: 'subtitle-setting',
   VIDEO_SETTING: 'video-setting',
-  SAVED_SUBTITLES: 'saved-subtitles',
+  REVIEW: 'review',
 } as const;
 export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
