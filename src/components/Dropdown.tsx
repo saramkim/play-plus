@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 export type Direction = 'bottomRight' | 'bottomLeft' | 'topRight' | 'topLeft';
 
@@ -26,16 +27,7 @@ const Dropdown = <V extends string>({ options, value, onClick, direction, childr
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleDocumentClick = (event: MouseEvent) => {
-    if (containerRef.current && !event.composedPath().includes(containerRef.current)) {
-      setIsOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('click', handleDocumentClick);
-    return () => document.removeEventListener('click', handleDocumentClick);
-  }, []);
+  useClickOutside(containerRef, () => setIsOpen(false));
 
   const handleClick = (v: V) => {
     setIsOpen(false);
