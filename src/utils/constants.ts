@@ -13,6 +13,7 @@ export const PAGE_NAME = {
   SUBTITLE_SETTING: 'subtitle-setting',
   VIDEO_SETTING: 'video-setting',
   REVIEW: 'review',
+  SUBTITLE_REGISTRATION: 'subtitle-registration',
 } as const;
 export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
 
@@ -59,4 +60,9 @@ export const MESSAGE_ACTION = {
 export const MORE_MENU_OPTIONS = {
   RESET_SETTINGS: 'resetSettings',
   SET_LEARNING_CONFIG: 'setLearningConfig',
+} as const;
+
+export const REGISTRATION = {
+  STORAGE_KEY: 'registeredSubtitles',
+  ID_PREFIX: 'subtitle',
 } as const;

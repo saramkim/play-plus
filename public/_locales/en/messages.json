@@ -21,6 +21,7 @@
 
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
+  "subtitle_registration": { "message": "Subtitle Registration" },
 
   "all_list": { "message": "All List" },
   "allow_line_break": { "message": "Allow Line Break" },

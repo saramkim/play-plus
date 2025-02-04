@@ -44,6 +44,58 @@ export const parseVTT = (data: string) => {
   return subtitles;
 };
 
+export const parseSRT = (data: string) => {
+  if (!data || !data.trim()) return [];
+
+  const subtitles: SubtitleData[] = [];
+  const lines = data.split(/\r?\n/);
+  let currentSubtitle = { start: 0, end: 0, text: '' };
+  let step = 0; // 0: 인덱스, 1: 시간, 2: 텍스트
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (!line) {
+      if (currentSubtitle.text.trim()) {
+        subtitles.push({ ...currentSubtitle });
+      }
+      currentSubtitle = { start: 0, end: 0, text: '' };
+      step = 0;
+      continue;
+    }
+
+    if (step === 0 && /^\d+$/.test(line)) {
+      step = 1;
+    } else if (step === 1 && line.includes('-->')) {
+      const [start, end] = line.split(' --> ').map((time) => timeToSeconds(time.trim().replace(',', '.')));
+      currentSubtitle.start = start;
+      currentSubtitle.end = end;
+      step = 2;
+    } else if (step === 2) {
+      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line;
+    }
+  }
+
+  if (currentSubtitle.text.trim()) {
+    subtitles.push({ ...currentSubtitle });
+  }
+
+  return subtitles;
+};
+
+export const parseSubtitle = {
+  '.srt': parseSRT,
+  '.vtt': parseVTT,
+};
+
+export const getSubtitleFormat = (file: File): keyof typeof parseSubtitle | undefined => {
+  const extensions = Object.keys(parseSubtitle);
+  for (const extension of extensions) {
+    if (file.name.toLowerCase().endsWith(extension)) return extension;
+  }
+  return;
+};
+
 export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: number) => {
   let left = 0;
   let right = subtitles.length - 1;

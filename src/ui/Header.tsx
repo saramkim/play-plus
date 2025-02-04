@@ -1,11 +1,12 @@
 import { PAGE_NAME, PageName } from '../utils/constants';
 import { getMessage } from '../utils/i18n';
 
-const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW } = PAGE_NAME;
+const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
 const pageMap = {
   [SUBTITLE_SETTING]: getMessage('subtitle_setting'),
   [VIDEO_SETTING]: getMessage('video_setting'),
   [REVIEW]: getMessage('review'),
+  [SUBTITLE_REGISTRATION]: getMessage('subtitle_registration'),
 };
 
 interface HeaderProps {

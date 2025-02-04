@@ -6,18 +6,20 @@ import Footer from './ui/Footer';
 import ReviewPage from './ui/ReviewPage';
 import SubtitleSettingPage from './ui/SubtitleSettingPage';
 import VideoSettingPage from './ui/VideoSettingPage';
+import SubtitleRegistrationPage from './ui/SubtitleRegistrationPage';
 import { usePopup } from './contexts/PopupContext';
 import OnboardingContent from './ui/OnboardingContent';
 import { getMessage } from './utils/i18n';
 
 const pageList = Object.values(PAGE_NAME);
 
-const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW } = PAGE_NAME;
+const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
 
 const pageMap = {
   [SUBTITLE_SETTING]: <SubtitleSettingPage />,
   [VIDEO_SETTING]: <VideoSettingPage />,
   [REVIEW]: <ReviewPage />,
+  [SUBTITLE_REGISTRATION]: <SubtitleRegistrationPage />,
 };
 
 function App() {

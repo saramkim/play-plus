@@ -21,6 +21,7 @@
 
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
+  "subtitle_registration": { "message": "자막 등록" },
 
   "all_list": { "message": "전체 목록" },
   "allow_line_break": { "message": "줄바꿈 허용" },

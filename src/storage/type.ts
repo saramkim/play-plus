@@ -63,10 +63,17 @@ export type SavedSubtitle = {
   savedAt: string;
 };
 
+export type SubtitleMetadata = {
+  id: string;
+  title: string;
+  savedAt: string;
+};
+
 export type LocalStorageSchema = {
   savedSubtitles: SavedSubtitle[];
   lastViewedPage: PageName;
   isOnboardingComplete: boolean;
+  registeredSubtitles: SubtitleMetadata[];
 };
 export type LocalStorageKey = keyof LocalStorageSchema;
 
