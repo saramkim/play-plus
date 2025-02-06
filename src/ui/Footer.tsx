@@ -9,7 +9,7 @@ function Footer() {
         <h1 className='text-[16px] font-bold text-teal-500'>Play Plus</h1>
       </div>
       <div className='flex justify-end items-center w-full'>
-        <MoreMenu direction='topLeft' />
+        <MoreMenu />
       </div>
     </div>
   );

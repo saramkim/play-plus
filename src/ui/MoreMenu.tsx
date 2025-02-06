@@ -1,5 +1,5 @@
 import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
-import Dropdown, { Direction } from '../components/Dropdown';
+import Dropdown from '../components/Dropdown';
 import { getMessage } from '../utils/i18n';
 import { MORE_MENU_OPTIONS } from '../utils/constants';
 import { clearStorage, setStorageAll } from '../storage/storage';
@@ -7,13 +7,9 @@ import { usePopup } from '../contexts/PopupContext';
 import MessagePopup from '../components/MessagePopup';
 import { LEARNING_CONFIG } from '../storage/preset';
 
-interface MoreMenuProps {
-  direction: Direction;
-}
-
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
-function MoreMenu({ direction }: MoreMenuProps) {
+function MoreMenu() {
   const { showPopup, hidePopup } = usePopup();
   const options = [
     { label: getMessage('reset_settings'), value: RESET_SETTINGS },
@@ -56,7 +52,7 @@ function MoreMenu({ direction }: MoreMenuProps) {
   };
 
   return (
-    <Dropdown direction={direction} options={options} onClick={(value) => menuMap[value]()}>
+    <Dropdown options={options} onClick={(value) => menuMap[value]()}>
       {({ isOpen, toggleDropdown }) => (
         <button
           onClick={toggleDropdown}

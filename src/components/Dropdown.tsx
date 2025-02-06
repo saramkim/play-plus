@@ -20,7 +20,7 @@ interface DropdownProps<V extends string> {
   value?: V;
   onClick: (value: V) => void;
   visibleItemCount?: number;
-  direction: Direction;
+  direction?: Direction;
   children: (props: { isOpen: boolean; toggleDropdown: () => void }) => React.ReactNode;
 }
 
@@ -44,13 +44,41 @@ const Dropdown = <V extends string>({
     onClick(v);
   };
 
+  const autoDirection = (options: DropdownOption<V>[]) => {
+    if (!containerRef.current) return 'bottomRight';
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const totalHeight = Math.min(options.length, visibleItemCount || 100) * ITEM_HEIGHT + 6;
+
+      context.font = window.getComputedStyle(containerRef.current).font;
+      const totalWidth = Math.max(...options.map(({ label }) => context.measureText(label).width)) + 16;
+
+      const hasSpaceBelow = rect.bottom + totalHeight <= window.innerHeight;
+      const hasSpaceAbove = rect.top - totalHeight >= 0;
+      const hasSpaceRight = rect.left + totalWidth <= window.innerWidth;
+
+      if (hasSpaceBelow) {
+        return hasSpaceRight ? 'bottomRight' : 'bottomLeft';
+      }
+      if (hasSpaceAbove) {
+        return hasSpaceRight ? 'topRight' : 'topLeft';
+      }
+    }
+    return 'bottomRight';
+  };
+
   return (
     <div ref={containerRef} className='relative inline-block'>
       {children({ isOpen, toggleDropdown: () => setIsOpen(!isOpen) })}
 
       {isOpen && (
         <div
-          className={`absolute ${positionMap[direction]} bg-white border rounded shadow-lg z-10 min-w-full overflow-auto`}
+          className={`absolute ${
+            positionMap[direction || autoDirection(options)]
+          } bg-white border rounded shadow-lg z-10 min-w-full overflow-auto`}
           style={{ maxHeight: visibleItemCount ? visibleItemCount * ITEM_HEIGHT + 2 : undefined }}
         >
           {options.map((option) => (

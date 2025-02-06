@@ -1,13 +1,12 @@
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/16/solid';
 import { getMessage } from '../utils/i18n';
-import Dropdown, { Direction, DropdownOption } from './Dropdown';
+import Dropdown, { DropdownOption } from './Dropdown';
 
 interface DropdownButtonProps<V extends string> {
   options: DropdownOption<V>[];
   value: V;
   onChange: (value: V) => void;
   visibleItemCount?: number;
-  direction?: Direction;
 }
 
 const DropdownButton = <V extends string>({
@@ -15,11 +14,9 @@ const DropdownButton = <V extends string>({
   value,
   onChange,
   visibleItemCount = 5,
-  direction = 'bottomRight',
 }: DropdownButtonProps<V>) => {
   return (
     <Dropdown
-      direction={direction}
       options={options}
       value={value}
       onClick={(v) => v !== value && onChange(v)}
