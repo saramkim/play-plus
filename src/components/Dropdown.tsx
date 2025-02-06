@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useClickOutside } from '../hooks/useClickOutside';
 
 export type Direction = 'bottomRight' | 'bottomLeft' | 'topRight' | 'topLeft';
@@ -19,11 +19,21 @@ interface DropdownProps<V extends string> {
   options: DropdownOption<V>[];
   value?: V;
   onClick: (value: V) => void;
+  visibleItemCount?: number;
   direction: Direction;
   children: (props: { isOpen: boolean; toggleDropdown: () => void }) => React.ReactNode;
 }
 
-const Dropdown = <V extends string>({ options, value, onClick, direction, children }: DropdownProps<V>) => {
+const ITEM_HEIGHT = 32;
+
+const Dropdown = <V extends string>({
+  options,
+  value,
+  onClick,
+  visibleItemCount,
+  direction,
+  children,
+}: DropdownProps<V>) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -39,11 +49,15 @@ const Dropdown = <V extends string>({ options, value, onClick, direction, childr
       {children({ isOpen, toggleDropdown: () => setIsOpen(!isOpen) })}
 
       {isOpen && (
-        <div className={`absolute ${positionMap[direction]} bg-white border rounded shadow-lg z-10 min-w-full`}>
+        <div
+          className={`absolute ${positionMap[direction]} bg-white border rounded shadow-lg z-10 min-w-full overflow-auto`}
+          style={{ maxHeight: visibleItemCount ? visibleItemCount * ITEM_HEIGHT + 2 : undefined }}
+        >
           {options.map((option) => (
             <button
               key={option.value}
-              className={`flex items-center px-2 h-8 w-full focus:outline-none ${
+              style={{ height: ITEM_HEIGHT }}
+              className={`flex items-center px-2 w-full focus:outline-none ${
                 option.value === value ? 'bg-gray-200' : 'hover:bg-gray-100'
               }`}
               onClick={() => handleClick(option.value)}

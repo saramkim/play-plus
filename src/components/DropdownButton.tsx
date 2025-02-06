@@ -6,6 +6,7 @@ interface DropdownButtonProps<V extends string> {
   options: DropdownOption<V>[];
   value: V;
   onChange: (value: V) => void;
+  visibleItemCount?: number;
   direction?: Direction;
 }
 
@@ -13,16 +14,24 @@ const DropdownButton = <V extends string>({
   options,
   value,
   onChange,
+  visibleItemCount = 5,
   direction = 'bottomRight',
 }: DropdownButtonProps<V>) => {
   return (
-    <Dropdown direction={direction} options={options} value={value} onClick={(v) => v !== value && onChange(v)}>
+    <Dropdown
+      direction={direction}
+      options={options}
+      value={value}
+      onClick={(v) => v !== value && onChange(v)}
+      visibleItemCount={visibleItemCount}
+    >
       {({ isOpen, toggleDropdown }) => {
         const label = options.find((option) => option.value === value)?.label;
         return (
           <button
+            type='button'
             onClick={toggleDropdown}
-            className='w-24 h-8 px-2 flex justify-between items-center border rounded focus:outline-none focus:border-teal-500'
+            className='min-w-24 w-full h-8 px-2 flex justify-between items-center border rounded focus:outline-none focus:border-teal-500'
           >
             <span>{label || getMessage('select')}</span>
             <span className='text-gray-500'>
