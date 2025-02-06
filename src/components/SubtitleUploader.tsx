@@ -4,11 +4,18 @@ import { getMessage } from '../utils/i18n';
 import MessagePopup from './MessagePopup';
 import { ArrowUpTrayIcon } from '@heroicons/react/20/solid';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { Language, LANGUAGES } from '../utils/constants';
+import DropdownButton from './DropdownButton';
 
+export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
+  value: key,
+  label: getMessage(value),
+}));
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const DEFAULT_LANGUAGE: Language = 'en';
 
 interface SubtitleUploaderProps {
-  onUpload: (file: File, title: string) => Promise<void>;
+  onUpload: (file: File, title: string, language: Language) => Promise<void>;
 }
 
 const allowedExtensions = ['.srt', '.vtt'];
@@ -27,6 +34,7 @@ const validateFile = (file: File) => {
 const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>('');
+  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { showPopup, hidePopup } = usePopup();
@@ -48,6 +56,7 @@ const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
   const reset = () => {
     setFile(null);
     setTitle('');
+    setLanguage(DEFAULT_LANGUAGE);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -90,13 +99,16 @@ const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
 
       {file && (
         <div className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
-          <input
-            type='text'
-            className='input'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isUploading}
-          />
+          <div className='flex justify-between items-center gap-1'>
+            <DropdownButton options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
+            <input
+              type='text'
+              className='input'
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isUploading}
+            />
+          </div>
           <div className='flex gap-2'>
             <button
               className='w-full bg-gray-500 text-white rounded-full p-2 font-medium'
@@ -109,7 +121,7 @@ const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
               className='w-full bg-teal-500 text-white rounded-full p-2 font-medium'
               onClick={async () => {
                 setIsUploading(true);
-                await onUpload(file, title);
+                await onUpload(file, title, language);
                 setIsUploading(false);
                 reset();
               }}

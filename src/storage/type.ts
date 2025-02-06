@@ -1,4 +1,4 @@
-import { PageName } from '../utils/constants';
+import { Language, PageName } from '../utils/constants';
 import { SubtitleLanguage } from '../utils/subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
@@ -66,6 +66,7 @@ export type SavedSubtitle = {
 export type SubtitleMetadata = {
   id: string;
   title: string;
+  language: Language;
   savedAt: string;
 };
 

@@ -9,6 +9,21 @@ export const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 export const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
 export const LOOP_BUTTON_ID = 'pp-loop-button';
 
+export const LANGUAGES = {
+  en: 'english',
+  ko: 'korean',
+  ja: 'japanese',
+  'zh-CN': 'chinese_simplified',
+  'zh-TW': 'chinese_traditional',
+  es: 'spanish',
+  fr: 'french',
+  de: 'german',
+  pt: 'portuguese',
+  ru: 'russian',
+  ar: 'arabic',
+} as const;
+export type Language = keyof typeof LANGUAGES;
+
 export const PAGE_NAME = {
   SUBTITLE_SETTING: 'subtitle-setting',
   VIDEO_SETTING: 'video-setting',
