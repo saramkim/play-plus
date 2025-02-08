@@ -66,12 +66,6 @@ export const REVIEW = {
   },
 } as const;
 
-export const MESSAGE_ACTION = {
-  FETCH_VIDEO_METADATA: 'fetchVideoMetadata',
-  VIEW_VIDEO: 'viewVideo',
-  PLAY_VIDEO: 'playVideo',
-} as const;
-
 export const MORE_MENU_OPTIONS = {
   RESET_SETTINGS: 'resetSettings',
   SET_LEARNING_CONFIG: 'setLearningConfig',

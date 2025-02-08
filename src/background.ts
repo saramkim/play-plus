@@ -1,5 +1,6 @@
-import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION } from './utils/constants';
+import { COUPANG_PLAY_BASE_URL } from './utils/constants';
 import { migrateLegacyStorage } from './storage/migration';
+import { onMessage, sendMessageToTab, ViewVideoMessage } from './utils/message';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
@@ -14,9 +15,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.action === MESSAGE_ACTION.VIEW_VIDEO) {
-    handleViewVideo(message);
+onMessage((message) => {
+  console.log('message1', message);
+  const { viewVideo } = message;
+  if (viewVideo) {
+    handleViewVideo(viewVideo);
   }
 });
 
@@ -29,29 +32,29 @@ chrome.webRequest.onSendHeaders.addListener(
     const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
-    chrome.tabs.sendMessage(tabId, { action: MESSAGE_ACTION.FETCH_VIDEO_METADATA, url, headers: requestHeaders });
+    sendMessageToTab(tabId, 'fetchVideoMetadata', { url, headers: requestHeaders ?? [] });
   },
   { urls: [`${COUPANG_PLAY_BASE_URL}/api/playback/play?*`] },
   ['requestHeaders']
 );
 
-const handleViewVideo = async ({ url, startTime }: { url: string; startTime: number }) => {
+const handleViewVideo = async ({ url, startTime }: ViewVideoMessage) => {
   const tabs = await chrome.tabs.query({});
   const matchingTab = tabs.find((tab) => tab.active && tab.url === url) || tabs.find((tab) => tab.url === url);
-  const message = { action: MESSAGE_ACTION.PLAY_VIDEO, startTime };
 
   if (matchingTab?.id) {
     await chrome.tabs.update(matchingTab.id, { active: true });
-    chrome.tabs.sendMessage(matchingTab.id, message);
+    sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
   } else {
     const newTab = await chrome.tabs.create({ url });
     if (newTab.id) {
       const listener = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
         if (tabId === newTab.id && changeInfo.status === 'complete') {
-          chrome.tabs.sendMessage(tabId, message);
+          sendMessageToTab(tabId, 'playVideo', { startTime });
           chrome.tabs.onUpdated.removeListener(listener);
         }
       };
+
       chrome.tabs.onUpdated.addListener(listener);
     }
   }

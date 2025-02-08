@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION, REVIEW } from '../utils/constants';
+import { COUPANG_PLAY_BASE_URL, REVIEW } from '../utils/constants';
 import { t } from '../utils/i18n';
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
 import { SavedSubtitle } from '../storage/type';
@@ -7,6 +7,7 @@ import { PlayCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import ListHeader from './ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import MessagePopup from '../components/MessagePopup';
+import { sendMessage } from '../utils/message';
 
 const { STORAGE_KEY } = REVIEW;
 
@@ -89,7 +90,7 @@ interface SubtitleItemProps extends SavedSubtitle {
 
 function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleItemProps) {
   const viewVideo = () => {
-    chrome.runtime.sendMessage({ action: MESSAGE_ACTION.VIEW_VIDEO, url, startTime });
+    sendMessage('viewVideo', { url, startTime });
   };
 
   return (
