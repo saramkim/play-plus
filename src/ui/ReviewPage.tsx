@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { COUPANG_PLAY_BASE_URL, MESSAGE_ACTION, REVIEW } from '../utils/constants';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
 import { SavedSubtitle } from '../storage/type';
 import { PlayCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
@@ -44,11 +44,11 @@ function ReviewPage() {
 
   const deleteSubtitle = (content: string) => {
     showPopup({
-      title: getMessage('delete'),
+      title: t('delete'),
       content: (
         <MessagePopup
           type='confirm'
-          message={getMessage('confirm_delete')}
+          message={t('confirm_delete')}
           onConfirm={() => {
             const filtered = subtitles.filter((v) => v.content !== content);
             setLocalStorage(STORAGE_KEY, filtered);
@@ -75,8 +75,8 @@ function ReviewPage() {
         </ul>
       ) : (
         <div className='flex flex-col justify-center items-center h-full gap-2'>
-          <p className='text-gray-500'>{getMessage('no_saved_subtitles')}</p>
-          <p className='text-gray-500'>{getMessage('no_saved_subtitles_description')}</p>
+          <p className='text-gray-500'>{t('no_saved_subtitles')}</p>
+          <p className='text-gray-500'>{t('no_saved_subtitles_description')}</p>
         </div>
       )}
     </div>

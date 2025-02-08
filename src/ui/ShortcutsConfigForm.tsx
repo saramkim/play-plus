@@ -1,4 +1,4 @@
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { SETTINGS } from '../utils/constants';
 import Toggle from '../components/Toggle';
 import KeydownInput from '../components/KeydownInput';
@@ -12,15 +12,15 @@ function ShortcutsConfigForm() {
   return (
     <section className='section'>
       <header className='section-header'>
-        <h2 className='section-title'>{getMessage('shortcuts')}</h2>
+        <h2 className='section-title'>{t('shortcuts')}</h2>
         <div className='row'>
           {hasChanged ? (
             <>
               <button onClick={handleCancel} className='button bg-gray-500'>
-                {getMessage('cancel')}
+                {t('cancel')}
               </button>
               <button onClick={handleSave} className='button bg-teal-500'>
-                {getMessage('save')}
+                {t('save')}
               </button>
             </>
           ) : (
@@ -30,19 +30,19 @@ function ShortcutsConfigForm() {
       </header>
       <div className='section'>
         <div className='row'>
-          <label className='label'>{getMessage('save_primary_subtitle')} </label>
+          <label className='label'>{t('save_primary_subtitle')} </label>
           <KeydownInput value={state.savePrimary} onChange={handleChange('savePrimary')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('save_secondary_subtitle')} </label>
+          <label className='label'>{t('save_secondary_subtitle')} </label>
           <KeydownInput value={state.saveSecondary} onChange={handleChange('saveSecondary')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('toggle_primary_subtitle')} </label>
+          <label className='label'>{t('toggle_primary_subtitle')} </label>
           <KeydownInput value={state.togglePrimary} onChange={handleChange('togglePrimary')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('toggle_secondary_subtitle')} </label>
+          <label className='label'>{t('toggle_secondary_subtitle')} </label>
           <KeydownInput value={state.toggleSecondary} onChange={handleChange('toggleSecondary')} />
         </div>
       </div>

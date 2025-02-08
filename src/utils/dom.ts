@@ -1,5 +1,5 @@
 import { TOAST_CONTAINER_ID } from './constants';
-import { getMessage } from './i18n';
+import { t } from './i18n';
 
 export const selectVideoElement = (): Promise<HTMLVideoElement> => {
   return new Promise((resolve, reject) => {
@@ -28,7 +28,7 @@ export const selectVideoElement = (): Promise<HTMLVideoElement> => {
 
     setTimeout(() => {
       observer.disconnect();
-      reject(new Error(getMessage('error_video_not_found')));
+      reject(new Error(t('error_video_not_found')));
     }, 5000);
   });
 };

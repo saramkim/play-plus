@@ -1,4 +1,4 @@
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 
 interface MessagePopupBase {
   message: string;
@@ -22,7 +22,7 @@ function MessagePopup(props: MessagePopupProps) {
       <div className='flex gap-2 w-full'>
         {type === 'confirm' && (
           <button className='button bg-gray-500 w-full' onClick={hidePopup}>
-            {getMessage('cancel')}
+            {t('cancel')}
           </button>
         )}
         <button
@@ -32,7 +32,7 @@ function MessagePopup(props: MessagePopupProps) {
             hidePopup();
           }}
         >
-          {getMessage('confirm')}
+          {t('confirm')}
         </button>
       </div>
     </div>

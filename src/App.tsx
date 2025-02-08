@@ -9,7 +9,7 @@ import VideoSettingPage from './ui/VideoSettingPage';
 import SubtitleRegistrationPage from './ui/SubtitleRegistrationPage';
 import { usePopup } from './contexts/PopupContext';
 import OnboardingContent from './ui/OnboardingContent';
-import { getMessage } from './utils/i18n';
+import { t } from './utils/i18n';
 
 const pageList = Object.values(PAGE_NAME);
 
@@ -31,7 +31,7 @@ function App() {
       const isOnboardingComplete = await getLocalStorage('isOnboardingComplete');
       if (!isOnboardingComplete) {
         showPopup({
-          title: getMessage('onboarding_title'),
+          title: t('onboarding_title'),
           content: <OnboardingContent hidePopup={hidePopup} />,
           status: 'info',
           preventOutsideClick: true,

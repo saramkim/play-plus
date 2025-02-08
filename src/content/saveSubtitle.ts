@@ -1,7 +1,7 @@
 import { REVIEW, SUBTITLE_TOOLTIP_ID } from '../utils/constants';
 import { setLocalStorage } from '../storage/storage';
 import { createTooltip, showToast } from '../utils/dom';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { getLocalStorage } from '../storage/storage';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
@@ -34,9 +34,9 @@ export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
 export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
   try {
     const subtitle = await saveSubtitle(subtitleElement);
-    showToast(getMessage('success_save_subtitle'), subtitle, 'success');
+    showToast(t('success_save_subtitle'), subtitle, 'success');
   } catch (error) {
-    showToast(getMessage('error_save_subtitle'), (error as Error).message, 'error');
+    showToast(t('error_save_subtitle'), (error as Error).message, 'error');
   }
 }
 
@@ -44,7 +44,7 @@ function getTooltip(): HTMLElement {
   const existingTooltip = document.getElementById(SUBTITLE_TOOLTIP_ID);
   if (existingTooltip) return existingTooltip;
 
-  const tooltip = createTooltip(getMessage('click_to_save'));
+  const tooltip = createTooltip(t('click_to_save'));
   tooltip.id = SUBTITLE_TOOLTIP_ID;
   document.body.appendChild(tooltip);
   return tooltip;
@@ -54,12 +54,12 @@ async function saveSubtitle(subtitleElement: HTMLElement) {
   const content = subtitleElement.textContent?.replace(/\n/g, ' ');
   const startTimeDataAttribute = subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
 
-  if (!content) throw new Error(getMessage('error_no_subtitle'));
+  if (!content) throw new Error(t('error_no_subtitle'));
 
   const startTime = Number(startTimeDataAttribute || 0);
   const prevData = await getLocalStorage(REVIEW.STORAGE_KEY);
   const isDuplicated = prevData?.some(({ content: prevContent }) => prevContent === content);
-  if (isDuplicated) throw new Error(getMessage('error_duplicate_subtitle'));
+  if (isDuplicated) throw new Error(t('error_duplicate_subtitle'));
 
   const data = { content, url: window.location.href, startTime, savedAt: new Date().toISOString() };
   await setLocalStorage(REVIEW.STORAGE_KEY, prevData ? [data, ...prevData] : [data]);

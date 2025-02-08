@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG } from './default';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import {
   LocalStorageChanges,
   LocalStorageKey,
@@ -24,7 +24,7 @@ export const setStorage = async <K extends StorageKey>(key: K, value: StorageSch
     storageCache.set(key, value);
     return { success: true };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error : new Error(getMessage('error_unknown')) };
+    return { success: false, error: error instanceof Error ? error : new Error(t('error_unknown')) };
   }
 };
 

@@ -3,7 +3,7 @@ import { getStorage, onStorageChange, setStorage } from '../storage/storage';
 import { DEFAULT_CONFIG } from '../storage/default';
 import { usePopup } from '../contexts/PopupContext';
 import MessagePopup from '../components/MessagePopup';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { StorageSchema, StorageKey } from '../storage/type';
 
 function useConfig<K extends StorageKey>(key: K) {
@@ -46,7 +46,7 @@ function useConfig<K extends StorageKey>(key: K) {
       setHasChanged(false);
     } else {
       showPopup({
-        title: getMessage('error'),
+        title: t('error'),
         content: <MessagePopup message={response.error.message} type='alert' hidePopup={hidePopup} />,
         status: 'error',
       });

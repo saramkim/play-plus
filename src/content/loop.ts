@@ -1,7 +1,7 @@
 import { SETTINGS } from '../utils/constants';
 import { createElement, createLoopIcon, createMarker, showToast } from '../utils/dom';
 import { formatTime } from '../utils/helper';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { getStorage } from '../storage/storage';
 import { StorageChanges } from '../storage/type';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
@@ -127,14 +127,14 @@ export const setupLoopHandler = (video: HTMLVideoElement) => {
 export const loopCurrentSubtitle = () => {
   try {
     const video = getVideoElement();
-    if (!video) throw new Error(getMessage('error_video_not_found'));
+    if (!video) throw new Error(t('error_video_not_found'));
 
     const subtitles = [...getSubtitleCache().values()]?.[0];
-    if (!subtitles || subtitles.length === 0) throw new Error(getMessage('error_no_subtitle'));
+    if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
     const index = findCurrentSubtitleIndex(subtitles, video.currentTime);
     const currentSubtitle = subtitles[index];
-    if (!currentSubtitle) throw new Error(getMessage('error_no_subtitle'));
+    if (!currentSubtitle) throw new Error(t('error_no_subtitle'));
 
     const { start, end } = currentSubtitle;
     if (state.isLooping && markerState[START_MARKER_ID].time === start && markerState[END_MARKER_ID].time === end) {
@@ -199,7 +199,7 @@ const startLoop = (video: HTMLVideoElement) => {
     setStartPoint(currentTime);
     setEndPoint(currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
   } else if (startTime >= endTime) {
-    throw new Error(getMessage('error_loop_time_message'));
+    throw new Error(t('error_loop_time_message'));
   } else if (currentTime < startTime || currentTime > endTime) {
     video.currentTime = startTime;
   }
@@ -220,7 +220,7 @@ const updateLoopUI = (isLooping: boolean) => {
 
 const handleLoopError = (e: unknown) => {
   const message = e instanceof Error ? e.message : JSON.stringify(e);
-  showToast(getMessage('error_loop'), message, 'error');
+  showToast(t('error_loop'), message, 'error');
 };
 
 const showLoopMarkers = () => {
@@ -297,7 +297,7 @@ const timeUpdateHandler = (video: HTMLVideoElement) => {
 
   if (isOutsideLoopRange(currentTime, startTime, endTime)) {
     loop(false);
-    showToast(getMessage('info_loop_stop'), getMessage('info_loop_stop_message'), 'info');
+    showToast(t('info_loop_stop'), t('info_loop_stop_message'), 'info');
   } else if (currentTime >= endTime) {
     video.currentTime = startTime;
   }

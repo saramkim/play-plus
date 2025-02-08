@@ -1,4 +1,4 @@
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { SETTINGS } from '../utils/constants';
 import Toggle from '../components/Toggle';
 import KeydownInput from '../components/KeydownInput';
@@ -16,15 +16,15 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
   return (
     <section className='section'>
       <header className='section-header'>
-        <h2 className='section-title'>{getMessage(TITLE_MESSAGE_KEY)}</h2>
+        <h2 className='section-title'>{t(TITLE_MESSAGE_KEY)}</h2>
         <div className='row'>
           {hasChanged ? (
             <>
               <button onClick={handleCancel} className='button bg-gray-500'>
-                {getMessage('cancel')}
+                {t('cancel')}
               </button>
               <button onClick={handleSave} className='button bg-teal-500'>
-                {getMessage('save')}
+                {t('save')}
               </button>
             </>
           ) : (
@@ -34,21 +34,21 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
       </header>
       <div className='section'>
         <div className='row'>
-          <label className='label'>{getMessage('backward_key')}</label>
+          <label className='label'>{t('backward_key')}</label>
           <KeydownInput value={state.backward} onChange={handleChange('backward')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('forward_key')}</label>
+          <label className='label'>{t('forward_key')}</label>
           <KeydownInput value={state.forward} onChange={handleChange('forward')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('skip_unit')}</label>
+          <label className='label'>{t('skip_unit')}</label>
           <NumberInput value={state.skipTime} onChange={handleChange('skipTime')} min={1} />
           <DropdownButton
             options={[
-              { label: getMessage('seconds'), value: 'seconds' },
-              { label: getMessage('minutes'), value: 'minutes' },
-              { label: getMessage('subtitles'), value: 'subtitles' },
+              { label: t('seconds'), value: 'seconds' },
+              { label: t('minutes'), value: 'minutes' },
+              { label: t('subtitles'), value: 'subtitles' },
             ]}
             value={state.skipTimeUnit}
             onChange={handleChange('skipTimeUnit')}
@@ -56,12 +56,12 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
         </div>
         {state.skipTimeUnit === 'subtitles' && (
           <div className='row'>
-            <label className='label'>{getMessage('fallback_unit')}</label>
+            <label className='label'>{t('fallback_unit')}</label>
             <NumberInput value={state.fallbackTime} onChange={handleChange('fallbackTime')} min={1} />
             <DropdownButton
               options={[
-                { label: getMessage('seconds'), value: 'seconds' },
-                { label: getMessage('minutes'), value: 'minutes' },
+                { label: t('seconds'), value: 'seconds' },
+                { label: t('minutes'), value: 'minutes' },
               ]}
               value={state.fallbackUnit}
               onChange={handleChange('fallbackUnit')}

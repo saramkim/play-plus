@@ -1,5 +1,5 @@
 import { XMarkIcon } from '@heroicons/react/16/solid';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 
 interface KeydownInputProps {
   value: string;
@@ -29,7 +29,7 @@ const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
           value ? '' : 'group-focus-within:block'
         }`}
       >
-        {getMessage('press_any_key')}
+        {t('press_any_key')}
       </span>
     </div>
   );

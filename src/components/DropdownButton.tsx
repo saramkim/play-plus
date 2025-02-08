@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/16/solid';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import Dropdown, { DropdownOption } from './Dropdown';
 
 interface DropdownButtonProps<V extends string> {
@@ -30,7 +30,7 @@ const DropdownButton = <V extends string>({
             onClick={toggleDropdown}
             className='min-w-24 w-full h-8 px-2 flex justify-between items-center border rounded focus:outline-none focus:border-teal-500'
           >
-            <span>{label || getMessage('select')}</span>
+            <span>{label || t('select')}</span>
             <span className='text-gray-500'>
               {isOpen ? <ChevronUpIcon className='size-4' /> : <ChevronDownIcon className='size-4' />}
             </span>

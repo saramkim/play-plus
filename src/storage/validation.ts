@@ -1,4 +1,4 @@
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { StorageSchema, StorageKey } from './type';
 import { DEFAULT_CONFIG } from './default';
 
@@ -50,24 +50,24 @@ function validateType<K extends StorageKey>(key: K, value: StorageSchema[K]) {
 
     if (Array.isArray(defaultValue)) {
       if (!defaultValue.includes(actualValue)) {
-        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
+        throw new Error(`${t('error_type_mismatch')}\n${getMessageByKey(k)}`);
       }
     } else if (typeof defaultValue === 'object' && defaultValue !== null) {
       if (typeof actualValue !== 'object' || actualValue === null) {
-        throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
+        throw new Error(`${t('error_type_mismatch')}\n${getMessageByKey(k)}`);
       }
       validateType(actualValue as any, defaultValue as any);
     } else if (typeof actualValue !== typeof defaultValue) {
       if (typeof defaultValue === 'string') {
-        throw new Error(`${getMessage('error_text_type')}\n${getMessageByKey(k)}`);
+        throw new Error(`${t('error_text_type')}\n${getMessageByKey(k)}`);
       }
       if (typeof defaultValue === 'number') {
-        throw new Error(`${getMessage('error_number_type')}\n${getMessageByKey(k)}`);
+        throw new Error(`${t('error_number_type')}\n${getMessageByKey(k)}`);
       }
-      throw new Error(`${getMessage('error_type_mismatch')}\n${getMessageByKey(k)}`);
+      throw new Error(`${t('error_type_mismatch')}\n${getMessageByKey(k)}`);
     } else if (typeof defaultValue === 'number') {
       if (isNaN(actualValue as number)) {
-        throw new Error(`${getMessage('error_number_type')}\n${getMessageByKey(k)}`);
+        throw new Error(`${t('error_number_type')}\n${getMessageByKey(k)}`);
       }
     }
   });
@@ -78,10 +78,9 @@ function validateDuplicateShortcuts<K extends StorageKey>(data: StorageSchema[K]
 
   Object.entries(data).forEach(([key, value]) => {
     if (SHORTCUT_DATA_KEYS.includes(key) && typeof value === 'string' && value !== '') {
-      if (otherShortcuts.includes(value))
-        throw new Error(`${getMessage('error_duplicate_shortcuts')}\n${getMessageByKey(key)}`);
+      if (otherShortcuts.includes(value)) throw new Error(`${t('error_duplicate_shortcuts')}\n${getMessageByKey(key)}`);
       if (RESERVED_SHORTCUTS.includes(value))
-        throw new Error(`${getMessage('error_reserved_shortcuts')}\n${getMessageByKey(key)}`);
+        throw new Error(`${t('error_reserved_shortcuts')}\n${getMessageByKey(key)}`);
 
       otherShortcuts.push(value);
     }
@@ -90,33 +89,33 @@ function validateDuplicateShortcuts<K extends StorageKey>(data: StorageSchema[K]
 
 const getMessageByKey = (key: KeyOfUnion<StorageSchema[StorageKey]>) => {
   return {
-    forward: getMessage('forward_key'),
-    backward: getMessage('backward_key'),
-    savePrimary: getMessage('save_primary_subtitle'),
-    saveSecondary: getMessage('save_secondary_subtitle'),
-    togglePrimary: getMessage('toggle_primary_subtitle'),
-    toggleSecondary: getMessage('toggle_secondary_subtitle'),
+    forward: t('forward_key'),
+    backward: t('backward_key'),
+    savePrimary: t('save_primary_subtitle'),
+    saveSecondary: t('save_secondary_subtitle'),
+    togglePrimary: t('toggle_primary_subtitle'),
+    toggleSecondary: t('toggle_secondary_subtitle'),
     enabled: 'enabled',
-    skipTime: getMessage('skip_unit'),
-    skipTimeUnit: getMessage('skip_unit'),
-    fallbackTime: getMessage('fallback_unit'),
-    fallbackUnit: getMessage('fallback_unit'),
-    language: getMessage('language'),
-    positionReference: getMessage('position_reference'),
-    positionOffset: getMessage('position_offset'),
-    color: getMessage('subtitle_color'),
-    fontSize: getMessage('subtitle_size'),
-    fontWeight: getMessage('font_weight'),
-    opacity: getMessage('opacity'),
-    lineBreak: getMessage('allow_line_break'),
-    videoSkip: getMessage('video_skip'),
-    subVideoSkip: getMessage('sub_video_skip'),
-    shortcuts: getMessage('shortcuts'),
-    primarySubtitle: getMessage('primary_subtitle'),
-    secondarySubtitle: getMessage('secondary_subtitle'),
-    toggleLoop: getMessage('toggle_loop_key'),
-    startPoint: getMessage('start_point_key'),
-    endPoint: getMessage('end_point_key'),
-    loopCurrentSubtitle: getMessage('loop_current_subtitle'),
+    skipTime: t('skip_unit'),
+    skipTimeUnit: t('skip_unit'),
+    fallbackTime: t('fallback_unit'),
+    fallbackUnit: t('fallback_unit'),
+    language: t('language'),
+    positionReference: t('position_reference'),
+    positionOffset: t('position_offset'),
+    color: t('subtitle_color'),
+    fontSize: t('subtitle_size'),
+    fontWeight: t('font_weight'),
+    opacity: t('opacity'),
+    lineBreak: t('allow_line_break'),
+    videoSkip: t('video_skip'),
+    subVideoSkip: t('sub_video_skip'),
+    shortcuts: t('shortcuts'),
+    primarySubtitle: t('primary_subtitle'),
+    secondarySubtitle: t('secondary_subtitle'),
+    toggleLoop: t('toggle_loop_key'),
+    startPoint: t('start_point_key'),
+    endPoint: t('end_point_key'),
+    loopCurrentSubtitle: t('loop_current_subtitle'),
   }[key];
 };

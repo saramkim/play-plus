@@ -1,4 +1,4 @@
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { SETTINGS } from '../utils/constants';
 import Toggle from '../components/Toggle';
 import KeydownInput from '../components/KeydownInput';
@@ -12,15 +12,15 @@ function LoopConfigForm() {
   return (
     <section className='section'>
       <header className='section-header'>
-        <h2 className='section-title'>{getMessage('loop')}</h2>
+        <h2 className='section-title'>{t('loop')}</h2>
         <div className='row'>
           {hasChanged ? (
             <>
               <button onClick={handleCancel} className='button bg-gray-500'>
-                {getMessage('cancel')}
+                {t('cancel')}
               </button>
               <button onClick={handleSave} className='button bg-teal-500'>
-                {getMessage('save')}
+                {t('save')}
               </button>
             </>
           ) : (
@@ -30,19 +30,19 @@ function LoopConfigForm() {
       </header>
       <div className='section'>
         <div className='row'>
-          <label className='label'>{getMessage('toggle_loop_key')} </label>
+          <label className='label'>{t('toggle_loop_key')} </label>
           <KeydownInput value={state.toggleLoop} onChange={handleChange('toggleLoop')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('start_point_key')} </label>
+          <label className='label'>{t('start_point_key')} </label>
           <KeydownInput value={state.startPoint} onChange={handleChange('startPoint')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('end_point_key')} </label>
+          <label className='label'>{t('end_point_key')} </label>
           <KeydownInput value={state.endPoint} onChange={handleChange('endPoint')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('loop_current_subtitle')} </label>
+          <label className='label'>{t('loop_current_subtitle')} </label>
           <KeydownInput value={state.loopCurrentSubtitle} onChange={handleChange('loopCurrentSubtitle')} />
         </div>
       </div>

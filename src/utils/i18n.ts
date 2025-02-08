@@ -7,6 +7,6 @@ type ExtractKeys<T> = {
 
 type I18nKeys = ExtractKeys<typeof messagesKo | typeof messagesEn>;
 
-export const getMessage = <K extends keyof I18nKeys>(key: K, ...args: I18nKeys[K]): string => {
+export const t = <K extends keyof I18nKeys>(key: K, ...args: I18nKeys[K]): string => {
   return chrome.i18n.getMessage(key, args);
 };

@@ -9,7 +9,7 @@ import ListHeader from './ListHeader';
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { usePopup } from '../contexts/PopupContext';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import MessagePopup from '../components/MessagePopup';
 import { useClickOutside } from '../hooks/useClickOutside';
 import DropdownButton from '../components/DropdownButton';
@@ -72,11 +72,11 @@ function SubtitleRegistrationPage() {
 
   const deleteSubtitle = (id: string) => {
     showPopup({
-      title: getMessage('delete'),
+      title: t('delete'),
       content: (
         <MessagePopup
           type='confirm'
-          message={getMessage('confirm_delete')}
+          message={t('confirm_delete')}
           onConfirm={() => {
             const filtered = subtitles.filter((v) => v.id !== id);
             setLocalStorage(STORAGE_KEY, filtered);
@@ -154,7 +154,7 @@ function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: Subtit
           </form>
         ) : (
           <div className='flex items-center gap-2 group w-fit flex-wrap'>
-            <span className='text-[13px] text-gray-500'>{getMessage(LANGUAGES[language])}</span>
+            <span className='text-[13px] text-gray-500'>{t(LANGUAGES[language])}</span>
             <p className='text-[15px] font-medium text-wrap'>{title}</p>
             <button onClick={() => setIsEditing(true)}>
               <PencilSquareIcon className='size-5 hidden group-hover:block text-gray-500 hover:text-gray-800' />

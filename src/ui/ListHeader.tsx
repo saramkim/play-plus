@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { XMarkIcon } from '@heroicons/react/16/solid';
 
 interface ListHeaderProps {
@@ -29,7 +29,7 @@ function ListHeader({ searchText, setSearchText, count, sort, setSort }: ListHea
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
           <input className='input' ref={searchInputRef} />
           <button className='button bg-teal-500' type='submit'>
-            {getMessage('search')}
+            {t('search')}
           </button>
         </form>
       </div>
@@ -39,23 +39,23 @@ function ListHeader({ searchText, setSearchText, count, sort, setSort }: ListHea
             <button className='text-rose-500' onClick={clearSearch}>
               <XMarkIcon className='size-4' />
             </button>
-            <span className='text-gray-800'>{getMessage('search_term')}:</span>
+            <span className='text-gray-800'>{t('search_term')}:</span>
             <span className='font-bold truncate'>{searchText}</span>
           </div>
         ) : (
           <div className='text-gray-800'>
-            <span className='font-medium'>{getMessage('all_list')}</span>
+            <span className='font-medium'>{t('all_list')}</span>
             <span>({count})</span>
           </div>
         )}
 
         <div className='flex items-center gap-1'>
           <button className={sort === 'latest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('latest')}>
-            {getMessage('latest')}
+            {t('latest')}
           </button>
           <span className='text-gray-300'>|</span>
           <button className={sort === 'oldest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('oldest')}>
-            {getMessage('oldest')}
+            {t('oldest')}
           </button>
         </div>
       </div>

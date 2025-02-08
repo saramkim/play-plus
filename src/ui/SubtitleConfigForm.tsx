@@ -1,5 +1,5 @@
 import { SETTINGS } from '../utils/constants';
-import { getMessage } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import Toggle from '../components/Toggle';
 import Switch from '../components/Switch';
 import NumberInput from '../components/NumberInput';
@@ -17,15 +17,15 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
   return (
     <section className='section'>
       <header className='section-header'>
-        <h2 className='section-title'>{getMessage(TITLE_MESSAGE_KEY)}</h2>
+        <h2 className='section-title'>{t(TITLE_MESSAGE_KEY)}</h2>
         <div className='row'>
           {hasChanged ? (
             <>
               <button onClick={handleCancel} className='button bg-gray-500'>
-                {getMessage('cancel')}
+                {t('cancel')}
               </button>
               <button onClick={handleSave} className='button bg-teal-500'>
-                {getMessage('save')}
+                {t('save')}
               </button>
             </>
           ) : (
@@ -35,50 +35,50 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
       </header>
       <div className='section'>
         <div className='row'>
-          <label className='label'>{getMessage('language')}</label>
+          <label className='label'>{t('language')}</label>
           <Switch
             options={[
-              { label: getMessage('english'), value: 'en' },
-              { label: getMessage('korean'), value: 'ko' },
+              { label: t('english'), value: 'en' },
+              { label: t('korean'), value: 'ko' },
             ]}
             value={state.language}
             onChange={handleChange('language')}
           />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('position_reference')}</label>
+          <label className='label'>{t('position_reference')}</label>
           <Switch
             options={[
-              { label: getMessage('top'), value: 'top' },
-              { label: getMessage('center'), value: 'center' },
-              { label: getMessage('bottom'), value: 'bottom' },
+              { label: t('top'), value: 'top' },
+              { label: t('center'), value: 'center' },
+              { label: t('bottom'), value: 'bottom' },
             ]}
             value={state.positionReference}
             onChange={handleChange('positionReference')}
           />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('position_offset')}(px)</label>
+          <label className='label'>{t('position_offset')}(px)</label>
           <NumberInput value={state.positionOffset} onChange={handleChange('positionOffset')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('subtitle_color')}</label>
+          <label className='label'>{t('subtitle_color')}</label>
           <ColorPicker value={state.color} onChange={handleChange('color')} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('subtitle_size')}(1~10)</label>
+          <label className='label'>{t('subtitle_size')}(1~10)</label>
           <NumberInput value={state.fontSize} onChange={handleChange('fontSize')} min={1} max={10} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('font_weight')}(1~6)</label>
+          <label className='label'>{t('font_weight')}(1~6)</label>
           <NumberInput value={state.fontWeight} onChange={handleChange('fontWeight')} min={1} max={6} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('opacity')}(%)</label>
+          <label className='label'>{t('opacity')}(%)</label>
           <NumberInput value={state.opacity} onChange={handleChange('opacity')} min={0} max={100} />
         </div>
         <div className='row'>
-          <label className='label'>{getMessage('allow_line_break')}</label>
+          <label className='label'>{t('allow_line_break')}</label>
           <Checkbox checked={state.lineBreak} onChange={handleChange('lineBreak')} />
         </div>
       </div>
