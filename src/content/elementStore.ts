@@ -4,14 +4,23 @@ import {
   LOOP_STATUS_CONTAINER_ID,
   TOAST_CONTAINER_ID,
   TRACK_DISPLAY_CONTAINER_CLASS_NAME,
+  SUBTITLE_CONTAINER_ID,
+  PRIMARY_SUBTITLE_ID,
+  SECONDARY_SUBTITLE_ID,
+  SETTINGS,
+  SubtitleSettingStorageKey,
 } from '../utils/constants';
-import { SUBTITLE_CONTAINER_ID } from '../utils/constants';
 import { createElement, createLoopIcon, selectVideoElement } from '../utils/dom';
+import { applySubtitleStyles, createSubtitleElement } from '../utils/subtitle';
+import { setupSubtitleSaveHandler } from './saveSubtitle';
+import { getSubtitleSettings } from './subtitleStore';
 
 type ElementStore = {
   videoElement: HTMLVideoElement | null;
   trackDisplayContainer: HTMLElement | null;
   subtitleContainer: HTMLElement;
+  primarySubtitle: HTMLElement;
+  secondarySubtitle: HTMLElement;
   toastContainer: HTMLElement;
   sliderContainer: HTMLElement | null;
   controlsLeft: HTMLElement | null;
@@ -25,6 +34,8 @@ const elementStore: ElementStore = {
   videoElement: null,
   trackDisplayContainer: null,
   subtitleContainer: createElement(SUBTITLE_CONTAINER_ID),
+  primarySubtitle: createSubtitleElement(PRIMARY_SUBTITLE_ID),
+  secondarySubtitle: createSubtitleElement(SECONDARY_SUBTITLE_ID),
   toastContainer: createElement(TOAST_CONTAINER_ID),
   sliderContainer: null,
   controlsLeft: null,
@@ -34,8 +45,31 @@ const elementStore: ElementStore = {
   subtitleContainerObserver: null,
 };
 
+const subtitleElementMap = {
+  [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: elementStore.primarySubtitle,
+  [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: elementStore.secondarySubtitle,
+};
+
 function init() {
   elementStore.loopButton.appendChild(createLoopIcon());
+  setupSubtitleElement();
+}
+
+function setupSubtitleElement() {
+  const fragment = document.createDocumentFragment();
+
+  for (const [key, config] of Object.entries(getSubtitleSettings())) {
+    const subtitleElement = subtitleElementMap[key];
+    applySubtitleStyles(subtitleElement, config);
+    setupSubtitleSaveHandler(subtitleElement);
+    fragment.appendChild(subtitleElement);
+  }
+
+  elementStore.subtitleContainer.replaceChildren(fragment);
+}
+
+export function getSubtitleElement(key: SubtitleSettingStorageKey) {
+  return subtitleElementMap[key];
 }
 
 export async function initializeElementStore() {
@@ -55,10 +89,6 @@ export function getVideoElement() {
 
 export function getTrackDisplayContainer() {
   return elementStore.trackDisplayContainer;
-}
-
-export function getSubtitleContainer() {
-  return elementStore.subtitleContainer;
 }
 
 export function getToastContainer() {
@@ -86,9 +116,8 @@ export function resetLoopStatus() {
 }
 
 function resetContainers() {
-  const { subtitleContainer, toastContainer, subtitleContainerObserver } = elementStore;
+  const { toastContainer, subtitleContainerObserver } = elementStore;
 
-  subtitleContainer.replaceChildren();
   toastContainer.replaceChildren();
   resetLoopStatus();
 

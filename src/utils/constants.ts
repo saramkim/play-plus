@@ -3,6 +3,8 @@ export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
 export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
+export const PRIMARY_SUBTITLE_ID = 'pp-primary-subtitle';
+export const SECONDARY_SUBTITLE_ID = 'pp-secondary-subtitle';
 export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 export const TOAST_CONTAINER_ID = 'pp-toast-container';
 export const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
@@ -58,6 +60,7 @@ export const SETTINGS = {
     STORAGE_KEY: 'loop',
   },
 } as const;
+export type SubtitleSettingStorageKey = (typeof SETTINGS.SUBTITLES)[keyof typeof SETTINGS.SUBTITLES]['STORAGE_KEY'];
 
 export const REVIEW = {
   STORAGE_KEY: 'savedSubtitles',

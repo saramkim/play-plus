@@ -1,7 +1,6 @@
 import { selectVideoElement } from '../utils/dom';
-import { fetchAndSyncSubtitles, fetchVideoMetadata, setupSubtitleSync } from './subtitle';
+import { fetchAndCacheSubtitles, fetchVideoMetadata, setupSubtitleSync } from './subtitle';
 import { initializeElementStore } from './elementStore';
-import { initializeSubtitleStore } from './subtitleStore';
 import { setupLoopHandler } from './loop';
 import { FetchVideoMetadataMessage, onMessage, PlayVideoMessage } from '../utils/message';
 
@@ -17,11 +16,10 @@ export function initializeMessageListener() {
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
   const [subtitleApiInfoList, video] = await Promise.all([fetchVideoMetadata(url, headers), initializeElementStore()]);
 
-  initializeSubtitleStore(subtitleApiInfoList);
   setupLoopHandler(video);
 
   if (subtitleApiInfoList && video) {
-    await fetchAndSyncSubtitles(subtitleApiInfoList);
+    await fetchAndCacheSubtitles(subtitleApiInfoList);
     setupSubtitleSync(video);
   }
 };

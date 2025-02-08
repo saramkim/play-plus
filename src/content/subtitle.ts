@@ -1,43 +1,38 @@
 import { REVIEW, SETTINGS } from '../utils/constants';
 import { getStorage } from '../storage/storage';
 import {
+  applySubtitleStyles,
   arrayToHeadersObject,
-  createSubtitleElement,
   extractSubtitleApiInfoFromResponse,
   findCurrentSubtitle,
   parseVTT,
   SubtitleApiInfo,
   SubtitleData,
 } from '../utils/subtitle';
-import { getSubtitleContainer, getVideoElement } from './elementStore';
-import { setupSubtitleSaveHandler } from './saveSubtitle';
-import { getSubtitleApiInfoList, getSubtitleCache, getSubtitleSettings, setSubtitleSetting } from './subtitleStore';
+import { getSubtitleElement, getVideoElement } from './elementStore';
+import { getSubtitleCache, getSubtitleSettings, setSubtitleSetting } from './subtitleStore';
 import { StorageChanges } from '../storage/type';
-import { DEFAULT_CONFIG } from '../storage/default';
 
 const { SUBTITLES } = SETTINGS;
 
-let handleVideoTimeupdate: ((arg?: Event | boolean) => void) | null;
+let handleVideoTimeupdate: (() => void) | null;
 
 export async function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
-    const subtitleChanges = changes[STORAGE_KEY];
+    const newConfig = changes[STORAGE_KEY]?.newValue;
+    if (!newConfig) continue;
 
-    if (subtitleChanges) {
-      const newValue = subtitleChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
-      setSubtitleSetting(STORAGE_KEY, newValue);
+    setSubtitleSetting(STORAGE_KEY, newConfig);
 
-      const subtitleApiInfoList = getSubtitleApiInfoList();
-      if (newValue.enabled && subtitleApiInfoList) {
-        await fetchAndSyncSubtitles(subtitleApiInfoList);
+    const video = getVideoElement();
+    if (!video) continue;
 
-        const video = getVideoElement();
-        if (video && !handleVideoTimeupdate) setupSubtitleSync(video);
-      } else if (Object.values(getSubtitleSettings()).every(({ enabled }) => !enabled)) {
-        stopSubtitleSync();
-      }
+    syncSubtitles(video, true);
 
-      if (handleVideoTimeupdate) handleVideoTimeupdate(true);
+    if (newConfig.enabled) {
+      if (!handleVideoTimeupdate) setupSubtitleSync(video);
+    } else if (Object.values(getSubtitleSettings()).every(({ enabled }) => !enabled)) {
+      stopSubtitleSync(video);
     }
   }
 }
@@ -60,35 +55,23 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
   return apiInfoList;
 }
 
-export async function fetchAndSyncSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
+export async function fetchAndCacheSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
   const subtitleCache = getSubtitleCache();
-
   for (const { lang, url } of subtitleApiInfoList) {
-    const isEnabled = Object.values(getSubtitleSettings()).some(
-      ({ language, enabled }) => enabled && language === lang
-    );
-    if (isEnabled && !subtitleCache.has(lang)) {
-      subtitleCache.set(lang, await fetchSubtitle(url));
-    }
+    subtitleCache.set(lang, await fetchSubtitle(url));
   }
 }
-
+``;
 export function setupSubtitleSync(video: HTMLVideoElement) {
-  updateSubtitleText(video);
-
-  handleVideoTimeupdate = (arg) => updateSubtitleText(video, typeof arg === 'boolean' ? arg : false);
+  syncSubtitles(video, true);
+  handleVideoTimeupdate = () => syncSubtitles(video);
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 
-function stopSubtitleSync() {
-  const video = getVideoElement();
-
-  if (video && handleVideoTimeupdate) {
+function stopSubtitleSync(video: HTMLVideoElement) {
+  if (handleVideoTimeupdate) {
     video.removeEventListener('timeupdate', handleVideoTimeupdate);
     handleVideoTimeupdate = null;
-
-    const subtitleContainer = getSubtitleContainer();
-    subtitleContainer.replaceChildren();
   }
 }
 
@@ -97,39 +80,19 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
   return parseVTT(await response.text());
 }
 
-function updateSubtitleText(video: HTMLVideoElement, hasStyleChanged = false) {
+function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
   const { currentTime } = video;
-  const subtitleContainer = getSubtitleContainer();
   const subtitleCache = getSubtitleCache();
 
-  if (hasStyleChanged) {
-    const fragment = document.createDocumentFragment();
+  for (const [key, config] of Object.entries(getSubtitleSettings())) {
+    const { language, enabled } = config;
+    const data = subtitleCache.get(language);
+    const subtitleElement = getSubtitleElement(key);
 
-    for (const [key, config] of Object.entries(getSubtitleSettings())) {
-      const { language, enabled } = config;
-      const data = subtitleCache.get(language);
+    if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);
 
-      if (data && enabled) {
-        const subtitleElement = createSubtitleElement(language, config, key);
-
-        setupSubtitle(subtitleElement, data, currentTime);
-        setupSubtitleSaveHandler(subtitleElement);
-
-        fragment.appendChild(subtitleElement);
-      }
-    }
-
-    subtitleContainer.replaceChildren(fragment);
-  } else {
-    for (const [lang, subtitles] of subtitleCache) {
-      const subtitleElement = subtitleContainer.querySelector(`#${lang}`) as HTMLElement | null;
-
-      if (subtitleElement) {
-        setupSubtitle(subtitleElement, subtitles, currentTime);
-      } else {
-        updateSubtitleText(video, true);
-        break;
-      }
+    if (data && enabled) {
+      setupSubtitle(subtitleElement, data, currentTime);
     }
   }
 }

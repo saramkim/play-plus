@@ -1,4 +1,4 @@
-import { StorageKey, SubtitleConfig } from '../storage/type';
+import { SubtitleConfig } from '../storage/type';
 import { applyStyles, createElement } from './dom';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
@@ -141,29 +141,14 @@ export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime:
   return -1; // 시간 범위를 벗어난 경우
 };
 
-export const createSubtitleElement = (id: string, config: SubtitleConfig, storageKey: StorageKey) => {
-  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
+export const createSubtitleElement = (id: string) => {
   const subtitle = createElement(id, 'p');
-  subtitle.dataset.storageKey = storageKey;
-
-  const positions = {
-    top: { top: `${positionOffset}px` },
-    center: { top: `calc(50% + ${positionOffset}px)` },
-    bottom: { bottom: `${positionOffset}px` },
-  };
 
   applyStyles(subtitle, {
-    ...positions[positionReference],
     lineHeight: '1.5em',
-    display: enabled ? 'block' : 'none',
-    color,
-    fontSize: `${0.5 + 0.1 * fontSize}em`,
-    fontWeight: `${200 + 100 * fontWeight}`,
-    opacity: `${opacity * 0.01}`,
-    whiteSpace: lineBreak ? 'pre-line' : 'normal',
+    display: 'none',
     position: 'absolute',
     left: '50%',
-    transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
     pointerEvents: 'auto',
     cursor: 'pointer',
     zIndex: '1000',
@@ -172,6 +157,27 @@ export const createSubtitleElement = (id: string, config: SubtitleConfig, storag
   });
 
   return subtitle;
+};
+
+export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfig) => {
+  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
+
+  const positions = {
+    top: { top: `${positionOffset}px`, bottom: 'auto' },
+    center: { top: `calc(50% + ${positionOffset}px)`, bottom: 'auto' },
+    bottom: { top: 'auto', bottom: `${positionOffset}px` },
+  };
+
+  applyStyles(subtitle, {
+    ...positions[positionReference],
+    display: enabled ? 'block' : 'none',
+    color,
+    fontSize: `${0.5 + 0.1 * fontSize}em`,
+    fontWeight: `${200 + 100 * fontWeight}`,
+    opacity: `${opacity * 0.01}`,
+    whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
+    transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
+  });
 };
 
 const timeToSeconds = (time: string) => {
