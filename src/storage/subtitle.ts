@@ -2,7 +2,7 @@ import { REGISTRATION } from '../utils/constants';
 import { SubtitleData } from '../utils/subtitle';
 
 type Uuid = `${string}-${string}-${string}-${string}-${string}`;
-type SubtitleId = `${typeof REGISTRATION.ID_PREFIX}-${Uuid}`;
+export type SubtitleId = `${typeof REGISTRATION.ID_PREFIX}-${Uuid}`;
 
 export const setLocalSubtitle = (id: SubtitleId, data: SubtitleData[]) => {
   return chrome.storage.local.set({ [id]: data });

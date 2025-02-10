@@ -1,6 +1,6 @@
-import { COUPANG_PLAY_BASE_URL } from './utils/constants';
+import { COUPANG_PLAY_BASE_URL, SET_SUBTITLE_ACTION, SetSubtitleAction } from './utils/constants';
 import { migrateLegacyStorage } from './storage/migration';
-import { onMessage, sendMessageToTab, ViewVideoMessage } from './utils/message';
+import { onMessage, sendMessageToTab, SetSubtitleMessage, ViewVideoMessage } from './utils/message';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
@@ -18,6 +18,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 onMessage((message) => {
   const { viewVideo } = message;
   if (viewVideo) handleViewVideo(viewVideo);
+
+  Object.values(SET_SUBTITLE_ACTION).forEach((action) => {
+    if (message[action]) handleSetSubtitle(action, message[action]);
+  });
 });
 
 chrome.sidePanel
@@ -54,5 +58,13 @@ const handleViewVideo = async ({ url, startTime }: ViewVideoMessage) => {
 
       chrome.tabs.onUpdated.addListener(listener);
     }
+  }
+};
+
+const handleSetSubtitle = async (action: SetSubtitleAction, message: SetSubtitleMessage) => {
+  const tabs = await chrome.tabs.query({ url: `${COUPANG_PLAY_BASE_URL}/*` });
+  const activeTab = tabs.find((tab) => tab.active);
+  if (activeTab?.id) {
+    sendMessageToTab(activeTab.id, action, message);
   }
 };

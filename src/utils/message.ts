@@ -1,3 +1,5 @@
+import { SubtitleId } from '../storage/subtitle';
+
 export type FetchVideoMetadataMessage = {
   url: string;
   headers: chrome.webRequest.HttpHeader[];
@@ -12,10 +14,16 @@ export type ViewVideoMessage = {
   startTime: number;
 };
 
+export type SetSubtitleMessage = {
+  id: SubtitleId | null;
+};
+
 type MessageData = {
   fetchVideoMetadata: FetchVideoMetadataMessage;
   playVideo: PlayVideoMessage;
   viewVideo: ViewVideoMessage;
+  setPrimarySubtitle: SetSubtitleMessage;
+  setSecondarySubtitle: SetSubtitleMessage;
 };
 type MessageKey = keyof MessageData;
 

@@ -62,6 +62,12 @@ export const SETTINGS = {
 } as const;
 export type SubtitleSettingStorageKey = (typeof SETTINGS.SUBTITLES)[keyof typeof SETTINGS.SUBTITLES]['STORAGE_KEY'];
 
+export const SET_SUBTITLE_ACTION = {
+  SET_PRIMARY: 'setPrimarySubtitle',
+  SET_SECONDARY: 'setSecondarySubtitle',
+} as const;
+export type SetSubtitleAction = (typeof SET_SUBTITLE_ACTION)[keyof typeof SET_SUBTITLE_ACTION];
+
 export const REVIEW = {
   STORAGE_KEY: 'savedSubtitles',
   DATA_ATTRIBUTE: {

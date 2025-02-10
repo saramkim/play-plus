@@ -10,7 +10,13 @@ import {
   SubtitleData,
 } from '../utils/subtitle';
 import { getSubtitleElement, getVideoElement } from './elementStore';
-import { getSubtitleCache, getSubtitleSettings, setSubtitleCache, setSubtitleSetting } from './subtitleStore';
+import {
+  getCustomSubtitleId,
+  getSubtitleCache,
+  getSubtitleSettings,
+  setSubtitleCache,
+  setSubtitleSetting,
+} from './subtitleStore';
 import { StorageChanges } from '../storage/type';
 import { DEFAULT_CONFIG } from '../storage/default';
 
@@ -86,7 +92,8 @@ function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
 
   for (const [key, config] of Object.entries(getSubtitleSettings())) {
     const { language, enabled } = config;
-    const data = getSubtitleCache(language);
+    const customSubtitleId = getCustomSubtitleId(key);
+    const data = getSubtitleCache(customSubtitleId ?? language);
     const subtitleElement = getSubtitleElement(key);
 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);

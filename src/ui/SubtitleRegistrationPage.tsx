@@ -2,9 +2,9 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/SubtitleUploader';
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../storage/storage';
 import { SubtitleMetadata } from '../storage/type';
-import { Language, LANGUAGES, REGISTRATION } from '../utils/constants';
+import { Language, LANGUAGES, REGISTRATION, SET_SUBTITLE_ACTION, SetSubtitleAction } from '../utils/constants';
 import { parseSubtitle, getSubtitleFormat } from '../utils/subtitle';
-import { setLocalSubtitle } from '../storage/subtitle';
+import { setLocalSubtitle, SubtitleId } from '../storage/subtitle';
 import ListHeader from './ListHeader';
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
@@ -13,6 +13,7 @@ import { t } from '../utils/i18n';
 import MessagePopup from '../components/MessagePopup';
 import { useClickOutside } from '../hooks/useClickOutside';
 import DropdownButton from '../components/DropdownButton';
+import { sendMessage } from '../utils/message';
 
 const { STORAGE_KEY, ID_PREFIX } = REGISTRATION;
 
@@ -123,8 +124,8 @@ function SubtitleRegistrationPage() {
 }
 
 interface SubtitleItemProps extends SubtitleMetadata {
-  onDelete: (id: string) => void;
-  onEdit: (id: string, title: string, language: Language) => void;
+  onDelete: (id: SubtitleId) => void;
+  onEdit: (id: SubtitleId, title: string, language: Language) => void;
 }
 
 function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: SubtitleItemProps) {
@@ -139,6 +140,10 @@ function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: Subtit
     e.preventDefault();
     onEdit(id, editedTitle, editedLanguage);
     setIsEditing(false);
+  };
+
+  const setSubtitle = (action: SetSubtitleAction, id: SubtitleId | null) => {
+    sendMessage(action, { id });
   };
 
   return (
@@ -163,9 +168,21 @@ function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: Subtit
         )}
       </div>
       <div className='flex justify-between items-center text-[13px]'>
-        <div className='flex items-center gap-1 text-gray-500 disabled:opacity-30'>
+        <div className='flex items-center gap-1'>
+          <button
+            className='text-gray-500 hover:text-gray-800'
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, id)}
+          >
+            {t('primary_subtitle')}
+          </button>
+          <button
+            className='text-gray-500 hover:text-gray-800'
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, id)}
+          >
+            {t('secondary_subtitle')}
+          </button>
           <button onClick={() => onDelete(id)}>
-            <XCircleIcon className='size-5 hover:text-gray-800' />
+            <XCircleIcon className='size-5 text-gray-500 hover:text-gray-800' />
           </button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>

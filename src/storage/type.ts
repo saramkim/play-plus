@@ -1,5 +1,6 @@
 import { Language, PageName } from '../utils/constants';
 import { SubtitleLanguage } from '../utils/subtitle';
+import { SubtitleId } from './subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';
 export type VideoSkipConfig = {
@@ -64,7 +65,7 @@ export type SavedSubtitle = {
 };
 
 export type SubtitleMetadata = {
-  id: string;
+  id: SubtitleId;
   title: string;
   language: Language;
   savedAt: string;
