@@ -10,8 +10,9 @@ import {
   SubtitleData,
 } from '../utils/subtitle';
 import { getSubtitleElement, getVideoElement } from './elementStore';
-import { getSubtitleCache, getSubtitleSettings, setSubtitleSetting } from './subtitleStore';
+import { getSubtitleCache, getSubtitleSettings, setSubtitleCache, setSubtitleSetting } from './subtitleStore';
 import { StorageChanges } from '../storage/type';
+import { DEFAULT_CONFIG } from '../storage/default';
 
 const { SUBTITLES } = SETTINGS;
 
@@ -19,9 +20,10 @@ let handleVideoTimeupdate: (() => void) | null;
 
 export async function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
-    const newConfig = changes[STORAGE_KEY]?.newValue;
-    if (!newConfig) continue;
+    const change = changes[STORAGE_KEY];
+    if (!change) continue;
 
+    const newConfig = change.newValue || DEFAULT_CONFIG[STORAGE_KEY];
     setSubtitleSetting(STORAGE_KEY, newConfig);
 
     const video = getVideoElement();
@@ -56,9 +58,8 @@ export async function fetchVideoMetadata(url: string, headerList: chrome.webRequ
 }
 
 export async function fetchAndCacheSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
-  const subtitleCache = getSubtitleCache();
   for (const { lang, url } of subtitleApiInfoList) {
-    subtitleCache.set(lang, await fetchSubtitle(url));
+    setSubtitleCache(lang, await fetchSubtitle(url));
   }
 }
 ``;
@@ -82,11 +83,10 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
 
 function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
   const { currentTime } = video;
-  const subtitleCache = getSubtitleCache();
 
   for (const [key, config] of Object.entries(getSubtitleSettings())) {
     const { language, enabled } = config;
-    const data = subtitleCache.get(language);
+    const data = getSubtitleCache(language);
     const subtitleElement = getSubtitleElement(key);
 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);

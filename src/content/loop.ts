@@ -12,7 +12,7 @@ import {
   getVideoElement,
   resetLoopStatus,
 } from './elementStore';
-import { getSubtitleCache } from './subtitleStore';
+import { getPrimarySubtitleCache } from './subtitleStore';
 import { DEFAULT_CONFIG } from '../storage/default';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
@@ -129,7 +129,7 @@ export const loopCurrentSubtitle = () => {
     const video = getVideoElement();
     if (!video) throw new Error(t('error_video_not_found'));
 
-    const subtitles = [...getSubtitleCache().values()]?.[0];
+    const subtitles = getPrimarySubtitleCache();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
     const index = findCurrentSubtitleIndex(subtitles, video.currentTime);

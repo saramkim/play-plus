@@ -1,10 +1,10 @@
-import { SETTINGS, SUBTITLE_CONTAINER_ID } from '../utils/constants';
+import { SETTINGS } from '../utils/constants';
 import { getStorage, updateStorage } from '../storage/storage';
 import { findCurrentSubtitleIndex } from '../utils/subtitle';
-import { getVideoElement } from './elementStore';
+import { getSubtitleElement, getVideoElement } from './elementStore';
 import { toggleLoop, setEndPoint, setStartPoint, loopCurrentSubtitle } from './loop';
 import { saveSubtitleWithToast } from './saveSubtitle';
-import { getSubtitleCache } from './subtitleStore';
+import { getPrimarySubtitleCache } from './subtitleStore';
 import {
   LoopConfig,
   ShortcutsConfig,
@@ -60,14 +60,9 @@ function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) 
   if (enabled) {
     const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
     const { savePrimary, saveSecondary, togglePrimary, toggleSecondary } = shortcuts;
-    const saveSubtitleByStorageKey = (storageKey: string) => {
-      const container = document.getElementById(SUBTITLE_CONTAINER_ID);
-      const subtitle = container?.querySelector(`p[data-storage-key="${storageKey}"]`);
-      if (!subtitle) return;
-      saveSubtitleWithToast(subtitle as HTMLElement);
-    };
-    keyBindings[savePrimary] = () => saveSubtitleByStorageKey(PRIMARY.STORAGE_KEY);
-    keyBindings[saveSecondary] = () => saveSubtitleByStorageKey(SECONDARY.STORAGE_KEY);
+
+    keyBindings[savePrimary] = () => saveSubtitleWithToast(getSubtitleElement(PRIMARY.STORAGE_KEY));
+    keyBindings[saveSecondary] = () => saveSubtitleWithToast(getSubtitleElement(SECONDARY.STORAGE_KEY));
     keyBindings[togglePrimary] = () => updateStorage(PRIMARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
     keyBindings[toggleSecondary] = () => updateStorage(SECONDARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
   } else {
@@ -154,7 +149,7 @@ const skipVideoBySubtitles = (
   fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
 ) => {
   const { currentTime, duration } = video;
-  const subtitles = [...getSubtitleCache().values()]?.[0];
+  const subtitles = getPrimarySubtitleCache();
 
   if (subtitles && subtitles.length > 0) {
     const index = findCurrentSubtitleIndex(subtitles, currentTime);

@@ -16,11 +16,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 onMessage((message) => {
-  console.log('message1', message);
   const { viewVideo } = message;
-  if (viewVideo) {
-    handleViewVideo(viewVideo);
-  }
+  if (viewVideo) handleViewVideo(viewVideo);
 });
 
 chrome.sidePanel

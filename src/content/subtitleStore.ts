@@ -1,11 +1,12 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '../utils/constants';
 import { DEFAULT_CONFIG } from '../storage/default';
 import { SubtitleConfig } from '../storage/type';
-import { SubtitleLanguage } from '../utils/subtitle';
-import { SubtitleData } from '../utils/subtitle';
+import { SubtitleLanguage, SubtitleData } from '../utils/subtitle';
+
+type SubtitleCacheKey = SubtitleLanguage;
 
 type SubtitleStore = {
-  subtitleCache: Map<SubtitleLanguage, SubtitleData[]>;
+  subtitleCache: Map<SubtitleCacheKey, SubtitleData[]>;
   subtitleSettings: Record<SubtitleSettingStorageKey, SubtitleConfig>;
 };
 
@@ -19,8 +20,25 @@ const subtitleStore: SubtitleStore = {
   },
 };
 
-export function getSubtitleCache() {
-  return subtitleStore.subtitleCache;
+export function getSubtitleCache(key: SubtitleCacheKey) {
+  return subtitleStore.subtitleCache.get(key);
+}
+
+export function setSubtitleCache(key: SubtitleCacheKey, data: SubtitleData[]) {
+  subtitleStore.subtitleCache.set(key, data);
+}
+
+export function deleteSubtitleCache(key: SubtitleCacheKey) {
+  subtitleStore.subtitleCache.delete(key);
+}
+
+export function hasSubtitleCache(key: SubtitleCacheKey) {
+  return subtitleStore.subtitleCache.has(key);
+}
+
+export function getPrimarySubtitleCache() {
+  const { language } = getSubtitleSettings()[PRIMARY.STORAGE_KEY];
+  return getSubtitleCache(language);
 }
 
 export function getSubtitleSettings() {
