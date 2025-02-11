@@ -4,7 +4,7 @@ import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '../stora
 import { SubtitleMetadata } from '../storage/type';
 import { Language, LANGUAGES, REGISTRATION, SET_SUBTITLE_ACTION, SetSubtitleAction } from '../utils/constants';
 import { parseSubtitle, getSubtitleFormat } from '../utils/subtitle';
-import { setLocalSubtitle, SubtitleId } from '../storage/subtitle';
+import { removeLocalSubtitle, setLocalSubtitle, SubtitleId } from '../storage/subtitle';
 import ListHeader from './ListHeader';
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
@@ -71,7 +71,7 @@ function SubtitleRegistrationPage() {
     return parseSubtitle[fileExtension](content);
   };
 
-  const deleteSubtitle = (id: string) => {
+  const deleteSubtitle = (id: SubtitleId) => {
     showPopup({
       title: t('delete'),
       content: (
@@ -81,6 +81,7 @@ function SubtitleRegistrationPage() {
           onConfirm={() => {
             const filtered = subtitles.filter((v) => v.id !== id);
             setLocalStorage(STORAGE_KEY, filtered);
+            removeLocalSubtitle(id);
           }}
           hidePopup={hidePopup}
         />
