@@ -97,35 +97,45 @@ body {
   background-color: theme(colors.gray.600);
 }
 
-.input {
-  @apply px-3 border outline-none rounded w-full focus:border-teal-500 h-8;
-}
+@layer utilities {
+  .input {
+    @apply px-3 border outline-none rounded w-full focus:border-teal-500 h-8;
+  }
 
-.button {
-  @apply px-3 text-white font-medium outline-none rounded text-nowrap disabled:opacity-30 h-8;
-}
+  .button {
+    @apply px-3 text-white font-medium outline-none rounded text-nowrap disabled:opacity-30 h-8;
+  }
 
-.label {
-  @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
-}
+  .label {
+    @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
+  }
 
-.section {
-  @apply flex flex-col gap-1;
-}
+  .section {
+    @apply flex flex-col gap-1;
+  }
 
-.section-header {
-  @apply flex justify-between items-center h-8;
-}
+  .section-header {
+    @apply flex justify-between items-center h-8;
+  }
 
-.section-title {
-  @apply text-[15px] font-bold;
-}
+  .section-title {
+    @apply text-[15px] font-bold;
+  }
 
-.row {
-  @apply flex items-center gap-1 h-8;
-}
+  .row {
+    @apply flex items-center gap-1 h-8;
+  }
 
-/* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
-.hidden {
-  display: none;
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
+  .hidden {
+    display: none;
+  }
 }

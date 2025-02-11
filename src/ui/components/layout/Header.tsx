@@ -1,5 +1,7 @@
 import { PAGE_NAME, PageName } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { useRef } from 'react';
+import { useDragScroll } from 'ui/hooks/useDragScroll';
 
 const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
 const pageMap = {
@@ -15,23 +17,35 @@ interface HeaderProps {
   navigate: (page: PageName) => void;
 }
 function Header({ pageList, currentPage, navigate }: HeaderProps) {
+  const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const { scrollRef, eventHandlers, allowClick } = useDragScroll();
+
+  const handleTabClick = (index: number) => {
+    if (!allowClick) return;
+    navigate(pageList[index]);
+    tabRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+
   return (
-    <div className='flex flex-col px-4 pt-4 border-b border-b-gray-300'>
-      <div className='flex justify-between items-center gap-2'>
-        {pageList.map((page) => (
-          <div
-            key={page}
-            onClick={() => navigate(page)}
-            className={`w-full px-1 text-center cursor-pointer text-[15px] ${
-              currentPage === page
-                ? 'text-black border-b-2 border-b-black font-bold translate-y-[1px]'
-                : 'text-gray-500 font-medium hover:text-black'
-            }`}
-          >
-            {pageMap[page]}
-          </div>
-        ))}
-      </div>
+    <div
+      ref={scrollRef}
+      {...eventHandlers}
+      className='flex justify-between px-2 pt-1 overflow-x-auto border-b border-b-gray-300 scrollbar-hidden'
+    >
+      {pageList.map((page, index) => (
+        <div
+          ref={(el) => {
+            tabRefs.current[index] = el;
+          }}
+          key={page}
+          onClick={() => handleTabClick(index)}
+          className={`w-full p-2 text-center cursor-pointer text-[15px] rounded-t-md hover:bg-gray-100 ${
+            currentPage === page ? 'text-black border-b-2 border-b-black font-bold' : 'text-gray-500 font-medium'
+          }`}
+        >
+          {pageMap[page]}
+        </div>
+      ))}
     </div>
   );
 }
