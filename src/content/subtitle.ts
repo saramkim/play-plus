@@ -1,5 +1,7 @@
-import { REVIEW, SETTINGS } from '../utils/constants';
-import { getStorage } from '../storage/storage';
+import { DEFAULT_CONFIG } from '@storage/default';
+import { getStorage } from '@storage/index';
+import { StorageChanges } from '@storage/type';
+import { REVIEW, SETTINGS } from '@utils/constants';
 import {
   applySubtitleStyles,
   arrayToHeadersObject,
@@ -8,17 +10,15 @@ import {
   parseVTT,
   SubtitleApiInfo,
   SubtitleData,
-} from '../utils/subtitle';
-import { getSubtitleElement, getVideoElement } from './elementStore';
+} from '@utils/subtitle';
+import { getSubtitleElement, getVideoElement } from './store/elementStore';
 import {
   getCustomSubtitleId,
   getSubtitleCache,
   getSubtitleSettings,
   setSubtitleCache,
   setSubtitleSetting,
-} from './subtitleStore';
-import { StorageChanges } from '../storage/type';
-import { DEFAULT_CONFIG } from '../storage/default';
+} from './store/subtitleStore';
 
 const { SUBTITLES } = SETTINGS;
 

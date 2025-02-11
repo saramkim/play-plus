@@ -1,4 +1,4 @@
-import { SubtitleConfig } from '../storage/type';
+import { SubtitleConfig } from '@storage/type';
 import { applyStyles, createElement } from './dom';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {

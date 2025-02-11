@@ -1,4 +1,4 @@
-import { SubtitleId } from '../storage/subtitle';
+import { SubtitleId } from '@storage/subtitle';
 
 export type FetchVideoMetadataMessage = {
   url: string;

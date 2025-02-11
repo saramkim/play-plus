@@ -1,5 +1,5 @@
-import messagesKo from '../../public/_locales/ko/messages.json';
 import messagesEn from '../../public/_locales/en/messages.json';
+import messagesKo from '../../public/_locales/ko/messages.json';
 
 type ExtractKeys<T> = {
   [K in keyof T]: T[K] extends { placeholders: Record<string, { content: string }> } ? string[] : [];

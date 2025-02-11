@@ -1,11 +1,11 @@
-import { selectVideoElement } from '../utils/dom';
-import { fetchAndCacheSubtitles, fetchVideoMetadata, setupSubtitleSync } from './subtitle';
-import { initializeElementStore } from './elementStore';
+import { getLocalSubtitle } from '@storage/subtitle';
+import { SET_SUBTITLE_ACTION, SetSubtitleAction, SETTINGS } from '@utils/constants';
+import { selectVideoElement } from '@utils/dom';
+import { FetchVideoMetadataMessage, onMessage, PlayVideoMessage, SetSubtitleMessage } from '@utils/message';
 import { setupLoopHandler } from './loop';
-import { FetchVideoMetadataMessage, onMessage, PlayVideoMessage, SetSubtitleMessage } from '../utils/message';
-import { getLocalSubtitle } from '../storage/subtitle';
-import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './subtitleStore';
-import { SET_SUBTITLE_ACTION, SetSubtitleAction, SETTINGS } from '../utils/constants';
+import { initializeElementStore } from './store/elementStore';
+import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitleStore';
+import { fetchAndCacheSubtitles, fetchVideoMetadata, setupSubtitleSync } from './subtitle';
 
 export function initializeMessageListener() {
   onMessage((message) => {

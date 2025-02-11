@@ -1,6 +1,6 @@
-import { t } from '../utils/i18n';
-import { StorageSchema, StorageKey } from './type';
+import { t } from '@utils/i18n';
 import { DEFAULT_CONFIG } from './default';
+import { StorageKey, StorageSchema } from './type';
 
 const SHORTCUT_STORAGE_KEYS: StorageKey[] = ['shortcuts', 'videoSkip', 'subVideoSkip', 'loop'];
 const SHORTCUT_DATA_KEYS: KeyOfUnion<StorageSchema[StorageKey]>[] = [

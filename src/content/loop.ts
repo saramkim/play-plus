@@ -1,19 +1,19 @@
-import { SETTINGS } from '../utils/constants';
-import { createElement, createLoopIcon, createMarker, showToast } from '../utils/dom';
-import { formatTime } from '../utils/helper';
-import { t } from '../utils/i18n';
-import { getStorage } from '../storage/storage';
-import { StorageChanges } from '../storage/type';
-import { findCurrentSubtitleIndex } from '../utils/subtitle';
+import { DEFAULT_CONFIG } from '@storage/default';
+import { getStorage } from '@storage/index';
+import { StorageChanges } from '@storage/type';
+import { SETTINGS } from '@utils/constants';
+import { createElement, createLoopIcon, createMarker, showToast } from '@utils/dom';
+import { formatTime } from '@utils/helper';
+import { t } from '@utils/i18n';
+import { findCurrentSubtitleIndex } from '@utils/subtitle';
 import {
   getLoopButton,
   getLoopMarkerContainer,
   getLoopStatusContainer,
   getVideoElement,
   resetLoopStatus,
-} from './elementStore';
-import { getPrimarySubtitleCache } from './subtitleStore';
-import { DEFAULT_CONFIG } from '../storage/default';
+} from './store/elementStore';
+import { getPrimarySubtitleCache } from './store/subtitleStore';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';

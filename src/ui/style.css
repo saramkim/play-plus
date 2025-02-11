@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/assets/fonts/Roboto-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/assets/fonts/Roboto-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/assets/fonts/Roboto-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/assets/fonts/Roboto-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0041-005A, U+0061-007A, U+0030-0039, U+0030-0039;
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  src: url('/assets/fonts/NotoSansKR-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-D7A3;
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  src: url('/assets/fonts/NotoSansKR-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-D7A3;
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  src: url('/assets/fonts/NotoSansKR-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-D7A3;
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  src: url('/assets/fonts/NotoSansKR-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AC00-D7A3;
+}
+
+body {
+  font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: theme(colors.gray.500);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: theme(colors.gray.600);
+}
+
+.input {
+  @apply px-3 border outline-none rounded w-full focus:border-teal-500 h-8;
+}
+
+.button {
+  @apply px-3 text-white font-medium outline-none rounded text-nowrap disabled:opacity-30 h-8;
+}
+
+.label {
+  @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
+}
+
+.section {
+  @apply flex flex-col gap-1;
+}
+
+.section-header {
+  @apply flex justify-between items-center h-8;
+}
+
+.section-title {
+  @apply text-[15px] font-bold;
+}
+
+.row {
+  @apply flex items-center gap-1 h-8;
+}
+
+/* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
+.hidden {
+  display: none;
+}
