@@ -83,7 +83,9 @@ export type LocalStorageChanges = {
   [K in LocalStorageKey]?: StorageChange<LocalStorageSchema[K]>;
 };
 
-export type SessionStorageSchema = {};
+export type SessionStorageSchema = {
+  activeTab: chrome.tabs.Tab;
+};
 export type SessionStorageKey = keyof SessionStorageSchema;
 
 export type SessionStorageChanges = {

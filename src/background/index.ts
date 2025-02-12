@@ -1,3 +1,4 @@
+import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
 import { COUPANG_PLAY_BASE_URL, SET_SUBTITLE_ACTION, SetSubtitleAction } from '@utils/constants';
 import { onMessage, sendMessageToTab, SetSubtitleMessage, ViewVideoMessage } from '@utils/message';
@@ -60,6 +61,11 @@ const handleViewVideo = async ({ url, startTime }: ViewVideoMessage) => {
     }
   }
 };
+
+chrome.tabs.onActivated.addListener(async (tabInfo) => {
+  const tab = await chrome.tabs.get(tabInfo.tabId);
+  setSessionStorage('activeTab', tab);
+});
 
 const handleSetSubtitle = async (action: SetSubtitleAction, message: SetSubtitleMessage) => {
   const tabs = await chrome.tabs.query({ url: `${COUPANG_PLAY_BASE_URL}/*` });
