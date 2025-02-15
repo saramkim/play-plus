@@ -1,11 +1,14 @@
 import { ArrowUpTrayIcon } from '@heroicons/react/20/solid';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { getLocalStorage, setLocalStorage } from '@storage/index';
+import { setLocalSubtitle } from '@storage/subtitle';
+import { Language, LANGUAGES, REGISTRATION } from '@utils/constants';
+import { t } from '@utils/i18n';
+import { getSubtitleFormat, parseSubtitle } from '@utils/subtitle';
 import { useRef, useState } from 'react';
 import { usePopup } from '../../contexts/PopupContext';
 import DropdownButton from '../elements/DropdownButton';
 import MessagePopup from '../elements/MessagePopup';
-import { Language, LANGUAGES } from '@utils/constants';
-import { t } from '@utils/i18n';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -13,10 +16,6 @@ export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => 
 }));
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const DEFAULT_LANGUAGE: Language = 'en';
-
-interface SubtitleUploaderProps {
-  onUpload: (file: File, title: string, language: Language) => Promise<void>;
-}
 
 const allowedExtensions = ['.srt', '.vtt'];
 
@@ -31,7 +30,31 @@ const validateFile = (file: File) => {
   return { isValid: true, message: '' };
 };
 
-const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
+const uploadSubtitle = (file: File, title: string, language: Language) => {
+  return new Promise<void>((resolve) => {
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = async () => {
+      const content = reader.result as string;
+      const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
+      const subtitle = getSubtitle(file, content);
+      const newData = { id, title, language, savedAt: new Date().toISOString() };
+      await Promise.all([
+        setLocalSubtitle(id, subtitle),
+        setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
+      ]);
+      resolve();
+    };
+  });
+};
+
+const getSubtitle = (file: File, content: string) => {
+  const fileExtension = getSubtitleFormat(file);
+  if (!fileExtension) return [];
+  return parseSubtitle[fileExtension](content);
+};
+
+const SubtitleUploader = () => {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>('');
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
@@ -121,7 +144,7 @@ const SubtitleUploader = ({ onUpload }: SubtitleUploaderProps) => {
               className='w-full bg-teal-500 text-white rounded-full p-2 font-medium'
               onClick={async () => {
                 setIsUploading(true);
-                await onUpload(file, title, language);
+                await uploadSubtitle(file, title, language);
                 setIsUploading(false);
                 reset();
               }}

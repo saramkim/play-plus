@@ -1,7 +1,8 @@
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
-import { removeLocalSubtitle, setLocalSubtitle, SubtitleId } from '@storage/subtitle';
+import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
+import { TabInfo, updateTabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
 import {
   COUPANG_PLAY_BASE_URL,
@@ -14,47 +15,23 @@ import {
 } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
-import { getSubtitleFormat, parseSubtitle } from '@utils/subtitle';
 import { useEffect, useRef, useState } from 'react';
+import { useSubtitles } from 'ui/hooks/useSubtitles';
+import { useTabInfo } from 'ui/hooks/useTabInfo';
 import DropdownButton from '../components/elements/DropdownButton';
 import MessagePopup from '../components/elements/MessagePopup';
 import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleUploader';
 import ListHeader from '../components/layout/ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { updateTabInfo, TabInfo } from '@storage/tab';
-import { useTabInfo } from 'ui/hooks/useTabInfo';
-import { useSubtitles } from 'ui/hooks/useSubtitles';
 
-const { STORAGE_KEY, ID_PREFIX } = REGISTRATION;
+const { STORAGE_KEY } = REGISTRATION;
 
 function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
   const { subtitles } = useSubtitles('registeredSubtitles');
   const { showPopup, hidePopup } = usePopup();
-
-  const handleUpload = (file: File, title: string, language: Language) => {
-    return new Promise<void>((resolve) => {
-      const reader = new FileReader();
-      reader.readAsText(file);
-      reader.onload = async () => {
-        const content = reader.result as string;
-        const id = `${ID_PREFIX}-${crypto.randomUUID()}` as const;
-        const subtitle = getSubtitle(file, content);
-        const newData = { id, title, language, savedAt: new Date().toISOString() };
-
-        await Promise.all([setLocalSubtitle(id, subtitle), setLocalStorage(STORAGE_KEY, [...subtitles, newData])]);
-        resolve();
-      };
-    });
-  };
-
-  const getSubtitle = (file: File, content: string) => {
-    const fileExtension = getSubtitleFormat(file);
-    if (!fileExtension) return [];
-    return parseSubtitle[fileExtension](content);
-  };
 
   const deleteSubtitle = (id: SubtitleId) => {
     showPopup({
@@ -99,12 +76,12 @@ function SubtitleRegistrationPage() {
             ))}
           </ul>
           <footer className='border-t pt-4'>
-            <SubtitleUploader onUpload={handleUpload} />
+            <SubtitleUploader />
           </footer>
         </>
       ) : (
         <div className='flex flex-col justify-center h-full'>
-          <SubtitleUploader onUpload={handleUpload} />
+          <SubtitleUploader />
         </div>
       )}
     </div>
