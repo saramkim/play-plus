@@ -1,4 +1,5 @@
 import { SubtitleId } from '@storage/subtitle';
+import { SetSubtitleAction } from './constants';
 
 export type FetchVideoMetadataMessage = {
   url: string;
@@ -15,7 +16,8 @@ export type ViewVideoMessage = {
 };
 
 export type SetSubtitleMessage = {
-  id: SubtitleId | null;
+  tabId: number;
+  subtitleId: SubtitleId | null;
 };
 
 type MessageData = {
@@ -27,14 +29,26 @@ type MessageData = {
 };
 type MessageKey = keyof MessageData;
 
-export const sendMessage = <T extends MessageKey>(action: T, data: MessageData[T]) => {
+export type MessageResponse = { success: true } | { success: false; message: string };
+
+export const sendMessage = <T extends MessageKey>(action: T, data: MessageData[T]): Promise<MessageResponse> => {
   return chrome.runtime.sendMessage({ [action]: data });
 };
 
-export const sendMessageToTab = <T extends MessageKey>(tabId: number, action: T, data: MessageData[T]) => {
+export const sendMessageToTab = <T extends MessageKey>(
+  tabId: number,
+  action: T,
+  data: MessageData[T]
+): Promise<MessageResponse> => {
   return chrome.tabs.sendMessage(tabId, { [action]: data });
 };
 
-export const onMessage = (callback: (message: Partial<MessageData>) => void) => {
+type MessageCallback = (
+  message: Partial<MessageData>,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: MessageResponse) => void
+) => void;
+
+export const onMessage = (callback: MessageCallback) => {
   chrome.runtime.onMessage.addListener(callback);
 };

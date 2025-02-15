@@ -1,7 +1,7 @@
 import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
-import { COUPANG_PLAY_BASE_URL, SET_SUBTITLE_ACTION, SetSubtitleAction } from '@utils/constants';
-import { onMessage, sendMessageToTab, SetSubtitleMessage, ViewVideoMessage } from '@utils/message';
+import { COUPANG_PLAY_BASE_URL, SET_SUBTITLE_ACTION } from '@utils/constants';
+import { onMessage, sendMessageToTab, ViewVideoMessage } from '@utils/message';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
@@ -16,13 +16,19 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-onMessage((message) => {
+onMessage((message, sender, sendResponse) => {
   const { viewVideo } = message;
   if (viewVideo) handleViewVideo(viewVideo);
 
-  Object.values(SET_SUBTITLE_ACTION).forEach((action) => {
-    if (message[action]) handleSetSubtitle(action, message[action]);
-  });
+  for (const action of Object.values(SET_SUBTITLE_ACTION)) {
+    if (message[action]) {
+      const data = message[action];
+      sendMessageToTab(data.tabId, action, data).then((response) => {
+        sendResponse(response);
+      });
+      return true;
+    }
+  }
 });
 
 chrome.sidePanel
@@ -67,10 +73,8 @@ chrome.tabs.onActivated.addListener(async (tabInfo) => {
   setSessionStorage('activeTab', tab);
 });
 
-const handleSetSubtitle = async (action: SetSubtitleAction, message: SetSubtitleMessage) => {
-  const tabs = await chrome.tabs.query({ url: `${COUPANG_PLAY_BASE_URL}/*` });
-  const activeTab = tabs.find((tab) => tab.active);
-  if (activeTab?.id) {
-    sendMessageToTab(activeTab.id, action, message);
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.active) {
+    setSessionStorage('activeTab', tab);
   }
-};
+});

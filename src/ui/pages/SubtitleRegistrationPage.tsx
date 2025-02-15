@@ -1,9 +1,23 @@
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
-import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
+import {
+  getLocalStorage,
+  getSessionStorage,
+  onLocalStorageChange,
+  onSessionStorageChange,
+  setLocalStorage,
+} from '@storage/index';
 import { removeLocalSubtitle, setLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
-import { Language, LANGUAGES, REGISTRATION, SET_SUBTITLE_ACTION, SetSubtitleAction } from '@utils/constants';
+import {
+  COUPANG_PLAY_BASE_URL,
+  Language,
+  LANGUAGES,
+  REGISTRATION,
+  SET_SUBTITLE_ACTION,
+  SET_SUBTITLE_STORAGE_KEY_MAP,
+  SetSubtitleAction,
+} from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { getSubtitleFormat, parseSubtitle } from '@utils/subtitle';
@@ -14,13 +28,16 @@ import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleU
 import ListHeader from '../components/layout/ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { getTabInfo, updateTabInfo, TabInfo } from '@storage/tab';
 
 const { STORAGE_KEY, ID_PREFIX } = REGISTRATION;
 
 function SubtitleRegistrationPage() {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
+  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
   const [searchText, setSearchText] = useState('');
   const [sort, setSort] = useState<'latest' | 'oldest'>('latest');
+  const [tabInfo, setTabInfo] = useState<TabInfo | null>(null);
   const { showPopup, hidePopup } = usePopup();
 
   const filteredSubtitles = useMemo(() => {
@@ -34,18 +51,34 @@ function SubtitleRegistrationPage() {
 
   useEffect(() => {
     (async () => {
-      const data = await getLocalStorage(STORAGE_KEY);
+      const [data, activeTab] = await Promise.all([getLocalStorage(STORAGE_KEY), getSessionStorage('activeTab')]);
       if (data) setSubtitles(data);
+      if (activeTab) setActiveTab(activeTab);
     })();
 
-    const { remove } = setupStorageListener();
-    return () => remove();
+    const listeners = [setupStorageListener(), setupSessionStorageListener()];
+    return () => listeners.forEach(({ remove }) => remove());
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (!activeTab?.id) return;
+      const info = await getTabInfo(activeTab.id);
+      setTabInfo(info ?? null);
+    })();
+  }, [activeTab]);
 
   const setupStorageListener = () => {
     return onLocalStorageChange((changes) => {
       const change = changes[STORAGE_KEY];
       if (change?.newValue) setSubtitles(change.newValue);
+    });
+  };
+
+  const setupSessionStorageListener = () => {
+    return onSessionStorageChange((changes) => {
+      const change = changes['activeTab'];
+      if (change?.newValue) setActiveTab(change.newValue);
     });
   };
 
@@ -108,7 +141,14 @@ function SubtitleRegistrationPage() {
         <>
           <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
             {filteredSubtitles.map((item) => (
-              <SubtitleItem key={item.id} {...item} onDelete={deleteSubtitle} onEdit={editSubtitle} />
+              <SubtitleItem
+                key={item.id}
+                {...item}
+                activeTab={activeTab}
+                tabInfo={tabInfo}
+                onDelete={deleteSubtitle}
+                onEdit={editSubtitle}
+              />
             ))}
           </ul>
           <footer className='border-t pt-4'>
@@ -125,15 +165,20 @@ function SubtitleRegistrationPage() {
 }
 
 interface SubtitleItemProps extends SubtitleMetadata {
+  activeTab: chrome.tabs.Tab | null;
+  tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
   onEdit: (id: SubtitleId, title: string, language: Language) => void;
 }
 
-function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: SubtitleItemProps) {
+function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDelete, onEdit }: SubtitleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedLanguage, setEditedLanguage] = useState(language);
+  const [primarySubtitle, setPrimarySubtitle] = useState<SubtitleId | null>(tabInfo?.primarySubtitle ?? null);
+  const [secondarySubtitle, setSecondarySubtitle] = useState<SubtitleId | null>(tabInfo?.secondarySubtitle ?? null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { showPopup, hidePopup } = usePopup();
 
   useClickOutside(containerRef, () => setIsEditing(false));
 
@@ -143,8 +188,26 @@ function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: Subtit
     setIsEditing(false);
   };
 
-  const setSubtitle = (action: SetSubtitleAction, id: SubtitleId | null) => {
-    sendMessage(action, { id });
+  const setSubtitleMap = {
+    [SET_SUBTITLE_ACTION.SET_PRIMARY]: setPrimarySubtitle,
+    [SET_SUBTITLE_ACTION.SET_SECONDARY]: setSecondarySubtitle,
+  };
+
+  const setSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null) => {
+    const tabId = activeTab?.id;
+    if (!tabId) return;
+
+    const response = await sendMessage(action, { tabId, subtitleId });
+    if (response.success) {
+      updateTabInfo(tabId, { [SET_SUBTITLE_STORAGE_KEY_MAP[action]]: subtitleId });
+      setSubtitleMap[action](subtitleId);
+    } else {
+      showPopup({
+        title: t('error'),
+        content: <MessagePopup message={response.message} type='alert' hidePopup={hidePopup} />,
+        status: 'error',
+      });
+    }
   };
 
   return (
@@ -170,18 +233,40 @@ function SubtitleItem({ id, title, language, savedAt, onDelete, onEdit }: Subtit
       </div>
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center gap-1'>
-          <button
-            className='text-gray-500 hover:text-gray-800'
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, id)}
-          >
-            {t('primary_subtitle')}
-          </button>
-          <button
-            className='text-gray-500 hover:text-gray-800'
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, id)}
-          >
-            {t('secondary_subtitle')}
-          </button>
+          {activeTab?.url?.startsWith(COUPANG_PLAY_BASE_URL) && (
+            <>
+              {primarySubtitle === id ? (
+                <button
+                  className='bg-gray-100 hover:text-gray-800'
+                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, null)}
+                >
+                  {t('primary_subtitle')} X
+                </button>
+              ) : (
+                <button
+                  className='text-gray-500 hover:text-gray-800'
+                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, id)}
+                >
+                  {t('primary_subtitle')}
+                </button>
+              )}
+              {secondarySubtitle === id ? (
+                <button
+                  className='bg-gray-100 hover:text-gray-800'
+                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, null)}
+                >
+                  {t('secondary_subtitle')} X
+                </button>
+              ) : (
+                <button
+                  className='text-gray-500 hover:text-gray-800'
+                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, id)}
+                >
+                  {t('secondary_subtitle')}
+                </button>
+              )}
+            </>
+          )}
           <button onClick={() => onDelete(id)}>
             <XCircleIcon className='size-5 text-gray-500 hover:text-gray-800' />
           </button>
