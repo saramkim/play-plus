@@ -1,17 +1,33 @@
 import { XMarkIcon } from '@heroicons/react/16/solid';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { t } from '@utils/i18n';
+import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 
-interface ListHeaderProps {
-  searchText: string;
-  setSearchText: (text: string) => void;
-  count: number;
-  sort: 'latest' | 'oldest';
-  setSort: (sort: 'latest' | 'oldest') => void;
+interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
+  originalList: T[];
+  onFilteredListChange: (filteredList: T[]) => void;
+  filterKey: keyof T extends string ? keyof T : never;
 }
 
-function ListHeader({ searchText, setSearchText, count, sort, setSort }: ListHeaderProps) {
+function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
+  originalList,
+  onFilteredListChange,
+  filterKey,
+}: ListHeaderProps<T>) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchText, setSearchText] = useState('');
+  const [sort, setSort] = useState<'latest' | 'oldest'>('latest');
+
+  useEffect(() => {
+    const filtered = searchText
+      ? originalList.filter((item) => String(item[filterKey]).toLowerCase().includes(searchText.toLowerCase()))
+      : originalList;
+    const sorted =
+      sort === 'latest'
+        ? filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+        : filtered.sort((a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime());
+    onFilteredListChange(sorted);
+  }, [originalList, searchText, sort]);
 
   const search = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +61,7 @@ function ListHeader({ searchText, setSearchText, count, sort, setSort }: ListHea
         ) : (
           <div className='text-gray-800'>
             <span className='font-medium'>{t('all_list')}</span>
-            <span>({count})</span>
+            <span>({originalList.length})</span>
           </div>
         )}
 

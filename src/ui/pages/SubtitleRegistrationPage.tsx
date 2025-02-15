@@ -1,12 +1,6 @@
 import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
-import {
-  getLocalStorage,
-  getSessionStorage,
-  onLocalStorageChange,
-  onSessionStorageChange,
-  setLocalStorage,
-} from '@storage/index';
+import { setLocalStorage } from '@storage/index';
 import { removeLocalSubtitle, setLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import {
@@ -21,66 +15,24 @@ import {
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { getSubtitleFormat, parseSubtitle } from '@utils/subtitle';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DropdownButton from '../components/elements/DropdownButton';
 import MessagePopup from '../components/elements/MessagePopup';
 import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleUploader';
 import ListHeader from '../components/layout/ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { getTabInfo, updateTabInfo, TabInfo } from '@storage/tab';
+import { updateTabInfo, TabInfo } from '@storage/tab';
+import { useTabInfo } from 'ui/hooks/useTabInfo';
+import { useSubtitles } from 'ui/hooks/useSubtitles';
 
 const { STORAGE_KEY, ID_PREFIX } = REGISTRATION;
 
 function SubtitleRegistrationPage() {
-  const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
-  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
-  const [searchText, setSearchText] = useState('');
-  const [sort, setSort] = useState<'latest' | 'oldest'>('latest');
-  const [tabInfo, setTabInfo] = useState<TabInfo | null>(null);
+  const { activeTab, tabInfo } = useTabInfo();
+  const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
+  const { subtitles } = useSubtitles('registeredSubtitles');
   const { showPopup, hidePopup } = usePopup();
-
-  const filteredSubtitles = useMemo(() => {
-    const filtered = searchText
-      ? subtitles.filter(({ title }) => title.toLowerCase().includes(searchText.toLowerCase()))
-      : subtitles;
-    return sort === 'latest'
-      ? filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
-      : filtered.sort((a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime());
-  }, [subtitles, searchText, sort]);
-
-  useEffect(() => {
-    (async () => {
-      const [data, activeTab] = await Promise.all([getLocalStorage(STORAGE_KEY), getSessionStorage('activeTab')]);
-      if (data) setSubtitles(data);
-      if (activeTab) setActiveTab(activeTab);
-    })();
-
-    const listeners = [setupStorageListener(), setupSessionStorageListener()];
-    return () => listeners.forEach(({ remove }) => remove());
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      if (!activeTab?.id) return;
-      const info = await getTabInfo(activeTab.id);
-      setTabInfo(info ?? null);
-    })();
-  }, [activeTab]);
-
-  const setupStorageListener = () => {
-    return onLocalStorageChange((changes) => {
-      const change = changes[STORAGE_KEY];
-      if (change?.newValue) setSubtitles(change.newValue);
-    });
-  };
-
-  const setupSessionStorageListener = () => {
-    return onSessionStorageChange((changes) => {
-      const change = changes['activeTab'];
-      if (change?.newValue) setActiveTab(change.newValue);
-    });
-  };
 
   const handleUpload = (file: File, title: string, language: Language) => {
     return new Promise<void>((resolve) => {
@@ -130,13 +82,8 @@ function SubtitleRegistrationPage() {
 
   return (
     <div className='flex flex-col h-full p-4'>
-      <ListHeader
-        searchText={searchText}
-        setSearchText={setSearchText}
-        count={subtitles.length}
-        sort={sort}
-        setSort={setSort}
-      />
+      <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
+
       {subtitles.length > 0 ? (
         <>
           <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
@@ -181,6 +128,13 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const { showPopup, hidePopup } = usePopup();
 
   useClickOutside(containerRef, () => setIsEditing(false));
+
+  useEffect(() => {
+    if (tabInfo) {
+      setPrimarySubtitle(tabInfo.primarySubtitle ?? null);
+      setSecondarySubtitle(tabInfo.secondarySubtitle ?? null);
+    }
+  }, [tabInfo]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
