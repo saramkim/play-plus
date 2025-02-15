@@ -1,5 +1,4 @@
 import { SubtitleId } from '@storage/subtitle';
-import { SetSubtitleAction } from './constants';
 
 export type FetchVideoMetadataMessage = {
   url: string;
@@ -21,6 +20,7 @@ export type SetSubtitleMessage = {
 };
 
 type MessageData = {
+  resetElement: true;
   fetchVideoMetadata: FetchVideoMetadataMessage;
   playVideo: PlayVideoMessage;
   viewVideo: ViewVideoMessage;

@@ -23,9 +23,7 @@ onMessage((message, sender, sendResponse) => {
   for (const action of Object.values(SET_SUBTITLE_ACTION)) {
     if (message[action]) {
       const data = message[action];
-      sendMessageToTab(data.tabId, action, data).then((response) => {
-        sendResponse(response);
-      });
+      sendMessageToTab(data.tabId, action, data).then(sendResponse);
       return true;
     }
   }
@@ -73,8 +71,9 @@ chrome.tabs.onActivated.addListener(async (tabInfo) => {
   setSessionStorage('activeTab', tab);
 });
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.active) {
-    setSessionStorage('activeTab', tab);
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    if (tab.active) setSessionStorage('activeTab', tab);
+    if (tab.url?.startsWith(COUPANG_PLAY_BASE_URL)) sendMessageToTab(tabId, 'resetElement', true);
   }
 });

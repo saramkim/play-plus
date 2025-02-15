@@ -8,7 +8,6 @@ import {
   extractSubtitleApiInfoFromResponse,
   findCurrentSubtitle,
   parseVTT,
-  SubtitleApiInfo,
   SubtitleData,
 } from '@utils/subtitle';
 import { getSubtitleElement, getVideoElement } from './store/elementStore';
@@ -52,18 +51,8 @@ export async function initializeSubtitleSync() {
   }
 }
 
-export async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
-  const headers = {
-    ...arrayToHeadersObject(headerList),
-    'X-Extension-Request': 'true', // 무한 루프 방지용 커스텀 헤더
-  };
-  const response = await fetch(url, { headers });
-  const apiInfoList = extractSubtitleApiInfoFromResponse(await response.json());
-  if (apiInfoList.length === 0) return null;
-  return apiInfoList;
-}
-
-export async function fetchAndCacheSubtitles(subtitleApiInfoList: SubtitleApiInfo[]) {
+export async function fetchAndCacheSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
+  const subtitleApiInfoList = await fetchVideoMetadata(url, headers);
   for (const { lang, url } of subtitleApiInfoList) {
     setSubtitleCache(lang, await fetchSubtitle(url));
   }
@@ -75,19 +64,7 @@ export function setupSubtitleSync(video: HTMLVideoElement) {
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 
-function stopSubtitleSync(video: HTMLVideoElement) {
-  if (handleVideoTimeupdate) {
-    video.removeEventListener('timeupdate', handleVideoTimeupdate);
-    handleVideoTimeupdate = null;
-  }
-}
-
-async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
-  const response = await fetch(url);
-  return parseVTT(await response.text());
-}
-
-function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
+export function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
   const { currentTime } = video;
 
   for (const [key, config] of Object.entries(getSubtitleSettings())) {
@@ -102,6 +79,27 @@ function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
       setupSubtitle(subtitleElement, data, currentTime);
     }
   }
+}
+
+async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
+  const headers = {
+    ...arrayToHeadersObject(headerList),
+    'X-Extension-Request': 'true', // 무한 루프 방지용 커스텀 헤더
+  };
+  const response = await fetch(url, { headers });
+  return extractSubtitleApiInfoFromResponse(await response.json());
+}
+
+function stopSubtitleSync(video: HTMLVideoElement) {
+  if (handleVideoTimeupdate) {
+    video.removeEventListener('timeupdate', handleVideoTimeupdate);
+    handleVideoTimeupdate = null;
+  }
+}
+
+async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
+  const response = await fetch(url);
+  return parseVTT(await response.text());
 }
 
 function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {

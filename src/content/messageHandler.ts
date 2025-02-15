@@ -1,6 +1,5 @@
 import { getLocalSubtitle } from '@storage/subtitle';
 import { SET_SUBTITLE_ACTION, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
-import { selectVideoElement } from '@utils/dom';
 import {
   FetchVideoMetadataMessage,
   MessageResponse,
@@ -9,23 +8,22 @@ import {
   SetSubtitleMessage,
 } from '@utils/message';
 import { setupLoopHandler } from './loop';
-import { getVideoElement, initializeElementStore } from './store/elementStore';
+import { getVideoElement, initializeElementStore, resetElementStore } from './store/elementStore';
 import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitleStore';
-import { fetchAndCacheSubtitles, fetchVideoMetadata, setupSubtitleSync } from './subtitle';
+import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './subtitle';
 import { t } from '@utils/i18n';
 
 export function initializeMessageListener() {
   onMessage((message, sender, sendResponse) => {
-    const { fetchVideoMetadata, playVideo } = message;
+    const { resetElement, fetchVideoMetadata, playVideo } = message;
 
+    if (resetElement) resetElementStore();
     if (fetchVideoMetadata) handleFetchVideoMetadata(fetchVideoMetadata);
     if (playVideo) handlePlayVideo(playVideo);
 
     for (const action of Object.values(SET_SUBTITLE_ACTION)) {
       if (message[action]) {
-        handleSetSubtitle(action, message[action]).then((response) => {
-          sendResponse(response);
-        });
+        handleSetSubtitle(action, message[action]).then(sendResponse);
         return true;
       }
     }
@@ -33,20 +31,25 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
-  const [subtitleApiInfoList, video] = await Promise.all([fetchVideoMetadata(url, headers), initializeElementStore()]);
+  await initializeVideo();
 
-  setupLoopHandler(video);
   deleteSubtitleCache('en');
   deleteSubtitleCache('ko');
 
-  if (subtitleApiInfoList && video) {
-    await fetchAndCacheSubtitles(subtitleApiInfoList);
-    setupSubtitleSync(video);
-  }
+  return fetchAndCacheSubtitles(url, headers);
 };
 
-const handlePlayVideo = async ({ startTime }: PlayVideoMessage) => {
-  const video = await selectVideoElement();
+const initializeVideo = async () => {
+  const video = await initializeElementStore();
+  setupLoopHandler(video);
+  setupSubtitleSync(video);
+};
+
+const handlePlayVideo = ({ startTime }: PlayVideoMessage) => {
+  const video = getVideoElement();
+  console.log('video', video);
+  if (!video) return;
+
   if (video.readyState >= 3) {
     video.currentTime = startTime;
   } else {
@@ -65,6 +68,7 @@ const handleSetSubtitle = async (
   setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
   const video = getVideoElement();
   if (video) {
+    syncSubtitles(video, true);
     return { success: true };
   }
   return { success: false, message: t('error_video_not_found') };
