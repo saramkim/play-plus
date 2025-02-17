@@ -33,7 +33,7 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
           )}
         </div>
       </header>
-      <div className='section'>
+      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
           <label className='label'>{t('language')}</label>
           <Switch

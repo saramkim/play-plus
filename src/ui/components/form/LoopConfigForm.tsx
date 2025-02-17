@@ -28,7 +28,7 @@ function LoopConfigForm() {
           )}
         </div>
       </header>
-      <div className='section'>
+      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
           <label className='label'>{t('toggle_loop_key')} </label>
           <KeydownInput value={state.toggleLoop} onChange={handleChange('toggleLoop')} />

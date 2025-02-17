@@ -28,7 +28,7 @@ function ShortcutsConfigForm() {
           )}
         </div>
       </header>
-      <div className='section'>
+      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
           <label className='label'>{t('save_primary_subtitle')} </label>
           <KeydownInput value={state.savePrimary} onChange={handleChange('savePrimary')} />

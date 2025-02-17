@@ -32,7 +32,7 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
           )}
         </div>
       </header>
-      <div className='section'>
+      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
           <label className='label'>{t('backward_key')}</label>
           <KeydownInput value={state.backward} onChange={handleChange('backward')} />
