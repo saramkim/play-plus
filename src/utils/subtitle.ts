@@ -19,21 +19,24 @@ export const parseVTT = (data: string) => {
   const subtitles: SubtitleData[] = [];
   const lines = data.split('\n');
   const startIndex = lines[0].includes('WEBVTT') ? 1 : 0;
-  let currentSubtitle = { start: 0, end: 0, text: '' };
+  let currentSubtitle: SubtitleData = { start: 0, end: 0, text: '' };
 
   for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i].trim();
+
     if (line.includes('-->')) {
-      const [start, end] = line.split(' --> ');
+      const [start, endAndOptions] = line.split(' --> ');
+      const [end, ...options] = endAndOptions.split(/\s+/);
       currentSubtitle.start = timeToSeconds(start.trim());
       currentSubtitle.end = timeToSeconds(end.trim());
-    } else if (line.trim() === '') {
+      if (options.length > 0) currentSubtitle.settings = options;
+    } else if (line === '') {
       if (currentSubtitle.text.trim()) {
         subtitles.push({ ...currentSubtitle });
       }
       currentSubtitle = { start: 0, end: 0, text: '' };
     } else {
-      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line.trim();
+      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line;
     }
   }
 
@@ -181,8 +184,17 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfi
 };
 
 const timeToSeconds = (time: string) => {
-  const [hours, minutes, seconds] = time.split(':');
-  return Number(hours) * 3600 + Number(minutes) * 60 + parseFloat(seconds);
+  const parts = time.split(':').map(parseFloat);
+
+  if (parts.length === 3) {
+    const [h, m, s] = parts;
+    return h * 3600 + m * 60 + s;
+  } else if (parts.length === 2) {
+    const [m, s] = parts;
+    return m * 60 + s;
+  }
+
+  return 0;
 };
 
 export type SubtitleLanguage = 'en' | 'ko';
@@ -196,6 +208,7 @@ export type SubtitleData = {
   start: number;
   end: number;
   text: string;
+  settings?: string[];
 };
 
 export type ApiResponse = {
