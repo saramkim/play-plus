@@ -2,12 +2,12 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
+import { parseVTT } from '@utils/parse';
 import {
   applySubtitleStyles,
   arrayToHeadersObject,
   extractSubtitleApiInfoFromResponse,
   findCurrentSubtitle,
-  parseVTT,
   SubtitleData,
 } from '@utils/subtitle';
 import { getSubtitleElement, getVideoElement } from './store/elementStore';

@@ -4,7 +4,7 @@ import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { setLocalSubtitle } from '@storage/subtitle';
 import { Language, LANGUAGES, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { getSubtitleFormat, parseSubtitle } from '@utils/subtitle';
+import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { useRef, useState } from 'react';
 import { usePopup } from '../../contexts/PopupContext';
 import DropdownButton from '../elements/DropdownButton';
@@ -17,7 +17,7 @@ export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const DEFAULT_LANGUAGE: Language = 'en';
 
-const allowedExtensions = ['.srt', '.vtt'];
+const allowedExtensions = ['.vtt', '.srt', '.smi'];
 
 const validateFile = (file: File) => {
   const fileExtension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
@@ -97,14 +97,16 @@ const SubtitleUploader = () => {
       >
         {file ? (
           <>
-            <DocumentTextIcon className='size-5' />
+            <DocumentTextIcon className='size-5 flex-shrink-0' />
             <span className='text-[15px] font-bold truncate'>{file.name}</span>
           </>
         ) : (
           <>
             <ArrowUpTrayIcon className='size-5' />
             <span className='text-[15px] font-bold'>{t('upload_subtitle_file')}</span>
-            <span className='text-[12px] text-gray-500'>SRT, VTT</span>
+            <span className='text-[12px] text-gray-500'>
+              {allowedExtensions.map((ext) => ext.replace('.', '').toUpperCase()).join(', ')}
+            </span>
           </>
         )}
 
