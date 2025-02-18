@@ -37,6 +37,7 @@
 
   "all_list": { "message": "All List" },
   "allow_line_break": { "message": "Allow Line Break" },
+  "available_on_coupang_play": { "message": "Available on Coupang Play" },
   "backward_key": { "message": "Backward Key" },
   "bottom": { "message": "Bottom" },
   "cancel": { "message": "Cancel" },

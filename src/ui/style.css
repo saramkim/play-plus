@@ -126,6 +126,10 @@ body {
     @apply flex items-center gap-1 h-8;
   }
 
+  .icon-button {
+    @apply text-gray-500 hover:enabled:text-gray-700 disabled:opacity-50;
+  }
+
   .scrollbar-hidden {
     -ms-overflow-style: none;
     scrollbar-width: none;

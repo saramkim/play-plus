@@ -37,6 +37,7 @@
 
   "all_list": { "message": "전체 목록" },
   "allow_line_break": { "message": "줄바꿈 허용" },
+  "available_on_coupang_play": { "message": "쿠팡플레이에서 사용 가능" },
   "backward_key": { "message": "뒤로 이동 키" },
   "bottom": { "message": "하단" },
   "cancel": { "message": "취소" },

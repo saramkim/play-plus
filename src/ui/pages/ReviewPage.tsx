@@ -1,4 +1,4 @@
-import { PlayCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
+import { PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_BASE_URL, REVIEW } from '@utils/constants';
@@ -67,12 +67,15 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
         <p className='text-[15px] font-medium text-wrap select-text w-full'>{content}</p>
       </div>
       <div className='flex justify-between items-center text-[13px]'>
-        <div className='flex items-center gap-1 text-gray-500 disabled:opacity-30'>
-          <button onClick={viewVideo} disabled={!url.startsWith(COUPANG_PLAY_BASE_URL)}>
-            <PlayCircleIcon className='size-5 hover:text-gray-800' />
+        <div className='flex items-center gap-1'>
+          <button className='icon-button' disabled={!url.startsWith(COUPANG_PLAY_BASE_URL)} onClick={viewVideo}>
+            <PlayIcon
+              title={url.startsWith(COUPANG_PLAY_BASE_URL) ? t('view_video') : t('error_unsupported_url')}
+              className='size-5'
+            />
           </button>
-          <button onClick={() => onDelete(content)}>
-            <XCircleIcon className='size-5 hover:text-gray-800' />
+          <button className='icon-button' onClick={() => onDelete(content)}>
+            <TrashIcon title={t('delete')} className='size-5' />
           </button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>

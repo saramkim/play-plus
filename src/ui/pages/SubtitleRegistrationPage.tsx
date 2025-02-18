@@ -1,5 +1,4 @@
-import { CheckIcon, XCircleIcon } from '@heroicons/react/20/solid';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, PencilSquareIcon, LinkIcon, LinkSlashIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { TabInfo, updateTabInfo } from '@storage/tab';
@@ -104,6 +103,8 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const containerRef = useRef<HTMLDivElement>(null);
   const { showPopup, hidePopup } = usePopup();
 
+  const available = activeTab?.url?.startsWith(COUPANG_PLAY_BASE_URL);
+
   useClickOutside(containerRef, () => setIsEditing(false));
 
   useEffect(() => {
@@ -148,58 +149,38 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
           <form className='flex items-center gap-1' onSubmit={handleSubmit}>
             <DropdownButton options={LANGUAGE_OPTIONS} value={editedLanguage} onChange={setEditedLanguage} />
             <input className='input' value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
-            <button type='submit'>
-              <CheckIcon className='size-5 text-gray-500 hover:text-gray-800' />
+            <button type='submit' className='icon-button'>
+              <CheckIcon className='size-5' />
             </button>
           </form>
         ) : (
           <div className='flex items-center gap-2 group w-fit flex-wrap'>
             <span className='text-[13px] text-gray-500'>{t(LANGUAGES[language])}</span>
             <p className='text-[15px] font-medium text-wrap'>{title}</p>
-            <button onClick={() => setIsEditing(true)}>
-              <PencilSquareIcon className='size-5 hidden group-hover:block text-gray-500 hover:text-gray-800' />
+            <button className='icon-button hidden group-hover:block' onClick={() => setIsEditing(true)}>
+              <PencilSquareIcon className='size-5' />
             </button>
           </div>
         )}
       </div>
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center gap-1'>
-          {activeTab?.url?.startsWith(COUPANG_PLAY_BASE_URL) && (
-            <>
-              {primarySubtitle === id ? (
-                <button
-                  className='bg-gray-100 hover:text-gray-800'
-                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, null)}
-                >
-                  {t('primary_subtitle')} X
-                </button>
-              ) : (
-                <button
-                  className='text-gray-500 hover:text-gray-800'
-                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, id)}
-                >
-                  {t('primary_subtitle')}
-                </button>
-              )}
-              {secondarySubtitle === id ? (
-                <button
-                  className='bg-gray-100 hover:text-gray-800'
-                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, null)}
-                >
-                  {t('secondary_subtitle')} X
-                </button>
-              ) : (
-                <button
-                  className='text-gray-500 hover:text-gray-800'
-                  onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, id)}
-                >
-                  {t('secondary_subtitle')}
-                </button>
-              )}
-            </>
-          )}
-          <button onClick={() => onDelete(id)}>
-            <XCircleIcon className='size-5 text-gray-500 hover:text-gray-800' />
+          <button
+            className={`icon-button ${primarySubtitle === id ? '!text-teal-500' : ''}`}
+            disabled={!available}
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, primarySubtitle === id ? null : id)}
+          >
+            <LinkIcon title={available ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
+          </button>
+          <button
+            className={`icon-button ${secondarySubtitle === id ? '!text-teal-500' : ''}`}
+            disabled={!available}
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, secondarySubtitle === id ? null : id)}
+          >
+            <LinkIcon title={available ? t('secondary_subtitle') : t('available_on_coupang_play')} className='size-5' />
+          </button>
+          <button className='icon-button' onClick={() => onDelete(id)}>
+            <TrashIcon title={t('delete')} className='size-5' />
           </button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>
