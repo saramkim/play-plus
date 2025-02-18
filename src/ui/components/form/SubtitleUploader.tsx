@@ -2,7 +2,7 @@ import { ArrowUpTrayIcon } from '@heroicons/react/20/solid';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { setLocalSubtitle } from '@storage/subtitle';
-import { Language, LANGUAGES, REGISTRATION } from '@utils/constants';
+import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { useRef, useState } from 'react';
@@ -33,19 +33,51 @@ const validateFile = (file: File) => {
 const uploadSubtitle = (file: File, title: string, language: Language) => {
   return new Promise<void>((resolve) => {
     const reader = new FileReader();
-    reader.readAsText(file);
+
     reader.onload = async () => {
-      const content = reader.result as string;
-      const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
-      const subtitle = getSubtitle(file, content);
-      const newData = { id, title, language, savedAt: new Date().toISOString() };
-      await Promise.all([
-        setLocalSubtitle(id, subtitle),
-        setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
-      ]);
+      try {
+        const content = getContent(reader.result as ArrayBuffer, language);
+        const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
+        const subtitle = getSubtitle(file, content);
+
+        const newData = { id, title, language, savedAt: new Date().toISOString() };
+        await Promise.all([
+          setLocalSubtitle(id, subtitle),
+          setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
+        ]);
+      } catch (error) {
+        console.error('Failed to process subtitle file:', error);
+      }
       resolve();
     };
+
+    reader.readAsArrayBuffer(file);
   });
+};
+
+const getContent = (arrayBuffer: ArrayBuffer, language: Language) => {
+  const encodings = Object.values(ENCODING_MAP).sort((a, b) => {
+    if (a === ENCODING_MAP.UTF_8) return -1;
+    if (b === ENCODING_MAP.UTF_8) return 1;
+
+    const languageEncoding = LANGUAGE_ENCODING_MAP[language];
+    if (a === languageEncoding) return -1;
+    if (b === languageEncoding) return 1;
+
+    return 0;
+  });
+
+  for (const encoding of encodings) {
+    try {
+      const decoder = new TextDecoder(encoding, { fatal: true });
+      const content = decoder.decode(arrayBuffer);
+      return content;
+    } catch (error) {
+      continue;
+    }
+  }
+
+  throw new Error('Failed to decode subtitle file');
 };
 
 const getSubtitle = (file: File, content: string) => {
