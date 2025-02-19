@@ -15,9 +15,13 @@ import { t } from '@utils/i18n';
 
 export function initializeMessageListener() {
   onMessage((message, sender, sendResponse) => {
-    const { resetElement, fetchVideoMetadata, playVideo } = message;
+    const { resetElement, detectVideo, fetchVideoMetadata, playVideo } = message;
 
     if (resetElement) resetElementStore();
+    if (detectVideo) {
+      initializeVideo().then(sendResponse);
+      return true;
+    }
     if (fetchVideoMetadata) handleFetchVideoMetadata(fetchVideoMetadata);
     if (playVideo) handlePlayVideo(playVideo);
 
@@ -31,23 +35,22 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
-  await initializeVideo();
-
   deleteSubtitleCache('en');
   deleteSubtitleCache('ko');
 
   return fetchAndCacheSubtitles(url, headers);
 };
 
-const initializeVideo = async () => {
+const initializeVideo = async (): Promise<MessageResponse> => {
   const video = await initializeElementStore();
   setupLoopHandler(video);
   setupSubtitleSync(video);
+
+  return { success: true };
 };
 
 const handlePlayVideo = ({ startTime }: PlayVideoMessage) => {
   const video = getVideoElement();
-  console.log('video', video);
   if (!video) return;
 
   if (video.readyState >= 3) {

@@ -1,14 +1,7 @@
 import { TOAST_CONTAINER_ID } from './constants';
-import { t } from './i18n';
 
-export const selectVideoElement = (): Promise<HTMLVideoElement> => {
-  return new Promise((resolve, reject) => {
-    const existingVideo = document.querySelector('video');
-    if (existingVideo) {
-      resolve(existingVideo);
-      return;
-    }
-
+export const detectVideoElement = (): Promise<HTMLVideoElement> => {
+  return new Promise((resolve) => {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'childList') {
@@ -25,11 +18,6 @@ export const selectVideoElement = (): Promise<HTMLVideoElement> => {
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
-
-    setTimeout(() => {
-      observer.disconnect();
-      reject(new Error(t('error_video_not_found')));
-    }, 5000);
   });
 };
 

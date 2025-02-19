@@ -1,7 +1,7 @@
 import { PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
-import { COUPANG_PLAY_BASE_URL, REVIEW } from '@utils/constants';
+import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { useState } from 'react';
@@ -68,9 +68,9 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
       </div>
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center gap-1'>
-          <button className='icon-button' disabled={!url.startsWith(COUPANG_PLAY_BASE_URL)} onClick={viewVideo}>
+          <button className='icon-button' disabled={!url.startsWith(COUPANG_PLAY_PLAY_URL)} onClick={viewVideo}>
             <PlayIcon
-              title={url.startsWith(COUPANG_PLAY_BASE_URL) ? t('view_video') : t('error_unsupported_url')}
+              title={url.startsWith(COUPANG_PLAY_PLAY_URL) ? t('view_video') : t('error_unsupported_url')}
               className='size-5'
             />
           </button>

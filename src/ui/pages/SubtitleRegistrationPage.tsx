@@ -4,7 +4,7 @@ import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { TabInfo, updateTabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
 import {
-  COUPANG_PLAY_BASE_URL,
+  COUPANG_PLAY_PLAY_URL,
   Language,
   LANGUAGES,
   REGISTRATION,
@@ -103,7 +103,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const containerRef = useRef<HTMLDivElement>(null);
   const { showPopup, hidePopup } = usePopup();
 
-  const available = activeTab?.url?.startsWith(COUPANG_PLAY_BASE_URL);
+  const available = activeTab?.url?.startsWith(COUPANG_PLAY_PLAY_URL);
 
   useClickOutside(containerRef, () => setIsEditing(false));
 

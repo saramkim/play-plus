@@ -1,4 +1,5 @@
 export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
+export const COUPANG_PLAY_PLAY_URL = `${COUPANG_PLAY_BASE_URL}/play`;
 
 export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 

@@ -10,7 +10,7 @@ import {
   TOAST_CONTAINER_ID,
   TRACK_DISPLAY_CONTAINER_CLASS_NAME,
 } from '@utils/constants';
-import { createElement, createLoopIcon, selectVideoElement } from '@utils/dom';
+import { createElement, createLoopIcon, detectVideoElement } from '@utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@utils/subtitle';
 import { setupSubtitleSaveHandler } from '../saveSubtitle';
 import { getSubtitleSettings } from './subtitleStore';
@@ -67,7 +67,7 @@ export function getSubtitleElement(key: SubtitleSettingStorageKey) {
 }
 
 export async function initializeElementStore() {
-  const video = await selectVideoElement();
+  const video = await detectVideoElement();
   elementStore.videoElement = video;
   setupContainer();
   return video;

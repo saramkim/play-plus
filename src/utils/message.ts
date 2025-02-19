@@ -21,6 +21,7 @@ export type SetSubtitleMessage = {
 
 type MessageData = {
   resetElement: true;
+  detectVideo: true;
   fetchVideoMetadata: FetchVideoMetadataMessage;
   playVideo: PlayVideoMessage;
   viewVideo: ViewVideoMessage;
