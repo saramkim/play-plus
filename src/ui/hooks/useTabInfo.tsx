@@ -1,5 +1,5 @@
 import { getSessionStorage, onSessionStorageChange } from '@storage/index';
-import { getTabInfo, TabInfo } from '@storage/tab';
+import { getTabInfo, onTabInfoChange, TabInfo } from '@storage/tab';
 import { useEffect, useState } from 'react';
 
 export function useTabInfo() {
@@ -20,11 +20,18 @@ export function useTabInfo() {
   }, []);
 
   useEffect(() => {
+    const activeTabId = activeTab?.id;
+    if (!activeTabId) return;
+
     (async () => {
-      if (!activeTab?.id) return;
-      const info = await getTabInfo(activeTab.id);
+      const info = await getTabInfo(activeTabId);
       setTabInfo(info ?? null);
     })();
+
+    const { remove } = onTabInfoChange((tabId, info) => {
+      if (tabId === activeTabId) setTabInfo(info);
+    });
+    return remove;
   }, [activeTab]);
 
   return { activeTab, tabInfo };

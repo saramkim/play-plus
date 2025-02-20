@@ -1,4 +1,4 @@
-import { CheckIcon, PencilSquareIcon, LinkIcon, LinkSlashIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { TabInfo, updateTabInfo } from '@storage/tab';
@@ -14,7 +14,7 @@ import {
 } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
 import { useTabInfo } from 'ui/hooks/useTabInfo';
 import DropdownButton from '../components/elements/DropdownButton';
@@ -98,31 +98,19 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedLanguage, setEditedLanguage] = useState(language);
-  const [primarySubtitle, setPrimarySubtitle] = useState<SubtitleId | null>(tabInfo?.primarySubtitle ?? null);
-  const [secondarySubtitle, setSecondarySubtitle] = useState<SubtitleId | null>(tabInfo?.secondarySubtitle ?? null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { showPopup, hidePopup } = usePopup();
 
   const available = activeTab?.url?.startsWith(COUPANG_PLAY_PLAY_URL);
+  const isPrimarySubtitle = tabInfo?.primarySubtitle === id;
+  const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
 
   useClickOutside(containerRef, () => setIsEditing(false));
-
-  useEffect(() => {
-    if (tabInfo) {
-      setPrimarySubtitle(tabInfo.primarySubtitle ?? null);
-      setSecondarySubtitle(tabInfo.secondarySubtitle ?? null);
-    }
-  }, [tabInfo]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onEdit(id, editedTitle, editedLanguage);
     setIsEditing(false);
-  };
-
-  const setSubtitleMap = {
-    [SET_SUBTITLE_ACTION.SET_PRIMARY]: setPrimarySubtitle,
-    [SET_SUBTITLE_ACTION.SET_SECONDARY]: setSecondarySubtitle,
   };
 
   const setSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null) => {
@@ -132,7 +120,6 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
     const response = await sendMessage(action, { tabId, subtitleId });
     if (response.success) {
       updateTabInfo(tabId, { [SET_SUBTITLE_STORAGE_KEY_MAP[action]]: subtitleId });
-      setSubtitleMap[action](subtitleId);
     } else {
       showPopup({
         title: t('error'),
@@ -166,16 +153,16 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center gap-1'>
           <button
-            className={`icon-button ${primarySubtitle === id ? '!text-teal-500' : ''}`}
+            className={`icon-button ${isPrimarySubtitle ? '!text-teal-500' : ''}`}
             disabled={!available}
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, primarySubtitle === id ? null : id)}
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
             <LinkIcon title={available ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
           </button>
           <button
-            className={`icon-button ${secondarySubtitle === id ? '!text-teal-500' : ''}`}
+            className={`icon-button ${isSecondarySubtitle ? '!text-teal-500' : ''}`}
             disabled={!available}
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, secondarySubtitle === id ? null : id)}
+            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >
             <LinkIcon title={available ? t('secondary_subtitle') : t('available_on_coupang_play')} className='size-5' />
           </button>
