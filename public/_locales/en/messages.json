@@ -86,6 +86,7 @@
   "subtitle_size": { "message": "Subtitle Size" },
   "subtitles": { "message": "Subtitles" },
   "success": { "message": "Success" },
+  "sync_adjustment": { "message": "Sync Adjustment" },
   "toggle_loop_key": { "message": "Loop On/Off" },
   "toggle_primary_subtitle": { "message": "Primary Subtitle On/Off" },
   "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },

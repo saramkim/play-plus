@@ -22,6 +22,7 @@ export type SubtitleConfig = {
   fontWeight: number;
   opacity: number;
   lineBreak: boolean;
+  delay: number;
 };
 export type ShortcutsConfig = {
   enabled: boolean;

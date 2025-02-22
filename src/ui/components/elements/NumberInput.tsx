@@ -1,16 +1,16 @@
-interface NumberInputProps {
+interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   value: number;
   onChange: (value: number) => void;
-  min?: number;
-  max?: number;
 }
 
-const NumberInput = ({ value, onChange, min, max }: NumberInputProps) => {
+const NumberInput = ({ value, onChange, className = '', ...props }: NumberInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(parseInt(e.target.value, 10));
+    onChange(parseFloat(e.target.value));
   };
 
-  return <input className='input' type='number' value={value.toString()} onChange={handleChange} min={min} max={max} />;
+  return (
+    <input className={`input ${className}`} type='number' value={value.toString()} onChange={handleChange} {...props} />
+  );
 };
 
 export default NumberInput;

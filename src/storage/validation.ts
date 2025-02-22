@@ -108,6 +108,7 @@ const getMessageByKey = (key: KeyOfUnion<StorageSchema[StorageKey]>) => {
     fontWeight: t('font_weight'),
     opacity: t('opacity'),
     lineBreak: t('allow_line_break'),
+    delay: t('sync_adjustment'),
     videoSkip: t('video_skip'),
     subVideoSkip: t('sub_video_skip'),
     shortcuts: t('shortcuts'),

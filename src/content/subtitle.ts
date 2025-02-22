@@ -68,7 +68,7 @@ export function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) 
   const { currentTime } = video;
 
   for (const [key, config] of Object.entries(getSubtitleSettings())) {
-    const { language, enabled } = config;
+    const { language, enabled, delay } = config;
     const customSubtitleId = getCustomSubtitleId(key);
     const data = getSubtitleCache(customSubtitleId ?? language);
     const subtitleElement = getSubtitleElement(key);
@@ -76,7 +76,7 @@ export function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);
 
     if (data && enabled) {
-      setupSubtitle(subtitleElement, data, currentTime);
+      setupSubtitle(subtitleElement, data, currentTime - delay);
     }
   }
 }

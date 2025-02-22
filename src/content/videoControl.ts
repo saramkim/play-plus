@@ -13,7 +13,7 @@ import { findCurrentSubtitleIndex } from '@utils/subtitle';
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from './loop';
 import { saveSubtitleWithToast } from './saveSubtitle';
 import { getSubtitleElement, getVideoElement } from './store/elementStore';
-import { getPrimarySubtitleCache } from './store/subtitleStore';
+import { getPrimarySubtitleAndDelay } from './store/subtitleStore';
 
 type KeyBindings = { [key: string]: () => void };
 
@@ -149,17 +149,17 @@ const skipVideoBySubtitles = (
   fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
 ) => {
   const { currentTime, duration } = video;
-  const subtitles = getPrimarySubtitleCache();
+  const { subtitles, delay } = getPrimarySubtitleAndDelay();
 
   if (subtitles && subtitles.length > 0) {
-    const index = findCurrentSubtitleIndex(subtitles, currentTime);
+    const index = findCurrentSubtitleIndex(subtitles, currentTime - delay);
 
     if (skipTime > 0) {
       const nextSubtitle = subtitles[Math.floor(index) + skipTime];
-      video.currentTime = nextSubtitle ? nextSubtitle.start : duration - 1;
+      video.currentTime = nextSubtitle ? nextSubtitle.start + delay : duration - 1;
     } else {
       const prevSubtitle = subtitles[Math.ceil(index) + skipTime];
-      video.currentTime = prevSubtitle ? prevSubtitle.start : 0;
+      video.currentTime = prevSubtitle ? prevSubtitle.start + delay : 0;
     }
   } else {
     skipVideoByTime(video, fallbackTime, fallbackUnit);

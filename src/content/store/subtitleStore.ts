@@ -42,12 +42,10 @@ export function hasSubtitleCache(key: SubtitleCacheKey) {
   return subtitleStore.subtitleCache.has(key);
 }
 
-export function getPrimarySubtitleCache() {
+export function getPrimarySubtitleAndDelay() {
   const id = getCustomSubtitleId(PRIMARY.STORAGE_KEY);
-  if (id) return getSubtitleCache(id);
-
-  const { language } = getSubtitleSettings()[PRIMARY.STORAGE_KEY];
-  return getSubtitleCache(language);
+  const { language, delay } = getSubtitleSettings()[PRIMARY.STORAGE_KEY];
+  return { subtitles: getSubtitleCache(id ?? language), delay };
 }
 
 export function getSubtitleSettings() {

@@ -13,7 +13,7 @@ import {
   getVideoElement,
   resetLoopStatus,
 } from './store/elementStore';
-import { getPrimarySubtitleCache } from './store/subtitleStore';
+import { getPrimarySubtitleAndDelay } from './store/subtitleStore';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';
@@ -129,19 +129,23 @@ export const loopCurrentSubtitle = () => {
     const video = getVideoElement();
     if (!video) throw new Error(t('error_video_not_found'));
 
-    const subtitles = getPrimarySubtitleCache();
+    const { subtitles, delay } = getPrimarySubtitleAndDelay();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
-    const index = findCurrentSubtitleIndex(subtitles, video.currentTime);
+    const index = findCurrentSubtitleIndex(subtitles, video.currentTime - delay);
     const currentSubtitle = subtitles[index];
     if (!currentSubtitle) throw new Error(t('error_no_subtitle'));
 
     const { start, end } = currentSubtitle;
-    if (state.isLooping && markerState[START_MARKER_ID].time === start && markerState[END_MARKER_ID].time === end) {
+    if (
+      state.isLooping &&
+      markerState[START_MARKER_ID].time === start + delay &&
+      markerState[END_MARKER_ID].time === end + delay
+    ) {
       loop(false);
     } else {
-      setStartPoint(start);
-      setEndPoint(end);
+      setStartPoint(start + delay);
+      setEndPoint(end + delay);
       loop(true);
     }
   } catch (e) {

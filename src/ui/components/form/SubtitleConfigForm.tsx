@@ -81,6 +81,10 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
           <label className='label'>{t('allow_line_break')}</label>
           <Checkbox checked={state.lineBreak} onChange={handleChange('lineBreak')} />
         </div>
+        <div className='row'>
+          <label className='label'>{t('sync_adjustment')}(s)</label>
+          <NumberInput value={state.delay} onChange={handleChange('delay')} step={0.1} />
+        </div>
       </div>
     </section>
   );

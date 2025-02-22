@@ -86,6 +86,7 @@
   "subtitle_size": { "message": "자막 크기" },
   "subtitles": { "message": "자막" },
   "success": { "message": "성공" },
+  "sync_adjustment": { "message": "싱크 조정" },
   "toggle_loop_key": { "message": "구간 반복 켜기/끄기" },
   "toggle_primary_subtitle": { "message": "메인 자막 켜기/끄기" },
   "toggle_secondary_subtitle": { "message": "서브 자막 켜기/끄기" },

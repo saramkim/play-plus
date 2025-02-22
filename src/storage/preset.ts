@@ -11,6 +11,7 @@ export const LEARNING_CONFIG: StorageSchema = {
     fontWeight: 3,
     opacity: 100,
     lineBreak: true,
+    delay: 0,
   },
   secondarySubtitle: {
     enabled: true,
@@ -22,6 +23,7 @@ export const LEARNING_CONFIG: StorageSchema = {
     fontWeight: 2,
     opacity: 100,
     lineBreak: false,
+    delay: 0,
   },
   videoSkip: {
     enabled: true,
