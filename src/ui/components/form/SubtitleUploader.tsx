@@ -7,7 +7,7 @@ import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { useRef, useState } from 'react';
 import { usePopup } from '../../contexts/PopupContext';
-import DropdownButton from '../elements/DropdownButton';
+import DropdownSelect from '../elements/DropdownSelect';
 import MessagePopup from '../elements/MessagePopup';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
@@ -157,7 +157,7 @@ const SubtitleUploader = () => {
       {file && (
         <div className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
           <div className='flex justify-between items-center gap-1'>
-            <DropdownButton options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
+            <DropdownSelect options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
             <input
               type='text'
               className='input'

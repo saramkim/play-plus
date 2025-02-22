@@ -1,5 +1,5 @@
 import useConfig from '../../hooks/useConfig';
-import DropdownButton from '../elements/DropdownButton';
+import DropdownSelect from '../elements/DropdownSelect';
 import KeydownInput from '../elements/KeydownInput';
 import NumberInput from '../elements/NumberInput';
 import Toggle from '../elements/Toggle';
@@ -44,7 +44,7 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
         <div className='row'>
           <label className='label'>{t('skip_unit')}</label>
           <NumberInput value={state.skipTime} onChange={handleChange('skipTime')} min={1} />
-          <DropdownButton
+          <DropdownSelect
             options={[
               { label: t('seconds'), value: 'seconds' },
               { label: t('minutes'), value: 'minutes' },
@@ -58,7 +58,7 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
           <div className='row'>
             <label className='label'>{t('fallback_unit')}</label>
             <NumberInput value={state.fallbackTime} onChange={handleChange('fallbackTime')} min={1} />
-            <DropdownButton
+            <DropdownSelect
               options={[
                 { label: t('seconds'), value: 'seconds' },
                 { label: t('minutes'), value: 'minutes' },

@@ -4,7 +4,7 @@ import { clearStorage, setStorageAll } from '@storage/index';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { usePopup } from '../../contexts/PopupContext';
-import Dropdown from '../elements/Dropdown';
+import DropdownMenu from '../elements/DropdownMenu';
 import MessagePopup from '../elements/MessagePopup';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
@@ -52,8 +52,10 @@ function MoreMenu() {
   };
 
   return (
-    <Dropdown options={options} onClick={(value) => menuMap[value]()}>
-      {({ isOpen, toggleDropdown }) => (
+    <DropdownMenu
+      options={options}
+      onClick={(value) => menuMap[value]()}
+      trigger={({ isOpen, toggleDropdown }) => (
         <button
           onClick={toggleDropdown}
           className={`flex items-center justify-center size-8 rounded-full ${
@@ -63,7 +65,7 @@ function MoreMenu() {
           <EllipsisHorizontalIcon className='size-7 text-gray-800' />
         </button>
       )}
-    </Dropdown>
+    />
   );
 }
 

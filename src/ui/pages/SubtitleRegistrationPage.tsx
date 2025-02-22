@@ -17,7 +17,7 @@ import { sendMessage } from '@utils/message';
 import { useRef, useState } from 'react';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
 import { useTabInfo } from 'ui/hooks/useTabInfo';
-import DropdownButton from '../components/elements/DropdownButton';
+import DropdownSelect from '../components/elements/DropdownSelect';
 import MessagePopup from '../components/elements/MessagePopup';
 import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleUploader';
 import ListHeader from '../components/layout/ListHeader';
@@ -134,7 +134,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       <div ref={containerRef}>
         {isEditing ? (
           <form className='flex items-center gap-1' onSubmit={handleSubmit}>
-            <DropdownButton options={LANGUAGE_OPTIONS} value={editedLanguage} onChange={setEditedLanguage} />
+            <DropdownSelect options={LANGUAGE_OPTIONS} value={editedLanguage} onChange={setEditedLanguage} />
             <input className='input' value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
             <button type='submit' className='icon-button'>
               <CheckIcon className='size-5' />

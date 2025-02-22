@@ -1,28 +1,27 @@
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/16/solid';
 import { t } from '@utils/i18n';
-import Dropdown, { DropdownOption } from './Dropdown';
+import DropdownMenu, { DropdownOption } from './DropdownMenu';
 
-interface DropdownButtonProps<V extends string> {
+interface DropdownSelectProps<V extends string> {
   options: DropdownOption<V>[];
   value: V;
   onChange: (value: V) => void;
   visibleItemCount?: number;
 }
 
-const DropdownButton = <V extends string>({
+const DropdownSelect = <V extends string>({
   options,
   value,
   onChange,
   visibleItemCount = 5,
-}: DropdownButtonProps<V>) => {
+}: DropdownSelectProps<V>) => {
   return (
-    <Dropdown
+    <DropdownMenu
       options={options}
       value={value}
       onClick={(v) => v !== value && onChange(v)}
       visibleItemCount={visibleItemCount}
-    >
-      {({ isOpen, toggleDropdown }) => {
+      trigger={({ isOpen, toggleDropdown }) => {
         const label = options.find((option) => option.value === value)?.label;
         return (
           <button
@@ -37,8 +36,8 @@ const DropdownButton = <V extends string>({
           </button>
         );
       }}
-    </Dropdown>
+    />
   );
 };
 
-export default DropdownButton;
+export default DropdownSelect;
