@@ -22,11 +22,14 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
     const filtered = searchText
       ? originalList.filter((item) => String(item[filterKey]).toLowerCase().includes(searchText.toLowerCase()))
       : originalList;
-    const sorted =
-      sort === 'latest'
-        ? filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
-        : filtered.sort((a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime());
-    onFilteredListChange(sorted);
+
+    onFilteredListChange(
+      [...filtered].sort((a, b) => {
+        const timeA = new Date(a.savedAt).getTime();
+        const timeB = new Date(b.savedAt).getTime();
+        return sort === 'latest' ? timeB - timeA : timeA - timeB;
+      })
+    );
   }, [originalList, searchText, sort]);
 
   const search = (e: React.FormEvent) => {
