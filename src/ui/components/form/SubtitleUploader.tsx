@@ -18,11 +18,12 @@ const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const DEFAULT_LANGUAGE: Language = 'en';
 
 const allowedExtensions = ['.vtt', '.srt', '.smi'];
+const allowedExtensionsString = allowedExtensions.map((ext) => ext.replace('.', '').toUpperCase()).join(', ');
 
 const validateFile = (file: File) => {
   const fileExtension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
   if (!allowedExtensions.includes(fileExtension)) {
-    return { isValid: false, message: t('error_unsupported_file_type') };
+    return { isValid: false, message: t('error_unsupported_file_type', allowedExtensionsString) };
   }
   if (file.size > MAX_FILE_SIZE) {
     return { isValid: false, message: t('error_file_size') };
@@ -136,9 +137,7 @@ const SubtitleUploader = () => {
           <>
             <ArrowUpTrayIcon className='size-5' />
             <span className='text-[15px] font-bold'>{t('upload_subtitle_file')}</span>
-            <span className='text-[12px] text-gray-500'>
-              {allowedExtensions.map((ext) => ext.replace('.', '').toUpperCase()).join(', ')}
-            </span>
+            <span className='text-[12px] text-gray-500'>{allowedExtensionsString}</span>
           </>
         )}
 
