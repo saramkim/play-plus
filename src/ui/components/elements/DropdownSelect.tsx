@@ -27,7 +27,7 @@ const DropdownSelect = <V extends string>({
           <button
             type='button'
             onClick={toggleDropdown}
-            className='min-w-24 w-full h-8 px-2 flex justify-between items-center border rounded focus:outline-none focus:border-teal-500'
+            className='min-w-24 w-full h-8 px-2 flex justify-between items-center border border-gray-200 rounded-sm focus:outline-hidden focus:border-teal-500'
           >
             <span>{label || t('select')}</span>
             <span className='text-gray-500'>

@@ -30,7 +30,7 @@ const DropdownMenu = <V extends string>({
             <button
               key={option.value}
               style={{ height: ITEM_HEIGHT }}
-              className={`flex items-center px-2 w-full focus:outline-none ${
+              className={`flex items-center px-2 w-full focus:outline-hidden ${
                 option.value === value ? 'bg-gray-200' : 'hover:bg-gray-100'
               }`}
               onClick={() => {

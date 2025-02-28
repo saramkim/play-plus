@@ -1,6 +1,56 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility input {
+  @apply px-3 border border-gray-200 outline-hidden rounded-sm w-full focus:border-teal-500 h-8;
+}
+
+@utility button {
+  @apply px-3 text-white font-medium outline-hidden rounded-sm text-nowrap disabled:opacity-30 h-8;
+}
+
+@utility label {
+  @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
+}
+
+@utility section {
+  @apply flex flex-col gap-1;
+}
+
+@utility section-header {
+  @apply flex justify-between items-center h-8;
+}
+
+@utility section-title {
+  @apply text-[15px] font-bold;
+}
+
+@utility row {
+  @apply flex items-center gap-1 h-8;
+}
+
+@utility icon-button {
+  @apply text-gray-500 hover:enabled:text-gray-700 disabled:opacity-50;
+}
+
+@utility scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility hidden {
+  /* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
+  display: none;
+}
 
 @font-face {
   font-family: 'Roboto';
@@ -89,57 +139,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: theme(colors.gray.500);
+  background-color: var(--color-gray-500);
   border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: theme(colors.gray.600);
-}
-
-@layer utilities {
-  .input {
-    @apply px-3 border outline-none rounded w-full focus:border-teal-500 h-8;
-  }
-
-  .button {
-    @apply px-3 text-white font-medium outline-none rounded text-nowrap disabled:opacity-30 h-8;
-  }
-
-  .label {
-    @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
-  }
-
-  .section {
-    @apply flex flex-col gap-1;
-  }
-
-  .section-header {
-    @apply flex justify-between items-center h-8;
-  }
-
-  .section-title {
-    @apply text-[15px] font-bold;
-  }
-
-  .row {
-    @apply flex items-center gap-1 h-8;
-  }
-
-  .icon-button {
-    @apply text-gray-500 hover:enabled:text-gray-700 disabled:opacity-50;
-  }
-
-  .scrollbar-hidden {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* TailwindCSS 유틸리티 클래스와 커스텀 클래스와의 우선순위(Cascading) 문제 해결 => 가장 아래에 위치해야 함 */
-  .hidden {
-    display: none;
-  }
+  background-color: var(--color-gray-600);
 }

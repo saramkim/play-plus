@@ -68,7 +68,7 @@ const Dropdown = ({ children, direction, trigger }: DropdownProps) => {
           ref={dropdownRef}
           className={`absolute ${
             positionMap[direction || calculatedDirection]
-          } bg-white border rounded shadow-lg z-10 min-w-full overflow-auto`}
+          } bg-white border border-gray-200 rounded shadow-lg z-10 min-w-full overflow-auto`}
         >
           {typeof children === 'function' ? children(() => setIsOpen(false)) : children}
         </div>

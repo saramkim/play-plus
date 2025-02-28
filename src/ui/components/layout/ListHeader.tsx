@@ -43,7 +43,7 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
   };
 
   return (
-    <header className='flex flex-col gap-2 pb-2 border-b'>
+    <header className='flex flex-col gap-2 pb-2 border-b border-gray-200'>
       <div className='flex justify-between items-center gap-2'>
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
           <input className='input' ref={searchInputRef} />

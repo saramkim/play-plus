@@ -119,7 +119,7 @@ const SubtitleUploader = () => {
   return (
     <div className='flex flex-col gap-2'>
       <div
-        className='flex justify-center items-center gap-2 border rounded-md p-4 hover:bg-gray-100 cursor-pointer'
+        className='flex justify-center items-center gap-2 border border-gray-200 rounded-md p-4 hover:bg-gray-100 cursor-pointer'
         onClick={() => fileInputRef.current?.click()}
         onDrop={(e) => {
           e.preventDefault();
@@ -130,7 +130,7 @@ const SubtitleUploader = () => {
       >
         {file ? (
           <>
-            <DocumentTextIcon className='size-5 flex-shrink-0' />
+            <DocumentTextIcon className='size-5 shrink-0' />
             <span className='text-[15px] font-bold truncate'>{file.name}</span>
           </>
         ) : (
@@ -154,7 +154,7 @@ const SubtitleUploader = () => {
       </div>
 
       {file && (
-        <div className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
+        <div className={`flex flex-col gap-2 border border-gray-200 rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
           <div className='flex justify-between items-center gap-1'>
             <DropdownSelect options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
             <input
