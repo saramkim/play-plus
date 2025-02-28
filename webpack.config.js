@@ -19,7 +19,6 @@ module.exports = {
       {
         test: /\.(ts|tsx)$/,
         include: path.resolve(__dirname, 'src'),
-        exclude: /node_modules/,
         oneOf: [
           {
             test: /\.tsx$/,

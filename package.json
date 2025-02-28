@@ -2,6 +2,7 @@
   "name": "play-plus",
   "version": "1.7.0",
   "description": "Enhance your Coupang Play experience with custom features.",
+  "packageManager": "yarn@4.6.0",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode production",
     "build:dev": "webpack --config webpack.config.js --mode development",
@@ -12,9 +13,11 @@
   },
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
+    "@types/babel__core": "^7",
     "@types/chrome": "^0.0.279",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

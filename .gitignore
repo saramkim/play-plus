@@ -1,5 +1,11 @@
-# Node.js dependencies
-node_modules/
+# Yarn Berry (PnP)
+.pnp.*
+.yarn/*
+!.yarn/releases
+!.yarn/patches
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
 
 # Built files
 dist/
