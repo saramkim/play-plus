@@ -5,7 +5,8 @@
     "baseUrl": "./src",
     "paths": {
       "@storage/*": ["storage/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@/*": ["./*"]
     },
     "strict": true,
     "jsx": "react-jsxdev",
