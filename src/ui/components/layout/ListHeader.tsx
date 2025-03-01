@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { t } from '@utils/i18n';
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { Button } from '../elements/button';
+import { Input } from '../elements/input';
 
 interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   originalList: T[];
@@ -47,7 +48,7 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
     <header className='flex flex-col gap-2 pb-2 border-b border-gray-200'>
       <div className='flex justify-between items-center gap-2'>
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
-          <input className='input' ref={searchInputRef} />
+          <Input ref={searchInputRef} />
           <Button size='sm' type='submit'>
             {t('search')}
           </Button>

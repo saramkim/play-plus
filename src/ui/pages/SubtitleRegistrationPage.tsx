@@ -23,6 +23,7 @@ import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleU
 import ListHeader from '../components/layout/ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { Input } from '../components/elements/input';
 
 const { STORAGE_KEY } = REGISTRATION;
 
@@ -135,7 +136,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
         {isEditing ? (
           <form className='flex items-center gap-1' onSubmit={handleSubmit}>
             <DropdownSelect options={LANGUAGE_OPTIONS} value={editedLanguage} onChange={setEditedLanguage} />
-            <input className='input' value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
+            <Input value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
             <button type='submit' className='icon-button'>
               <CheckIcon className='size-5' />
             </button>

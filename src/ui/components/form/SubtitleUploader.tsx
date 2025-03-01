@@ -10,6 +10,7 @@ import { usePopup } from '../../contexts/PopupContext';
 import DropdownSelect from '../elements/DropdownSelect';
 import MessagePopup from '../elements/MessagePopup';
 import { Button } from '../elements/button';
+import { Input } from '../elements/input';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -158,13 +159,7 @@ const SubtitleUploader = () => {
         <div className={`flex flex-col gap-2 border border-gray-200 rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
           <div className='flex justify-between items-center gap-1'>
             <DropdownSelect options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
-            <input
-              type='text'
-              className='input'
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={isUploading}
-            />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={isUploading} />
           </div>
           <div className='flex gap-2'>
             <Button variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
