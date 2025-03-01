@@ -1,12 +1,13 @@
 import useConfig from '../../hooks/useConfig';
 import { Button } from '../elements/button';
-import Checkbox from '../elements/Checkbox';
 import ColorPicker from '../elements/ColorPicker';
 import NumberInput from '../elements/NumberInput';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Switch } from '../ui/switch';
+import { Toggle } from '../ui/toggle';
+import { EqualsIcon } from '@heroicons/react/20/solid';
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
@@ -106,7 +107,15 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
         </div>
         <div className='row'>
           <label className='label'>{t('allow_line_break')}</label>
-          <Checkbox checked={state.lineBreak} onChange={handleChange('lineBreak')} />
+          <Toggle
+            variant='outline'
+            aria-label={t('allow_line_break')}
+            size='sm'
+            pressed={state.lineBreak}
+            onPressedChange={handleChange('lineBreak')}
+          >
+            <EqualsIcon className='size-5' />
+          </Toggle>
         </div>
         <div className='row'>
           <label className='label'>{t('sync_adjustment')}(s)</label>
