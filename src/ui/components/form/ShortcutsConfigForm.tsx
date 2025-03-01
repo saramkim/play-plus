@@ -1,9 +1,9 @@
 import useConfig from '../../hooks/useConfig';
 import KeydownInput from '../elements/KeydownInput';
-import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { Button } from '../elements/button';
+import { Switch } from '../ui/switch';
 
 const { STORAGE_KEY } = SETTINGS.SHORTCUTS;
 
@@ -25,7 +25,7 @@ function ShortcutsConfigForm() {
               </Button>
             </>
           ) : (
-            <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />
+            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
           )}
         </div>
       </header>

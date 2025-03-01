@@ -3,9 +3,9 @@ import { Button } from '../elements/button';
 import DropdownSelect from '../elements/DropdownSelect';
 import KeydownInput from '../elements/KeydownInput';
 import NumberInput from '../elements/NumberInput';
-import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { Switch } from '../ui/switch';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
@@ -29,7 +29,7 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
               </Button>
             </>
           ) : (
-            <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />
+            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
           )}
         </div>
       </header>

@@ -1,9 +1,9 @@
 import useConfig from '../../hooks/useConfig';
 import { Button } from '../elements/button';
 import KeydownInput from '../elements/KeydownInput';
-import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { Switch } from '../ui/switch';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 
@@ -25,7 +25,7 @@ function LoopConfigForm() {
               </Button>
             </>
           ) : (
-            <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />
+            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
           )}
         </div>
       </header>

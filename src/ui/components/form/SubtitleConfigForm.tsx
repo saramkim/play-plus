@@ -3,10 +3,10 @@ import { Button } from '../elements/button';
 import Checkbox from '../elements/Checkbox';
 import ColorPicker from '../elements/ColorPicker';
 import NumberInput from '../elements/NumberInput';
-import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { Switch } from '../ui/switch';
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
@@ -30,7 +30,7 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
               </Button>
             </>
           ) : (
-            <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />
+            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
           )}
         </div>
       </header>
