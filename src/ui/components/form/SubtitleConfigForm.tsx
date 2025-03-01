@@ -3,10 +3,10 @@ import { Button } from '../elements/button';
 import Checkbox from '../elements/Checkbox';
 import ColorPicker from '../elements/ColorPicker';
 import NumberInput from '../elements/NumberInput';
-import Switch from '../elements/Switch';
 import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
@@ -37,26 +37,52 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
       <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
           <label className='label'>{t('language')}</label>
-          <Switch
-            options={[
+          <ToggleGroup
+            type='single'
+            variant='outline'
+            size='sm'
+            className='w-full'
+            onValueChange={(value) => {
+              if (value === 'en' || value === 'ko') {
+                handleChange('language')(value);
+              }
+            }}
+            value={state.language}
+          >
+            {[
               { label: t('english'), value: 'en' },
               { label: t('korean'), value: 'ko' },
-            ]}
-            value={state.language}
-            onChange={handleChange('language')}
-          />
+            ].map(({ label, value }) => (
+              <ToggleGroupItem key={value} value={value} aria-label={label}>
+                {label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
         <div className='row'>
           <label className='label'>{t('position_reference')}</label>
-          <Switch
-            options={[
+          <ToggleGroup
+            type='single'
+            variant='outline'
+            size='sm'
+            className='w-full'
+            onValueChange={(value) => {
+              if (value === 'top' || value === 'center' || value === 'bottom') {
+                handleChange('positionReference')(value);
+              }
+            }}
+            value={state.positionReference}
+          >
+            {[
               { label: t('top'), value: 'top' },
               { label: t('center'), value: 'center' },
               { label: t('bottom'), value: 'bottom' },
-            ]}
-            value={state.positionReference}
-            onChange={handleChange('positionReference')}
-          />
+            ].map(({ label, value }) => (
+              <ToggleGroupItem key={value} value={value} aria-label={label}>
+                {label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
         <div className='row'>
           <label className='label'>{t('position_offset')}(px)</label>
