@@ -131,10 +131,6 @@
   @apply px-3 border border-gray-200 outline-hidden rounded-sm w-full focus:border-teal-500 h-8;
 }
 
-@utility button {
-  @apply px-3 text-white font-medium outline-hidden rounded-sm text-nowrap disabled:opacity-30 h-8;
-}
-
 @utility label {
   @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
 }

@@ -3,6 +3,7 @@ import KeydownInput from '../elements/KeydownInput';
 import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { Button } from '../elements/button';
 
 const { STORAGE_KEY } = SETTINGS.SHORTCUTS;
 
@@ -16,12 +17,12 @@ function ShortcutsConfigForm() {
         <div className='row'>
           {hasChanged ? (
             <>
-              <button onClick={handleCancel} className='button bg-gray-500'>
+              <Button variant='outline' size='sm' onClick={handleCancel}>
                 {t('cancel')}
-              </button>
-              <button onClick={handleSave} className='button bg-teal-500'>
+              </Button>
+              <Button size='sm' onClick={handleSave}>
                 {t('save')}
-              </button>
+              </Button>
             </>
           ) : (
             <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />

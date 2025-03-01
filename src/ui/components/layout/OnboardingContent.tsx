@@ -1,6 +1,7 @@
 import { LEARNING_CONFIG } from '@storage/preset';
 import { setLocalStorage, setStorageAll } from '@storage/index';
 import { t } from '@utils/i18n';
+import { Button } from '../elements/button';
 
 interface OnboardingContentProps {
   hidePopup: () => void;
@@ -26,12 +27,12 @@ function OnboardingContent({ hidePopup }: OnboardingContentProps) {
         <p className='text-[12px] text-gray-500'>{t('onboarding_description_4')}</p>
       </div>
       <div className='flex gap-2 w-full'>
-        <button className='button bg-gray-500 w-full' onClick={handleOnboardingComplete}>
+        <Button variant='outline' className='w-full' onClick={handleOnboardingComplete}>
           {t('set_up_manually')}
-        </button>
-        <button className='button bg-teal-500 w-full' onClick={optimizeForLearning}>
+        </Button>
+        <Button className='w-full' onClick={optimizeForLearning}>
           {t('optimize_for_learning')}
-        </button>
+        </Button>
       </div>
     </div>
   );

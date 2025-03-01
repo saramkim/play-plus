@@ -1,4 +1,5 @@
 import useConfig from '../../hooks/useConfig';
+import { Button } from '../elements/button';
 import Checkbox from '../elements/Checkbox';
 import ColorPicker from '../elements/ColorPicker';
 import NumberInput from '../elements/NumberInput';
@@ -21,12 +22,12 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
         <div className='row'>
           {hasChanged ? (
             <>
-              <button onClick={handleCancel} className='button bg-gray-500'>
+              <Button variant='outline' size='sm' onClick={handleCancel}>
                 {t('cancel')}
-              </button>
-              <button onClick={handleSave} className='button bg-teal-500'>
+              </Button>
+              <Button size='sm' onClick={handleSave}>
                 {t('save')}
-              </button>
+              </Button>
             </>
           ) : (
             <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />

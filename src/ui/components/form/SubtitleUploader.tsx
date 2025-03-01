@@ -9,6 +9,7 @@ import { useRef, useState } from 'react';
 import { usePopup } from '../../contexts/PopupContext';
 import DropdownSelect from '../elements/DropdownSelect';
 import MessagePopup from '../elements/MessagePopup';
+import { Button } from '../elements/button';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -166,15 +167,11 @@ const SubtitleUploader = () => {
             />
           </div>
           <div className='flex gap-2'>
-            <button
-              className='w-full bg-gray-500 text-white rounded-full p-2 font-medium'
-              onClick={reset}
-              disabled={isUploading}
-            >
+            <Button variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
               {t('cancel')}
-            </button>
-            <button
-              className='w-full bg-teal-500 text-white rounded-full p-2 font-medium'
+            </Button>
+            <Button
+              className='w-full'
               onClick={async () => {
                 setIsUploading(true);
                 await uploadSubtitle(file, title, language);
@@ -184,7 +181,7 @@ const SubtitleUploader = () => {
               disabled={isUploading}
             >
               {t('register')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { XMarkIcon } from '@heroicons/react/16/solid';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '@utils/i18n';
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
+import { Button } from '../elements/button';
 
 interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   originalList: T[];
@@ -47,9 +48,9 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
       <div className='flex justify-between items-center gap-2'>
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
           <input className='input' ref={searchInputRef} />
-          <button className='button bg-teal-500' type='submit'>
+          <Button size='sm' type='submit'>
             {t('search')}
-          </button>
+          </Button>
         </form>
       </div>
       <div className='flex justify-between items-center gap-2 h-5'>

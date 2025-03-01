@@ -1,4 +1,5 @@
 import useConfig from '../../hooks/useConfig';
+import { Button } from '../elements/button';
 import KeydownInput from '../elements/KeydownInput';
 import Toggle from '../elements/Toggle';
 import { SETTINGS } from '@utils/constants';
@@ -16,12 +17,12 @@ function LoopConfigForm() {
         <div className='row'>
           {hasChanged ? (
             <>
-              <button onClick={handleCancel} className='button bg-gray-500'>
+              <Button variant='outline' size='sm' onClick={handleCancel}>
                 {t('cancel')}
-              </button>
-              <button onClick={handleSave} className='button bg-teal-500'>
+              </Button>
+              <Button size='sm' onClick={handleSave}>
                 {t('save')}
-              </button>
+              </Button>
             </>
           ) : (
             <Toggle isOn={state.enabled} onChange={handleChange('enabled')} />

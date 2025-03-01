@@ -1,4 +1,5 @@
 import { t } from '@utils/i18n';
+import { Button } from './button';
 
 interface MessagePopupBase {
   message: string;
@@ -19,21 +20,20 @@ function MessagePopup(props: MessagePopupProps) {
     <div className='flex flex-col gap-3'>
       <p className='whitespace-pre-line'>{message}</p>
 
-      <div className='flex gap-2 w-full'>
+      <div className='flex gap-2 w-full justify-end'>
         {type === 'confirm' && (
-          <button className='button bg-gray-500 w-full' onClick={hidePopup}>
+          <Button variant='outline' onClick={hidePopup}>
             {t('cancel')}
-          </button>
+          </Button>
         )}
-        <button
-          className='button bg-teal-500 w-full'
+        <Button
           onClick={() => {
             if (type === 'confirm') props.onConfirm();
             hidePopup();
           }}
         >
           {t('confirm')}
-        </button>
+        </Button>
       </div>
     </div>
   );
