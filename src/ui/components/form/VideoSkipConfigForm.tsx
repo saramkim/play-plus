@@ -1,11 +1,11 @@
 import useConfig from '../../hooks/useConfig';
 import { Button } from '../elements/button';
-import DropdownSelect from '../elements/DropdownSelect';
 import KeydownInput from '../elements/KeydownInput';
 import NumberInput from '../elements/NumberInput';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { Switch } from '../ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 
@@ -45,28 +45,42 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
         <div className='row'>
           <label className='label'>{t('skip_unit')}</label>
           <NumberInput value={state.skipTime} onChange={handleChange('skipTime')} min={1} />
-          <DropdownSelect
-            options={[
-              { label: t('seconds'), value: 'seconds' },
-              { label: t('minutes'), value: 'minutes' },
-              { label: t('subtitles'), value: 'subtitles' },
-            ]}
-            value={state.skipTimeUnit}
-            onChange={handleChange('skipTimeUnit')}
-          />
+          <Select value={state.skipTimeUnit} onValueChange={handleChange('skipTimeUnit')}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('select')} />
+            </SelectTrigger>
+            <SelectContent>
+              {[
+                { label: t('seconds'), value: 'seconds' },
+                { label: t('minutes'), value: 'minutes' },
+                { label: t('subtitles'), value: 'subtitles' },
+              ].map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {state.skipTimeUnit === 'subtitles' && (
           <div className='row'>
             <label className='label'>{t('fallback_unit')}</label>
             <NumberInput value={state.fallbackTime} onChange={handleChange('fallbackTime')} min={1} />
-            <DropdownSelect
-              options={[
-                { label: t('seconds'), value: 'seconds' },
-                { label: t('minutes'), value: 'minutes' },
-              ]}
-              value={state.fallbackUnit}
-              onChange={handleChange('fallbackUnit')}
-            />
+            <Select value={state.fallbackUnit} onValueChange={handleChange('fallbackUnit')}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('select')} />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  { label: t('seconds'), value: 'seconds' },
+                  { label: t('minutes'), value: 'minutes' },
+                ].map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>

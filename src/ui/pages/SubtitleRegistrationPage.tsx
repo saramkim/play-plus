@@ -17,13 +17,13 @@ import { sendMessage } from '@utils/message';
 import { useRef, useState } from 'react';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
 import { useTabInfo } from 'ui/hooks/useTabInfo';
-import DropdownSelect from '../components/elements/DropdownSelect';
 import MessagePopup from '../components/elements/MessagePopup';
 import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleUploader';
 import ListHeader from '../components/layout/ListHeader';
 import { usePopup } from '../contexts/PopupContext';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { Input } from '../components/elements/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const { STORAGE_KEY } = REGISTRATION;
 
@@ -100,13 +100,14 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedLanguage, setEditedLanguage] = useState(language);
   const containerRef = useRef<HTMLDivElement>(null);
+  const selectRef = useRef<HTMLDivElement>(null);
   const { showPopup, hidePopup } = usePopup();
 
   const available = activeTab?.url?.startsWith(COUPANG_PLAY_PLAY_URL);
   const isPrimarySubtitle = tabInfo?.primarySubtitle === id;
   const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
 
-  useClickOutside(containerRef, () => setIsEditing(false));
+  useClickOutside([containerRef, selectRef], () => setIsEditing(false));
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -135,7 +136,18 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       <div ref={containerRef}>
         {isEditing ? (
           <form className='flex items-center gap-1' onSubmit={handleSubmit}>
-            <DropdownSelect options={LANGUAGE_OPTIONS} value={editedLanguage} onChange={setEditedLanguage} />
+            <Select value={editedLanguage} onValueChange={(value) => setEditedLanguage(value as Language)}>
+              <SelectTrigger className='w-fit'>
+                <SelectValue placeholder={t('language')} />
+              </SelectTrigger>
+              <SelectContent ref={selectRef}>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
             <button type='submit' className='icon-button'>
               <CheckIcon className='size-5' />

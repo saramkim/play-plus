@@ -7,10 +7,10 @@ import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { useRef, useState } from 'react';
 import { usePopup } from '../../contexts/PopupContext';
-import DropdownSelect from '../elements/DropdownSelect';
 import MessagePopup from '../elements/MessagePopup';
 import { Button } from '../elements/button';
 import { Input } from '../elements/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -158,7 +158,18 @@ const SubtitleUploader = () => {
       {file && (
         <div className={`flex flex-col gap-2 border border-gray-200 rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
           <div className='flex justify-between items-center gap-1'>
-            <DropdownSelect options={LANGUAGE_OPTIONS} value={language} onChange={setLanguage} />
+            <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+              <SelectTrigger className='w-fit'>
+                <SelectValue placeholder={t('select')} />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={isUploading} />
           </div>
           <div className='flex gap-2'>
