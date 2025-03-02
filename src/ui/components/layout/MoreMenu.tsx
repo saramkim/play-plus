@@ -4,8 +4,9 @@ import { clearStorage, setStorageAll } from '@storage/index';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { usePopup } from '../../contexts/PopupContext';
-import DropdownMenu from '../elements/DropdownMenu';
 import MessagePopup from '../elements/MessagePopup';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Button } from '../elements/button';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
@@ -52,20 +53,20 @@ function MoreMenu() {
   };
 
   return (
-    <DropdownMenu
-      options={options}
-      onClick={(value) => menuMap[value]()}
-      trigger={({ isOpen, toggleDropdown }) => (
-        <button
-          onClick={toggleDropdown}
-          className={`flex items-center justify-center size-8 rounded-full ${
-            isOpen ? 'bg-gray-200' : 'hover:bg-gray-100'
-          }`}
-        >
-          <EllipsisHorizontalIcon className='size-7 text-gray-800' />
-        </button>
-      )}
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant='ghost' size='icon'>
+          <EllipsisHorizontalIcon className='size-7 ' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {options.map((option) => (
+          <DropdownMenuItem key={option.value} onClick={() => menuMap[option.value]()}>
+            {option.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
