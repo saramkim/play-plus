@@ -40,7 +40,7 @@ function Header({ pageList, currentPage, navigate }: HeaderProps) {
           key={page}
           onClick={() => handleTabClick(index)}
           className={`w-full p-2 text-center cursor-pointer text-[15px] rounded-t-md hover:bg-gray-100 ${
-            currentPage === page ? 'text-black border-b-2 border-b-black font-bold' : 'text-gray-500 font-medium'
+            currentPage === page ? 'border-b-2 border-b-foreground font-bold' : 'text-gray-500 font-medium'
           }`}
         >
           {pageMap[page]}
