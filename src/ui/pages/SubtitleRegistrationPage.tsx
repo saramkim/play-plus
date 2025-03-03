@@ -166,14 +166,14 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center gap-1'>
           <button
-            className={`icon-button ${isPrimarySubtitle ? 'text-teal-500!' : ''}`}
+            className={`icon-button ${isPrimarySubtitle ? 'text-primary!' : ''}`}
             disabled={!available}
             onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
             <LinkIcon title={available ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
           </button>
           <button
-            className={`icon-button ${isSecondarySubtitle ? 'text-teal-500!' : ''}`}
+            className={`icon-button ${isSecondarySubtitle ? 'text-primary!' : ''}`}
             disabled={!available}
             onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >

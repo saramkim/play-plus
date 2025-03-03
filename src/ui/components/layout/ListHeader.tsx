@@ -57,7 +57,7 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
       <div className='flex justify-between items-center gap-2 h-5'>
         {searchText ? (
           <div className='flex items-center gap-1 w-full overflow-hidden'>
-            <button className='text-rose-500' onClick={clearSearch}>
+            <button className='text-destructive' onClick={clearSearch}>
               <XMarkIcon className='size-4' />
             </button>
             <span className='text-gray-800'>{t('search_term')}:</span>
