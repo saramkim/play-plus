@@ -1,23 +1,14 @@
-import { LEARNING_CONFIG } from '@storage/preset';
-import { setLocalStorage, setStorageAll } from '@storage/index';
 import { t } from '@utils/i18n';
 import { Button } from '../elements/button';
 
+type OnboardingState = {
+  isOptimizing: boolean;
+};
 interface OnboardingContentProps {
-  hidePopup: () => void;
+  handleOnboardingComplete: (state: OnboardingState) => void;
 }
 
-function OnboardingContent({ hidePopup }: OnboardingContentProps) {
-  const handleOnboardingComplete = () => {
-    hidePopup();
-    setLocalStorage('isOnboardingComplete', true);
-  };
-
-  const optimizeForLearning = async () => {
-    await setStorageAll(LEARNING_CONFIG);
-    handleOnboardingComplete();
-  };
-
+function OnboardingContent({ handleOnboardingComplete }: OnboardingContentProps) {
   return (
     <div className='flex flex-col gap-3'>
       <div className='flex flex-col gap-2'>
@@ -27,10 +18,10 @@ function OnboardingContent({ hidePopup }: OnboardingContentProps) {
         <p className='text-[12px] text-gray-500'>{t('onboarding_description_4')}</p>
       </div>
       <div className='flex gap-2 w-full'>
-        <Button variant='outline' className='w-full' onClick={handleOnboardingComplete}>
+        <Button variant='outline' className='w-full' onClick={() => handleOnboardingComplete({ isOptimizing: false })}>
           {t('set_up_manually')}
         </Button>
-        <Button className='w-full' onClick={optimizeForLearning}>
+        <Button className='w-full' onClick={() => handleOnboardingComplete({ isOptimizing: true })}>
           {t('optimize_for_learning')}
         </Button>
       </div>

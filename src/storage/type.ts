@@ -1,4 +1,4 @@
-import { Language, PageName } from '@utils/constants';
+import { Language } from '@utils/constants';
 import { SubtitleLanguage } from '@utils/subtitle';
 import { SubtitleId } from './subtitle';
 
@@ -74,8 +74,6 @@ export type SubtitleMetadata = {
 
 export type LocalStorageSchema = {
   savedSubtitles: SavedSubtitle[];
-  lastViewedPage: PageName;
-  isOnboardingComplete: boolean;
   registeredSubtitles: SubtitleMetadata[];
 };
 export type LocalStorageKey = keyof LocalStorageSchema;
