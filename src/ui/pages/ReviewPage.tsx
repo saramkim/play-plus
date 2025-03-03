@@ -62,7 +62,7 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
   };
 
   return (
-    <li key={content} className='flex flex-col gap-[6px] py-2 border-b border-gray-200'>
+    <li key={content} className='flex flex-col gap-[6px] py-2 border-b'>
       <div className='flex items-center'>
         <p className='text-[15px] font-medium text-wrap select-text w-full'>{content}</p>
       </div>

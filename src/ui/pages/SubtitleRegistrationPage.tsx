@@ -75,7 +75,7 @@ function SubtitleRegistrationPage() {
               />
             ))}
           </ul>
-          <footer className='border-t border-gray-200 pt-4'>
+          <footer className='border-t pt-4'>
             <SubtitleUploader />
           </footer>
         </>
@@ -132,7 +132,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   };
 
   return (
-    <li key={id} className='flex flex-col gap-2 py-2 border-b border-gray-200'>
+    <li key={id} className='flex flex-col gap-2 py-2 border-b'>
       <div ref={containerRef}>
         {isEditing ? (
           <form className='flex items-center gap-1' onSubmit={handleSubmit}>

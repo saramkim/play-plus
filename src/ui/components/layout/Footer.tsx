@@ -3,7 +3,7 @@ import MoreMenu from './MoreMenu';
 
 function Footer() {
   return (
-    <div className='flex justify-between items-center h-10 border-t border-t-gray-300 px-2'>
+    <div className='flex justify-between items-center h-10 border-t px-2'>
       <div className='w-full'>
         <ModeToggle />
       </div>

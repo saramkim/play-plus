@@ -30,7 +30,7 @@ function Header({ pageList, currentPage, navigate }: HeaderProps) {
     <div
       ref={scrollRef}
       {...eventHandlers}
-      className='flex justify-between px-2 pt-1 overflow-x-auto border-b border-b-gray-300 scrollbar-hidden'
+      className='flex justify-between px-2 pt-1 overflow-x-auto border-b scrollbar-hidden'
     >
       {pageList.map((page, index) => (
         <div

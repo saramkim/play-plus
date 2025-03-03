@@ -121,7 +121,7 @@ const SubtitleUploader = () => {
   return (
     <div className='flex flex-col gap-2'>
       <div
-        className='flex justify-center items-center gap-2 border border-gray-200 rounded-md p-4 hover:bg-gray-100 cursor-pointer'
+        className='flex justify-center items-center gap-2 border rounded-md p-4 hover:bg-gray-100 cursor-pointer'
         onClick={() => fileInputRef.current?.click()}
         onDrop={(e) => {
           e.preventDefault();
@@ -156,7 +156,7 @@ const SubtitleUploader = () => {
       </div>
 
       {file && (
-        <div className={`flex flex-col gap-2 border border-gray-200 rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
+        <div className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
           <div className='flex justify-between items-center gap-1'>
             <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
               <SelectTrigger className='w-fit'>
