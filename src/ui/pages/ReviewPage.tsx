@@ -5,33 +5,32 @@ import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { useState } from 'react';
-import MessagePopup from '../components/elements/MessagePopup';
 import ListHeader from '../components/layout/ListHeader';
-import { usePopup } from '../contexts/PopupContext';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
+import { toast } from 'sonner';
 
 const { STORAGE_KEY } = REVIEW;
 
 function ReviewPage() {
   const [filteredSubtitles, setFilteredSubtitles] = useState<SavedSubtitle[]>([]);
   const { subtitles } = useSubtitles('savedSubtitles');
-  const { showPopup, hidePopup } = usePopup();
 
   const deleteSubtitle = (content: string) => {
-    showPopup({
-      title: t('delete'),
-      content: (
-        <MessagePopup
-          type='confirm'
-          message={t('confirm_delete')}
-          onConfirm={() => {
-            const filtered = subtitles.filter((v) => v.content !== content);
-            setLocalStorage(STORAGE_KEY, filtered);
-          }}
-          hidePopup={hidePopup}
-        />
-      ),
-      status: 'confirm',
+    const filtered = subtitles.filter((v) => v.content !== content);
+    setLocalStorage(STORAGE_KEY, filtered);
+
+    toast(t('delete'), {
+      description: content,
+      action: {
+        label: t('undo'),
+        onClick: () => {
+          toast.dismiss();
+          const deletedItem = subtitles.find((v) => v.content === content);
+          if (deletedItem) {
+            setLocalStorage(STORAGE_KEY, [...filtered, deletedItem]);
+          }
+        },
+      },
     });
   };
 

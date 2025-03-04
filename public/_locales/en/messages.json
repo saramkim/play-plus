@@ -96,6 +96,7 @@
   "toggle_primary_subtitle": { "message": "Primary Subtitle On/Off" },
   "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },
   "top": { "message": "Top" },
+  "undo": { "message": "Undo" },
   "upload_subtitle_file": { "message": "Upload Subtitle File" },
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },

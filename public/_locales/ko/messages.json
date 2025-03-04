@@ -96,6 +96,7 @@
   "toggle_primary_subtitle": { "message": "메인 자막 켜기/끄기" },
   "toggle_secondary_subtitle": { "message": "서브 자막 켜기/끄기" },
   "top": { "message": "상단" },
+  "undo": { "message": "취소" },
   "upload_subtitle_file": { "message": "자막 파일 업로드" },
   "video_skip": { "message": "영상 이동(1)" },
   "view_video": { "message": "영상 보기" },
