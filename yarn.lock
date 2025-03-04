@@ -3956,6 +3956,7 @@ __metadata:
     postcss-loader: "npm:^8.1.1"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
+    sonner: "npm:^2.0.1"
     style-loader: "npm:^4.0.0"
     tailwind-merge: "npm:^3.0.2"
     tailwindcss: "npm:^4.0.9"
@@ -4402,6 +4403,16 @@ __metadata:
   version: 5.1.0
   resolution: "slash@npm:5.1.0"
   checksum: 10c0/eb48b815caf0bdc390d0519d41b9e0556a14380f6799c72ba35caf03544d501d18befdeeef074bc9c052acf69654bc9e0d79d7f1de0866284137a40805299eb3
+  languageName: node
+  linkType: hard
+
+"sonner@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "sonner@npm:2.0.1"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+  checksum: 10c0/29e15324109ac19e0c9f2236ad695e2791fcf183264e5a4ffc72acfff28894fb8e80de65a1bf40bcea881fe4d06481b3c533ee3dc6ffafa80a44912e2ebc5cf6
   languageName: node
   linkType: hard
 
