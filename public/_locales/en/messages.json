@@ -1,8 +1,8 @@
 {
   "app_name": { "message": "Play Plus" },
-  "extension_name": { "message": "Play Plus" },
+  "extension_name": { "message": "Play Plus - Enhance Coupang Play's features" },
   "extension_description": {
-    "message": "Enhance Coupang Play's features. Provides features such as dual subtitles, subtitle customization, video skip settings, shortcut settings, section repetition, subtitle saving and review, and subtitle registration."
+    "message": "Provides features such as dual subtitles, subtitle customization, video skip settings, shortcut settings, section repetition, subtitle saving and review, and subtitle registration."
   },
   "action_default_title": { "message": "Open Play Plus" },
 
