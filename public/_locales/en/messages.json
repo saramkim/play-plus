@@ -46,6 +46,8 @@
   "center": { "message": "Center" },
   "click_to_save": { "message": "Click to save" },
   "confirm": { "message": "Confirm" },
+  "copy": { "message": "Copy" },
+  "copied": { "message": "Copied" },
   "dark": { "message": "Dark" },
   "delete": { "message": "Delete" },
   "edit": { "message": "Edit" },

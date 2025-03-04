@@ -46,6 +46,8 @@
   "center": { "message": "중앙" },
   "click_to_save": { "message": "클릭하여 저장" },
   "confirm": { "message": "확인" },
+  "copy": { "message": "복사" },
+  "copied": { "message": "복사됨" },
   "dark": { "message": "어둡게" },
   "delete": { "message": "삭제" },
   "edit": { "message": "편집" },

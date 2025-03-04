@@ -1,4 +1,11 @@
-import { PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentIcon,
+  ClipboardIcon,
+  DocumentDuplicateIcon,
+  PlayIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
@@ -8,6 +15,7 @@ import { useState } from 'react';
 import ListHeader from '../components/layout/ListHeader';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
 import { toast } from 'sonner';
+import { CopyIcon } from 'lucide-react';
 
 const { STORAGE_KEY } = REVIEW;
 
@@ -73,6 +81,7 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
               className='size-5'
             />
           </button>
+          <CopyButton content={content} />
           <button className='icon-button' onClick={() => onDelete(content)}>
             <TrashIcon title={t('delete')} className='size-5' />
           </button>
@@ -80,6 +89,32 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>
       </div>
     </li>
+  );
+}
+
+const COPY_FEEDBACK_DURATION = 1800;
+
+function CopyButton({ content }: { content: string }) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  return isCopied ? (
+    <div className='flex items-center gap-1 text-gray-700'>
+      <ClipboardDocumentCheckIcon title={t('copied')} className='size-5' />
+      <span>{t('copied')}</span>
+    </div>
+  ) : (
+    <button
+      className='icon-button'
+      onClick={async () => {
+        await navigator.clipboard.writeText(content);
+        setIsCopied(true);
+        setTimeout(() => {
+          setIsCopied(false);
+        }, COPY_FEEDBACK_DURATION);
+      }}
+    >
+      <ClipboardDocumentIcon title={t('copy')} className='size-5' />
+    </button>
   );
 }
 
