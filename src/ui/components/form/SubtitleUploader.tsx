@@ -156,7 +156,16 @@ const SubtitleUploader = () => {
       </div>
 
       {file && (
-        <div className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setIsUploading(true);
+            await uploadSubtitle(file, title, language);
+            setIsUploading(false);
+            reset();
+          }}
+          className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}
+        >
           <div className='flex justify-between items-center gap-1'>
             <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
               <SelectTrigger className='w-fit'>
@@ -173,23 +182,14 @@ const SubtitleUploader = () => {
             <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={isUploading} />
           </div>
           <div className='flex gap-2'>
-            <Button variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
+            <Button type='button' variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
               {t('cancel')}
             </Button>
-            <Button
-              className='w-full'
-              onClick={async () => {
-                setIsUploading(true);
-                await uploadSubtitle(file, title, language);
-                setIsUploading(false);
-                reset();
-              }}
-              disabled={isUploading}
-            >
+            <Button type='submit' className='w-full' disabled={isUploading}>
               {t('register')}
             </Button>
           </div>
-        </div>
+        </form>
       )}
     </div>
   );
