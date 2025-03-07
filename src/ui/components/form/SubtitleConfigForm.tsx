@@ -9,9 +9,7 @@ import { Switch } from '../ui/switch';
 import { Toggle } from '../ui/toggle';
 import { EqualsIcon } from '@heroicons/react/20/solid';
 
-const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
-
-type SubtitleConfigFormProps = typeof PRIMARY | typeof SECONDARY;
+type SubtitleConfigFormProps = typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY;
 
 function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFormProps) {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);

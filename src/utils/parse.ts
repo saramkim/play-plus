@@ -89,7 +89,7 @@ export const parseSMI = (data: string) => {
 
     const textStart = match.index + match[0].length;
     const textEnd = nextMatch ? nextMatch.index : data.length;
-    let text = data.substring(textStart, textEnd).replace(tagRegex, '').replace(nbspRegex, '').trim();
+    const text = data.substring(textStart, textEnd).replace(tagRegex, '').replace(nbspRegex, '').trim();
 
     if (text) {
       subtitles.push({ start, end, text });

@@ -7,9 +7,7 @@ import { t } from '@utils/i18n';
 import { Switch } from '../ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
-
-type VideoSkipConfigFormProps = typeof VIDEO_SKIP | typeof SUB_VIDEO_SKIP;
+type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
 
 function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);

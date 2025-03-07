@@ -8,7 +8,8 @@ type LegacyMigration<T extends StorageKey> = {
 
 const createMigration = <T extends StorageKey>(migration: LegacyMigration<T>) => migration;
 
-const LEGACY_MIGRATIONS = {
+export const LEGACY_MIGRATIONS = {
+  // Example migrations:
   // 1.4.x => 1.5.x
   // skipTime: createMigration({
   //   newKey: SETTINGS.VIDEO_SKIP.STORAGE_KEY,

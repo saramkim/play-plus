@@ -75,7 +75,7 @@ const getContent = (arrayBuffer: ArrayBuffer, language: Language) => {
       const decoder = new TextDecoder(encoding, { fatal: true });
       const content = decoder.decode(arrayBuffer);
       return content;
-    } catch (error) {
+    } catch {
       continue;
     }
   }

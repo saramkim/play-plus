@@ -1,11 +1,4 @@
-import {
-  ClipboardDocumentCheckIcon,
-  ClipboardDocumentIcon,
-  ClipboardIcon,
-  DocumentDuplicateIcon,
-  PlayIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
@@ -15,7 +8,6 @@ import { useState } from 'react';
 import ListHeader from '../components/layout/ListHeader';
 import { useSubtitles } from 'ui/hooks/useSubtitles';
 import { toast } from 'sonner';
-import { CopyIcon } from 'lucide-react';
 
 const { STORAGE_KEY } = REVIEW;
 

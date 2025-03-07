@@ -57,7 +57,7 @@ export async function fetchAndCacheSubtitles(url: string, headers: chrome.webReq
     setSubtitleCache(lang, await fetchSubtitle(url));
   }
 }
-``;
+
 export function setupSubtitleSync(video: HTMLVideoElement) {
   syncSubtitles(video, true);
   handleVideoTimeupdate = () => syncSubtitles(video);
