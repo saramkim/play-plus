@@ -8,8 +8,8 @@ import {
   SetSubtitleMessage,
 } from '@utils/message';
 import { setupLoopHandler } from './loop';
-import { getVideoElement, initializeElementStore, resetElementStore } from './store/elementStore';
-import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitleStore';
+import { getVideoElement, initializeElementStore, resetElementStore } from './store/element-store';
+import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitle-store';
 import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './subtitle';
 import { t } from '@utils/i18n';
 

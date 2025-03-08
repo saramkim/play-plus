@@ -12,8 +12,8 @@ import {
 } from '@utils/constants';
 import { createElement, createLoopIcon, detectVideoElement } from '@utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@utils/subtitle';
-import { setupSubtitleSaveHandler } from '../saveSubtitle';
-import { getSubtitleSettings } from './subtitleStore';
+import { setupSubtitleSaveHandler } from '../save-subtitle';
+import { getSubtitleSettings } from './subtitle-store';
 
 type ElementStore = {
   videoElement: HTMLVideoElement | null;

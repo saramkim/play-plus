@@ -10,14 +10,14 @@ import {
   findCurrentSubtitle,
   SubtitleData,
 } from '@utils/subtitle';
-import { getSubtitleElement, getVideoElement } from './store/elementStore';
+import { getSubtitleElement, getVideoElement } from './store/element-store';
 import {
   getCustomSubtitleId,
   getSubtitleCache,
   getSubtitleSettings,
   setSubtitleCache,
   setSubtitleSetting,
-} from './store/subtitleStore';
+} from './store/subtitle-store';
 
 const { SUBTITLES } = SETTINGS;
 

@@ -3,8 +3,8 @@ import { LEARNING_CONFIG } from '@storage/preset';
 import { clearStorage, setStorageAll } from '@storage/index';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { usePopup } from '../../contexts/PopupContext';
-import MessagePopup from '../elements/MessagePopup';
+import { usePopup } from '../../contexts/popup-context';
+import MessagePopup from '../elements/message-popup';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../elements/button';
 

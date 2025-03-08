@@ -12,8 +12,8 @@ import {
   getLoopStatusContainer,
   getVideoElement,
   resetLoopStatus,
-} from './store/elementStore';
-import { getPrimarySubtitleAndDelay } from './store/subtitleStore';
+} from './store/element-store';
+import { getPrimarySubtitleAndDelay } from './store/subtitle-store';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';

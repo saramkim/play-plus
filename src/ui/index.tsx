@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import GlobalPopup from './components/layout/GlobalPopup';
-import { PopupProvider } from './contexts/PopupContext';
+import App from './app';
+import GlobalPopup from './components/layout/global-popup';
+import { PopupProvider } from './contexts/popup-context';
 import './style.css';
-import { ThemeProvider } from './contexts/ThemeProviderContext';
+import { ThemeProvider } from './contexts/theme-provider-context';
 import { Toaster } from './components/ui/sonner';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);

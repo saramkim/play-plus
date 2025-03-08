@@ -6,8 +6,8 @@ import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION 
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { useRef, useState } from 'react';
-import { usePopup } from '../../contexts/PopupContext';
-import MessagePopup from '../elements/MessagePopup';
+import { usePopup } from '../../contexts/popup-context';
+import MessagePopup from '../elements/message-popup';
 import { Button } from '../elements/button';
 import { Input } from '../elements/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';

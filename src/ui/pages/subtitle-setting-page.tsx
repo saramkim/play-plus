@@ -1,5 +1,5 @@
 import { SETTINGS } from '@utils/constants';
-import SubtitleConfigForm from '../components/form/SubtitleConfigForm';
+import SubtitleConfigForm from '../components/form/subtitle-config-form';
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 

@@ -1,7 +1,7 @@
 import { XMarkIcon as XMarkIconSolid } from '@heroicons/react/16/solid';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/20/solid';
-import { usePopup } from '../../contexts/PopupContext';
-import { PopupStatus } from '../../contexts/PopupContext';
+import { usePopup } from '../../contexts/popup-context';
+import { PopupStatus } from '../../contexts/popup-context';
 import { cn } from '@/ui/lib/utils';
 
 const colorMap: Record<PopupStatus, string> = {

@@ -1,7 +1,7 @@
-import useConfig from '../../hooks/useConfig';
+import useConfig from '../../hooks/use-config';
 import { Button } from '../elements/button';
-import KeydownInput from '../elements/KeydownInput';
-import NumberInput from '../elements/NumberInput';
+import KeydownInput from '../elements/keydown-input';
+import NumberInput from '../elements/number-input';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { Switch } from '../ui/switch';

@@ -3,8 +3,8 @@ import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { StorageKey, StorageSchema } from '@storage/type';
 import { t } from '@utils/i18n';
 import { useEffect, useRef, useState } from 'react';
-import MessagePopup from '../components/elements/MessagePopup';
-import { usePopup } from '../contexts/PopupContext';
+import MessagePopup from '../components/elements/message-popup';
+import { usePopup } from '../contexts/popup-context';
 
 function useConfig<K extends StorageKey>(key: K) {
   const [state, setState] = useState<StorageSchema[K]>(DEFAULT_CONFIG[key]);

@@ -2,6 +2,7 @@ import globals from 'globals';
 import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import pluginReact from 'eslint-plugin-react';
+import pluginUnicorn from 'eslint-plugin-unicorn';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -33,6 +34,9 @@ export default [
         runtime: 'automatic',
       },
     },
+    plugins: {
+      unicorn: pluginUnicorn,
+    },
     rules: {
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
@@ -46,6 +50,12 @@ export default [
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
+        },
+      ],
+      'unicorn/filename-case': [
+        'error',
+        {
+          case: 'kebabCase',
         },
       ],
     },

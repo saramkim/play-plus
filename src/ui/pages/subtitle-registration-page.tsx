@@ -15,13 +15,13 @@ import {
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { useRef, useState } from 'react';
-import { useSubtitles } from 'ui/hooks/useSubtitles';
+import { useSubtitles } from '@/ui/hooks/use-subtitles';
 import { useTabInfo } from 'ui/hooks/useTabInfo';
-import MessagePopup from '../components/elements/MessagePopup';
-import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/SubtitleUploader';
-import ListHeader from '../components/layout/ListHeader';
-import { usePopup } from '../contexts/PopupContext';
-import { useClickOutside } from '../hooks/useClickOutside';
+import MessagePopup from '../components/elements/message-popup';
+import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/subtitle-uploader';
+import ListHeader from '../components/layout/list-header';
+import { usePopup } from '../contexts/popup-context';
+import { useClickOutside } from '../hooks/use-click-outside';
 import { Input } from '../components/elements/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 

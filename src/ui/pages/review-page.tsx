@@ -5,8 +5,8 @@ import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { useState } from 'react';
-import ListHeader from '../components/layout/ListHeader';
-import { useSubtitles } from 'ui/hooks/useSubtitles';
+import ListHeader from '../components/layout/list-header';
+import { useSubtitles } from '@/ui/hooks/use-subtitles';
 import { toast } from 'sonner';
 
 const { STORAGE_KEY } = REVIEW;

@@ -1,7 +1,7 @@
 import { PAGE_NAME, PageName } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { useRef } from 'react';
-import { useDragScroll } from 'ui/hooks/useDragScroll';
+import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
 
 const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
 const pageMap = {

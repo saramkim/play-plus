@@ -1,19 +1,19 @@
-import useConfig from '../../hooks/useConfig';
-import { Button } from '../elements/button';
-import KeydownInput from '../elements/KeydownInput';
+import useConfig from '../../hooks/use-config';
+import KeydownInput from '../elements/keydown-input';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { Button } from '../elements/button';
 import { Switch } from '../ui/switch';
 
-const { STORAGE_KEY } = SETTINGS.LOOP;
+const { STORAGE_KEY } = SETTINGS.SHORTCUTS;
 
-function LoopConfigForm() {
+function ShortcutsConfigForm() {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
 
   return (
     <section className='section'>
       <header className='section-header'>
-        <h2 className='section-title'>{t('loop')}</h2>
+        <h2 className='section-title'>{t('shortcuts')}</h2>
         <div className='row'>
           {hasChanged ? (
             <>
@@ -31,24 +31,24 @@ function LoopConfigForm() {
       </header>
       <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
         <div className='row'>
-          <label className='label'>{t('toggle_loop_key')} </label>
-          <KeydownInput value={state.toggleLoop} onChange={handleChange('toggleLoop')} />
+          <label className='label'>{t('save_primary_subtitle')} </label>
+          <KeydownInput value={state.savePrimary} onChange={handleChange('savePrimary')} />
         </div>
         <div className='row'>
-          <label className='label'>{t('start_point_key')} </label>
-          <KeydownInput value={state.startPoint} onChange={handleChange('startPoint')} />
+          <label className='label'>{t('save_secondary_subtitle')} </label>
+          <KeydownInput value={state.saveSecondary} onChange={handleChange('saveSecondary')} />
         </div>
         <div className='row'>
-          <label className='label'>{t('end_point_key')} </label>
-          <KeydownInput value={state.endPoint} onChange={handleChange('endPoint')} />
+          <label className='label'>{t('toggle_primary_subtitle')} </label>
+          <KeydownInput value={state.togglePrimary} onChange={handleChange('togglePrimary')} />
         </div>
         <div className='row'>
-          <label className='label'>{t('loop_current_subtitle')} </label>
-          <KeydownInput value={state.loopCurrentSubtitle} onChange={handleChange('loopCurrentSubtitle')} />
+          <label className='label'>{t('toggle_secondary_subtitle')} </label>
+          <KeydownInput value={state.toggleSecondary} onChange={handleChange('toggleSecondary')} />
         </div>
       </div>
     </section>
   );
 }
 
-export default LoopConfigForm;
+export default ShortcutsConfigForm;

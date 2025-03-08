@@ -1,5 +1,5 @@
-import { ModeToggle } from './ModeToggle';
-import MoreMenu from './MoreMenu';
+import { ModeToggle } from './mode-toggle';
+import MoreMenu from './more-menu';
 
 function Footer() {
   return (

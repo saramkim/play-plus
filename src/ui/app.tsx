@@ -3,14 +3,14 @@ import { LEARNING_CONFIG } from '@storage/preset';
 import { PAGE_NAME, PageName } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { useEffect, useState } from 'react';
-import Footer from './components/layout/Footer';
-import Header from './components/layout/Header';
-import OnboardingContent from './components/layout/OnboardingContent';
-import { usePopup } from './contexts/PopupContext';
-import ReviewPage from './pages/ReviewPage';
-import SubtitleRegistrationPage from './pages/SubtitleRegistrationPage';
-import SubtitleSettingPage from './pages/SubtitleSettingPage';
-import VideoSettingPage from './pages/VideoSettingPage';
+import Footer from './components/layout/footer';
+import Header from './components/layout/header';
+import OnboardingContent from './components/layout/onboarding-content';
+import { usePopup } from './contexts/popup-context';
+import ReviewPage from './pages/review-page';
+import SubtitleRegistrationPage from './pages/subtitle-registration-page';
+import SubtitleSettingPage from './pages/subtitle-setting-page';
+import VideoSettingPage from './pages/video-setting-page';
 
 const pageList = Object.values(PAGE_NAME);
 

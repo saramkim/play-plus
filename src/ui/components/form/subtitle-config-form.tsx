@@ -1,7 +1,7 @@
-import useConfig from '../../hooks/useConfig';
+import useConfig from '../../hooks/use-config';
 import { Button } from '../elements/button';
-import ColorPicker from '../elements/ColorPicker';
-import NumberInput from '../elements/NumberInput';
+import ColorPicker from '../elements/color-picker';
+import NumberInput from '../elements/number-input';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';

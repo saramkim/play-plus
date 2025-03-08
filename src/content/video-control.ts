@@ -11,9 +11,9 @@ import {
 import { SETTINGS } from '@utils/constants';
 import { findCurrentSubtitleIndex } from '@utils/subtitle';
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from './loop';
-import { saveSubtitleWithToast } from './saveSubtitle';
-import { getSubtitleElement, getVideoElement } from './store/elementStore';
-import { getPrimarySubtitleAndDelay } from './store/subtitleStore';
+import { saveSubtitleWithToast } from './save-subtitle';
+import { getSubtitleElement, getVideoElement } from './store/element-store';
+import { getPrimarySubtitleAndDelay } from './store/subtitle-store';
 
 type KeyBindings = { [key: string]: () => void };
 

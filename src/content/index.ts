@@ -1,9 +1,9 @@
 import { onStorageChange } from '@storage/index';
 import './content.css';
 import { initializeLoopSetting, onLoopStorageChange } from './loop';
-import { initializeMessageListener } from './messageHandler';
+import { initializeMessageListener } from './message-handler';
 import { initializeSubtitleSync, onSubtitleStorageChange } from './subtitle';
-import { initializeVideoControlSetting, onVideoControlStorageChange } from './videoControl';
+import { initializeVideoControlSetting, onVideoControlStorageChange } from './video-control';
 
 async function init() {
   initializeMessageListener();
