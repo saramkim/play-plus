@@ -1,12 +1,14 @@
+import { useEffect, useRef, useState } from 'react';
+
 import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { StorageKey, StorageSchema } from '@storage/type';
 import { t } from '@utils/i18n';
-import { useEffect, useRef, useState } from 'react';
-import MessagePopup from '../components/elements/message-popup';
-import { usePopup } from '../contexts/popup-context';
 
-function useConfig<K extends StorageKey>(key: K) {
+import { MessagePopup } from '@/ui/components/elements/message-popup';
+import { usePopup } from '@/ui/contexts/popup-context';
+
+export function useConfig<K extends StorageKey>(key: K) {
   const [state, setState] = useState<StorageSchema[K]>(DEFAULT_CONFIG[key]);
   const [hasChanged, setHasChanged] = useState(false);
   const originalState = useRef<StorageSchema[K]>(DEFAULT_CONFIG[key]);
@@ -60,5 +62,3 @@ function useConfig<K extends StorageKey>(key: K) {
 
   return { state, hasChanged, handleChange, handleSave, handleCancel };
 }
-
-export default useConfig;

@@ -1,4 +1,5 @@
 import { t } from '@utils/i18n';
+
 import { DEFAULT_CONFIG } from './default';
 import {
   LocalStorageChanges,

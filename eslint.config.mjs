@@ -1,8 +1,10 @@
-import globals from 'globals';
 import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import globals from 'globals';
+
+import pluginImport from 'eslint-plugin-import';
 import pluginReact from 'eslint-plugin-react';
 import pluginUnicorn from 'eslint-plugin-unicorn';
+import tseslint from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -28,14 +30,24 @@ export default [
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
   {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'import/no-default-export': 'error',
+    },
+  },
+  {
     settings: {
       react: {
         version: 'detect',
         runtime: 'automatic',
       },
+      'import/resolver': {
+        typescript: true,
+      },
     },
     plugins: {
       unicorn: pluginUnicorn,
+      import: pluginImport,
     },
     rules: {
       'react/react-in-jsx-scope': 'off',
@@ -56,6 +68,41 @@ export default [
         'error',
         {
           case: 'kebabCase',
+        },
+      ],
+      'import/prefer-default-export': 'off',
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+          pathGroups: [
+            {
+              pattern: '@/**',
+              group: 'internal',
+              position: 'after',
+            },
+          ],
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+        },
+      ],
+      'import/no-duplicates': 'error',
+      'import/no-unresolved': 'error',
+      'import/no-cycle': 'error',
+      'import/no-useless-path-segments': 'error',
+      'import/no-relative-packages': 'error',
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../*'],
+              message: 'Usage of relative parent imports is not allowed. Use aliases instead (e.g. @/ui/...).',
+            },
+          ],
         },
       ],
     },

@@ -1,9 +1,11 @@
-import { XMarkIcon } from '@heroicons/react/16/solid';
 import { useEffect, useRef, useState } from 'react';
-import { t } from '@utils/i18n';
+
+import { XMarkIcon } from '@heroicons/react/16/solid';
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
-import { Button } from '../elements/button';
-import { Input } from '../elements/input';
+import { t } from '@utils/i18n';
+
+import { Button } from '@/ui/components/elements/button';
+import { Input } from '@/ui/components/elements/input';
 
 interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   originalList: T[];
@@ -11,7 +13,7 @@ interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   filterKey: keyof T extends string ? keyof T : never;
 }
 
-function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
+export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
   originalList,
   onFilteredListChange,
   filterKey,
@@ -83,5 +85,3 @@ function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
     </header>
   );
 }
-
-export default ListHeader;

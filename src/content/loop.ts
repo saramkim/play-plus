@@ -6,6 +6,7 @@ import { createElement, createLoopIcon, createMarker, showToast } from '@utils/d
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { findCurrentSubtitleIndex } from '@utils/subtitle';
+
 import {
   getLoopButton,
   getLoopMarkerContainer,

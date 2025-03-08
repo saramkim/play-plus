@@ -1,4 +1,5 @@
 import { onStorageChange } from '@storage/index';
+
 import './content.css';
 import { initializeLoopSetting, onLoopStorageChange } from './loop';
 import { initializeMessageListener } from './message-handler';

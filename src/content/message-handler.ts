@@ -1,5 +1,6 @@
 import { getLocalSubtitle } from '@storage/subtitle';
 import { SET_SUBTITLE_ACTION, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
+import { t } from '@utils/i18n';
 import {
   FetchVideoMetadataMessage,
   MessageResponse,
@@ -7,11 +8,11 @@ import {
   PlayVideoMessage,
   SetSubtitleMessage,
 } from '@utils/message';
+
 import { setupLoopHandler } from './loop';
 import { getVideoElement, initializeElementStore, resetElementStore } from './store/element-store';
 import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitle-store';
 import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './subtitle';
-import { t } from '@utils/i18n';
 
 export function initializeMessageListener() {
   onMessage((message, sender, sendResponse) => {

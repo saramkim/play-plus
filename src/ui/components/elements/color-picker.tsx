@@ -3,7 +3,7 @@ interface ColorPickerProps {
   onChange: (value: string) => void;
 }
 
-function ColorPicker({ value, onChange }: ColorPickerProps) {
+export function ColorPicker({ value, onChange }: ColorPickerProps) {
   return (
     <div className='relative inline-block size-8'>
       <input
@@ -16,5 +16,3 @@ function ColorPicker({ value, onChange }: ColorPickerProps) {
     </div>
   );
 }
-
-export default ColorPicker;

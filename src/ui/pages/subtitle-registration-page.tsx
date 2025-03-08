@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+
 import { CheckIcon, PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
@@ -14,20 +16,20 @@ import {
 } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
-import { useRef, useState } from 'react';
+
+import { Input } from '@/ui/components/elements/input';
+import { MessagePopup } from '@/ui/components/elements/message-popup';
+import { SubtitleUploader, LANGUAGE_OPTIONS } from '@/ui/components/form/subtitle-uploader';
+import { ListHeader } from '@/ui/components/layout/list-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { usePopup } from '@/ui/contexts/popup-context';
+import { useClickOutside } from '@/ui/hooks/use-click-outside';
 import { useSubtitles } from '@/ui/hooks/use-subtitles';
-import { useTabInfo } from 'ui/hooks/useTabInfo';
-import MessagePopup from '../components/elements/message-popup';
-import SubtitleUploader, { LANGUAGE_OPTIONS } from '../components/form/subtitle-uploader';
-import ListHeader from '../components/layout/list-header';
-import { usePopup } from '../contexts/popup-context';
-import { useClickOutside } from '../hooks/use-click-outside';
-import { Input } from '../components/elements/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useTabInfo } from '@/ui/hooks/use-tab-info';
 
 const { STORAGE_KEY } = REGISTRATION;
 
-function SubtitleRegistrationPage() {
+export function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
   const { subtitles } = useSubtitles('registeredSubtitles');
@@ -188,5 +190,3 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
     </li>
   );
 }
-
-export default SubtitleRegistrationPage;

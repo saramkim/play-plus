@@ -1,16 +1,22 @@
 import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
-import { LEARNING_CONFIG } from '@storage/preset';
 import { clearStorage, setStorageAll } from '@storage/index';
+import { LEARNING_CONFIG } from '@storage/preset';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { usePopup } from '../../contexts/popup-context';
-import MessagePopup from '../elements/message-popup';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { Button } from '../elements/button';
+
+import { Button } from '@/ui/components/elements/button';
+import { MessagePopup } from '@/ui/components/elements/message-popup';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu';
+import { usePopup } from '@/ui/contexts/popup-context';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
-function MoreMenu() {
+export function MoreMenu() {
   const { showPopup, hidePopup } = usePopup();
   const options = [
     { label: t('reset_settings'), value: RESET_SETTINGS },
@@ -69,5 +75,3 @@ function MoreMenu() {
     </DropdownMenu>
   );
 }
-
-export default MoreMenu;

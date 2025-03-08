@@ -10,6 +10,7 @@ import {
 } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { findCurrentSubtitleIndex } from '@utils/subtitle';
+
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from './loop';
 import { saveSubtitleWithToast } from './save-subtitle';
 import { getSubtitleElement, getVideoElement } from './store/element-store';

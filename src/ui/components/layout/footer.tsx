@@ -1,7 +1,7 @@
 import { ModeToggle } from './mode-toggle';
-import MoreMenu from './more-menu';
+import { MoreMenu } from './more-menu';
 
-function Footer() {
+export function Footer() {
   return (
     <div className='flex justify-between items-center h-10 border-t px-2'>
       <div className='w-full'>
@@ -17,5 +17,3 @@ function Footer() {
     </div>
   );
 }
-
-export default Footer;

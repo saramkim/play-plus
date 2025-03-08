@@ -1,6 +1,8 @@
+import { useRef } from 'react';
+
 import { PAGE_NAME, PageName } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { useRef } from 'react';
+
 import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
 
 const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
@@ -16,7 +18,7 @@ interface HeaderProps {
   currentPage: PageName;
   navigate: (page: PageName) => void;
 }
-function Header({ pageList, currentPage, navigate }: HeaderProps) {
+export function Header({ pageList, currentPage, navigate }: HeaderProps) {
   const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
   const { scrollRef, eventHandlers, allowClick } = useDragScroll();
 
@@ -49,5 +51,3 @@ function Header({ pageList, currentPage, navigate }: HeaderProps) {
     </div>
   );
 }
-
-export default Header;

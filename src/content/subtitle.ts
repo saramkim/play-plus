@@ -10,6 +10,7 @@ import {
   findCurrentSubtitle,
   SubtitleData,
 } from '@utils/subtitle';
+
 import { getSubtitleElement, getVideoElement } from './store/element-store';
 import {
   getCustomSubtitleId,

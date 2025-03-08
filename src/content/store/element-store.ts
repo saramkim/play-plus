@@ -12,7 +12,9 @@ import {
 } from '@utils/constants';
 import { createElement, createLoopIcon, detectVideoElement } from '@utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@utils/subtitle';
-import { setupSubtitleSaveHandler } from '../save-subtitle';
+
+import { setupSubtitleSaveHandler } from '@/content/save-subtitle';
+
 import { getSubtitleSettings } from './subtitle-store';
 
 type ElementStore = {

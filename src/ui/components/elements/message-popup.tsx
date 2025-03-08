@@ -1,4 +1,5 @@
 import { t } from '@utils/i18n';
+
 import { Button } from './button';
 
 interface MessagePopupBase {
@@ -14,7 +15,7 @@ interface ConfirmPopupProps extends MessagePopupBase {
 }
 type MessagePopupProps = AlertPopupProps | ConfirmPopupProps;
 
-function MessagePopup(props: MessagePopupProps) {
+export function MessagePopup(props: MessagePopupProps) {
   const { message, type, hidePopup } = props;
   return (
     <div className='flex flex-col gap-3'>
@@ -38,5 +39,3 @@ function MessagePopup(props: MessagePopupProps) {
     </div>
   );
 }
-
-export default MessagePopup;

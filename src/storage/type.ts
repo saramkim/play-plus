@@ -1,5 +1,6 @@
 import { Language } from '@utils/constants';
 import { SubtitleLanguage } from '@utils/subtitle';
+
 import { SubtitleId } from './subtitle';
 
 export type SkipTimeUnit = 'seconds' | 'minutes' | 'subtitles';

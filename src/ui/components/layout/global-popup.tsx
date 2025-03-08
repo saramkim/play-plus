@@ -1,7 +1,7 @@
 import { XMarkIcon as XMarkIconSolid } from '@heroicons/react/16/solid';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/20/solid';
-import { usePopup } from '../../contexts/popup-context';
-import { PopupStatus } from '../../contexts/popup-context';
+
+import { usePopup, PopupStatus } from '@/ui/contexts/popup-context';
 import { cn } from '@/ui/lib/utils';
 
 const colorMap: Record<PopupStatus, string> = {
@@ -18,7 +18,7 @@ const iconMap: Record<PopupStatus, React.ElementType> = {
   confirm: QuestionMarkCircleIcon,
 };
 
-function GlobalPopup() {
+export function GlobalPopup() {
   const { popup, hidePopup, isOpen } = usePopup();
 
   if (!isOpen || !popup) return null;
@@ -48,5 +48,3 @@ function GlobalPopup() {
     </div>
   );
 }
-
-export default GlobalPopup;

@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+
 import { ArrowUpTrayIcon } from '@heroicons/react/20/solid';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { getLocalStorage, setLocalStorage } from '@storage/index';
@@ -5,12 +7,12 @@ import { setLocalSubtitle } from '@storage/subtitle';
 import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
-import { useRef, useState } from 'react';
-import { usePopup } from '../../contexts/popup-context';
-import MessagePopup from '../elements/message-popup';
-import { Button } from '../elements/button';
-import { Input } from '../elements/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
+import { Button } from '@/ui/components/elements/button';
+import { Input } from '@/ui/components/elements/input';
+import { MessagePopup } from '@/ui/components/elements/message-popup';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { usePopup } from '@/ui/contexts/popup-context';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -89,7 +91,7 @@ const getSubtitle = (file: File, content: string) => {
   return parseSubtitle[fileExtension](content);
 };
 
-const SubtitleUploader = () => {
+export function SubtitleUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>('');
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
@@ -193,6 +195,4 @@ const SubtitleUploader = () => {
       )}
     </div>
   );
-};
-
-export default SubtitleUploader;
+}

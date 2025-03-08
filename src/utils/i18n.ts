@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-restricted-imports */
 import messagesEn from '../../public/_locales/en/messages.json';
 import messagesKo from '../../public/_locales/ko/messages.json';
 

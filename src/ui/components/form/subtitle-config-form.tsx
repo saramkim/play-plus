@@ -1,17 +1,18 @@
-import useConfig from '../../hooks/use-config';
-import { Button } from '../elements/button';
-import ColorPicker from '../elements/color-picker';
-import NumberInput from '../elements/number-input';
+import { EqualsIcon } from '@heroicons/react/20/solid';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { Switch } from '../ui/switch';
-import { Toggle } from '../ui/toggle';
-import { EqualsIcon } from '@heroicons/react/20/solid';
+
+import { Button } from '@/ui/components/elements/button';
+import { ColorPicker } from '@/ui/components/elements/color-picker';
+import { NumberInput } from '@/ui/components/elements/number-input';
+import { Switch } from '@/ui/components/ui/switch';
+import { Toggle } from '@/ui/components/ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/ui/components/ui/toggle-group';
+import { useConfig } from '@/ui/hooks/use-config';
 
 type SubtitleConfigFormProps = typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY;
 
-function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFormProps) {
+export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFormProps) {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
 
   return (
@@ -123,5 +124,3 @@ function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFo
     </section>
   );
 }
-
-export default SubtitleConfigForm;

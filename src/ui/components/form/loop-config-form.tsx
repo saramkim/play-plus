@@ -1,13 +1,14 @@
-import useConfig from '../../hooks/use-config';
-import { Button } from '../elements/button';
-import KeydownInput from '../elements/keydown-input';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { Switch } from '../ui/switch';
+
+import { Button } from '@/ui/components/elements/button';
+import { KeydownInput } from '@/ui/components/elements/keydown-input';
+import { Switch } from '@/ui/components/ui/switch';
+import { useConfig } from '@/ui/hooks/use-config';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 
-function LoopConfigForm() {
+export function LoopConfigForm() {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
 
   return (
@@ -50,5 +51,3 @@ function LoopConfigForm() {
     </section>
   );
 }
-
-export default LoopConfigForm;

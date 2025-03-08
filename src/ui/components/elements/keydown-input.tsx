@@ -1,5 +1,6 @@
 import { XMarkIcon } from '@heroicons/react/16/solid';
 import { t } from '@utils/i18n';
+
 import { Input } from './input';
 
 interface KeydownInputProps {
@@ -7,7 +8,7 @@ interface KeydownInputProps {
   onChange: (value: string) => void;
 }
 
-const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
+export const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
   return (
     <div className='relative w-full group'>
       <Input value={value} onKeyDown={({ code }) => code !== value && onChange(code)} readOnly />
@@ -29,5 +30,3 @@ const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
     </div>
   );
 };
-
-export default KeydownInput;

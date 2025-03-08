@@ -1,17 +1,19 @@
+import { useState } from 'react';
+
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL, REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
-import { useState } from 'react';
-import ListHeader from '../components/layout/list-header';
-import { useSubtitles } from '@/ui/hooks/use-subtitles';
 import { toast } from 'sonner';
+
+import { ListHeader } from '@/ui/components/layout/list-header';
+import { useSubtitles } from '@/ui/hooks/use-subtitles';
 
 const { STORAGE_KEY } = REVIEW;
 
-function ReviewPage() {
+export function ReviewPage() {
   const [filteredSubtitles, setFilteredSubtitles] = useState<SavedSubtitle[]>([]);
   const { subtitles } = useSubtitles('savedSubtitles');
 
@@ -109,5 +111,3 @@ function CopyButton({ content }: { content: string }) {
     </button>
   );
 }
-
-export default ReviewPage;

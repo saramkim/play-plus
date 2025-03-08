@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
+
 import { getLocalStorage, onLocalStorageChange } from '@storage/index';
 import { LocalStorageSchema } from '@storage/type';
-import { useEffect, useState } from 'react';
 
 type SubtitleStorageKey = 'savedSubtitles' | 'registeredSubtitles';
 

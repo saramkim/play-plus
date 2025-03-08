@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
+
 import { getSessionStorage, onSessionStorageChange } from '@storage/index';
 import { getTabInfo, onTabInfoChange, TabInfo } from '@storage/tab';
-import { useEffect, useState } from 'react';
 
 export function useTabInfo() {
   const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);

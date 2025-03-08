@@ -1,5 +1,6 @@
 import { t } from '@utils/i18n';
-import { Button } from '../elements/button';
+
+import { Button } from '@/ui/components/elements/button';
 
 type OnboardingState = {
   isOptimizing: boolean;
@@ -8,7 +9,7 @@ interface OnboardingContentProps {
   handleOnboardingComplete: (state: OnboardingState) => void;
 }
 
-function OnboardingContent({ handleOnboardingComplete }: OnboardingContentProps) {
+export function OnboardingContent({ handleOnboardingComplete }: OnboardingContentProps) {
   return (
     <div className='flex flex-col gap-3'>
       <div className='flex flex-col gap-2'>
@@ -28,5 +29,3 @@ function OnboardingContent({ handleOnboardingComplete }: OnboardingContentProps)
     </div>
   );
 }
-
-export default OnboardingContent;

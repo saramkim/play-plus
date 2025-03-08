@@ -1,15 +1,16 @@
-import useConfig from '../../hooks/use-config';
-import { Button } from '../elements/button';
-import KeydownInput from '../elements/keydown-input';
-import NumberInput from '../elements/number-input';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { Switch } from '../ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
+import { Button } from '@/ui/components/elements/button';
+import { KeydownInput } from '@/ui/components/elements/keydown-input';
+import { NumberInput } from '@/ui/components/elements/number-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { Switch } from '@/ui/components/ui/switch';
+import { useConfig } from '@/ui/hooks/use-config';
 
 type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
 
-function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
+export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
   const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
 
   return (
@@ -85,5 +86,3 @@ function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfig
     </section>
   );
 }
-
-export default VideoSkipConfigForm;
