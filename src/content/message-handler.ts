@@ -9,10 +9,10 @@ import {
   SetSubtitleMessage,
 } from '@utils/message';
 
-import { setupLoopHandler } from './loop';
+import { setupLoopHandler } from './features/loop/loop';
+import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
 import { getVideoElement, initializeElementStore, resetElementStore } from './store/element-store';
 import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitle-store';
-import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './subtitle';
 
 export function initializeMessageListener() {
   onMessage((message, sender, sendResponse) => {

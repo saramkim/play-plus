@@ -1,8 +1,8 @@
 import { SETTINGS } from '@utils/constants';
 
-import { LoopConfigForm } from '@/ui/components/form/loop-config-form';
-import { ShortcutsConfigForm } from '@/ui/components/form/shortcuts-config-form';
-import { VideoSkipConfigForm } from '@/ui/components/form/video-skip-config-form';
+import { LoopConfigForm } from '@/ui/features/loop/loop-config-form';
+import { ShortcutsConfigForm } from '@/ui/features/video/shortcuts-config-form';
+import { VideoSkipConfigForm } from '@/ui/features/video/video-skip-config-form';
 
 const { VIDEO_SKIP, SUB_VIDEO_SKIP } = SETTINGS;
 

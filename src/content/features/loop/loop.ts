@@ -2,10 +2,8 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
-import { createElement, createLoopIcon, createMarker, showToast } from '@utils/dom';
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { findCurrentSubtitleIndex } from '@utils/subtitle';
 
 import {
   getLoopButton,
@@ -13,8 +11,10 @@ import {
   getLoopStatusContainer,
   getVideoElement,
   resetLoopStatus,
-} from './store/element-store';
-import { getPrimarySubtitleAndDelay } from './store/subtitle-store';
+} from '@/content/store/element-store';
+import { getPrimarySubtitleAndDelay } from '@/content/store/subtitle-store';
+import { createElement, createLoopIcon, createMarker, showToast } from '@/content/utils/dom';
+import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';
@@ -52,13 +52,13 @@ const state: State = {
 const markerState: Record<string, MarkerState> = {
   [START_MARKER_ID]: {
     marker: createMarker(START_MARKER_ID, 'S'),
-    status: createElement('loop-status-start'),
+    status: document.createElement('div'),
     isDragging: false,
     time: 0,
   },
   [END_MARKER_ID]: {
     marker: createMarker(END_MARKER_ID, 'E'),
-    status: createElement('loop-status-end'),
+    status: document.createElement('div'),
     isDragging: false,
     time: LOOP_CONSTANTS.DEFAULT_LOOP_TIME,
   },

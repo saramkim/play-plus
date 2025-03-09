@@ -1,21 +1,18 @@
-import {
-  LOOP_BUTTON_ID,
-  LOOP_MARKER_CONTAINER_ID,
-  LOOP_STATUS_CONTAINER_ID,
-  PRIMARY_SUBTITLE_ID,
-  SECONDARY_SUBTITLE_ID,
-  SETTINGS,
-  SUBTITLE_CONTAINER_ID,
-  SubtitleSettingStorageKey,
-  TOAST_CONTAINER_ID,
-  TRACK_DISPLAY_CONTAINER_CLASS_NAME,
-} from '@utils/constants';
-import { createElement, createLoopIcon, detectVideoElement } from '@utils/dom';
-import { applySubtitleStyles, createSubtitleElement } from '@utils/subtitle';
+import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
-import { setupSubtitleSaveHandler } from '@/content/save-subtitle';
+import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
+import { createElement, createLoopIcon, detectVideoElement } from '@/content/utils/dom';
+import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
 import { getSubtitleSettings } from './subtitle-store';
+
+const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
+
+const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
+const TOAST_CONTAINER_ID = 'pp-toast-container';
+const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
+const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
+const LOOP_BUTTON_ID = 'pp-loop-button';
 
 type ElementStore = {
   videoElement: HTMLVideoElement | null;
@@ -32,8 +29,8 @@ type ElementStore = {
 const elementStore: ElementStore = {
   videoElement: null,
   subtitleContainer: createElement(SUBTITLE_CONTAINER_ID),
-  primarySubtitle: createSubtitleElement(PRIMARY_SUBTITLE_ID),
-  secondarySubtitle: createSubtitleElement(SECONDARY_SUBTITLE_ID),
+  primarySubtitle: createSubtitleElement(),
+  secondarySubtitle: createSubtitleElement(),
   toastContainer: createElement(TOAST_CONTAINER_ID),
   loopMarkerContainer: createElement(LOOP_MARKER_CONTAINER_ID),
   loopStatusContainer: createElement(LOOP_STATUS_CONTAINER_ID),
@@ -89,6 +86,10 @@ export function getLoopStatusContainer() {
 
 export function getLoopButton() {
   return elementStore.loopButton;
+}
+
+export function getToastContainer() {
+  return elementStore.toastContainer;
 }
 
 export function resetLoopStatus() {

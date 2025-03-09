@@ -9,12 +9,12 @@ import {
   VideoSkipConfig,
 } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
-import { findCurrentSubtitleIndex } from '@utils/subtitle';
 
-import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from './loop';
-import { saveSubtitleWithToast } from './save-subtitle';
-import { getSubtitleElement, getVideoElement } from './store/element-store';
-import { getPrimarySubtitleAndDelay } from './store/subtitle-store';
+import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
+import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
+import { getSubtitleElement, getVideoElement } from '@/content/store/element-store';
+import { getPrimarySubtitleAndDelay } from '@/content/store/subtitle-store';
+import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 

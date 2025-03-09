@@ -17,14 +17,14 @@ import {
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 
-import { Input } from '@/ui/components/elements/input';
-import { MessagePopup } from '@/ui/components/elements/message-popup';
-import { SubtitleUploader, LANGUAGE_OPTIONS } from '@/ui/components/form/subtitle-uploader';
-import { ListHeader } from '@/ui/components/layout/list-header';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { Input } from '@/ui/components/input';
+import { MessagePopup } from '@/ui/components/message-popup';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { usePopup } from '@/ui/contexts/popup-context';
+import { ListHeader } from '@/ui/features/subtitle/list-header';
+import { SubtitleUploader, LANGUAGE_OPTIONS } from '@/ui/features/subtitle/subtitle-uploader';
+import { useSubtitles } from '@/ui/features/subtitle/use-subtitles';
 import { useClickOutside } from '@/ui/hooks/use-click-outside';
-import { useSubtitles } from '@/ui/hooks/use-subtitles';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
 
 const { STORAGE_KEY } = REGISTRATION;

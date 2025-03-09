@@ -8,8 +8,8 @@ import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 import { toast } from 'sonner';
 
-import { ListHeader } from '@/ui/components/layout/list-header';
-import { useSubtitles } from '@/ui/hooks/use-subtitles';
+import { ListHeader } from '@/ui/features/subtitle/list-header';
+import { useSubtitles } from '@/ui/features/subtitle/use-subtitles';
 
 const { STORAGE_KEY } = REVIEW;
 

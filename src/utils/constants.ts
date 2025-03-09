@@ -1,17 +1,6 @@
 export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
 export const COUPANG_PLAY_PLAY_URL = `${COUPANG_PLAY_BASE_URL}/play`;
 
-export const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
-
-export const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
-export const PRIMARY_SUBTITLE_ID = 'pp-primary-subtitle';
-export const SECONDARY_SUBTITLE_ID = 'pp-secondary-subtitle';
-export const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
-export const TOAST_CONTAINER_ID = 'pp-toast-container';
-export const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
-export const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
-export const LOOP_BUTTON_ID = 'pp-loop-button';
-
 export const LANGUAGES = {
   en: 'english',
   ko: 'korean',

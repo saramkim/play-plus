@@ -1,4 +1,9 @@
-import { SubtitleData } from './subtitle';
+export type SubtitleData = {
+  start: number;
+  end: number;
+  text: string;
+  settings?: string[];
+};
 
 export const parseVTT = (data: string) => {
   if (!data || !data.trim()) return [];

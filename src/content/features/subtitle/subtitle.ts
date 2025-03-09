@@ -2,23 +2,22 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
-import { parseVTT } from '@utils/parse';
-import {
-  applySubtitleStyles,
-  arrayToHeadersObject,
-  extractSubtitleApiInfoFromResponse,
-  findCurrentSubtitle,
-  SubtitleData,
-} from '@utils/subtitle';
+import { parseVTT, SubtitleData } from '@utils/parse';
 
-import { getSubtitleElement, getVideoElement } from './store/element-store';
+import { getSubtitleElement, getVideoElement } from '@/content/store/element-store';
 import {
   getCustomSubtitleId,
   getSubtitleCache,
   getSubtitleSettings,
   setSubtitleCache,
   setSubtitleSetting,
-} from './store/subtitle-store';
+} from '@/content/store/subtitle-store';
+import {
+  applySubtitleStyles,
+  arrayToHeadersObject,
+  extractSubtitleApiInfoFromResponse,
+  findCurrentSubtitle,
+} from '@/content/utils/subtitle';
 
 const { SUBTITLES } = SETTINGS;
 

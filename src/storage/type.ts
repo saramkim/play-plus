@@ -1,5 +1,4 @@
 import { Language } from '@utils/constants';
-import { SubtitleLanguage } from '@utils/subtitle';
 
 import { SubtitleId } from './subtitle';
 
@@ -13,6 +12,7 @@ export type VideoSkipConfig = {
   fallbackTime: number;
   fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>;
 };
+export type SubtitleLanguage = 'en' | 'ko';
 export type SubtitleConfig = {
   enabled: boolean;
   language: SubtitleLanguage;

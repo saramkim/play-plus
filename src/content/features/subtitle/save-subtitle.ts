@@ -1,7 +1,8 @@
 import { getLocalStorage, setLocalStorage } from '@storage/index';
-import { REVIEW, SUBTITLE_TOOLTIP_ID } from '@utils/constants';
-import { createTooltip, showToast } from '@utils/dom';
+import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
+
+import { createTooltip, showToast } from '@/content/utils/dom';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
   const tooltip = getTooltip();
@@ -38,6 +39,8 @@ export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
     showToast(t('error_save_subtitle'), (error as Error).message, 'error');
   }
 }
+
+const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
 
 function getTooltip(): HTMLElement {
   const existingTooltip = document.getElementById(SUBTITLE_TOOLTIP_ID);

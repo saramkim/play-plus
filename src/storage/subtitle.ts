@@ -1,5 +1,5 @@
 import { REGISTRATION } from '@utils/constants';
-import { SubtitleData } from '@utils/subtitle';
+import { SubtitleData } from '@utils/parse';
 
 type Uuid = `${string}-${string}-${string}-${string}-${string}`;
 export type SubtitleId = `${typeof REGISTRATION.ID_PREFIX}-${Uuid}`;

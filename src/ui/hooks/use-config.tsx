@@ -5,7 +5,7 @@ import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { StorageKey, StorageSchema } from '@storage/type';
 import { t } from '@utils/i18n';
 
-import { MessagePopup } from '@/ui/components/elements/message-popup';
+import { MessagePopup } from '@/ui/components/message-popup';
 import { usePopup } from '@/ui/contexts/popup-context';
 
 export function useConfig<K extends StorageKey>(key: K) {

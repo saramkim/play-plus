@@ -4,14 +4,14 @@ import { LEARNING_CONFIG } from '@storage/preset';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { Button } from '@/ui/components/elements/button';
-import { MessagePopup } from '@/ui/components/elements/message-popup';
+import { Button } from '@/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu';
+} from '@/ui/components/dropdown-menu';
+import { MessagePopup } from '@/ui/components/message-popup';
 import { usePopup } from '@/ui/contexts/popup-context';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;

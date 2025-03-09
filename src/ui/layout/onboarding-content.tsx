@@ -1,6 +1,6 @@
 import { t } from '@utils/i18n';
 
-import { Button } from '@/ui/components/elements/button';
+import { Button } from '@/ui/components/button';
 
 type OnboardingState = {
   isOptimizing: boolean;

@@ -1,11 +1,11 @@
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { Button } from '@/ui/components/elements/button';
-import { KeydownInput } from '@/ui/components/elements/keydown-input';
-import { NumberInput } from '@/ui/components/elements/number-input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
-import { Switch } from '@/ui/components/ui/switch';
+import { Button } from '@/ui/components/button';
+import { KeydownInput } from '@/ui/components/keydown-input';
+import { NumberInput } from '@/ui/components/number-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
+import { Switch } from '@/ui/components/switch';
 import { useConfig } from '@/ui/hooks/use-config';
 
 type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;

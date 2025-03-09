@@ -1,10 +1,10 @@
 import { onStorageChange } from '@storage/index';
 
 import './content.css';
-import { initializeLoopSetting, onLoopStorageChange } from './loop';
+import { initializeLoopSetting, onLoopStorageChange } from './features/loop/loop';
+import { initializeSubtitleSync, onSubtitleStorageChange } from './features/subtitle/subtitle';
+import { initializeVideoControlSetting, onVideoControlStorageChange } from './features/video/video-control';
 import { initializeMessageListener } from './message-handler';
-import { initializeSubtitleSync, onSubtitleStorageChange } from './subtitle';
-import { initializeVideoControlSetting, onVideoControlStorageChange } from './video-control';
 
 async function init() {
   initializeMessageListener();

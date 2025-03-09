@@ -4,8 +4,8 @@ import { XMarkIcon } from '@heroicons/react/16/solid';
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { t } from '@utils/i18n';
 
-import { Button } from '@/ui/components/elements/button';
-import { Input } from '@/ui/components/elements/input';
+import { Button } from '@/ui/components/button';
+import { Input } from '@/ui/components/input';
 
 interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   originalList: T[];

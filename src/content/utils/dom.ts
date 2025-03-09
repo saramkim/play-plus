@@ -1,4 +1,4 @@
-import { TOAST_CONTAINER_ID } from './constants';
+import { getToastContainer } from '@/content/store/element-store';
 
 export const detectVideoElement = (): Promise<HTMLVideoElement> => {
   return new Promise((resolve) => {
@@ -54,13 +54,7 @@ export const createElement = (id: string, tagName: string = 'div') => {
 };
 
 export function showToast(title: string, message: string, type: 'success' | 'error' | 'info') {
-  const container = document.getElementById(TOAST_CONTAINER_ID);
-
-  if (!container) {
-    console.error('Toast container not found');
-    return;
-  }
-
+  const container = getToastContainer();
   const toast = document.createElement('div');
   const titleElement = document.createElement('span');
   const messageElement = document.createElement('span');

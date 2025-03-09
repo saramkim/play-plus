@@ -8,10 +8,10 @@ import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION 
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 
-import { Button } from '@/ui/components/elements/button';
-import { Input } from '@/ui/components/elements/input';
-import { MessagePopup } from '@/ui/components/elements/message-popup';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select';
+import { Button } from '@/ui/components/button';
+import { Input } from '@/ui/components/input';
+import { MessagePopup } from '@/ui/components/message-popup';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { usePopup } from '@/ui/contexts/popup-context';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({

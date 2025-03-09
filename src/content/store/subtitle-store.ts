@@ -1,8 +1,8 @@
 import { DEFAULT_CONFIG } from '@storage/default';
 import { SubtitleId } from '@storage/subtitle';
-import { SubtitleConfig } from '@storage/type';
+import { SubtitleConfig, SubtitleLanguage } from '@storage/type';
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
-import { SubtitleData, SubtitleLanguage } from '@utils/subtitle';
+import { SubtitleData } from '@utils/parse';
 
 type SubtitleCacheKey = SubtitleLanguage | SubtitleId;
 

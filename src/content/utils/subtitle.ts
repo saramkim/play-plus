@@ -1,6 +1,7 @@
-import { SubtitleConfig } from '@storage/type';
+import { SubtitleConfig, SubtitleLanguage } from '@storage/type';
+import { SubtitleData } from '@utils/parse';
 
-import { applyStyles, createElement } from './dom';
+import { applyStyles } from '@/content/utils/dom';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
@@ -59,8 +60,8 @@ export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime:
   return -1; // 시간 범위를 벗어난 경우
 };
 
-export const createSubtitleElement = (id: string) => {
-  const subtitle = createElement(id, 'p');
+export const createSubtitleElement = () => {
+  const subtitle = document.createElement('p');
 
   applyStyles(subtitle, {
     lineHeight: '1.5em',
@@ -98,88 +99,64 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfi
   });
 };
 
-export type SubtitleLanguage = 'en' | 'ko';
-
-export type SubtitleApiInfo = {
-  lang: SubtitleLanguage;
-  url: string;
-};
-
-export type SubtitleData = {
-  start: number;
-  end: number;
-  text: string;
-  settings?: string[];
-};
-
-export type ApiResponse = {
+type ApiResponse = {
   success: boolean;
-  data: Data;
-  meta: Meta;
+  data: {
+    raw: {
+      account_id: string;
+      created_at: string;
+      cue_points: {
+        force_stop: boolean;
+        id: string;
+        metadata: string;
+        name: string;
+        time: number;
+        type: string;
+      }[];
+      duration: number;
+      id: string;
+      published_at: string;
+      sources: {
+        key_systems: {
+          'com.apple.fps.1_0'?: {
+            certificate_url?: string;
+            key_request_url: string;
+            license_url?: string;
+          };
+          'com.widevine.alpha'?: {
+            certificate_url?: string;
+            key_request_url: string;
+            license_url?: string;
+          };
+        };
+        src: string;
+        type: string;
+      }[];
+      text_tracks: {
+        account_id: string | null;
+        asset_id: string | null;
+        bandwidth: number | null;
+        default: boolean | null;
+        height: number | null;
+        id: string | null;
+        kind: string;
+        label: string;
+        mime_type: string;
+        sources: { src: string }[];
+        src: string;
+        srclang: SubtitleLanguage | null;
+        width: number | null;
+      }[];
+      updated_at: string;
+    };
+    preferredDrm: string | null;
+    streamId: string;
+  };
+  meta: {
+    now: number;
+    requestId: string;
+  };
   'x-payload-signature': string;
   'body-signature': string;
   'client-ip': string;
-};
-
-type CuePoint = {
-  force_stop: boolean;
-  id: string;
-  metadata: string;
-  name: string;
-  time: number;
-  type: string;
-};
-
-type KeySystem = {
-  certificate_url?: string;
-  key_request_url: string;
-  license_url?: string;
-};
-
-type Source = {
-  key_systems: {
-    'com.apple.fps.1_0'?: KeySystem;
-    'com.widevine.alpha'?: KeySystem;
-  };
-  src: string;
-  type: string;
-};
-
-type TextTrack = {
-  account_id: string | null;
-  asset_id: string | null;
-  bandwidth: number | null;
-  default: boolean | null;
-  height: number | null;
-  id: string | null;
-  kind: string;
-  label: string;
-  mime_type: string;
-  sources: { src: string }[];
-  src: string;
-  srclang: SubtitleLanguage | null;
-  width: number | null;
-};
-
-type RawData = {
-  account_id: string;
-  created_at: string;
-  cue_points: CuePoint[];
-  duration: number;
-  id: string;
-  published_at: string;
-  sources: Source[];
-  text_tracks: TextTrack[];
-  updated_at: string;
-};
-
-type Data = {
-  raw: RawData;
-  preferredDrm: string | null;
-  streamId: string;
-};
-
-type Meta = {
-  now: number;
-  requestId: string;
 };

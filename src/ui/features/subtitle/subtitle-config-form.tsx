@@ -2,12 +2,12 @@ import { EqualsIcon } from '@heroicons/react/20/solid';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { Button } from '@/ui/components/elements/button';
-import { ColorPicker } from '@/ui/components/elements/color-picker';
-import { NumberInput } from '@/ui/components/elements/number-input';
-import { Switch } from '@/ui/components/ui/switch';
-import { Toggle } from '@/ui/components/ui/toggle';
-import { ToggleGroup, ToggleGroupItem } from '@/ui/components/ui/toggle-group';
+import { Button } from '@/ui/components/button';
+import { ColorPicker } from '@/ui/components/color-picker';
+import { NumberInput } from '@/ui/components/number-input';
+import { Switch } from '@/ui/components/switch';
+import { Toggle } from '@/ui/components/toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/ui/components/toggle-group';
 import { useConfig } from '@/ui/hooks/use-config';
 
 type SubtitleConfigFormProps = typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY;
