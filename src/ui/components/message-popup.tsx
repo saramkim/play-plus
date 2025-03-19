@@ -19,15 +19,15 @@ export function MessagePopup(props: MessagePopupProps) {
   const { message, type, hidePopup } = props;
   return (
     <div className='flex flex-col gap-3'>
-      <p className='whitespace-pre-line'>{message}</p>
-
-      <div className='flex gap-2 w-full justify-end'>
+      <p className='whitespace-pre-line text-muted-foreground'>{message}</p>
+      <div className='flex gap-1.5 w-full justify-end'>
         {type === 'confirm' && (
-          <Button variant='outline' onClick={hidePopup}>
+          <Button variant='outline' size='sm' onClick={hidePopup}>
             {t('cancel')}
           </Button>
         )}
         <Button
+          size='sm'
           onClick={() => {
             if (type === 'confirm') props.onConfirm();
             hidePopup();

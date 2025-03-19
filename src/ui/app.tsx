@@ -50,8 +50,6 @@ export function App() {
           }}
         />
       ),
-      status: 'info',
-      preventOutsideClick: true,
     });
   }, []);
 

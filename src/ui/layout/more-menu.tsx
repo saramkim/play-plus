@@ -34,7 +34,6 @@ export function MoreMenu() {
           hidePopup={hidePopup}
         />
       ),
-      status: 'confirm',
     });
   };
 
@@ -49,7 +48,6 @@ export function MoreMenu() {
           hidePopup={hidePopup}
         />
       ),
-      status: 'confirm',
     });
   };
 

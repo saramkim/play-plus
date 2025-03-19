@@ -50,7 +50,6 @@ export function useConfig<K extends StorageKey>(key: K) {
       showPopup({
         title: t('error'),
         content: <MessagePopup message={response.error.message} type='alert' hidePopup={hidePopup} />,
-        status: 'error',
       });
     }
   };

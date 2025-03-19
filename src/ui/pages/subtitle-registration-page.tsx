@@ -50,7 +50,6 @@ export function SubtitleRegistrationPage() {
           hidePopup={hidePopup}
         />
       ),
-      status: 'confirm',
     });
   };
 
@@ -128,7 +127,6 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       showPopup({
         title: t('error'),
         content: <MessagePopup message={response.message} type='alert' hidePopup={hidePopup} />,
-        status: 'error',
       });
     }
   };

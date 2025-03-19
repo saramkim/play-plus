@@ -108,7 +108,6 @@ export function SubtitleUploader() {
       showPopup({
         title: t('error'),
         content: <MessagePopup message={message} type='alert' hidePopup={hidePopup} />,
-        status: 'error',
       });
     }
   };

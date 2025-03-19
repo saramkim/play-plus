@@ -1,49 +1,49 @@
+import { useEffect } from 'react';
+
 import { XMarkIcon as XMarkIconSolid } from '@heroicons/react/16/solid';
-import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/20/solid';
 
-import { usePopup, PopupStatus } from '@/ui/contexts/popup-context';
+import { usePopup } from '@/ui/contexts/popup-context';
 import { cn } from '@/ui/lib/utils';
-
-const colorMap: Record<PopupStatus, string> = {
-  success: 'text-primary',
-  error: 'text-destructive',
-  info: '',
-  confirm: 'text-amber-500',
-};
-
-const iconMap: Record<PopupStatus, React.ElementType> = {
-  success: CheckCircleIcon,
-  error: XCircleIcon,
-  info: InformationCircleIcon,
-  confirm: QuestionMarkCircleIcon,
-};
 
 export function GlobalPopup() {
   const { popup, hidePopup, isOpen } = usePopup();
 
   if (!isOpen || !popup) return null;
 
-  const { title, content, status, preventOutsideClick } = popup;
+  const { title, content } = popup;
 
-  const Icon = status !== undefined ? iconMap[status] : null;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') hidePopup();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div
-      className='fixed inset-0 flex justify-center items-center bg-foreground/50 z-50'
-      onClick={preventOutsideClick ? undefined : hidePopup}
+      className={cn(
+        'fixed inset-0 flex justify-center items-center bg-black/50 z-50',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
+      )}
+      data-state={isOpen ? 'open' : 'closed'}
     >
       <div
-        className='relative bg-background rounded-md shadow-md p-4 min-w-[220px] mx-4'
+        className={cn(
+          'relative bg-background rounded-lg shadow-lg p-4 mx-4 w-full border duration-200 max-w-lg',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'
+        )}
         onClick={(e) => e.stopPropagation()}
+        data-state={isOpen ? 'open' : 'closed'}
       >
-        <button className='absolute top-2 right-2 text-gray-500' onClick={hidePopup}>
+        <div className='flex flex-col gap-2'>
+          <h2 className='text-[15px] font-bold'>{title}</h2>
+          <div>{content}</div>
+        </div>
+
+        <button className='absolute top-2 right-2 icon-button cursor-default' onClick={hidePopup}>
           <XMarkIconSolid className='size-4' />
         </button>
-        <div className='flex items-center gap-1 mb-2'>
-          {Icon && <Icon className={cn('size-5', colorMap[status!])} />}
-          <h2 className='text-[15px] font-medium'>{title}</h2>
-        </div>
-        <div>{content}</div>
       </div>
     </div>
   );
