@@ -1,62 +1,23 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { CheckIcon, PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { setLocalStorage } from '@storage/index';
-import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
-import { TabInfo, updateTabInfo } from '@storage/tab';
+import { PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { SubtitleId } from '@storage/subtitle';
+import { TabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
-import {
-  COUPANG_PLAY_PLAY_URL,
-  Language,
-  LANGUAGES,
-  REGISTRATION,
-  SET_SUBTITLE_ACTION,
-  SET_SUBTITLE_STORAGE_KEY_MAP,
-  SetSubtitleAction,
-} from '@utils/constants';
+import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { sendMessage } from '@utils/message';
 
-import { Input } from '@/ui/components/input';
-import { MessagePopup } from '@/ui/components/message-popup';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
-import { usePopup } from '@/ui/contexts/popup-context';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
-import { SubtitleUploader, LANGUAGE_OPTIONS } from '@/ui/features/subtitle/subtitle-uploader';
-import { useSubtitles } from '@/ui/features/subtitle/use-subtitles';
-import { useClickOutside } from '@/ui/hooks/use-click-outside';
+import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
+import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
+import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
+import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
-
-const { STORAGE_KEY } = REGISTRATION;
 
 export function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { subtitles } = useSubtitles('registeredSubtitles');
-  const { showPopup, hidePopup } = usePopup();
-
-  const deleteSubtitle = (id: SubtitleId) => {
-    showPopup({
-      title: t('delete'),
-      content: (
-        <MessagePopup
-          type='confirm'
-          message={t('confirm_delete')}
-          onConfirm={() => {
-            const filtered = subtitles.filter((v) => v.id !== id);
-            setLocalStorage(STORAGE_KEY, filtered);
-            removeLocalSubtitle(id);
-          }}
-          hidePopup={hidePopup}
-        />
-      ),
-    });
-  };
-
-  const editSubtitle = (id: string, title: string, language: Language) => {
-    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, title, language } : v));
-    setLocalStorage(STORAGE_KEY, newSubtitles);
-  };
+  const { subtitles, editSubtitle, deleteSubtitle } = useRegisteredSubtitles();
 
   return (
     <div className='flex flex-col h-full p-4'>
@@ -98,61 +59,22 @@ interface SubtitleItemProps extends SubtitleMetadata {
 
 function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDelete, onEdit }: SubtitleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-  const [editedLanguage, setEditedLanguage] = useState(language);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const selectRef = useRef<HTMLDivElement>(null);
-  const { showPopup, hidePopup } = usePopup();
+  const { useAsSubtitle, isAvailable } = useSubtitleSettings(activeTab);
 
-  const available = activeTab?.url?.startsWith(COUPANG_PLAY_PLAY_URL);
   const isPrimarySubtitle = tabInfo?.primarySubtitle === id;
   const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
 
-  useClickOutside([containerRef, selectRef], () => setIsEditing(false));
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onEdit(id, editedTitle, editedLanguage);
-    setIsEditing(false);
-  };
-
-  const setSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null) => {
-    const tabId = activeTab?.id;
-    if (!tabId) return;
-
-    const response = await sendMessage(action, { tabId, subtitleId });
-    if (response.success) {
-      updateTabInfo(tabId, { [SET_SUBTITLE_STORAGE_KEY_MAP[action]]: subtitleId });
-    } else {
-      showPopup({
-        title: t('error'),
-        content: <MessagePopup message={response.message} type='alert' hidePopup={hidePopup} />,
-      });
-    }
-  };
-
   return (
     <li key={id} className='flex flex-col gap-2 py-2 border-b'>
-      <div ref={containerRef}>
+      <div>
         {isEditing ? (
-          <form className='flex items-center gap-1' onSubmit={handleSubmit}>
-            <Select value={editedLanguage} onValueChange={(value) => setEditedLanguage(value as Language)}>
-              <SelectTrigger className='w-fit'>
-                <SelectValue placeholder={t('language')} />
-              </SelectTrigger>
-              <SelectContent ref={selectRef}>
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
-            <button type='submit' className='icon-button'>
-              <CheckIcon className='size-5' />
-            </button>
-          </form>
+          <SubtitleEditForm
+            id={id}
+            initialTitle={title}
+            initialLanguage={language}
+            onEdit={onEdit}
+            closeEditMode={() => setIsEditing(false)}
+          />
         ) : (
           <div className='flex items-center gap-2 group w-fit flex-wrap'>
             <span className='text-[13px] text-gray-500'>{t(LANGUAGES[language])}</span>
@@ -167,17 +89,20 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
         <div className='flex items-center gap-1'>
           <button
             className={`icon-button ${isPrimarySubtitle ? 'text-primary!' : ''}`}
-            disabled={!available}
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
+            disabled={!isAvailable}
+            onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
-            <LinkIcon title={available ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
+            <LinkIcon title={isAvailable ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
           </button>
           <button
             className={`icon-button ${isSecondarySubtitle ? 'text-primary!' : ''}`}
-            disabled={!available}
-            onClick={() => setSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
+            disabled={!isAvailable}
+            onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >
-            <LinkIcon title={available ? t('secondary_subtitle') : t('available_on_coupang_play')} className='size-5' />
+            <LinkIcon
+              title={isAvailable ? t('secondary_subtitle') : t('available_on_coupang_play')}
+              className='size-5'
+            />
           </button>
           <button className='icon-button' onClick={() => onDelete(id)}>
             <TrashIcon title={t('delete')} className='size-5' />

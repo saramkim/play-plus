@@ -3,16 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { StorageKey, StorageSchema } from '@storage/type';
-import { t } from '@utils/i18n';
-
-import { MessagePopup } from '@/ui/components/message-popup';
-import { usePopup } from '@/ui/contexts/popup-context';
+import { toast } from 'sonner';
 
 export function useConfig<K extends StorageKey>(key: K) {
   const [state, setState] = useState<StorageSchema[K]>(DEFAULT_CONFIG[key]);
   const [hasChanged, setHasChanged] = useState(false);
   const originalState = useRef<StorageSchema[K]>(DEFAULT_CONFIG[key]);
-  const { showPopup, hidePopup } = usePopup();
 
   useEffect(() => {
     (async () => {
@@ -47,10 +43,7 @@ export function useConfig<K extends StorageKey>(key: K) {
     if (response.success) {
       setHasChanged(false);
     } else {
-      showPopup({
-        title: t('error'),
-        content: <MessagePopup message={response.error.message} type='alert' hidePopup={hidePopup} />,
-      });
+      toast.error(response.error.message);
     }
   };
 
