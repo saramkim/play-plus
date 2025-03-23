@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 import { setStorageAll } from '@storage/index';
 import { LEARNING_CONFIG } from '@storage/preset';
 import { PAGE_NAME, PageName } from '@utils/constants';
-import { t } from '@utils/i18n';
 
-import { usePopup } from './contexts/popup-context';
+import { modal } from './components/modal';
 import { Footer } from './layout/footer';
 import { Header } from './layout/header';
 import { OnboardingContent } from './layout/onboarding-content';
@@ -31,26 +30,22 @@ export function App() {
   const [page, setPage] = useState<PageName>(
     () => (localStorage.getItem(LAST_VIEWED_PAGE_KEY) as PageName) || pageList[0]
   );
-  const { showPopup, hidePopup } = usePopup();
 
   useEffect(() => {
     const isOnboardingComplete = localStorage.getItem(IS_ONBOARDING_COMPLETE_KEY);
     if (isOnboardingComplete) return;
 
-    showPopup({
-      title: t('onboarding_title'),
-      content: (
-        <OnboardingContent
-          handleOnboardingComplete={async (state) => {
-            if (state.isOptimizing) {
-              await setStorageAll(LEARNING_CONFIG);
-            }
-            localStorage.setItem(IS_ONBOARDING_COMPLETE_KEY, 'true');
-            hidePopup();
-          }}
-        />
-      ),
-    });
+    modal(
+      <OnboardingContent
+        handleOnboardingComplete={async (state) => {
+          if (state.isOptimizing) {
+            await setStorageAll(LEARNING_CONFIG);
+          }
+          localStorage.setItem(IS_ONBOARDING_COMPLETE_KEY, 'true');
+          modal.hide();
+        }}
+      />
+    );
   }, []);
 
   return (

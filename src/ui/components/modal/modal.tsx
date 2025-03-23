@@ -1,32 +1,34 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { XMarkIcon as XMarkIconSolid } from '@heroicons/react/16/solid';
+import { XMarkIcon } from '@heroicons/react/16/solid';
 
-import { usePopup } from '@/ui/contexts/popup-context';
 import { cn } from '@/ui/lib/utils';
 
-export function GlobalPopup() {
-  const { popup, hidePopup, isOpen } = usePopup();
+import { modalService } from './modal-service';
 
-  if (!isOpen || !popup) return null;
-
-  const { title, content } = popup;
+export function Modal() {
+  const [content, setContent] = useState<React.ReactNode>(null);
 
   useEffect(() => {
+    const unsubscribe = modalService.subscribe(setContent);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') hidePopup();
+      if (e.key === 'Escape') setContent(null);
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
-  return (
+  return content ? (
     <div
       className={cn(
         'fixed inset-0 flex justify-center items-center bg-black/50 z-50',
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
       )}
-      data-state={isOpen ? 'open' : 'closed'}
+      data-state={content ? 'open' : 'closed'}
     >
       <div
         className={cn(
@@ -34,17 +36,13 @@ export function GlobalPopup() {
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'
         )}
         onClick={(e) => e.stopPropagation()}
-        data-state={isOpen ? 'open' : 'closed'}
+        data-state={content ? 'open' : 'closed'}
       >
-        <div className='flex flex-col gap-2'>
-          <h2 className='text-[15px] font-bold'>{title}</h2>
-          <div>{content}</div>
-        </div>
-
-        <button className='absolute top-2 right-2 icon-button cursor-default' onClick={hidePopup}>
-          <XMarkIconSolid className='size-4' />
+        <div>{content}</div>
+        <button className='absolute top-2 right-2 icon-button cursor-default' onClick={() => setContent(null)}>
+          <XMarkIcon className='size-4' />
         </button>
       </div>
     </div>
-  );
+  ) : null;
 }

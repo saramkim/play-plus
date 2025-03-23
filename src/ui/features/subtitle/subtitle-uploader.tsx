@@ -10,9 +10,8 @@ import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
-import { MessagePopup } from '@/ui/components/message-popup';
+import { modal } from '@/ui/components/modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
-import { usePopup } from '@/ui/contexts/popup-context';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
@@ -97,7 +96,6 @@ export function SubtitleUploader() {
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const { showPopup, hidePopup } = usePopup();
 
   const handleFileUpload = (file: File) => {
     const { isValid, message } = validateFile(file);
@@ -105,10 +103,7 @@ export function SubtitleUploader() {
       setFile(file);
       setTitle(file.name.replace(/\.[^.]+$/, ''));
     } else {
-      showPopup({
-        title: t('error'),
-        content: <MessagePopup message={message} type='alert' hidePopup={hidePopup} />,
-      });
+      modal.alert({ title: t('error'), message });
     }
   };
 

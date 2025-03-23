@@ -11,43 +11,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu';
-import { MessagePopup } from '@/ui/components/message-popup';
-import { usePopup } from '@/ui/contexts/popup-context';
+import { modal } from '@/ui/components/modal';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
 export function MoreMenu() {
-  const { showPopup, hidePopup } = usePopup();
   const options = [
     { label: t('reset_settings'), value: RESET_SETTINGS },
     { label: t('optimize_for_learning'), value: SET_LEARNING_CONFIG },
   ];
 
   const resetSettings = () => {
-    showPopup({
+    modal.confirm({
       title: t('reset_settings'),
-      content: (
-        <MessagePopup
-          message={t('reset_settings_confirm')}
-          type='confirm'
-          onConfirm={clearStorage}
-          hidePopup={hidePopup}
-        />
-      ),
+      message: t('reset_settings_confirm'),
+      onConfirm: clearStorage,
     });
   };
 
   const optimizeForLearning = () => {
-    showPopup({
+    modal.confirm({
       title: t('optimize_for_learning'),
-      content: (
-        <MessagePopup
-          message={t('optimize_for_learning_confirm')}
-          type='confirm'
-          onConfirm={() => setStorageAll(LEARNING_CONFIG)}
-          hidePopup={hidePopup}
-        />
-      ),
+      message: t('optimize_for_learning_confirm'),
+      onConfirm: () => setStorageAll(LEARNING_CONFIG),
     });
   };
 

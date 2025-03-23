@@ -4,12 +4,9 @@ import { COUPANG_PLAY_PLAY_URL, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction 
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 
-import { MessagePopup } from '@/ui/components/message-popup';
-import { usePopup } from '@/ui/contexts/popup-context';
+import { modal } from '@/ui/components/modal';
 
 export function useSubtitleSettings(activeTab: chrome.tabs.Tab | null) {
-  const { showPopup, hidePopup } = usePopup();
-
   const useAsSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null) => {
     const tabId = activeTab?.id;
     if (!tabId) return;
@@ -18,10 +15,7 @@ export function useSubtitleSettings(activeTab: chrome.tabs.Tab | null) {
     if (response.success) {
       updateTabInfo(tabId, { [SET_SUBTITLE_STORAGE_KEY_MAP[action]]: subtitleId });
     } else {
-      showPopup({
-        title: t('error'),
-        content: <MessagePopup message={response.message} type='alert' hidePopup={hidePopup} />,
-      });
+      modal.alert({ title: t('error'), message: response.message });
     }
   };
 

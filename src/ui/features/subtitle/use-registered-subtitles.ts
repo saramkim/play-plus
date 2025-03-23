@@ -6,14 +6,12 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { MessagePopup } from '@/ui/components/message-popup';
-import { usePopup } from '@/ui/contexts/popup-context';
+import { modal } from '@/ui/components/modal';
 
 const { STORAGE_KEY } = REGISTRATION;
 
 export function useRegisteredSubtitles() {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { showPopup, hidePopup } = usePopup();
 
   useEffect(() => {
     (async () => {
@@ -34,20 +32,14 @@ export function useRegisteredSubtitles() {
   };
 
   const deleteSubtitle = (id: SubtitleId) => {
-    showPopup({
+    modal.confirm({
       title: t('delete'),
-      content: (
-        <MessagePopup
-          type='confirm'
-          message={t('confirm_delete')}
-          onConfirm={() => {
-            const filtered = subtitles.filter((v) => v.id !== id);
-            setLocalStorage(STORAGE_KEY, filtered);
-            removeLocalSubtitle(id);
-          }}
-          hidePopup={hidePopup}
-        />
-      ),
+      message: t('confirm_delete'),
+      onConfirm: () => {
+        const filtered = subtitles.filter((v) => v.id !== id);
+        setLocalStorage(STORAGE_KEY, filtered);
+        removeLocalSubtitle(id);
+      },
     });
   };
 
