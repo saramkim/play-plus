@@ -5,14 +5,8 @@ import { SETTINGS } from '@utils/constants';
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 
-import {
-  getLoopButton,
-  getLoopMarkerContainer,
-  getLoopStatusContainer,
-  getVideoElement,
-  resetLoopStatus,
-} from '@/content/store/element-store';
-import { getPrimarySubtitleAndDelay } from '@/content/store/subtitle-store';
+import { elementStore } from '@/content/store/element-store';
+import { subtitleStore } from '@/content/store/subtitle-store';
 import { createElement, createLoopIcon, createMarker, showToast } from '@/content/utils/dom';
 import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
 
@@ -24,9 +18,9 @@ const LOOP_CONSTANTS = {
   BUFFER_TIME: 0.5,
 } as const;
 
-const markerContainer = getLoopMarkerContainer();
-const loopStatusContainer = getLoopStatusContainer();
-const loopButton = getLoopButton();
+const markerContainer = elementStore.getLoopMarkerContainer();
+const loopStatusContainer = elementStore.getLoopStatusContainer();
+const loopButton = elementStore.getLoopButton();
 
 type State = {
   enabled: boolean;
@@ -77,7 +71,7 @@ export const onLoopStorageChange = (changes: StorageChanges) => {
     const { enabled } = loopChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
     if (!enabled) {
       loop(false);
-      resetLoopStatus();
+      elementStore.resetLoopStatus();
       state.isMarkerShowing = false;
     }
     loopButton.classList.toggle('show', enabled);
@@ -89,7 +83,7 @@ export const toggleLoop = () => {
 };
 
 export const setStartPoint = (time?: number) => {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   const { currentTime } = video;
@@ -104,7 +98,7 @@ export const setStartPoint = (time?: number) => {
 };
 
 export const setEndPoint = (time?: number) => {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   const { currentTime, duration } = video;
@@ -127,10 +121,10 @@ export const setupLoopHandler = (video: HTMLVideoElement) => {
 
 export const loopCurrentSubtitle = () => {
   try {
-    const video = getVideoElement();
+    const video = elementStore.getVideoElement();
     if (!video) throw new Error(t('error_video_not_found'));
 
-    const { subtitles, delay } = getPrimarySubtitleAndDelay();
+    const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
     const index = findCurrentSubtitleIndex(subtitles, video.currentTime - delay);
@@ -180,7 +174,7 @@ const initializeLoopUI = () => {
 };
 
 const loop = (isLooping: boolean) => {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   try {
@@ -235,7 +229,7 @@ const showLoopMarkers = () => {
 
 const handleMouseUp = () => {
   const draggedMarker = Object.values(markerState).find(({ isDragging }) => isDragging);
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!draggedMarker || !video) return;
 
   draggedMarker.isDragging = false;
@@ -281,7 +275,7 @@ const updateTime = (markerId: string, time: number) => {
 };
 
 const moveMarkerByTime = (marker: HTMLElement, time: number) => {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   const position = getPositionByTime(video, time);

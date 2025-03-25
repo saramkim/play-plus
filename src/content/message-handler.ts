@@ -11,14 +11,14 @@ import {
 
 import { setupLoopHandler } from './features/loop/loop';
 import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
-import { getVideoElement, initializeElementStore, resetElementStore } from './store/element-store';
-import { deleteSubtitleCache, hasSubtitleCache, setCustomSubtitleId, setSubtitleCache } from './store/subtitle-store';
+import { elementStore } from './store/element-store';
+import { subtitleStore } from './store/subtitle-store';
 
 export function initializeMessageListener() {
   onMessage((message, sender, sendResponse) => {
     const { resetElement, detectVideo, fetchVideoMetadata, playVideo } = message;
 
-    if (resetElement) resetElementStore();
+    if (resetElement) elementStore.reset();
     if (detectVideo) {
       initializeVideo().then(sendResponse);
       return true;
@@ -36,14 +36,14 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
-  deleteSubtitleCache('en');
-  deleteSubtitleCache('ko');
+  subtitleStore.deleteSubtitleCache('en');
+  subtitleStore.deleteSubtitleCache('ko');
 
   return fetchAndCacheSubtitles(url, headers);
 };
 
 const initializeVideo = async (): Promise<MessageResponse> => {
-  const video = await initializeElementStore();
+  const video = await elementStore.initialize();
   setupLoopHandler(video);
   setupSubtitleSync(video);
 
@@ -51,7 +51,7 @@ const initializeVideo = async (): Promise<MessageResponse> => {
 };
 
 const handlePlayVideo = ({ startTime }: PlayVideoMessage) => {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   if (video.readyState >= 3) {
@@ -65,12 +65,12 @@ const handleSetSubtitle = async (
   action: SetSubtitleAction,
   { subtitleId }: SetSubtitleMessage
 ): Promise<MessageResponse> => {
-  if (subtitleId && !hasSubtitleCache(subtitleId)) {
+  if (subtitleId && !subtitleStore.hasSubtitleCache(subtitleId)) {
     const subtitle = await getLocalSubtitle(subtitleId);
-    setSubtitleCache(subtitleId, subtitle);
+    subtitleStore.setSubtitleCache(subtitleId, subtitle);
   }
-  setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
-  const video = getVideoElement();
+  subtitleStore.setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
+  const video = elementStore.getVideoElement();
   if (video) {
     syncSubtitles(video, true);
     return { success: true };

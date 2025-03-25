@@ -1,4 +1,4 @@
-import { getToastContainer } from '@/content/store/element-store';
+import { elementStore } from '@/content/store/element-store';
 
 export const detectVideoElement = (): Promise<HTMLVideoElement> => {
   return new Promise((resolve) => {
@@ -54,7 +54,7 @@ export const createElement = (id: string, tagName: string = 'div') => {
 };
 
 export function showToast(title: string, message: string, type: 'success' | 'error' | 'info') {
-  const container = getToastContainer();
+  const container = elementStore.getToastContainer();
   const toast = document.createElement('div');
   const titleElement = document.createElement('span');
   const messageElement = document.createElement('span');

@@ -4,7 +4,7 @@ import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subti
 import { createElement, createLoopIcon, detectVideoElement } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
-import { getSubtitleSettings } from './subtitle-store';
+import { subtitleStore } from './subtitle-store';
 
 const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
@@ -14,138 +14,123 @@ const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
 const LOOP_BUTTON_ID = 'pp-loop-button';
 
-type ElementStore = {
-  videoElement: HTMLVideoElement | null;
-  subtitleContainer: HTMLElement;
-  primarySubtitle: HTMLElement;
-  secondarySubtitle: HTMLElement;
-  toastContainer: HTMLElement;
-  loopMarkerContainer: HTMLElement;
-  loopStatusContainer: HTMLElement;
-  loopButton: HTMLElement;
-  subtitleContainerObserver: MutationObserver | null;
-};
+class ElementStore {
+  private videoElement: HTMLVideoElement | null = null;
+  private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
+  private primarySubtitle = createSubtitleElement();
+  private secondarySubtitle = createSubtitleElement();
+  private toastContainer = createElement(TOAST_CONTAINER_ID);
+  private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
+  private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
+  private loopButton = createElement(LOOP_BUTTON_ID);
+  private subtitleContainerObserver: MutationObserver | null = null;
+  private subtitleElementMap = {
+    [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: this.primarySubtitle,
+    [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: this.secondarySubtitle,
+  };
 
-const elementStore: ElementStore = {
-  videoElement: null,
-  subtitleContainer: createElement(SUBTITLE_CONTAINER_ID),
-  primarySubtitle: createSubtitleElement(),
-  secondarySubtitle: createSubtitleElement(),
-  toastContainer: createElement(TOAST_CONTAINER_ID),
-  loopMarkerContainer: createElement(LOOP_MARKER_CONTAINER_ID),
-  loopStatusContainer: createElement(LOOP_STATUS_CONTAINER_ID),
-  loopButton: createElement(LOOP_BUTTON_ID),
-  subtitleContainerObserver: null,
-};
-
-const subtitleElementMap = {
-  [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: elementStore.primarySubtitle,
-  [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: elementStore.secondarySubtitle,
-};
-
-function init() {
-  elementStore.loopButton.appendChild(createLoopIcon());
-  setupSubtitleElement();
-}
-
-function setupSubtitleElement() {
-  const fragment = document.createDocumentFragment();
-
-  for (const [key, config] of Object.entries(getSubtitleSettings())) {
-    const subtitleElement = subtitleElementMap[key];
-    applySubtitleStyles(subtitleElement, config);
-    setupSubtitleSaveHandler(subtitleElement);
-    fragment.appendChild(subtitleElement);
+  constructor() {
+    this.loopButton.appendChild(createLoopIcon());
+    this.setupSubtitleElement();
   }
 
-  elementStore.subtitleContainer.replaceChildren(fragment);
-}
-
-export function getSubtitleElement(key: SubtitleSettingStorageKey) {
-  return subtitleElementMap[key];
-}
-
-export async function initializeElementStore() {
-  const video = await detectVideoElement();
-  elementStore.videoElement = video;
-  setupContainer();
-  return video;
-}
-
-export function getVideoElement() {
-  return elementStore.videoElement;
-}
-
-export function getLoopMarkerContainer() {
-  return elementStore.loopMarkerContainer;
-}
-
-export function getLoopStatusContainer() {
-  return elementStore.loopStatusContainer;
-}
-
-export function getLoopButton() {
-  return elementStore.loopButton;
-}
-
-export function getToastContainer() {
-  return elementStore.toastContainer;
-}
-
-export function resetLoopStatus() {
-  const { loopMarkerContainer, loopStatusContainer, loopButton } = elementStore;
-  loopMarkerContainer.classList.remove('show');
-  loopStatusContainer.classList.remove('show');
-  loopStatusContainer.classList.remove('spin');
-  loopButton.classList.remove('active');
-}
-
-export function resetElementStore() {
-  const { toastContainer, subtitleContainerObserver } = elementStore;
-  elementStore.videoElement = null;
-  toastContainer.replaceChildren();
-  resetLoopStatus();
-
-  if (subtitleContainerObserver) {
-    subtitleContainerObserver.disconnect();
-    elementStore.subtitleContainerObserver = null;
-  }
-}
-
-function setupContainer() {
-  const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
-  if (trackDisplayContainer) {
-    appendContainer(trackDisplayContainer);
-    observeContainer(trackDisplayContainer);
+  async initialize() {
+    const video = await detectVideoElement();
+    this.videoElement = video;
+    this.setupContainer();
+    return video;
   }
 
-  const sliderContainer = document.querySelector('div.slider');
-  if (sliderContainer) {
-    sliderContainer.appendChild(elementStore.loopMarkerContainer);
-  }
+  reset() {
+    this.videoElement = null;
+    this.toastContainer.replaceChildren();
+    this.resetLoopStatus();
 
-  const controlsLeft = document.querySelector('.controls-left');
-  if (controlsLeft) {
-    controlsLeft.appendChild(elementStore.loopButton);
-  }
-}
-
-function observeContainer(trackDisplayContainer: Element) {
-  elementStore.subtitleContainerObserver = new MutationObserver(() => {
-    appendContainer(trackDisplayContainer);
-  });
-  elementStore.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
-}
-
-function appendContainer(trackDisplayContainer: Element) {
-  const subtitleContainerWrapper = trackDisplayContainer.children[0];
-  const { subtitleContainer, toastContainer, loopStatusContainer } = elementStore;
-
-  [subtitleContainer, toastContainer, loopStatusContainer].forEach((container) => {
-    if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(container)) {
-      subtitleContainerWrapper.appendChild(container);
+    if (this.subtitleContainerObserver) {
+      this.subtitleContainerObserver.disconnect();
+      this.subtitleContainerObserver = null;
     }
-  });
+  }
+
+  getSubtitleElement(key: SubtitleSettingStorageKey) {
+    return this.subtitleElementMap[key];
+  }
+
+  getVideoElement() {
+    return this.videoElement;
+  }
+
+  getLoopMarkerContainer() {
+    return this.loopMarkerContainer;
+  }
+
+  getLoopStatusContainer() {
+    return this.loopStatusContainer;
+  }
+
+  getLoopButton() {
+    return this.loopButton;
+  }
+
+  getToastContainer() {
+    return this.toastContainer;
+  }
+
+  resetLoopStatus() {
+    this.loopMarkerContainer.classList.remove('show');
+    this.loopStatusContainer.classList.remove('show');
+    this.loopStatusContainer.classList.remove('spin');
+    this.loopButton.classList.remove('active');
+  }
+
+  private setupSubtitleElement() {
+    const fragment = document.createDocumentFragment();
+
+    for (const [key, config] of Object.entries(subtitleStore.getSubtitleSettings())) {
+      const subtitleElement = this.subtitleElementMap[key];
+      applySubtitleStyles(subtitleElement, config);
+      setupSubtitleSaveHandler(subtitleElement);
+      fragment.appendChild(subtitleElement);
+    }
+
+    this.subtitleContainer.replaceChildren(fragment);
+  }
+
+  private setupContainer() {
+    const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
+    if (trackDisplayContainer) {
+      this.appendContainer(trackDisplayContainer);
+      this.observeContainer(trackDisplayContainer);
+    }
+
+    const sliderContainer = document.querySelector('div.slider');
+    if (sliderContainer) {
+      sliderContainer.appendChild(this.loopMarkerContainer);
+    }
+
+    const controlsLeft = document.querySelector('.controls-left');
+    if (controlsLeft) {
+      controlsLeft.appendChild(this.loopButton);
+    }
+  }
+
+  private observeContainer(trackDisplayContainer: Element) {
+    this.subtitleContainerObserver = new MutationObserver(() => {
+      this.appendContainer(trackDisplayContainer);
+    });
+    this.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
+  }
+
+  private appendContainer(trackDisplayContainer: Element) {
+    const subtitleContainerWrapper = trackDisplayContainer.children[0];
+    const containers = [this.subtitleContainer, this.toastContainer, this.loopStatusContainer];
+
+    containers.forEach((container) => {
+      if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(container)) {
+        subtitleContainerWrapper.appendChild(container);
+      }
+    });
+  }
 }
 
-init();
+export const elementStore = new ElementStore();

@@ -12,8 +12,8 @@ import { SETTINGS } from '@utils/constants';
 
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
-import { getSubtitleElement, getVideoElement } from '@/content/store/element-store';
-import { getPrimarySubtitleAndDelay } from '@/content/store/subtitle-store';
+import { elementStore } from '@/content/store/element-store';
+import { subtitleStore } from '@/content/store/subtitle-store';
 import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
 
 type KeyBindings = { [key: string]: () => void };
@@ -62,8 +62,8 @@ function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) 
     const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
     const { savePrimary, saveSecondary, togglePrimary, toggleSecondary } = shortcuts;
 
-    keyBindings[savePrimary] = () => saveSubtitleWithToast(getSubtitleElement(PRIMARY.STORAGE_KEY));
-    keyBindings[saveSecondary] = () => saveSubtitleWithToast(getSubtitleElement(SECONDARY.STORAGE_KEY));
+    keyBindings[savePrimary] = () => saveSubtitleWithToast(elementStore.getSubtitleElement(PRIMARY.STORAGE_KEY));
+    keyBindings[saveSecondary] = () => saveSubtitleWithToast(elementStore.getSubtitleElement(SECONDARY.STORAGE_KEY));
     keyBindings[togglePrimary] = () => updateStorage(PRIMARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
     keyBindings[toggleSecondary] = () => updateStorage(SECONDARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
   } else {
@@ -133,7 +133,7 @@ function skipVideoTime(
   fallbackTime: number,
   fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
 ) {
-  const video = getVideoElement();
+  const video = elementStore.getVideoElement();
   if (!video) return;
 
   if (skipTimeUnit === 'subtitles') {
@@ -150,7 +150,7 @@ const skipVideoBySubtitles = (
   fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
 ) => {
   const { currentTime, duration } = video;
-  const { subtitles, delay } = getPrimarySubtitleAndDelay();
+  const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
 
   if (subtitles && subtitles.length > 0) {
     const index = findCurrentSubtitleIndex(subtitles, currentTime - delay);
