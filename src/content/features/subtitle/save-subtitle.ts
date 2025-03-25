@@ -7,7 +7,7 @@ import { createTooltip, showToast } from '@/content/utils/dom';
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
   const tooltip = getTooltip();
   const showTooltip = (event: MouseEvent) => {
-    subtitleElement.style.borderColor = 'currentColor';
+    subtitleElement.style.outline = '1px solid currentColor';
     tooltip.style.opacity = '1';
     updateTooltipPosition(event);
   };
@@ -16,7 +16,7 @@ export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
     tooltip.style.left = `${event.pageX + 10}px`;
   };
   const hideTooltip = () => {
-    subtitleElement.style.borderColor = 'transparent';
+    subtitleElement.style.outline = 'none';
     tooltip.style.opacity = '0';
   };
   const handleSubtitleClick = async (event: MouseEvent) => {

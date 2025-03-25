@@ -72,7 +72,6 @@ export const createSubtitleElement = () => {
     cursor: 'pointer',
     zIndex: '1000',
     padding: '0 0.5em',
-    border: '1px solid transparent',
   });
 
   return subtitle;
