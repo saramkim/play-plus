@@ -78,7 +78,8 @@ export const createSubtitleElement = () => {
 };
 
 export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfig) => {
-  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, opacity, lineBreak } = config;
+  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity } =
+    config;
 
   const positions = {
     top: { top: `${positionOffset}px`, bottom: 'auto' },
@@ -92,9 +93,9 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfi
     color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
-    opacity: `${opacity * 0.01}`,
     whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
     transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
+    backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity * 0.01})`,
   });
 };
 

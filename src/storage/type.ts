@@ -21,7 +21,7 @@ export type SubtitleConfig = {
   color: string;
   fontSize: number;
   fontWeight: number;
-  opacity: number;
+  backgroundOpacity: number;
   lineBreak: boolean;
   delay: number;
 };

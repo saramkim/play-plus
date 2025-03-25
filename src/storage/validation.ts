@@ -107,7 +107,7 @@ const getMessageByKey = (key: KeyOfUnion<StorageSchema[StorageKey]>) => {
     color: t('subtitle_color'),
     fontSize: t('subtitle_size'),
     fontWeight: t('font_weight'),
-    opacity: t('opacity'),
+    backgroundOpacity: t('background_opacity'),
     lineBreak: t('allow_line_break'),
     delay: t('sync_adjustment'),
     videoSkip: t('video_skip'),

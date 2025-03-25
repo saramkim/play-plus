@@ -101,8 +101,8 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
           <NumberInput value={state.fontWeight} onChange={handleChange('fontWeight')} min={1} max={6} />
         </div>
         <div className='row'>
-          <label className='label'>{t('opacity')}(%)</label>
-          <NumberInput value={state.opacity} onChange={handleChange('opacity')} min={0} max={100} />
+          <label className='label'>{t('background_opacity')}(%)</label>
+          <NumberInput value={state.backgroundOpacity} onChange={handleChange('backgroundOpacity')} min={0} max={100} />
         </div>
         <div className='row'>
           <label className='label'>{t('allow_line_break')}</label>
