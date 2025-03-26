@@ -1,4 +1,4 @@
-import { SubtitleConfig, SubtitleLanguage } from '@storage/type';
+import { SubtitleConfig } from '@storage/schema';
 import { SubtitleData } from '@utils/parse';
 
 import { applyStyles } from '@/content/utils/dom';
@@ -144,7 +144,7 @@ type ApiResponse = {
         mime_type: string;
         sources: { src: string }[];
         src: string;
-        srclang: SubtitleLanguage | null;
+        srclang: SubtitleConfig['language'] | null;
         width: number | null;
       }[];
       updated_at: string;

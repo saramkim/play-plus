@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import {
@@ -12,8 +13,8 @@ import {
   UseFormReturn,
 } from 'react-hook-form';
 
-import { cn } from '@/ui/lib/utils';
 import { Label } from '@/ui/components/label';
+import { cn } from '@/ui/lib/utils';
 
 export function Form<TFieldValues extends FieldValues>({
   form,

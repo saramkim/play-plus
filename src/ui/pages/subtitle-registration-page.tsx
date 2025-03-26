@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
 import { PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { SubtitleMetadata } from '@storage/schema';
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
-import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { t } from '@utils/i18n';
 

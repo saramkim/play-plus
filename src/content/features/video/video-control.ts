@@ -1,13 +1,7 @@
 import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage, updateStorage } from '@storage/index';
-import {
-  LoopConfig,
-  ShortcutsConfig,
-  SkipTimeUnit,
-  StorageChange,
-  StorageChanges,
-  VideoSkipConfig,
-} from '@storage/type';
+import { LoopConfig, ShortcutsConfig, VideoSkipConfig } from '@storage/schema';
+import { StorageChange, StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
@@ -129,9 +123,9 @@ function isInputField(): boolean {
 
 function skipVideoTime(
   skipTime: number,
-  skipTimeUnit: SkipTimeUnit,
+  skipTimeUnit: VideoSkipConfig['skipTimeUnit'],
   fallbackTime: number,
-  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
+  fallbackUnit: VideoSkipConfig['fallbackUnit']
 ) {
   const video = elementStore.getVideoElement();
   if (!video) return;
@@ -147,7 +141,7 @@ const skipVideoBySubtitles = (
   video: HTMLVideoElement,
   skipTime: number,
   fallbackTime: number,
-  fallbackUnit: Exclude<SkipTimeUnit, 'subtitles'>
+  fallbackUnit: VideoSkipConfig['fallbackUnit']
 ) => {
   const { currentTime, duration } = video;
   const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
@@ -167,11 +161,7 @@ const skipVideoBySubtitles = (
   }
 };
 
-const skipVideoByTime = (
-  video: HTMLVideoElement,
-  skipTime: number,
-  skipTimeUnit: Exclude<SkipTimeUnit, 'subtitles'>
-) => {
+const skipVideoByTime = (video: HTMLVideoElement, skipTime: number, skipTimeUnit: VideoSkipConfig['fallbackUnit']) => {
   const { currentTime, duration } = video;
   const unitMap = { seconds: 1, minutes: 60 };
   const time = currentTime + skipTime * unitMap[skipTimeUnit];
