@@ -8,7 +8,7 @@ import { t } from '@utils/i18n';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
 import { createElement, createLoopIcon, createMarker, showToast } from '@/content/utils/dom';
-import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
+import { findSubtitle } from '@/content/utils/subtitle';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 const START_MARKER_ID = 'loop-marker-start';
@@ -127,8 +127,7 @@ export const loopCurrentSubtitle = () => {
     const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
-    const index = findCurrentSubtitleIndex(subtitles, video.currentTime - delay);
-    const currentSubtitle = subtitles[index];
+    const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);
     if (!currentSubtitle) throw new Error(t('error_no_subtitle'));
 
     const { start, end } = currentSubtitle;

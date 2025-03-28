@@ -10,7 +10,7 @@ import {
   applySubtitleStyles,
   arrayToHeadersObject,
   extractSubtitleApiInfoFromResponse,
-  findCurrentSubtitle,
+  findSubtitle,
 } from '@/content/utils/subtitle';
 
 const { SUBTITLES } = SETTINGS;
@@ -97,10 +97,12 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
 }
 
 function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {
-  const { text, start } = findCurrentSubtitle(data, currentTime);
-
-  subtitleElement.innerHTML = text;
-
-  if (start) subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = start.toString();
-  else delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
+  const subtitle = findSubtitle(data, currentTime);
+  if (subtitle) {
+    subtitleElement.innerHTML = subtitle.text;
+    subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = subtitle.start.toString();
+  } else {
+    subtitleElement.innerHTML = '';
+    delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
+  }
 }

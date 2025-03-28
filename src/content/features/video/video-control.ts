@@ -8,7 +8,7 @@ import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/c
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
-import { findCurrentSubtitleIndex } from '@/content/utils/subtitle';
+import { findSubtitleIndex } from '@/content/utils/subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 
@@ -147,7 +147,7 @@ const skipVideoBySubtitles = (
   const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
 
   if (subtitles && subtitles.length > 0) {
-    const index = findCurrentSubtitleIndex(subtitles, currentTime - delay);
+    const index = findSubtitleIndex(subtitles, currentTime - delay);
 
     if (skipTime > 0) {
       const nextSubtitle = subtitles[Math.floor(index) + skipTime];

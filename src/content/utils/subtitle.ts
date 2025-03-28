@@ -15,24 +15,7 @@ export const extractSubtitleApiInfoFromResponse = (response: ApiResponse) => {
     .map(({ srclang, src }) => ({ lang: srclang!, url: src }));
 };
 
-export const findCurrentSubtitle = (subtitles: SubtitleData[], currentTime: number) => {
-  let left = 0;
-  let right = subtitles.length - 1;
-
-  while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
-    const { start, end, text } = subtitles[mid];
-
-    if (currentTime >= start && currentTime <= end) return { text, start };
-
-    if (currentTime < start) right = mid - 1;
-    else left = mid + 1;
-  }
-
-  return { text: '' };
-};
-
-export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime: number): number => {
+export const findSubtitle = (subtitles: SubtitleData[], time: number) => {
   let left = 0;
   let right = subtitles.length - 1;
 
@@ -40,24 +23,43 @@ export const findCurrentSubtitleIndex = (subtitles: SubtitleData[], currentTime:
     const mid = Math.floor((left + right) / 2);
     const { start, end } = subtitles[mid];
 
-    // 1️⃣ 현재 자막 범위 내에 있을 때
-    if (currentTime >= start && currentTime <= end) return mid;
+    if (start <= time && time <= end) return subtitles[mid];
 
-    // 2️⃣ 왼쪽 탐색
-    if (currentTime < start) {
+    if (time < start) right = mid - 1;
+    else left = mid + 1;
+  }
+
+  return undefined;
+};
+
+/**
+ * 주어진 시간에 해당하는 자막 인덱스를 반환한다.
+ *
+ * - 자막 범위에 정확히 포함되면 정수 인덱스를 반환
+ * - 자막과 자막 사이에 위치하면 `n + 0.5` 형식으로 반환
+ */
+export const findSubtitleIndex = (subtitles: SubtitleData[], time: number) => {
+  let left = 0;
+  let right = subtitles.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const { start, end } = subtitles[mid];
+
+    if (start <= time && time <= end) return mid;
+
+    if (time < start) {
       if (mid === 0) return 0 - 0.5; // 첫 번째 자막 이전
-      if (currentTime > subtitles[mid - 1].end) return mid - 0.5; // 자막 사이
+      if (time > subtitles[mid - 1].end) return mid - 0.5; // 자막 사이
       right = mid - 1;
-    }
-    // 3️⃣ 오른쪽 탐색
-    else {
+    } else {
       if (mid === subtitles.length - 1) return subtitles.length - 1 + 0.5; // 마지막 자막 이후
-      if (currentTime < subtitles[mid + 1].start) return mid + 0.5; // 자막 사이
+      if (time < subtitles[mid + 1].start) return mid + 0.5; // 자막 사이
       left = mid + 1;
     }
   }
 
-  return -1; // 시간 범위를 벗어난 경우
+  return -1;
 };
 
 export const createSubtitleElement = () => {
