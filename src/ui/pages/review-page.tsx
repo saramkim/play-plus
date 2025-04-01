@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { SavedSubtitle } from '@storage/schema';
+import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';

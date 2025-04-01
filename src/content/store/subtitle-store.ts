@@ -1,9 +1,10 @@
 import { DEFAULT_CONFIG } from '@storage/default';
-import { SubtitleConfig } from '@storage/schema';
 import { SubtitleId } from '@storage/subtitle';
+import { StorageSchema } from '@storage/type';
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 import { SubtitleData } from '@utils/parse';
 
+type SubtitleConfig = StorageSchema['primarySubtitle'];
 type SubtitleCacheKey = SubtitleConfig['language'] | SubtitleId;
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;

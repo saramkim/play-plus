@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { XMarkIcon } from '@heroicons/react/16/solid';
-import { SavedSubtitle, SubtitleMetadata } from '@storage/schema';
+import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';

@@ -1,4 +1,4 @@
-import { SubtitleConfig } from '@storage/schema';
+import { StorageSchema } from '@storage/type';
 import { SubtitleData } from '@utils/parse';
 
 import { applyStyles } from '@/content/utils/dom';
@@ -79,7 +79,7 @@ export const createSubtitleElement = () => {
   return subtitle;
 };
 
-export const applySubtitleStyles = (subtitle: HTMLElement, config: SubtitleConfig) => {
+export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema['primarySubtitle']) => {
   const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity } =
     config;
 
@@ -146,7 +146,7 @@ type ApiResponse = {
         mime_type: string;
         sources: { src: string }[];
         src: string;
-        srclang: SubtitleConfig['language'] | null;
+        srclang: StorageSchema['primarySubtitle']['language'] | null;
         width: number | null;
       }[];
       updated_at: string;

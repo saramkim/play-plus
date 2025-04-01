@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
-import { SavedSubtitle } from '@storage/schema';
+import { SavedSubtitle } from '@storage/type';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { toast } from 'sonner';

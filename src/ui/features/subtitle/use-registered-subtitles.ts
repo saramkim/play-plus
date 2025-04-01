@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
-import { SubtitleMetadata } from '@storage/schema';
 import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
+import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 

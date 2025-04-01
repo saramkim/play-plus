@@ -1,7 +1,6 @@
 import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage, updateStorage } from '@storage/index';
-import { LoopConfig, ShortcutsConfig, VideoSkipConfig } from '@storage/schema';
-import { StorageChange, StorageChanges } from '@storage/type';
+import { StorageChange, StorageChanges, StorageSchema } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
@@ -43,7 +42,7 @@ export async function initializeVideoControlSetting() {
   document.addEventListener('keydown', handleKeydown);
 }
 
-function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<ShortcutsConfig>) {
+function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<StorageSchema['shortcuts']>) {
   if (oldValue) {
     const { enabled, ...shortcuts } = oldValue;
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
@@ -51,7 +50,7 @@ function handleShortcutsStorageChange({ oldValue, newValue }: StorageChange<Shor
   setKeyBindingsForShortcuts(newValue || DEFAULT_CONFIG[SHORTCUTS.STORAGE_KEY]);
 }
 
-function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) {
+function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: StorageSchema['shortcuts']) {
   if (enabled) {
     const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
     const { savePrimary, saveSecondary, togglePrimary, toggleSecondary } = shortcuts;
@@ -65,7 +64,7 @@ function setKeyBindingsForShortcuts({ enabled, ...shortcuts }: ShortcutsConfig) 
   }
 }
 
-function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<VideoSkipConfig>) {
+function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<StorageSchema['videoSkip']>) {
   if (oldValue) {
     const { backward, forward } = oldValue;
     delete keyBindings[backward];
@@ -74,7 +73,7 @@ function handleVideoSkipStorageChange({ oldValue, newValue }: StorageChange<Vide
   setKeyBindingsForVideoSkip(newValue || DEFAULT_CONFIG[VIDEO_SKIP.STORAGE_KEY]);
 }
 
-function setKeyBindingsForVideoSkip(data: VideoSkipConfig) {
+function setKeyBindingsForVideoSkip(data: StorageSchema['videoSkip']) {
   const { enabled, backward, forward, skipTime, skipTimeUnit, fallbackTime, fallbackUnit } = data;
   if (enabled) {
     keyBindings[backward] = () => skipVideoTime(-skipTime, skipTimeUnit, -fallbackTime, fallbackUnit);
@@ -96,7 +95,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
-function handleLoopStorageChange({ oldValue, newValue }: StorageChange<LoopConfig>) {
+function handleLoopStorageChange({ oldValue, newValue }: StorageChange<StorageSchema['loop']>) {
   if (oldValue) {
     const { enabled, ...shortcuts } = oldValue;
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
@@ -104,7 +103,7 @@ function handleLoopStorageChange({ oldValue, newValue }: StorageChange<LoopConfi
   setKeyBindingsForLoop(newValue || DEFAULT_CONFIG[LOOP.STORAGE_KEY]);
 }
 
-function setKeyBindingsForLoop({ enabled, ...shortcuts }: LoopConfig) {
+function setKeyBindingsForLoop({ enabled, ...shortcuts }: StorageSchema['loop']) {
   const { toggleLoop: toggleLoopKey, startPoint, endPoint } = shortcuts;
   if (enabled) {
     keyBindings[toggleLoopKey] = toggleLoop;
@@ -123,9 +122,9 @@ function isInputField(): boolean {
 
 function skipVideoTime(
   skipTime: number,
-  skipTimeUnit: VideoSkipConfig['skipTimeUnit'],
+  skipTimeUnit: StorageSchema['videoSkip']['skipTimeUnit'],
   fallbackTime: number,
-  fallbackUnit: VideoSkipConfig['fallbackUnit']
+  fallbackUnit: StorageSchema['videoSkip']['fallbackUnit']
 ) {
   const video = elementStore.getVideoElement();
   if (!video) return;
@@ -141,7 +140,7 @@ const skipVideoBySubtitles = (
   video: HTMLVideoElement,
   skipTime: number,
   fallbackTime: number,
-  fallbackUnit: VideoSkipConfig['fallbackUnit']
+  fallbackUnit: StorageSchema['videoSkip']['fallbackUnit']
 ) => {
   const { currentTime, duration } = video;
   const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
@@ -161,7 +160,11 @@ const skipVideoBySubtitles = (
   }
 };
 
-const skipVideoByTime = (video: HTMLVideoElement, skipTime: number, skipTimeUnit: VideoSkipConfig['fallbackUnit']) => {
+const skipVideoByTime = (
+  video: HTMLVideoElement,
+  skipTime: number,
+  skipTimeUnit: StorageSchema['videoSkip']['fallbackUnit']
+) => {
   const { currentTime, duration } = video;
   const unitMap = { seconds: 1, minutes: 60 };
   const time = currentTime + skipTime * unitMap[skipTimeUnit];
