@@ -160,26 +160,6 @@
   }
 }
 
-@utility label {
-  @apply min-w-[140px] shrink-0 text-gray-800 text-nowrap;
-}
-
-@utility section {
-  @apply flex flex-col gap-1;
-}
-
-@utility section-header {
-  @apply flex justify-between items-center h-8;
-}
-
-@utility section-title {
-  @apply text-[15px] font-bold;
-}
-
-@utility row {
-  @apply flex items-center gap-1 h-8;
-}
-
 @utility icon-button {
   @apply text-gray-500 hover:enabled:text-gray-700 disabled:opacity-50;
 }

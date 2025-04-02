@@ -1,53 +1,91 @@
-import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
+import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
 import { KeydownInput } from '@/ui/components/keydown-input';
 import { Switch } from '@/ui/components/switch';
-import { useConfig } from '@/ui/hooks/use-config';
-
-const { STORAGE_KEY } = SETTINGS.LOOP;
+import { useConfigForm } from '@/ui/hooks/use-config-form';
+import { cn } from '@/ui/lib/utils';
 
 export function LoopConfigForm() {
-  const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
+  const { form, loading, onSubmit } = useConfigForm('loop');
+  const { isDirty, isValid } = form.formState;
+
+  if (loading) return null;
 
   return (
-    <section className='section'>
-      <header className='section-header'>
-        <h2 className='section-title'>{t('loop')}</h2>
-        <div className='row'>
-          {hasChanged ? (
+    <Form form={form} onSubmit={onSubmit}>
+      <FormHeader>
+        <FormTitle>{t('loop')}</FormTitle>
+        <div className='flex items-center gap-1'>
+          {isDirty ? (
             <>
-              <Button variant='outline' size='sm' onClick={handleCancel}>
+              <Button variant='outline' size='sm' type='button' onClick={() => form.reset()}>
                 {t('cancel')}
               </Button>
-              <Button size='sm' onClick={handleSave}>
+              <Button size='sm' type='submit' disabled={!isValid}>
                 {t('save')}
               </Button>
             </>
           ) : (
-            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
+            <FormField
+              control={form.control}
+              name='enabled'
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
           )}
         </div>
-      </header>
-      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
-        <div className='row'>
-          <label className='label'>{t('toggle_loop_key')} </label>
-          <KeydownInput value={state.toggleLoop} onChange={handleChange('toggleLoop')} />
-        </div>
-        <div className='row'>
-          <label className='label'>{t('start_point_key')} </label>
-          <KeydownInput value={state.startPoint} onChange={handleChange('startPoint')} />
-        </div>
-        <div className='row'>
-          <label className='label'>{t('end_point_key')} </label>
-          <KeydownInput value={state.endPoint} onChange={handleChange('endPoint')} />
-        </div>
-        <div className='row'>
-          <label className='label'>{t('loop_current_subtitle')} </label>
-          <KeydownInput value={state.loopCurrentSubtitle} onChange={handleChange('loopCurrentSubtitle')} />
-        </div>
+      </FormHeader>
+      <div className={cn('flex flex-col gap-1', form.watch('enabled') ? '' : 'opacity-50 pointer-events-none')}>
+        <FormField
+          control={form.control}
+          name='toggleLoop'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('toggle_loop_key')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='startPoint'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('start_point_key')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='endPoint'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('end_point_key')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='loopCurrentSubtitle'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('loop_current_subtitle')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
       </div>
-    </section>
+    </Form>
   );
 }

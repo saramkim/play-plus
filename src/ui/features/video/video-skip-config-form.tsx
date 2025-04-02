@@ -2,87 +2,152 @@ import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
+import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
 import { KeydownInput } from '@/ui/components/keydown-input';
 import { NumberInput } from '@/ui/components/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { Switch } from '@/ui/components/switch';
-import { useConfig } from '@/ui/hooks/use-config';
+import { useConfigForm } from '@/ui/hooks/use-config-form';
+import { cn } from '@/ui/lib/utils';
 
 type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
 
 export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
-  const { state, hasChanged, handleChange, handleSave, handleCancel } = useConfig(STORAGE_KEY);
+  const { form, loading, onSubmit } = useConfigForm(STORAGE_KEY);
+  const { isDirty, isValid } = form.formState;
+
+  if (loading) return null;
 
   return (
-    <section className='section'>
-      <header className='section-header'>
-        <h2 className='section-title'>{t(TITLE_MESSAGE_KEY)}</h2>
-        <div className='row'>
-          {hasChanged ? (
+    <Form form={form} onSubmit={onSubmit}>
+      <FormHeader>
+        <FormTitle>{t(TITLE_MESSAGE_KEY)}</FormTitle>
+        <div className='flex items-center gap-1'>
+          {isDirty ? (
             <>
-              <Button variant='outline' size='sm' onClick={handleCancel}>
+              <Button variant='outline' size='sm' type='button' onClick={() => form.reset()}>
                 {t('cancel')}
               </Button>
-              <Button size='sm' onClick={handleSave}>
+              <Button size='sm' type='submit' disabled={!isValid}>
                 {t('save')}
               </Button>
             </>
           ) : (
-            <Switch checked={state.enabled} onCheckedChange={handleChange('enabled')} />
+            <FormField
+              control={form.control}
+              name='enabled'
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
           )}
         </div>
-      </header>
-      <div className={`section ${state.enabled ? '' : 'opacity-50 pointer-events-none'}`}>
-        <div className='row'>
-          <label className='label'>{t('backward_key')}</label>
-          <KeydownInput value={state.backward} onChange={handleChange('backward')} />
+      </FormHeader>
+      <div className={cn('flex flex-col gap-1', form.watch('enabled') ? '' : 'opacity-50 pointer-events-none')}>
+        <FormField
+          control={form.control}
+          name='backward'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('backward_key')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='forward'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('forward_key')}</FormLabel>
+              <FormControl>
+                <KeydownInput {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <div className='flex items-center gap-1'>
+          <FormField
+            control={form.control}
+            name='skipTime'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('skip_unit')}</FormLabel>
+                <FormControl>
+                  <NumberInput {...field} min={1} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='skipTimeUnit'
+            render={({ field }) => (
+              <FormItem className='flex-1'>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('select')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        { label: t('seconds'), value: 'seconds' },
+                        { label: t('minutes'), value: 'minutes' },
+                        { label: t('subtitles'), value: 'subtitles' },
+                      ].map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
-        <div className='row'>
-          <label className='label'>{t('forward_key')}</label>
-          <KeydownInput value={state.forward} onChange={handleChange('forward')} />
-        </div>
-        <div className='row'>
-          <label className='label'>{t('skip_unit')}</label>
-          <NumberInput value={state.skipTime} onChange={handleChange('skipTime')} min={1} />
-          <Select value={state.skipTimeUnit} onValueChange={handleChange('skipTimeUnit')}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('select')} />
-            </SelectTrigger>
-            <SelectContent>
-              {[
-                { label: t('seconds'), value: 'seconds' },
-                { label: t('minutes'), value: 'minutes' },
-                { label: t('subtitles'), value: 'subtitles' },
-              ].map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {state.skipTimeUnit === 'subtitles' && (
-          <div className='row'>
-            <label className='label'>{t('fallback_unit')}</label>
-            <NumberInput value={state.fallbackTime} onChange={handleChange('fallbackTime')} min={1} />
-            <Select value={state.fallbackUnit} onValueChange={handleChange('fallbackUnit')}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('select')} />
-              </SelectTrigger>
-              <SelectContent>
-                {[
-                  { label: t('seconds'), value: 'seconds' },
-                  { label: t('minutes'), value: 'minutes' },
-                ].map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {form.watch('skipTimeUnit') === 'subtitles' && (
+          <div className='flex items-center gap-1'>
+            <FormField
+              control={form.control}
+              name='fallbackTime'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fallback_unit')}</FormLabel>
+                  <FormControl>
+                    <NumberInput {...field} min={1} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='fallbackUnit'
+              render={({ field }) => (
+                <FormItem className='flex-1'>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('select')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[
+                          { label: t('seconds'), value: 'seconds' },
+                          { label: t('minutes'), value: 'minutes' },
+                        ].map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </div>
         )}
       </div>
-    </section>
+    </Form>
   );
 }
