@@ -31,7 +31,9 @@ export function LoopConfigForm() {
             <FormField
               control={form.control}
               name='enabled'
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })} />
+              )}
             />
           )}
         </div>

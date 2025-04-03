@@ -36,7 +36,9 @@ export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSki
             <FormField
               control={form.control}
               name='enabled'
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })} />
+              )}
             />
           )}
         </div>
