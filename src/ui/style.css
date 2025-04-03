@@ -124,10 +124,6 @@
   }
 }
 
-@utility icon-button {
-  @apply text-gray-500 hover:enabled:text-gray-700 disabled:opacity-50;
-}
-
 @utility scrollbar-hidden {
   -ms-overflow-style: none;
   scrollbar-width: none;

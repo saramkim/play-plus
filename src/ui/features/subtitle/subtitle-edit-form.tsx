@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { useClickOutside } from '@/ui/hooks/use-click-outside';
 
 import { LANGUAGE_OPTIONS } from './subtitle-uploader';
+import { Button } from '@/ui/components/button';
 
 interface SubtitleEditFormProps {
   id: SubtitleId;
@@ -48,9 +49,9 @@ export function SubtitleEditForm({ id, initialTitle, initialLanguage, onEdit, cl
         </SelectContent>
       </Select>
       <Input value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
-      <button type='submit' className='icon-button'>
-        <CheckIcon className='size-5' />
-      </button>
+      <Button variant='outline' size='sm' type='submit'>
+        <CheckIcon />
+      </Button>
     </form>
   );
 }

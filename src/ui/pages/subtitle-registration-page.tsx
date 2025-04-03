@@ -13,6 +13,8 @@ import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
 import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
+import { Button } from '../components/button';
+import { cn } from '../lib/utils';
 
 export function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
@@ -65,7 +67,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
 
   return (
-    <li key={id} className='flex flex-col gap-2 py-2 border-b'>
+    <li key={id} className='flex flex-col gap-[6px] py-2 border-b'>
       <div>
         {isEditing ? (
           <SubtitleEditForm
@@ -76,37 +78,43 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             closeEditMode={() => setIsEditing(false)}
           />
         ) : (
-          <div className='flex items-center gap-2 group w-fit flex-wrap'>
+          <div className='flex items-center gap-[6px] group w-fit flex-wrap min-h-6'>
             <span className='text-[13px] text-gray-500'>{t(LANGUAGES[language])}</span>
             <p className='text-[15px] font-medium text-wrap'>{title}</p>
-            <button className='icon-button hidden group-hover:block' onClick={() => setIsEditing(true)}>
-              <PencilSquareIcon className='size-5' />
-            </button>
+            <Button
+              variant='ghost'
+              size='xxs'
+              className='hidden group-hover:inline-flex'
+              onClick={() => setIsEditing(true)}
+            >
+              <PencilSquareIcon />
+            </Button>
           </div>
         )}
       </div>
       <div className='flex justify-between items-center text-[13px]'>
-        <div className='flex items-center gap-1'>
-          <button
-            className={`icon-button ${isPrimarySubtitle ? 'text-primary!' : ''}`}
+        <div className='flex items-center'>
+          <Button
+            variant='ghost'
+            size='xxs'
+            className={cn(isPrimarySubtitle && 'text-primary!')}
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
-            <LinkIcon title={isAvailable ? t('primary_subtitle') : t('available_on_coupang_play')} className='size-5' />
-          </button>
-          <button
-            className={`icon-button ${isSecondarySubtitle ? 'text-primary!' : ''}`}
+            <LinkIcon title={isAvailable ? t('primary_subtitle') : t('available_on_coupang_play')} />
+          </Button>
+          <Button
+            variant='ghost'
+            size='xxs'
+            className={cn(isSecondarySubtitle && 'text-primary!')}
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >
-            <LinkIcon
-              title={isAvailable ? t('secondary_subtitle') : t('available_on_coupang_play')}
-              className='size-5'
-            />
-          </button>
-          <button className='icon-button' onClick={() => onDelete(id)}>
-            <TrashIcon title={t('delete')} className='size-5' />
-          </button>
+            <LinkIcon title={isAvailable ? t('secondary_subtitle') : t('available_on_coupang_play')} />
+          </Button>
+          <Button variant='ghost' size='xxs' onClick={() => onDelete(id)}>
+            <TrashIcon title={t('delete')} />
+          </Button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>
       </div>

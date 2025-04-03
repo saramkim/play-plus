@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 import { t } from '@utils/i18n';
+import { Button } from './button';
 
 const COPY_FEEDBACK_DURATION = 1800;
 
@@ -9,13 +10,14 @@ export function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
 
   return isCopied ? (
-    <div className='flex items-center gap-1 text-gray-700'>
+    <div className='flex items-center gap-1 text-gray-700 h-6 px-0.5'>
       <ClipboardDocumentCheckIcon title={t('copied')} className='size-5' />
       <span>{t('copied')}</span>
     </div>
   ) : (
-    <button
-      className='icon-button'
+    <Button
+      variant='ghost'
+      size='xxs'
       onClick={async () => {
         await navigator.clipboard.writeText(content);
         setIsCopied(true);
@@ -24,7 +26,7 @@ export function CopyButton({ content }: { content: string }) {
         }, COPY_FEEDBACK_DURATION);
       }}
     >
-      <ClipboardDocumentIcon title={t('copy')} className='size-5' />
-    </button>
+      <ClipboardDocumentIcon title={t('copy')} />
+    </Button>
   );
 }

@@ -14,10 +14,10 @@ export const KeydownInput = ({ value, onChange }: KeydownInputProps) => {
       <Input value={value} onKeyDown={({ code }) => code !== value && onChange(code)} readOnly />
       {value && (
         <button
-          className='icon-button absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover:block group-focus-within:block'
+          className='absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover:block group-focus-within:block'
           onClick={() => onChange('')}
         >
-          <XMarkIcon className='size-4' />
+          <XMarkIcon className='size-4 text-gray-500 hover:text-gray-700' />
         </button>
       )}
       <span

@@ -5,6 +5,7 @@ import { XMarkIcon } from '@heroicons/react/16/solid';
 import { cn } from '@/ui/lib/utils';
 
 import { modalService } from './modal-service';
+import { Button } from '../button';
 
 export function Modal() {
   const [content, setContent] = useState<React.ReactNode>(null);
@@ -39,9 +40,14 @@ export function Modal() {
         data-state={content ? 'open' : 'closed'}
       >
         <div>{content}</div>
-        <button className='absolute top-2 right-2 icon-button cursor-default' onClick={() => setContent(null)}>
+        <Button
+          variant='ghost'
+          size='xxs'
+          className='absolute top-2 right-2 cursor-default'
+          onClick={() => setContent(null)}
+        >
           <XMarkIcon className='size-4' />
-        </button>
+        </Button>
       </div>
     </div>
   ) : null;
