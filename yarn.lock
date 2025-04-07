@@ -5761,9 +5761,9 @@ __metadata:
     style-loader: "npm:^4.0.0"
     tailwind-merge: "npm:^3.0.2"
     tailwindcss: "npm:^4.0.9"
-    tailwindcss-animate: "npm:^1.0.7"
     ts-loader: "npm:^9.5.1"
     tsconfig-paths-webpack-plugin: "npm:^4.2.0"
+    tw-animate-css: "npm:^1.2.5"
     typescript: "npm:^5.6.3"
     typescript-eslint: "npm:^8.26.0"
     webpack: "npm:^5.95.0"
@@ -6703,15 +6703,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss-animate@npm:^1.0.7":
-  version: 1.0.7
-  resolution: "tailwindcss-animate@npm:1.0.7"
-  peerDependencies:
-    tailwindcss: "*"
-  checksum: 10c0/ec7dbd1631076b97d66a1fbaaa06e0725fccfa63119221e8d87a997b02dcede98ad88bb1ef6665b968f5d260fcefb10592e0299ca70208d365b37761edf5e19a
-  languageName: node
-  linkType: hard
-
 "tailwindcss@npm:4.0.9, tailwindcss@npm:^4.0.9":
   version: 4.0.9
   resolution: "tailwindcss@npm:4.0.9"
@@ -6845,6 +6836,13 @@ __metadata:
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
+  languageName: node
+  linkType: hard
+
+"tw-animate-css@npm:^1.2.5":
+  version: 1.2.5
+  resolution: "tw-animate-css@npm:1.2.5"
+  checksum: 10c0/6db58d82d3547b11596b90eeb1b951e6586c93010d464a4aadc96a72b8e5e842e5517d2ac83074cd821676c811ffc4ec99db66d1afb6ca3253d3f88e6390c575
   languageName: node
   linkType: hard
 
