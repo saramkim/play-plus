@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 import { XMarkIcon } from '@heroicons/react/16/solid';
 
+import { Button } from '@/ui/components/button';
 import { cn } from '@/ui/lib/utils';
 
 import { modalService } from './modal-service';
-import { Button } from '../button';
 
 export function Modal() {
   const [content, setContent] = useState<React.ReactNode>(null);

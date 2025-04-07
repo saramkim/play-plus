@@ -6,10 +6,10 @@ import { COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
 
+import { Button } from '@/ui/components/button';
 import { CopyButton } from '@/ui/components/copy-button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
 import { useSavedSubtitle } from '@/ui/features/subtitle/use-saved-subtitle';
-import { Button } from '../components/button';
 
 export function ReviewPage() {
   const [filteredSubtitles, setFilteredSubtitles] = useState<SavedSubtitle[]>([]);
@@ -55,14 +55,15 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
           <Button
             variant='ghost'
             size='xxs'
+            tooltip={t('view_video')}
             disabled={!url.startsWith(COUPANG_PLAY_PLAY_URL)}
             onClick={() => sendMessage('viewVideo', { url, startTime })}
           >
-            <PlayIcon title={url.startsWith(COUPANG_PLAY_PLAY_URL) ? t('view_video') : t('error_unsupported_url')} />
+            <PlayIcon />
           </Button>
           <CopyButton content={content} />
-          <Button variant='ghost' size='xxs' onClick={() => onDelete(content)}>
-            <TrashIcon title={t('delete')} />
+          <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(content)}>
+            <TrashIcon />
           </Button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>

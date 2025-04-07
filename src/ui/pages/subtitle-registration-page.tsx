@@ -7,14 +7,14 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { t } from '@utils/i18n';
 
+import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
 import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
 import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
 import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
-import { Button } from '../components/button';
-import { cn } from '../lib/utils';
+import { cn } from '@/ui/lib/utils';
 
 export function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
@@ -84,6 +84,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             <Button
               variant='ghost'
               size='xxs'
+              tooltip={t('edit')}
               className='hidden group-hover:inline-flex'
               onClick={() => setIsEditing(true)}
             >
@@ -97,23 +98,25 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
           <Button
             variant='ghost'
             size='xxs'
+            tooltip={t('primary_subtitle')}
             className={cn(isPrimarySubtitle && 'text-primary!')}
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
-            <LinkIcon title={isAvailable ? t('primary_subtitle') : t('available_on_coupang_play')} />
+            <LinkIcon />
           </Button>
           <Button
             variant='ghost'
             size='xxs'
+            tooltip={t('secondary_subtitle')}
             className={cn(isSecondarySubtitle && 'text-primary!')}
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >
-            <LinkIcon title={isAvailable ? t('secondary_subtitle') : t('available_on_coupang_play')} />
+            <LinkIcon />
           </Button>
-          <Button variant='ghost' size='xxs' onClick={() => onDelete(id)}>
-            <TrashIcon title={t('delete')} />
+          <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(id)}>
+            <TrashIcon />
           </Button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>
