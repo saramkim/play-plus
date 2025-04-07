@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
-import { PencilSquareIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { CaptionsIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
@@ -88,7 +88,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
               className='hidden group-hover:inline-flex'
               onClick={() => setIsEditing(true)}
             >
-              <PencilSquareIcon />
+              <PencilIcon />
             </Button>
           </div>
         )}
@@ -103,7 +103,7 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
           >
-            <LinkIcon />
+            <CaptionsIcon className='size-5' />
           </Button>
           <Button
             variant='ghost'
@@ -113,10 +113,10 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             disabled={!isAvailable}
             onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
           >
-            <LinkIcon />
+            <CaptionsIcon className='size-5' />
           </Button>
           <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(id)}>
-            <TrashIcon />
+            <Trash2Icon />
           </Button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>

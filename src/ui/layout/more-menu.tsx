@@ -1,8 +1,8 @@
-import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
 import { clearStorage, setStorageAll } from '@storage/index';
 import { LEARNING_CONFIG } from '@storage/preset';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { EllipsisIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import {
@@ -46,7 +46,7 @@ export function MoreMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' size='icon'>
-          <EllipsisHorizontalIcon className='size-7 ' />
+          <EllipsisIcon className='size-6' />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>

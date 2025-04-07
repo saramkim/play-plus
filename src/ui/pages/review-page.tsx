@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-import { PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
+import { PlayIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { CopyButton } from '@/ui/components/copy-button';
@@ -63,7 +63,7 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
           </Button>
           <CopyButton content={content} />
           <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(content)}>
-            <TrashIcon />
+            <Trash2Icon />
           </Button>
         </div>
         <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>

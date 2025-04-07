@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { XMarkIcon } from '@heroicons/react/16/solid';
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { t } from '@utils/i18n';
+import { XIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
@@ -59,8 +59,8 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
       <div className='flex justify-between items-center gap-2 h-5'>
         {searchText ? (
           <div className='flex items-center gap-1 w-full overflow-hidden'>
-            <button className='text-destructive' onClick={clearSearch}>
-              <XMarkIcon className='size-4' />
+            <button onClick={clearSearch}>
+              <XIcon className='size-4 text-destructive hover:text-destructive/80' />
             </button>
             <span className='text-gray-800'>{t('search_term')}:</span>
             <span className='font-bold truncate'>{searchText}</span>

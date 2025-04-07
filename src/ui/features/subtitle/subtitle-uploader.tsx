@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 
-import { ArrowUpTrayIcon } from '@heroicons/react/20/solid';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { setLocalSubtitle } from '@storage/subtitle';
 import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
+import { FileTextIcon, FileUpIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
@@ -128,12 +127,12 @@ export function SubtitleUploader() {
       >
         {file ? (
           <>
-            <DocumentTextIcon className='size-5 shrink-0' />
+            <FileTextIcon className='size-5 shrink-0' />
             <span className='text-[15px] font-bold truncate'>{file.name}</span>
           </>
         ) : (
           <>
-            <ArrowUpTrayIcon className='size-5' />
+            <FileUpIcon className='size-5' />
             <span className='text-[15px] font-bold'>{t('upload_subtitle_file')}</span>
             <span className='text-[12px] text-gray-500'>{allowedExtensionsString}</span>
           </>

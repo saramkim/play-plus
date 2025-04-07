@@ -1,16 +1,16 @@
 import { useRef, useState } from 'react';
 
-import { CheckIcon } from '@heroicons/react/24/outline';
 import { SubtitleId } from '@storage/subtitle';
 import { Language } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { CheckIcon } from 'lucide-react';
 
+import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/ui/components/select';
 import { useClickOutside } from '@/ui/hooks/use-click-outside';
 
 import { LANGUAGE_OPTIONS } from './subtitle-uploader';
-import { Button } from '@/ui/components/button';
 
 interface SubtitleEditFormProps {
   id: SubtitleId;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 import { t } from '@utils/i18n';
+import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 
 import { Button } from './button';
 
@@ -11,8 +11,8 @@ export function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
 
   return isCopied ? (
-    <div className='flex items-center gap-1 text-gray-700 h-6 px-0.5'>
-      <ClipboardDocumentCheckIcon className='size-5' />
+    <div className='flex items-center gap-1 text-gray-700 h-6 px-0.75'>
+      <CopyCheckIcon className='size-4.5' />
       <span>{t('copied')}</span>
     </div>
   ) : (
@@ -28,7 +28,7 @@ export function CopyButton({ content }: { content: string }) {
         }, COPY_FEEDBACK_DURATION);
       }}
     >
-      <ClipboardDocumentIcon />
+      <CopyIcon />
     </Button>
   );
 }

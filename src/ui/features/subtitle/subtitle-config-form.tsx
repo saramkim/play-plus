@@ -1,6 +1,6 @@
-import { EqualsIcon } from '@heroicons/react/20/solid';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { WrapTextIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ColorPicker } from '@/ui/components/color-picker';
@@ -185,7 +185,7 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
                   pressed={field.value}
                   onPressedChange={field.onChange}
                 >
-                  <EqualsIcon className='size-5' />
+                  <WrapTextIcon className='size-5' />
                 </Toggle>
               </FormControl>
             </FormItem>
