@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 export type SubtitleData = {
   start: number;
   end: number;
@@ -5,13 +7,15 @@ export type SubtitleData = {
   settings?: string[];
 };
 
+const INITIAL_SUBTITLE: SubtitleData = { start: 0, end: 0, text: '' };
+
 export const parseVTT = (data: string) => {
   if (!data || !data.trim()) return [];
 
   const subtitles: SubtitleData[] = [];
   const lines = data.split('\n');
   const startIndex = lines[0].includes('WEBVTT') ? 1 : 0;
-  let currentSubtitle: SubtitleData = { start: 0, end: 0, text: '' };
+  let currentSubtitle = { ...INITIAL_SUBTITLE };
 
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -26,9 +30,9 @@ export const parseVTT = (data: string) => {
       if (currentSubtitle.text.trim()) {
         subtitles.push({ ...currentSubtitle });
       }
-      currentSubtitle = { start: 0, end: 0, text: '' };
+      currentSubtitle = { ...INITIAL_SUBTITLE };
     } else {
-      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line;
+      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + sanitize(line);
     }
   }
 
@@ -44,7 +48,7 @@ export const parseSRT = (data: string) => {
 
   const subtitles: SubtitleData[] = [];
   const lines = data.split(/\r?\n/);
-  let currentSubtitle = { start: 0, end: 0, text: '' };
+  let currentSubtitle = { ...INITIAL_SUBTITLE };
   let step = 0; // 0: 인덱스, 1: 시간, 2: 텍스트
 
   for (let i = 0; i < lines.length; i++) {
@@ -54,7 +58,7 @@ export const parseSRT = (data: string) => {
       if (currentSubtitle.text.trim()) {
         subtitles.push({ ...currentSubtitle });
       }
-      currentSubtitle = { start: 0, end: 0, text: '' };
+      currentSubtitle = { ...INITIAL_SUBTITLE };
       step = 0;
       continue;
     }
@@ -67,7 +71,7 @@ export const parseSRT = (data: string) => {
       currentSubtitle.end = end;
       step = 2;
     } else if (step === 2) {
-      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + line;
+      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + sanitize(line);
     }
   }
 
@@ -97,7 +101,7 @@ export const parseSMI = (data: string) => {
     const text = data.substring(textStart, textEnd).replace(tagRegex, '').replace(nbspRegex, '').trim();
 
     if (text) {
-      subtitles.push({ start, end, text });
+      subtitles.push({ start, end, text: sanitize(text) });
     }
   }
 
@@ -116,6 +120,14 @@ export const getSubtitleFormat = (file: File): keyof typeof parseSubtitle | unde
     if (file.name.toLowerCase().endsWith(extension)) return extension;
   }
   return;
+};
+
+const sanitize = (dirtyText: string) => {
+  return DOMPurify.sanitize(dirtyText, {
+    ALLOWED_TAGS: ['b', 'i', 'u', 'c', 'v', 'lang', 'ruby', 'rt'],
+    ALLOWED_ATTR: ['class', 'title', 'lang'],
+    ALLOW_UNKNOWN_PROTOCOLS: false,
+  });
 };
 
 const timeToSeconds = (time: string) => {
