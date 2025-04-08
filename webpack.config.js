@@ -4,8 +4,11 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
+const isProd = process.argv.at(-1) === 'production';
+
 module.exports = {
   mode: 'production',
+  devtool: isProd ? false : 'source-map',
   entry: {
     index: path.resolve(__dirname, 'src/ui/index.tsx'),
     background: path.resolve(__dirname, 'src/background/index.ts'),
@@ -50,7 +53,6 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
   },
-  devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/ui/index.html',
