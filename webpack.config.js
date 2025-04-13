@@ -62,7 +62,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [{ from: 'public', to: '.' }],
     }),
-    new BundleAnalyzerPlugin(),
+    ...(isProd ? [new BundleAnalyzerPlugin()] : []),
   ],
   optimization: {
     splitChunks: {
