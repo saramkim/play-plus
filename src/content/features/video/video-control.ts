@@ -2,12 +2,12 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage, updateStorage } from '@storage/index';
 import { StorageChange, StorageChanges, StorageSchema } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
+import { findSubtitleIndex } from '@utils/helper';
 
 import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
-import { findSubtitleIndex } from '@/content/utils/subtitle';
 
 type KeyBindings = { [key: string]: () => void };
 

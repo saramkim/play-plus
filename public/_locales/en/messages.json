@@ -24,6 +24,7 @@
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
   "subtitle_registration": { "message": "Subtitle Registration" },
+  "subtitle_analysis": { "message": "Subtitle Analysis" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },

@@ -1,5 +1,6 @@
 import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
+import { updateTabInfo } from '@storage/tab';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_PLAY_URL, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { onMessage, sendMessageToTab, ViewVideoMessage } from '@utils/message';
 
@@ -19,6 +20,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 onMessage((message, sender, sendResponse) => {
   const { viewVideo } = message;
   if (viewVideo) handleViewVideo(viewVideo);
+
+  if (message.updateSubtitles && sender.tab?.id) {
+    const { lang, subtitleData } = message.updateSubtitles;
+    updateTabInfo(sender.tab.id, { [lang]: subtitleData });
+  }
 
   for (const action of Object.values(SET_SUBTITLE_ACTION)) {
     if (message[action]) {

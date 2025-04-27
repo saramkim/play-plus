@@ -2,6 +2,7 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
+import { sendMessage } from '@utils/message';
 import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/store/element-store';
@@ -48,13 +49,18 @@ export async function initializeSubtitleSync() {
 export async function fetchAndCacheSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
   const subtitleApiInfoList = await fetchVideoMetadata(url, headers);
   for (const { lang, url } of subtitleApiInfoList) {
-    subtitleStore.setSubtitleCache(lang, await fetchSubtitle(url));
+    const subtitleData = await fetchSubtitle(url);
+    subtitleStore.setSubtitleCache(lang, subtitleData);
+    sendMessage('updateSubtitles', { lang, subtitleData });
   }
 }
 
 export function setupSubtitleSync(video: HTMLVideoElement) {
   syncSubtitles(video, true);
-  handleVideoTimeupdate = () => syncSubtitles(video);
+  handleVideoTimeupdate = () => {
+    syncSubtitles(video);
+    sendMessage('updateCurrentTime', video.currentTime);
+  };
   video.addEventListener('timeupdate', handleVideoTimeupdate);
 }
 

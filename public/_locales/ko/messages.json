@@ -24,6 +24,7 @@
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
   "subtitle_registration": { "message": "자막 등록" },
+  "subtitle_analysis": { "message": "자막 분석" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },

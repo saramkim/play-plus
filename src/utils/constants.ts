@@ -44,6 +44,7 @@ export const PAGE_NAME = {
   SUBTITLE_SETTING: 'subtitle-setting',
   VIDEO_SETTING: 'video-setting',
   REVIEW: 'review',
+  SUBTITLE_ANALYSIS: 'subtitle-analysis',
   SUBTITLE_REGISTRATION: 'subtitle-registration',
 } as const;
 export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];

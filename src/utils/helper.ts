@@ -1,3 +1,5 @@
+import { SubtitleData } from './parse';
+
 export const formatTime = (seconds: number): string => {
   const roundedSeconds = Math.round(seconds);
   let hours = Math.floor(roundedSeconds / 3600);
@@ -21,4 +23,34 @@ export const formatTime = (seconds: number): string => {
   ].filter(Boolean);
 
   return parts.join(':');
+};
+
+/**
+ * 주어진 시간에 해당하는 자막 인덱스를 반환한다.
+ *
+ * - 자막 범위에 정확히 포함되면 정수 인덱스를 반환
+ * - 자막과 자막 사이에 위치하면 `n + 0.5` 형식으로 반환
+ */
+export const findSubtitleIndex = (subtitles: SubtitleData[], time: number) => {
+  let left = 0;
+  let right = subtitles.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const { start, end } = subtitles[mid];
+
+    if (start <= time && time <= end) return mid;
+
+    if (time < start) {
+      if (mid === 0) return 0 - 0.5; // 첫 번째 자막 이전
+      if (time > subtitles[mid - 1].end) return mid - 0.5; // 자막 사이
+      right = mid - 1;
+    } else {
+      if (mid === subtitles.length - 1) return subtitles.length - 1 + 0.5; // 마지막 자막 이후
+      if (time < subtitles[mid + 1].start) return mid + 0.5; // 자막 사이
+      left = mid + 1;
+    }
+  }
+
+  return -1;
 };

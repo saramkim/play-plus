@@ -9,13 +9,14 @@ import { Footer } from './layout/footer';
 import { Header } from './layout/header';
 import { OnboardingContent } from './layout/onboarding-content';
 import { ReviewPage } from './pages/review-page';
+import { SubtitleAnalysisPage } from './pages/subtitle-analysis-page';
 import { SubtitleRegistrationPage } from './pages/subtitle-registration-page';
 import { SubtitleSettingPage } from './pages/subtitle-setting-page';
 import { VideoSettingPage } from './pages/video-setting-page';
 
 const pageList = Object.values(PAGE_NAME);
 
-const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
+const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION, SUBTITLE_ANALYSIS } = PAGE_NAME;
 const LAST_VIEWED_PAGE_KEY = 'lastViewedPage';
 const IS_ONBOARDING_COMPLETE_KEY = 'isOnboardingComplete';
 
@@ -23,6 +24,7 @@ const pageMap = {
   [SUBTITLE_SETTING]: <SubtitleSettingPage />,
   [VIDEO_SETTING]: <VideoSettingPage />,
   [REVIEW]: <ReviewPage />,
+  [SUBTITLE_ANALYSIS]: <SubtitleAnalysisPage />,
   [SUBTITLE_REGISTRATION]: <SubtitleRegistrationPage />,
 };
 

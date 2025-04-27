@@ -1,3 +1,5 @@
+import { SubtitleData } from '@utils/parse';
+
 import { SubtitleId } from './subtitle';
 
 const KEY_PREFIX = 'tab_';
@@ -5,6 +7,8 @@ const KEY_PREFIX = 'tab_';
 export type TabInfo = {
   primarySubtitle?: SubtitleId;
   secondarySubtitle?: SubtitleId;
+  en?: SubtitleData[];
+  ko?: SubtitleData[];
 };
 
 export const updateTabInfo = async (tabId: number, info: TabInfo) => {

@@ -5,12 +5,13 @@ import { t } from '@utils/i18n';
 
 import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
 
-const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION } = PAGE_NAME;
-const pageMap = {
+const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION, SUBTITLE_ANALYSIS } = PAGE_NAME;
+const pageTitleMap = {
   [SUBTITLE_SETTING]: t('subtitle_setting'),
   [VIDEO_SETTING]: t('video_setting'),
   [REVIEW]: t('review'),
   [SUBTITLE_REGISTRATION]: t('subtitle_registration'),
+  [SUBTITLE_ANALYSIS]: t('subtitle_analysis'),
 };
 
 interface HeaderProps {
@@ -45,7 +46,7 @@ export function Header({ pageList, currentPage, navigate }: HeaderProps) {
             currentPage === page ? 'border-b-2 border-b-foreground font-bold' : 'text-gray-500 font-medium'
           }`}
         >
-          {pageMap[page]}
+          {pageTitleMap[page]}
         </div>
       ))}
     </div>

@@ -1,5 +1,7 @@
 import { SubtitleId } from '@storage/subtitle';
 
+import { SubtitleData } from './parse';
+
 export type FetchVideoMetadataMessage = {
   url: string;
   headers: chrome.webRequest.HttpHeader[];
@@ -27,6 +29,8 @@ type MessageData = {
   viewVideo: ViewVideoMessage;
   setPrimarySubtitle: SetSubtitleMessage;
   setSecondarySubtitle: SetSubtitleMessage;
+  updateCurrentTime: number;
+  updateSubtitles: { lang: string; subtitleData: SubtitleData[] };
 };
 type MessageKey = keyof MessageData;
 
@@ -51,5 +55,7 @@ type MessageCallback = (
 ) => void;
 
 export const onMessage = (callback: MessageCallback) => {
-  chrome.runtime.onMessage.addListener(callback);
+  const { onMessage } = chrome.runtime;
+  onMessage.addListener(callback);
+  return { remove: () => onMessage.removeListener(callback) };
 };
