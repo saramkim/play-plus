@@ -1,10 +1,11 @@
 import DOMPurify from 'dompurify';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
-import { findSubtitleIndex } from '@utils/helper';
+import { findSubtitleIndex, formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { onMessage } from '@utils/message';
+import { onMessage, sendMessageToTab } from '@utils/message';
 import { SubtitleData } from '@utils/parse';
+import { toast } from 'sonner';
 
 import { Button } from '@/ui/components/button';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
@@ -19,7 +20,7 @@ export function SubtitleAnalysisPage() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [language, setLanguage] = useState<'en' | 'ko'>('en');
-  const { tabInfo } = useTabInfo();
+  const { activeTab, tabInfo } = useTabInfo();
   const activeSubtitleRef = useRef<HTMLLIElement>(null);
 
   const activeIndex = useMemo(() => findSubtitleIndex(subtitles, currentTime), [subtitles, currentTime]);
@@ -65,8 +66,15 @@ export function SubtitleAnalysisPage() {
           {subtitles.map((subtitle, index) => (
             <SubtitleItem
               key={index}
-              text={subtitle.text}
+              subtitle={subtitle}
               isActive={index === activeIndex}
+              onClick={() => {
+                if (activeTab?.id) {
+                  sendMessageToTab(activeTab.id, 'playVideo', { startTime: subtitle.start });
+                } else {
+                  toast.error(t('error_video_not_found'));
+                }
+              }}
               ref={index === activeIndex ? activeSubtitleRef : null}
             />
           ))}
@@ -76,16 +84,34 @@ export function SubtitleAnalysisPage() {
   );
 }
 
-const SubtitleItem = memo(
-  ({ text, isActive, ...props }: { text: string; isActive: boolean } & React.ComponentProps<'li'>) => (
-    <li className={cn('p-2 rounded', isActive ? 'bg-primary/20' : 'bg-gray-50')} {...props}>
+interface SubtitleItemProps extends React.ComponentProps<'li'> {
+  subtitle: SubtitleData;
+  isActive: boolean;
+}
+
+const SubtitleItem = memo(({ subtitle, isActive, onClick, ...props }: SubtitleItemProps) => {
+  const { text, start, end } = subtitle;
+  return (
+    <li
+      className={cn('p-2 rounded relative group', isActive ? 'bg-primary/20' : 'bg-gray-50 hover:bg-gray-200')}
+      onClick={onClick}
+      {...props}
+    >
       <p
         className='whitespace-pre-line'
         dangerouslySetInnerHTML={{
           __html: DOMPurify.sanitize(text),
         }}
       />
+      <div
+        className={cn(
+          'absolute bottom-[calc(100%+0.25rem)] right-0 bg-gray-200 rounded px-2 py-1 z-10 text-[13px]',
+          'opacity-0 group-hover:opacity-100 pointer-events-none'
+        )}
+      >
+        {formatTime(start)} - {formatTime(end)}
+      </div>
     </li>
-  )
-);
+  );
+});
 SubtitleItem.displayName = 'SubtitleItem';
