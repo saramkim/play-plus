@@ -1,11 +1,12 @@
 import DOMPurify from 'dompurify';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
-import { findSubtitleIndex, formatTime } from '@utils/helper';
+import { getLocalStorage, setLocalStorage } from '@storage/index';
+import { findSubtitleIndex, formatTime, stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { onMessage, sendMessageToTab } from '@utils/message';
 import { SubtitleData } from '@utils/parse';
-import { MouseIcon } from 'lucide-react';
+import { MouseIcon, StarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/ui/components/button';
@@ -86,6 +87,7 @@ export function SubtitleAnalysisPage() {
           {subtitles.map((subtitle, index) => (
             <SubtitleItem
               key={index}
+              ref={index === activeIndex ? activeSubtitleRef : null}
               subtitle={subtitle}
               isActive={index === activeIndex}
               onClick={() => {
@@ -95,7 +97,24 @@ export function SubtitleAnalysisPage() {
                   toast.error(t('error_video_not_found'));
                 }
               }}
-              ref={index === activeIndex ? activeSubtitleRef : null}
+              onSave={async (subtitle) => {
+                const content = stripTags(subtitle.text);
+                const prevData = (await getLocalStorage('savedSubtitles')) || [];
+                const isDuplicated = prevData.some(({ content: prevContent }) => prevContent === content);
+
+                if (isDuplicated) {
+                  toast.error(t('error_duplicate_subtitle'));
+                } else {
+                  const data = {
+                    content,
+                    url: activeTab?.url || '',
+                    startTime: subtitle.start,
+                    savedAt: new Date().toISOString(),
+                  };
+                  await setLocalStorage('savedSubtitles', [...prevData, data]);
+                  toast.success(t('success_save_subtitle'));
+                }
+              }}
             />
           ))}
         </ul>
@@ -107,14 +126,14 @@ export function SubtitleAnalysisPage() {
 interface SubtitleItemProps extends React.ComponentProps<'li'> {
   subtitle: SubtitleData;
   isActive: boolean;
+  onSave: (subtitle: SubtitleData) => void;
 }
 
-const SubtitleItem = memo(({ subtitle, isActive, onClick, ...props }: SubtitleItemProps) => {
+const SubtitleItem = memo(({ subtitle, isActive, onSave, ...props }: SubtitleItemProps) => {
   const { text, start, end } = subtitle;
   return (
     <li
       className={cn('p-2 rounded relative group', isActive ? 'bg-primary/20' : 'bg-gray-50 hover:bg-gray-200')}
-      onClick={onClick}
       {...props}
     >
       <p
@@ -131,6 +150,18 @@ const SubtitleItem = memo(({ subtitle, isActive, onClick, ...props }: SubtitleIt
       >
         {formatTime(start)} - {formatTime(end)}
       </div>
+      <Button
+        variant='ghost'
+        size='xxs'
+        className='absolute top-1/2 -translate-y-1/2 right-2 opacity-0 group-hover:opacity-100 bg-gray-200'
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onSave(subtitle);
+        }}
+      >
+        <StarIcon className='size-4' />
+      </Button>
     </li>
   );
 });

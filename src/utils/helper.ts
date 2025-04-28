@@ -54,3 +54,9 @@ export const findSubtitleIndex = (subtitles: SubtitleData[], time: number) => {
 
   return -1;
 };
+
+export const stripTags = (line: string): string => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${line}</div>`, 'text/html');
+  return doc.body.textContent?.trim() ?? '';
+};
