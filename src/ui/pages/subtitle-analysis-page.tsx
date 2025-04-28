@@ -5,9 +5,12 @@ import { findSubtitleIndex, formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { onMessage, sendMessageToTab } from '@utils/message';
 import { SubtitleData } from '@utils/parse';
+import { MouseIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/ui/components/button';
+import { Toggle } from '@/ui/components/toggle';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/tooltip';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
 import { cn } from '@/ui/lib/utils';
 
@@ -20,6 +23,7 @@ export function SubtitleAnalysisPage() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [language, setLanguage] = useState<'en' | 'ko'>('en');
+  const [autoScroll, setAutoScroll] = useState(true);
   const { activeTab, tabInfo } = useTabInfo();
   const activeSubtitleRef = useRef<HTMLLIElement>(null);
 
@@ -43,23 +47,39 @@ export function SubtitleAnalysisPage() {
   }, []);
 
   useEffect(() => {
-    activeSubtitleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [activeIndex]);
+    if (autoScroll) {
+      activeSubtitleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeIndex, autoScroll]);
 
   return (
     <div className='h-full flex flex-col'>
-      <header className='flex items-center border-b py-1 px-2'>
-        {SUBTITLE_OPTIONS.map((subtitle) => (
-          <Button
-            variant='ghost'
-            size='sm'
-            key={subtitle.id}
-            onClick={() => setLanguage(subtitle.id)}
-            className={cn(language === subtitle.id && 'bg-accent text-accent-foreground')}
-          >
-            {subtitle.label}
-          </Button>
-        ))}
+      <header className='flex items-center justify-between border-b py-1 px-2'>
+        <div className='flex items-center'>
+          {SUBTITLE_OPTIONS.map((subtitle) => (
+            <Button
+              variant='ghost'
+              size='sm'
+              key={subtitle.id}
+              onClick={() => setLanguage(subtitle.id)}
+              className={cn(language === subtitle.id && 'bg-accent text-accent-foreground')}
+            >
+              {subtitle.label}
+            </Button>
+          ))}
+        </div>
+        <div className='border-l pl-2'>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Toggle pressed={autoScroll} onPressedChange={setAutoScroll} aria-label={t('auto_scroll')} size='sm'>
+                  <MouseIcon className='size-5' />
+                </Toggle>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>{t('auto_scroll')}</TooltipContent>
+          </Tooltip>
+        </div>
       </header>
       <div className='p-2 overflow-y-auto'>
         <ul className='flex flex-col gap-1'>

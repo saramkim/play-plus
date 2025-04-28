@@ -40,6 +40,7 @@
 
   "all_list": { "message": "All List" },
   "allow_line_break": { "message": "Allow Line Break" },
+  "auto_scroll": { "message": "Auto Scroll" },
   "available_on_coupang_play": { "message": "Available on Coupang Play" },
   "backward_key": { "message": "Backward Key" },
   "background_opacity": { "message": "Background Opacity" },
