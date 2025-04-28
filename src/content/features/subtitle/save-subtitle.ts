@@ -34,9 +34,9 @@ export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
 export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
   try {
     const subtitle = await saveSubtitle(subtitleElement);
-    showToast(t('success_save_subtitle'), subtitle, 'success');
+    showToast(`✔ ${t('success_save_subtitle')}`, subtitle, 'success');
   } catch (error) {
-    showToast(t('error_save_subtitle'), (error as Error).message, 'error');
+    showToast(`✖ ${t('error_save_subtitle')}`, (error as Error).message, 'error');
   }
 }
 

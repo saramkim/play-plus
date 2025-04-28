@@ -218,7 +218,7 @@ const updateLoopUI = (isLooping: boolean) => {
 
 const handleLoopError = (e: unknown) => {
   const message = e instanceof Error ? e.message : JSON.stringify(e);
-  showToast(t('error_loop'), message, 'error');
+  showToast(`✖ ${t('error_loop')}`, message, 'error');
 };
 
 const showLoopMarkers = () => {

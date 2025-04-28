@@ -23,8 +23,9 @@
 
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
-  "subtitle_registration": { "message": "자막 등록" },
+  "review": { "message": "복습" },
   "subtitle_analysis": { "message": "자막 분석" },
+  "subtitle_registration": { "message": "자막 등록" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
@@ -76,7 +77,6 @@
   "register": { "message": "등록" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
-  "review": { "message": "복습" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
   "save": { "message": "저장" },
@@ -107,10 +107,9 @@
 
   "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
 
-  "success_save_subtitle": { "message": "✔ 자막 저장 완료" },
-  "error_save_subtitle": { "message": "✖ 자막 저장 실패" },
-  "error_skip_video": { "message": "✖ 영상 이동 실패" },
-  "error_loop": { "message": "✖ 구간 반복 실패" },
+  "success_save_subtitle": { "message": "자막 저장 완료" },
+  "error_save_subtitle": { "message": "자막 저장 실패" },
+  "error_loop": { "message": "구간 반복 실패" },
   "info_loop_stop": { "message": "구간 반복 해제" },
 
   "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
@@ -140,7 +139,6 @@
   "error_reserved_shortcuts": { "message": "예약된 단축키입니다." },
   "error_duplicate_shortcuts": { "message": "단축키가 중복됩니다." },
   "error_video_not_found": { "message": "영상을 찾을 수 없습니다." },
-  "error_unsupported_url": { "message": "지원하지 않는 사이트입니다." },
   "error_try_later": { "message": "나중에 다시 시도해주세요." },
   "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
   "error_no_subtitle": { "message": "자막이 없습니다." },

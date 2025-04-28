@@ -23,8 +23,9 @@
 
   "subtitle_setting": { "message": "Subtitle Setting" },
   "video_setting": { "message": "Video Setting" },
-  "subtitle_registration": { "message": "Subtitle Registration" },
+  "review": { "message": "Review" },
   "subtitle_analysis": { "message": "Subtitle Analysis" },
+  "subtitle_registration": { "message": "Subtitle Registration" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
@@ -76,7 +77,6 @@
   "register": { "message": "Register" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
-  "review": { "message": "Review" },
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
   "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
   "save": { "message": "Save" },
@@ -107,10 +107,9 @@
 
   "confirm_delete": { "message": "Are you sure you want to delete?" },
 
-  "success_save_subtitle": { "message": "✔ Subtitle saved" },
-  "error_save_subtitle": { "message": "✖ Failed to save subtitle" },
-  "error_skip_video": { "message": "✖ Failed to skip video" },
-  "error_loop": { "message": "✖ Failed to loop" },
+  "success_save_subtitle": { "message": "Subtitle saved" },
+  "error_save_subtitle": { "message": "Failed to save subtitle" },
+  "error_loop": { "message": "Failed to loop" },
   "info_loop_stop": { "message": "Loop is stopped" },
 
   "error_text_type": { "message": "Only text is allowed." },
@@ -136,7 +135,6 @@
   "error_unsupported_file_type": { "message": "Unsupported file type. Please upload SRT or VTT files." },
   "error_reserved_shortcuts": { "message": "Reserved Shortcuts." },
   "error_video_not_found": { "message": "Video not found." },
-  "error_unsupported_url": { "message": "Unsupported site." },
   "error_try_later": { "message": "Please try again later." },
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },
   "error_no_subtitle": { "message": "No subtitle." },
