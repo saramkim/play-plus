@@ -1,8 +1,8 @@
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
-import { KeydownInput } from '@/ui/components/keydown-input';
+import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form';
+import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 import { cn } from '@/ui/lib/utils';
@@ -42,50 +42,22 @@ export function LoopConfigForm() {
         <FormField
           control={form.control}
           name='toggleLoop'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('toggle_loop_key')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('toggle_loop_key')} field={field} />}
         />
         <FormField
           control={form.control}
           name='startPoint'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('start_point_key')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('start_point_key')} field={field} />}
         />
         <FormField
           control={form.control}
           name='endPoint'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('end_point_key')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('end_point_key')} field={field} />}
         />
         <FormField
           control={form.control}
           name='loopCurrentSubtitle'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('loop_current_subtitle')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('loop_current_subtitle')} field={field} />}
         />
       </div>
     </Form>

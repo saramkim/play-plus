@@ -2,8 +2,8 @@ import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
-import { KeydownInput } from '@/ui/components/keydown-input';
+import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form';
+import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 import { cn } from '@/ui/lib/utils';
@@ -45,50 +45,22 @@ export function ShortcutsConfigForm() {
         <FormField
           control={form.control}
           name='savePrimary'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('save_primary_subtitle')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('save_primary_subtitle')} field={field} />}
         />
         <FormField
           control={form.control}
           name='saveSecondary'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('save_secondary_subtitle')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('save_secondary_subtitle')} field={field} />}
         />
         <FormField
           control={form.control}
           name='togglePrimary'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('toggle_primary_subtitle')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('toggle_primary_subtitle')} field={field} />}
         />
         <FormField
           control={form.control}
           name='toggleSecondary'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('toggle_secondary_subtitle')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('toggle_secondary_subtitle')} field={field} />}
         />
       </div>
     </Form>

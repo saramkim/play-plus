@@ -72,7 +72,7 @@
   "optimize_for_learning": { "message": "학습 최적화" },
   "position_offset": { "message": "위치 조정" },
   "position_reference": { "message": "위치 기준" },
-  "press_any_key": { "message": "키 입력" },
+  "press_any_key": { "message": "키를 눌러 입력하세요" },
   "primary_subtitle": { "message": "메인 자막" },
   "register": { "message": "등록" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
@@ -136,7 +136,7 @@
     "message": "지원하지 않는 파일 형식입니다.\n$fileType$ 파일만 업로드해주세요.",
     "placeholders": { "fileType": { "content": "$1" } }
   },
-  "error_reserved_shortcuts": { "message": "예약된 단축키입니다." },
+  "error_reserved_shortcuts": { "message": "시스템에서 사용 중입니다" },
   "error_duplicate_shortcuts": { "message": "단축키가 중복됩니다." },
   "error_video_not_found": { "message": "영상을 찾을 수 없습니다." },
   "error_try_later": { "message": "나중에 다시 시도해주세요." },

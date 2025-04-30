@@ -131,9 +131,12 @@
     "message": "Smaller than the minimum value of $minValue$.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
-  "error_file_size": { "message": "File size is too large. Please upload a file less than 1MB." },
-  "error_unsupported_file_type": { "message": "Unsupported file type. Please upload SRT or VTT files." },
-  "error_reserved_shortcuts": { "message": "Reserved Shortcuts." },
+  "error_file_size": { "message": "File size is too large.\nPlease upload a file less than 1MB." },
+  "error_unsupported_file_type": {
+    "message": "Unsupported file type.\n Please upload $fileType$ files.",
+    "placeholders": { "fileType": { "content": "$1" } }
+  },
+  "error_reserved_shortcuts": { "message": "Reserved for the system" },
   "error_video_not_found": { "message": "Video not found." },
   "error_try_later": { "message": "Please try again later." },
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },

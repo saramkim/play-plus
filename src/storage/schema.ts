@@ -3,18 +3,24 @@ import { z } from 'zod';
 import { Language } from '@utils/constants';
 
 import { SubtitleId } from './subtitle';
+import { t } from '@utils/i18n';
+
+const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
+const shortcutSchema = z
+  .string()
+  .refine((shortcut) => !RESERVED_SHORTCUTS.includes(shortcut), { message: t('error_reserved_shortcuts') });
 
 const loopConfigSchema = z.object({
   enabled: z.boolean(),
-  toggleLoop: z.string(),
-  startPoint: z.string(),
-  endPoint: z.string(),
-  loopCurrentSubtitle: z.string(),
+  toggleLoop: shortcutSchema,
+  startPoint: shortcutSchema,
+  endPoint: shortcutSchema,
+  loopCurrentSubtitle: shortcutSchema,
 });
 const videoSkipConfigSchema = z.object({
   enabled: z.boolean(),
-  forward: z.string(),
-  backward: z.string(),
+  forward: shortcutSchema,
+  backward: shortcutSchema,
   skipTime: z.number(),
   skipTimeUnit: z.enum(['seconds', 'minutes', 'subtitles']),
   fallbackTime: z.number(),
@@ -34,10 +40,10 @@ const subtitleConfigSchema = z.object({
 });
 const shortcutsConfigSchema = z.object({
   enabled: z.boolean(),
-  savePrimary: z.string(),
-  saveSecondary: z.string(),
-  togglePrimary: z.string(),
-  toggleSecondary: z.string(),
+  savePrimary: shortcutSchema,
+  saveSecondary: shortcutSchema,
+  togglePrimary: shortcutSchema,
+  toggleSecondary: shortcutSchema,
 });
 export const storageSchema = {
   videoSkip: videoSkipConfigSchema,

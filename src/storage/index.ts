@@ -1,5 +1,3 @@
-import { t } from '@utils/i18n';
-
 import { DEFAULT_CONFIG } from './default';
 import {
   LocalStorageChanges,
@@ -12,21 +10,12 @@ import {
   StorageKey,
   StorageSchema,
 } from './type';
-import { validate } from './validation';
 
 const storageCache = new Map<StorageKey, StorageSchema[StorageKey]>();
 
-type Response = { success: true } | { success: false; error: Error };
-
-export const setStorage = async <K extends StorageKey>(key: K, value: StorageSchema[K]): Promise<Response> => {
-  try {
-    validate(storageCache, key, value);
-    await chrome.storage.sync.set({ [key]: value });
-    storageCache.set(key, value);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error : new Error(t('error_unknown')) };
-  }
+export const setStorage = async <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
+  storageCache.set(key, value);
+  return chrome.storage.sync.set({ [key]: value });
 };
 
 export const setStorageAll = async (config: StorageSchema) => {

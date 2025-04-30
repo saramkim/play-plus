@@ -3,7 +3,7 @@ import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
 import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
-import { KeydownInput } from '@/ui/components/keydown-input';
+import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { Switch } from '@/ui/components/switch';
@@ -47,26 +47,12 @@ export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSki
         <FormField
           control={form.control}
           name='backward'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('backward_key')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('backward_key')} field={field} />}
         />
         <FormField
           control={form.control}
           name='forward'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('forward_key')}</FormLabel>
-              <FormControl>
-                <KeydownInput {...field} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <ShortcutField label={t('forward_key')} field={field} />}
         />
         <div className='flex items-center gap-1'>
           <FormField

@@ -7,7 +7,6 @@ import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { storageSchema } from '@storage/schema';
 import { StorageKey, StorageSchema } from '@storage/type';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
 export const useConfigForm = <K extends StorageKey>(key: K) => {
   const [loading, setLoading] = useState(true);
@@ -31,11 +30,8 @@ export const useConfigForm = <K extends StorageKey>(key: K) => {
     return remove;
   }, []);
 
-  const onSubmit = async (data: StorageSchema[K]) => {
-    const response = await setStorage(key, data);
-    if (!response.success) {
-      toast.error(response.error.message);
-    }
+  const onSubmit = (data: StorageSchema[K]) => {
+    return setStorage(key, data);
   };
 
   return { form, loading, onSubmit };
