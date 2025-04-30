@@ -5,6 +5,7 @@ import { WrapTextIcon } from 'lucide-react';
 import { Button } from '@/ui/components/button';
 import { ColorPicker } from '@/ui/components/color-picker';
 import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
+import { SliderField } from '@/ui/components/form/slider-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Switch } from '@/ui/components/switch';
 import { Toggle } from '@/ui/components/toggle';
@@ -138,37 +139,18 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
         <FormField
           control={form.control}
           name='fontSize'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('subtitle_size')}(1~10)</FormLabel>
-              <FormControl>
-                <NumberInput {...field} min={1} max={10} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <SliderField label={t('subtitle_size')} field={field} min={1} max={10} />}
         />
         <FormField
           control={form.control}
           name='fontWeight'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('font_weight')}(1~6)</FormLabel>
-              <FormControl>
-                <NumberInput {...field} min={1} max={6} />
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => <SliderField label={t('font_weight')} field={field} min={1} max={6} />}
         />
         <FormField
           control={form.control}
           name='backgroundOpacity'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('background_opacity')}(%)</FormLabel>
-              <FormControl>
-                <NumberInput {...field} min={0} max={100} />
-              </FormControl>
-            </FormItem>
+            <SliderField label={t('background_opacity')} field={field} min={0} max={100} unit='%' />
           )}
         />
         <FormField
