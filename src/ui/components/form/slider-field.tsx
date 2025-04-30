@@ -1,6 +1,6 @@
 import { ControllerRenderProps } from 'react-hook-form';
 
-import { FormControl, FormItem, FormLabel } from '@/ui/components/form';
+import { FormControl, FormItem, FormLabel } from '@/ui/components/form/form';
 import { Slider } from '@/ui/components/slider';
 
 interface SliderFieldProps {

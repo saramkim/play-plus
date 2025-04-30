@@ -27,7 +27,11 @@ export function Form<TFieldValues extends FieldValues>({
 } & Omit<React.ComponentProps<'form'>, 'onSubmit'>) {
   return (
     <FormProvider {...form}>
-      <form {...props} className={cn('flex flex-col gap-1', className)} onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        {...props}
+        className={cn('flex flex-col gap-2 px-4 py-3 border rounded-xl shadow bg-background', className)}
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {props.children}
       </form>
     </FormProvider>

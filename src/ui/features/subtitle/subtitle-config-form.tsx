@@ -4,7 +4,7 @@ import { WrapTextIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ColorPicker } from '@/ui/components/color-picker';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
+import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form/form';
 import { SliderField } from '@/ui/components/form/slider-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Switch } from '@/ui/components/switch';

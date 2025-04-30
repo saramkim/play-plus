@@ -2,7 +2,7 @@ import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form';
+import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form/form';
 import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';

@@ -1,6 +1,6 @@
 import { ControllerRenderProps } from 'react-hook-form';
 
-import { FormControl, FormItem, FormLabel, FormMessage } from '@/ui/components/form';
+import { FormControl, FormItem, FormLabel, FormMessage } from '@/ui/components/form/form';
 import { KeydownInput } from '@/ui/components/keydown-input';
 
 interface ShortcutFieldProps {
@@ -12,7 +12,7 @@ export const ShortcutField = ({ label, field }: ShortcutFieldProps) => {
   return (
     <FormItem>
       <FormLabel>{label}</FormLabel>
-      <div>
+      <div className='w-full'>
         <FormControl>
           <KeydownInput {...field} />
         </FormControl>

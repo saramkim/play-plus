@@ -1,7 +1,7 @@
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form';
+import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form/form';
 import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
