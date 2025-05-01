@@ -20,6 +20,9 @@
 
   "no_saved_subtitles": { "message": "저장된 자막이 없습니다." },
   "no_saved_subtitles_description": { "message": "자막을 클릭하거나 단축키를 사용해 저장해보세요!" },
+  "subtitle_analysis_description": {
+    "message": "시청중인 영상의 자막이나,\n등록한 자막을 선택해 자막을 분석해보세요!"
+  },
 
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
@@ -75,6 +78,7 @@
   "press_any_key": { "message": "키를 눌러 입력하세요" },
   "primary_subtitle": { "message": "메인 자막" },
   "register": { "message": "등록" },
+  "registered_subtitle": { "message": "등록한 자막" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
