@@ -1,3 +1,5 @@
+import { Fragment } from 'react/jsx-dev-runtime';
+
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { GalleryVertical } from 'lucide-react';
@@ -6,6 +8,7 @@ import { Button } from '@/ui/components/button';
 import { Toggle } from '@/ui/components/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/tooltip';
 import { RegisteredSubtitleSelect } from '@/ui/features/analysis/registered-subtitle-select';
+import { SubtitleGapMarker } from '@/ui/features/analysis/subtitle-gap-marker';
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
@@ -70,17 +73,23 @@ export function SubtitleAnalysisPage() {
                 {formatTime(subtitles[0].start)} - {formatTime(subtitles[subtitles.length - 1].end)}
               </p>
             </div>
-            <ul className='flex flex-col gap-1'>
-              {subtitles.map((subtitle, index) => (
-                <SubtitleItem
-                  key={index}
-                  ref={index === activeIndex ? activeSubtitleRef : null}
-                  subtitle={subtitle}
-                  isActive={index === activeIndex}
-                  onClick={() => handlePlayVideo(subtitle.start)}
-                  onSave={handleSaveSubtitle}
-                />
-              ))}
+            <ul className='space-y-1'>
+              {subtitles.map((subtitle, index) => {
+                const isActive = index === activeIndex;
+                const isBetweenNext = index === activeIndex - 0.5;
+                return (
+                  <Fragment key={index}>
+                    <SubtitleItem
+                      ref={isActive || isBetweenNext ? activeSubtitleRef : null}
+                      subtitle={subtitle}
+                      isActive={isActive}
+                      onClick={() => handlePlayVideo(subtitle.start)}
+                      onSave={handleSaveSubtitle}
+                    />
+                    {isBetweenNext && <SubtitleGapMarker />}
+                  </Fragment>
+                );
+              })}
             </ul>
           </div>
         </div>
