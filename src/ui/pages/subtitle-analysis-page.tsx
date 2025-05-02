@@ -1,3 +1,4 @@
+import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { MouseIcon } from 'lucide-react';
 
@@ -62,18 +63,26 @@ export function SubtitleAnalysisPage() {
         </div>
       ) : (
         <div className='p-2 overflow-y-auto'>
-          <ul className='flex flex-col gap-1'>
-            {subtitles.map((subtitle, index) => (
-              <SubtitleItem
-                key={index}
-                ref={index === activeIndex ? activeSubtitleRef : null}
-                subtitle={subtitle}
-                isActive={index === activeIndex}
-                onClick={() => handlePlayVideo(subtitle.start)}
-                onSave={handleSaveSubtitle}
-              />
-            ))}
-          </ul>
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground'>{t('subtitle_count', subtitles.length.toString())}</span>
+              <p className='text-muted-foreground'>
+                {formatTime(subtitles[0].start)} - {formatTime(subtitles[subtitles.length - 1].end)}
+              </p>
+            </div>
+            <ul className='flex flex-col gap-1'>
+              {subtitles.map((subtitle, index) => (
+                <SubtitleItem
+                  key={index}
+                  ref={index === activeIndex ? activeSubtitleRef : null}
+                  subtitle={subtitle}
+                  isActive={index === activeIndex}
+                  onClick={() => handlePlayVideo(subtitle.start)}
+                  onSave={handleSaveSubtitle}
+                />
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>

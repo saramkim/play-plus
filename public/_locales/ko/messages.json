@@ -24,6 +24,8 @@
     "message": "시청중인 영상의 자막이나,\n등록한 자막을 선택해 자막을 분석해보세요!"
   },
 
+  "subtitle_count": { "message": "$1개의 자막", "placeholders": { "count": { "content": "$1" } } },
+
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
   "review": { "message": "복습" },
