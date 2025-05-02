@@ -1,7 +1,4 @@
-import DOMPurify from 'dompurify';
-import { memo } from 'react';
-
-import { formatTime } from '@utils/helper';
+import { formatTime, stripTags } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 import { StarIcon } from 'lucide-react';
 
@@ -14,7 +11,7 @@ interface SubtitleItemProps extends React.ComponentProps<'li'> {
   onSave: (subtitle: SubtitleData) => void;
 }
 
-export const SubtitleItem = memo(({ subtitle, isActive, onSave, className, ...props }: SubtitleItemProps) => {
+export const SubtitleItem = ({ subtitle, isActive, onSave, className, ...props }: SubtitleItemProps) => {
   const { text, start, end } = subtitle;
   return (
     <li
@@ -25,7 +22,7 @@ export const SubtitleItem = memo(({ subtitle, isActive, onSave, className, ...pr
       )}
       {...props}
     >
-      <Subtitle text={text} />
+      <p className='whitespace-pre-line'>{stripTags(text)}</p>
       <div
         className={cn(
           'absolute bottom-[calc(100%+0.25rem)] right-0 bg-gray-200 rounded px-2 py-1 z-10 text-[13px]',
@@ -48,15 +45,4 @@ export const SubtitleItem = memo(({ subtitle, isActive, onSave, className, ...pr
       </Button>
     </li>
   );
-});
-SubtitleItem.displayName = 'SubtitleItem';
-
-const Subtitle = memo(({ text }: { text: string }) => (
-  <p
-    className='whitespace-pre-line'
-    dangerouslySetInnerHTML={{
-      __html: DOMPurify.sanitize(text),
-    }}
-  />
-));
-Subtitle.displayName = 'Subtitle';
+};
