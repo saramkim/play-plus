@@ -1,6 +1,6 @@
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { MouseIcon } from 'lucide-react';
+import { GalleryVertical } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { Toggle } from '@/ui/components/toggle';
@@ -21,7 +21,7 @@ export function SubtitleAnalysisPage() {
     handleSaveSubtitle,
     handlePlayVideo,
   } = useSubtitleAnalysis();
-  const { autoScroll, setAutoScroll, activeSubtitleRef } = useAutoScroll(activeIndex);
+  const { autoScroll, setAutoScroll, activeSubtitleRef, containerRef } = useAutoScroll();
 
   return (
     <div className='h-full flex flex-col'>
@@ -48,7 +48,7 @@ export function SubtitleAnalysisPage() {
             <TooltipTrigger asChild>
               <div>
                 <Toggle pressed={autoScroll} onPressedChange={setAutoScroll} aria-label={t('auto_scroll')} size='sm'>
-                  <MouseIcon className='size-5' />
+                  <GalleryVertical className='size-5' />
                 </Toggle>
               </div>
             </TooltipTrigger>
@@ -62,7 +62,7 @@ export function SubtitleAnalysisPage() {
           <p className='whitespace-pre-line text-wrap'>{t('subtitle_analysis_description')}</p>
         </div>
       ) : (
-        <div className='p-2 overflow-y-auto'>
+        <div ref={containerRef} className='p-2 overflow-y-auto'>
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground'>{t('subtitle_count', subtitles.length.toString())}</span>
