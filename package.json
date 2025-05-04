@@ -2,7 +2,7 @@
   "name": "play-plus",
   "version": "1.7.4",
   "description": "Enhance your Coupang Play experience with custom features.",
-  "packageManager": "yarn@4.7.0",
+  "packageManager": "yarn@4.9.1",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode production",
     "build:dev": "webpack --config webpack.config.js --mode development",
