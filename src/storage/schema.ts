@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { Language } from '@utils/constants';
+import { DEFAULT_SUBTITLE_LANGUAGES, Language } from '@utils/constants';
+import { t } from '@utils/i18n';
 
 import { SubtitleId } from './subtitle';
-import { t } from '@utils/i18n';
 
 const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
 const shortcutSchema = z
@@ -28,7 +28,7 @@ const videoSkipConfigSchema = z.object({
 });
 const subtitleConfigSchema = z.object({
   enabled: z.boolean(),
-  language: z.enum(['en', 'ko']),
+  language: z.enum(DEFAULT_SUBTITLE_LANGUAGES),
   positionReference: z.enum(['top', 'center', 'bottom']),
   positionOffset: z.number(),
   color: z.string(),

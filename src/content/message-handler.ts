@@ -1,16 +1,22 @@
 import { getLocalSubtitle } from '@storage/subtitle';
-import { SET_SUBTITLE_ACTION, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
+import {
+  DEFAULT_SUBTITLE_LANGUAGES,
+  SET_SUBTITLE_ACTION,
+  SET_SUBTITLE_STORAGE_KEY_MAP,
+  SetSubtitleAction,
+} from '@utils/constants';
 import { t } from '@utils/i18n';
 import {
   FetchVideoMetadataMessage,
   MessageResponse,
   onMessage,
   PlayVideoMessage,
+  sendMessage,
   SetSubtitleMessage,
 } from '@utils/message';
 
 import { setupLoopHandler } from './features/loop/loop';
-import { fetchAndCacheSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
+import { fetchSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
 import { elementStore } from './store/element-store';
 import { subtitleStore } from './store/subtitle-store';
 
@@ -36,10 +42,13 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
-  subtitleStore.deleteSubtitleCache('en');
-  subtitleStore.deleteSubtitleCache('ko');
+  resetSubtitleCache();
 
-  return fetchAndCacheSubtitles(url, headers);
+  const subtitleDataList = await fetchSubtitles(url, headers);
+  subtitleDataList.forEach(({ lang, subtitleData }) => {
+    subtitleStore.setSubtitleCache(lang, subtitleData);
+    sendMessage('updateSubtitles', { lang, subtitleData });
+  });
 };
 
 const initializeVideo = async (): Promise<MessageResponse> => {
@@ -77,3 +86,10 @@ const handleSetSubtitle = async (
   }
   return { success: false, message: t('error_video_not_found') };
 };
+
+function resetSubtitleCache() {
+  DEFAULT_SUBTITLE_LANGUAGES.forEach((lang) => {
+    subtitleStore.deleteSubtitleCache(lang);
+    sendMessage('updateSubtitles', { lang, subtitleData: null });
+  });
+}

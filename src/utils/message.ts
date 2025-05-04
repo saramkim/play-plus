@@ -30,7 +30,7 @@ type MessageData = {
   setPrimarySubtitle: SetSubtitleMessage;
   setSecondarySubtitle: SetSubtitleMessage;
   updateCurrentTime: number;
-  updateSubtitles: { lang: string; subtitleData: SubtitleData[] };
+  updateSubtitles: { lang: string; subtitleData: SubtitleData[] | null };
 };
 type MessageKey = keyof MessageData;
 

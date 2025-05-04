@@ -46,13 +46,11 @@ export async function initializeSubtitleSync() {
   }
 }
 
-export async function fetchAndCacheSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
+export async function fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
   const subtitleApiInfoList = await fetchVideoMetadata(url, headers);
-  for (const { lang, url } of subtitleApiInfoList) {
-    const subtitleData = await fetchSubtitle(url);
-    subtitleStore.setSubtitleCache(lang, subtitleData);
-    sendMessage('updateSubtitles', { lang, subtitleData });
-  }
+  return Promise.all(
+    subtitleApiInfoList.map(async ({ lang, url }) => ({ lang, subtitleData: await fetchSubtitle(url) }))
+  );
 }
 
 export function setupSubtitleSync(video: HTMLVideoElement) {

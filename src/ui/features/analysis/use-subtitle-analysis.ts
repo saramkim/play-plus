@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
-import { LANGUAGES } from '@utils/constants';
+import { DefaultSubtitleLanguage, LANGUAGES } from '@utils/constants';
 import { findSubtitleIndex, stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { onMessage, sendMessageToTab } from '@utils/message';
@@ -11,12 +11,10 @@ import { toast } from 'sonner';
 
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
 
-type DefaultSubtitleId = 'en' | 'ko';
-
 export function useSubtitleAnalysis() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [subtitleId, setSubtitleId] = useState<DefaultSubtitleId | SubtitleId>('en');
+  const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>('en');
   const { activeTab, tabInfo } = useTabInfo();
 
   const activeIndex = useMemo(() => findSubtitleIndex(subtitles, currentTime), [subtitles, currentTime]);
