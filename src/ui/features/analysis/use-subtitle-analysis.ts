@@ -30,7 +30,7 @@ export function useSubtitleAnalysis() {
     (async () => {
       const subtitle =
         subtitleId === 'en' || subtitleId === 'ko' ? tabInfo?.[subtitleId] || [] : await getLocalSubtitle(subtitleId);
-      setSubtitles(subtitle);
+      setSubtitles(subtitle.map(({ text, ...rest }) => ({ ...rest, text: stripTags(text) })));
     })();
   }, [subtitleId, tabInfo]);
 
@@ -44,7 +44,7 @@ export function useSubtitleAnalysis() {
   }, []);
 
   const handleSaveSubtitle = async (subtitle: SubtitleData) => {
-    const content = stripTags(subtitle.text);
+    const content = subtitle.text;
     const prevData = (await getLocalStorage('savedSubtitles')) || [];
     const isDuplicated = prevData.some(({ content: prevContent }) => prevContent === content);
 

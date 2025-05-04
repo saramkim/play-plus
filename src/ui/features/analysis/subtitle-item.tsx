@@ -1,4 +1,4 @@
-import { formatTime, stripTags } from '@utils/helper';
+import { formatTime } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 import { StarIcon } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export const SubtitleItem = ({ subtitle, isActive, onSave, className, ...props }
       )}
       {...props}
     >
-      <p className='whitespace-pre-line'>{stripTags(text)}</p>
+      <p className='whitespace-pre-line'>{text}</p>
       <div
         className={cn(
           'absolute bottom-[calc(100%+0.25rem)] right-0 bg-gray-200 rounded px-2 py-1 z-10 text-[13px]',
