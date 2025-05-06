@@ -22,6 +22,7 @@ export function useSubtitleAnalysis() {
     return tabInfo
       ? Object.keys(tabInfo)
           .filter((key) => key === 'en' || key === 'ko')
+          .filter((key) => tabInfo[key])
           .map((key) => ({ id: key, label: t(LANGUAGES[key]) }))
       : [];
   }, [tabInfo]);

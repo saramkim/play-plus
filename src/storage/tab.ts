@@ -5,10 +5,10 @@ import { SubtitleId } from './subtitle';
 const KEY_PREFIX = 'tab_';
 
 export type TabInfo = {
-  primarySubtitle?: SubtitleId;
-  secondarySubtitle?: SubtitleId;
-  en?: SubtitleData[];
-  ko?: SubtitleData[];
+  primarySubtitle?: SubtitleId | null;
+  secondarySubtitle?: SubtitleId | null;
+  en?: SubtitleData[] | null;
+  ko?: SubtitleData[] | null;
 };
 
 export const updateTabInfo = async (tabId: number, info: TabInfo) => {

@@ -42,13 +42,18 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
-  resetSubtitleCache();
+  const subtitles = await fetchSubtitles(url, headers);
 
-  const subtitleDataList = await fetchSubtitles(url, headers);
-  subtitleDataList.forEach(({ lang, subtitleData }) => {
-    subtitleStore.setSubtitleCache(lang, subtitleData);
-    sendMessage('updateSubtitles', { lang, subtitleData });
-  });
+  for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
+    const subtitleData = subtitles.find((subtitle) => subtitle.lang === lang)?.subtitleData;
+    if (subtitleData) {
+      subtitleStore.setSubtitleCache(lang, subtitleData);
+      await sendMessage('updateSubtitles', { lang, subtitleData });
+    } else {
+      subtitleStore.deleteSubtitleCache(lang);
+      await sendMessage('updateSubtitles', { lang, subtitleData: null });
+    }
+  }
 };
 
 const initializeVideo = async (): Promise<MessageResponse> => {
@@ -86,10 +91,3 @@ const handleSetSubtitle = async (
   }
   return { success: false, message: t('error_video_not_found') };
 };
-
-function resetSubtitleCache() {
-  DEFAULT_SUBTITLE_LANGUAGES.forEach((lang) => {
-    subtitleStore.deleteSubtitleCache(lang);
-    sendMessage('updateSubtitles', { lang, subtitleData: null });
-  });
-}
