@@ -33,6 +33,10 @@ export function initializeMessageListener() {
         handleSetSubtitle(message, params).then(sendResponse);
         return true;
       }
+      case 'getVideoTime': {
+        handleGetVideoTime().then(sendResponse);
+        return true;
+      }
     }
   });
 }
@@ -85,5 +89,11 @@ const handleSetSubtitle = async (
     syncSubtitles(video, true);
     return { success: true };
   }
+  return { success: false, message: t('error_video_not_found') };
+};
+
+const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> => {
+  const video = elementStore.getVideoElement();
+  if (video) return { success: true, data: video.currentTime };
   return { success: false, message: t('error_video_not_found') };
 };

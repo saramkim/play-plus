@@ -24,7 +24,7 @@ export function SubtitleAnalysisPage() {
     handleSaveSubtitle,
     handlePlayVideo,
   } = useSubtitleAnalysis();
-  const { autoScroll, setAutoScroll, activeSubtitleRef, containerRef } = useAutoScroll();
+  const { autoScroll, setAutoScroll, activeSubtitleRef, containerRef } = useAutoScroll(activeIndex);
 
   return (
     <div className='h-full flex flex-col'>

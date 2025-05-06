@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useAutoScroll = () => {
+export const useAutoScroll = (activeIndex: number) => {
   const [autoScroll, setAutoScroll] = useState(true);
   const activeSubtitleRef = useRef<HTMLLIElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,7 +24,7 @@ export const useAutoScroll = () => {
       isAutoScrolling.current = true;
       activeSubtitleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [activeSubtitleRef.current, autoScroll]);
+  }, [activeIndex, autoScroll]);
 
   return { autoScroll, setAutoScroll, activeSubtitleRef, containerRef };
 };

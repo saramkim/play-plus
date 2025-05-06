@@ -36,6 +36,15 @@ export function useSubtitleAnalysis() {
   }, [subtitleId, tabInfo]);
 
   useEffect(() => {
+    (async () => {
+      if (!activeTab?.id) return;
+      const response = await sendMessageToTab(activeTab.id, 'getVideoTime');
+      if (response.success) setCurrentTime(response.data);
+      else setCurrentTime(0);
+    })();
+  }, [activeTab]);
+
+  useEffect(() => {
     const { remove } = onMessage(({ message, params }) => {
       if (message === 'updateCurrentTime') {
         setCurrentTime(params);

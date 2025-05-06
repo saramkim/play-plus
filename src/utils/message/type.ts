@@ -25,4 +25,7 @@ export type MessageSchema = {
   updateSubtitles: {
     params: { lang: string; subtitleData: SubtitleData[] | null };
   };
+  getVideoTime: {
+    response: number;
+  };
 };
