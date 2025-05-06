@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { SavedSubtitle } from '@storage/type';
 import { COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { sendMessage } from '@utils/message';
+import { sendMessage } from '@utils/message/index';
 import { PlayIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';

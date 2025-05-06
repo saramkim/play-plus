@@ -1,19 +1,8 @@
 import { getLocalSubtitle } from '@storage/subtitle';
-import {
-  DEFAULT_SUBTITLE_LANGUAGES,
-  SET_SUBTITLE_ACTION,
-  SET_SUBTITLE_STORAGE_KEY_MAP,
-  SetSubtitleAction,
-} from '@utils/constants';
+import { DEFAULT_SUBTITLE_LANGUAGES, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
 import { t } from '@utils/i18n';
-import {
-  FetchVideoMetadataMessage,
-  MessageResponse,
-  onMessage,
-  PlayVideoMessage,
-  sendMessage,
-  SetSubtitleMessage,
-} from '@utils/message';
+import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
+import { MessageSchema } from '@utils/message/type';
 
 import { setupLoopHandler } from './features/loop/loop';
 import { fetchSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
@@ -21,27 +10,34 @@ import { elementStore } from './store/element-store';
 import { subtitleStore } from './store/subtitle-store';
 
 export function initializeMessageListener() {
-  onMessage((message, sender, sendResponse) => {
-    const { resetElement, detectVideo, fetchVideoMetadata, playVideo } = message;
-
-    if (resetElement) elementStore.reset();
-    if (detectVideo) {
-      initializeVideo().then(sendResponse);
-      return true;
-    }
-    if (fetchVideoMetadata) handleFetchVideoMetadata(fetchVideoMetadata);
-    if (playVideo) handlePlayVideo(playVideo);
-
-    for (const action of Object.values(SET_SUBTITLE_ACTION)) {
-      if (message[action]) {
-        handleSetSubtitle(action, message[action]).then(sendResponse);
+  onMessage(({ message, params, sendResponse }) => {
+    switch (message) {
+      case 'resetElement': {
+        elementStore.reset();
+        break;
+      }
+      case 'detectVideo': {
+        initializeVideo().then(sendResponse);
+        return true;
+      }
+      case 'fetchVideoMetadata': {
+        handleFetchVideoMetadata(params);
+        break;
+      }
+      case 'playVideo': {
+        handlePlayVideo(params);
+        break;
+      }
+      case 'setPrimarySubtitle':
+      case 'setSecondarySubtitle': {
+        handleSetSubtitle(message, params).then(sendResponse);
         return true;
       }
     }
   });
 }
 
-const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMessage) => {
+const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
   const subtitles = await fetchSubtitles(url, headers);
 
   for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
@@ -56,7 +52,7 @@ const handleFetchVideoMetadata = async ({ url, headers }: FetchVideoMetadataMess
   }
 };
 
-const initializeVideo = async (): Promise<MessageResponse> => {
+const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   const video = await elementStore.initialize();
   setupLoopHandler(video);
   setupSubtitleSync(video);
@@ -64,7 +60,7 @@ const initializeVideo = async (): Promise<MessageResponse> => {
   return { success: true };
 };
 
-const handlePlayVideo = ({ startTime }: PlayVideoMessage) => {
+const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) => {
   const video = elementStore.getVideoElement();
   if (!video) return;
 
@@ -77,8 +73,8 @@ const handlePlayVideo = ({ startTime }: PlayVideoMessage) => {
 
 const handleSetSubtitle = async (
   action: SetSubtitleAction,
-  { subtitleId }: SetSubtitleMessage
-): Promise<MessageResponse> => {
+  { subtitleId }: MessageSchema['setPrimarySubtitle']['params'] | MessageSchema['setSecondarySubtitle']['params']
+): Promise<MessageResponse<'setPrimarySubtitle' | 'setSecondarySubtitle'>> => {
   if (subtitleId && !subtitleStore.hasSubtitleCache(subtitleId)) {
     const subtitle = await getLocalSubtitle(subtitleId);
     subtitleStore.setSubtitleCache(subtitleId, subtitle);

@@ -5,7 +5,7 @@ import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { DefaultSubtitleLanguage, LANGUAGES } from '@utils/constants';
 import { findSubtitleIndex, stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { onMessage, sendMessageToTab } from '@utils/message';
+import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { SubtitleData } from '@utils/parse';
 import { toast } from 'sonner';
 
@@ -36,9 +36,9 @@ export function useSubtitleAnalysis() {
   }, [subtitleId, tabInfo]);
 
   useEffect(() => {
-    const { remove } = onMessage((message) => {
-      if (message.updateCurrentTime) {
-        setCurrentTime(message.updateCurrentTime);
+    const { remove } = onMessage(({ message, params }) => {
+      if (message === 'updateCurrentTime') {
+        setCurrentTime(params);
       }
     });
     return remove;

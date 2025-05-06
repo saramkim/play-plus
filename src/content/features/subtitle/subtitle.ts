@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
-import { sendMessage } from '@utils/message';
+import { sendMessage } from '@utils/message/index';
 import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/store/element-store';

@@ -2,7 +2,7 @@ import { SubtitleId } from '@storage/subtitle';
 import { updateTabInfo } from '@storage/tab';
 import { COUPANG_PLAY_PLAY_URL, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { sendMessage } from '@utils/message';
+import { sendMessage } from '@utils/message/index';
 
 import { modal } from '@/ui/components/modal';
 
