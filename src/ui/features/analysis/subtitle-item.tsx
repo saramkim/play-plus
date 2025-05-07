@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import { formatTime } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 import { StarIcon } from 'lucide-react';
@@ -5,16 +7,16 @@ import { StarIcon } from 'lucide-react';
 import { Button } from '@/ui/components/button';
 import { cn } from '@/ui/lib/utils';
 
-interface SubtitleItemProps extends React.ComponentProps<'li'> {
+interface SubtitleItemProps extends React.ComponentProps<'div'> {
   subtitle: SubtitleData;
   isActive: boolean;
   onSave: (subtitle: SubtitleData) => void;
 }
 
-export const SubtitleItem = ({ subtitle, isActive, onSave, className, ...props }: SubtitleItemProps) => {
+export const SubtitleItem = memo(({ subtitle, isActive, onSave, className, ...props }: SubtitleItemProps) => {
   const { text, start, end } = subtitle;
   return (
-    <li
+    <div
       className={cn(
         'p-2 rounded relative group',
         isActive ? 'bg-primary/20' : 'bg-gray-50 hover:bg-gray-200',
@@ -43,6 +45,7 @@ export const SubtitleItem = ({ subtitle, isActive, onSave, className, ...props }
       >
         <StarIcon className='size-4' />
       </Button>
-    </li>
+    </div>
   );
-};
+});
+SubtitleItem.displayName = 'SubtitleItem';

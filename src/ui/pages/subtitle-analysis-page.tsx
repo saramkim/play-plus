@@ -1,5 +1,6 @@
-import { Fragment } from 'react/jsx-dev-runtime';
+import { useRef } from 'react';
 
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { formatTime } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { GalleryVertical } from 'lucide-react';
@@ -8,13 +9,16 @@ import { Button } from '@/ui/components/button';
 import { Toggle } from '@/ui/components/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/components/tooltip';
 import { RegisteredSubtitleSelect } from '@/ui/features/analysis/registered-subtitle-select';
-import { SubtitleGapMarker } from '@/ui/features/analysis/subtitle-gap-marker';
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
 import { cn } from '@/ui/lib/utils';
 
+const ESTIMATED_ITEM_HEIGHT = 37;
+const GAP_HEIGHT = 4;
+
 export function SubtitleAnalysisPage() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const {
     subtitles,
     subtitleId,
@@ -24,7 +28,15 @@ export function SubtitleAnalysisPage() {
     handleSaveSubtitle,
     handlePlayVideo,
   } = useSubtitleAnalysis();
-  const { autoScroll, setAutoScroll, activeSubtitleRef, containerRef } = useAutoScroll(activeIndex);
+  const rowVirtualizer = useVirtualizer({
+    count: subtitles.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => ESTIMATED_ITEM_HEIGHT + GAP_HEIGHT,
+    overscan: 5,
+  });
+  const { isAutoScrolling, setIsAutoScrolling, handleScroll } = useAutoScroll(activeIndex, (index) =>
+    rowVirtualizer.scrollToIndex(index, { align: 'center' })
+  );
 
   return (
     <div className='h-full flex flex-col'>
@@ -50,7 +62,12 @@ export function SubtitleAnalysisPage() {
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <Toggle pressed={autoScroll} onPressedChange={setAutoScroll} aria-label={t('auto_scroll')} size='sm'>
+                <Toggle
+                  pressed={isAutoScrolling}
+                  onPressedChange={setIsAutoScrolling}
+                  aria-label={t('auto_scroll')}
+                  size='sm'
+                >
                   <GalleryVertical className='size-5' />
                 </Toggle>
               </div>
@@ -65,7 +82,7 @@ export function SubtitleAnalysisPage() {
           <p className='whitespace-pre-line text-wrap'>{t('subtitle_analysis_description')}</p>
         </div>
       ) : (
-        <div ref={containerRef} className='p-2 overflow-y-auto'>
+        <div ref={containerRef} className='p-2 overflow-y-auto' onScroll={handleScroll}>
           <div className='flex flex-col gap-2'>
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground'>{t('subtitle_count', subtitles.length.toString())}</span>
@@ -73,24 +90,29 @@ export function SubtitleAnalysisPage() {
                 {formatTime(subtitles[0].start)} - {formatTime(subtitles[subtitles.length - 1].end)}
               </p>
             </div>
-            <ul className='space-y-1'>
-              {subtitles.map((subtitle, index) => {
-                const isActive = index === activeIndex;
-                const isBetweenNext = index === activeIndex - 0.5;
+            <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }} className='relative w-full'>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const index = virtualRow.index;
+                const subtitle = subtitles[index];
                 return (
-                  <Fragment key={index}>
+                  <div
+                    key={virtualRow.key}
+                    data-index={index}
+                    ref={rowVirtualizer.measureElement}
+                    className='absolute top-0 left-0 w-full'
+                    style={{ transform: `translateY(${virtualRow.start}px)` }}
+                  >
                     <SubtitleItem
-                      ref={isActive || isBetweenNext ? activeSubtitleRef : null}
                       subtitle={subtitle}
-                      isActive={isActive}
+                      isActive={index === activeIndex}
                       onClick={() => handlePlayVideo(subtitle.start)}
                       onSave={handleSaveSubtitle}
+                      style={{ marginBottom: `${GAP_HEIGHT}px` }}
                     />
-                    {isBetweenNext && <SubtitleGapMarker />}
-                  </Fragment>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </div>
         </div>
       )}
