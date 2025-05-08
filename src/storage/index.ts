@@ -11,15 +11,11 @@ import {
   StorageSchema,
 } from './type';
 
-const storageCache = new Map<StorageKey, StorageSchema[StorageKey]>();
-
-export const setStorage = async <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
-  storageCache.set(key, value);
+export const setStorage = <K extends StorageKey>(key: K, value: StorageSchema[K]) => {
   return chrome.storage.sync.set({ [key]: value });
 };
 
-export const setStorageAll = async (config: StorageSchema) => {
-  Object.entries(config).forEach(([key, value]) => storageCache.set(key, value));
+export const setStorageAll = (config: StorageSchema) => {
   return chrome.storage.sync.set(config);
 };
 
@@ -27,8 +23,20 @@ export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[
   return new Promise((resolve) => {
     chrome.storage.sync.get(key, (result) => {
       const value = { ...DEFAULT_CONFIG[key], ...result[key] };
-      storageCache.set(key, value);
       resolve(value);
+    });
+  });
+};
+
+export const getStorageAll = (): Promise<StorageSchema> => {
+  const configKeys = Object.keys(DEFAULT_CONFIG);
+  return new Promise<StorageSchema>((resolve) => {
+    chrome.storage.sync.get(configKeys, (result) => {
+      const configs = configKeys.reduce(
+        (acc, key) => ({ ...acc, [key]: { ...DEFAULT_CONFIG[key], ...result[key] } }),
+        {} as StorageSchema
+      );
+      resolve(configs);
     });
   });
 };
