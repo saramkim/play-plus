@@ -13,6 +13,7 @@ import { SubtitleAnalysisPage } from './pages/subtitle-analysis-page';
 import { SubtitleRegistrationPage } from './pages/subtitle-registration-page';
 import { SubtitleSettingPage } from './pages/subtitle-setting-page';
 import { VideoSettingPage } from './pages/video-setting-page';
+import { useConfigStore } from './store/config-store';
 
 const pageList = Object.values(PAGE_NAME);
 
@@ -29,25 +30,31 @@ const pageMap = {
 };
 
 export function App() {
-  const [page, setPage] = useState<PageName>(
-    () => (localStorage.getItem(LAST_VIEWED_PAGE_KEY) as PageName) || pageList[0]
-  );
+  const [page, setPage] = useState<PageName>((localStorage.getItem(LAST_VIEWED_PAGE_KEY) as PageName) || pageList[0]);
+  const { initializeConfigs, loading } = useConfigStore();
 
   useEffect(() => {
     const isOnboardingComplete = localStorage.getItem(IS_ONBOARDING_COMPLETE_KEY);
-    if (isOnboardingComplete) return;
+    if (!isOnboardingComplete) {
+      modal(
+        <OnboardingContent
+          handleOnboardingComplete={async (state) => {
+            if (state.isOptimizing) {
+              await setStorageAll(LEARNING_CONFIG);
+            }
+            localStorage.setItem(IS_ONBOARDING_COMPLETE_KEY, 'true');
+            modal.hide();
+          }}
+        />
+      );
+    }
 
-    modal(
-      <OnboardingContent
-        handleOnboardingComplete={async (state) => {
-          if (state.isOptimizing) {
-            await setStorageAll(LEARNING_CONFIG);
-          }
-          localStorage.setItem(IS_ONBOARDING_COMPLETE_KEY, 'true');
-          modal.hide();
-        }}
-      />
-    );
+    let cleanup: (() => void) | undefined;
+    (async () => {
+      const { remove } = await initializeConfigs();
+      cleanup = remove;
+    })();
+    return () => cleanup?.();
   }, []);
 
   return (
@@ -60,7 +67,7 @@ export function App() {
           localStorage.setItem(LAST_VIEWED_PAGE_KEY, page);
         }}
       />
-      <main className='h-full overflow-auto'>{pageMap[page]}</main>
+      <main className='h-full overflow-auto'>{loading ? null : pageMap[page]}</main>
       <Footer />
     </div>
   );

@@ -8,10 +8,8 @@ import { useConfigForm } from '@/ui/hooks/use-config-form';
 import { cn } from '@/ui/lib/utils';
 
 export function LoopConfigForm() {
-  const { form, loading, onSubmit } = useConfigForm('loop');
+  const { form, onSubmit } = useConfigForm('loop');
   const { isDirty, isValid } = form.formState;
-
-  if (loading) return null;
 
   return (
     <Form form={form} onSubmit={onSubmit}>

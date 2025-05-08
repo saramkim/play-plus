@@ -13,10 +13,8 @@ import { cn } from '@/ui/lib/utils';
 type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
 
 export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
-  const { form, loading, onSubmit } = useConfigForm(STORAGE_KEY);
+  const { form, onSubmit } = useConfigForm(STORAGE_KEY);
   const { isDirty, isValid } = form.formState;
-
-  if (loading) return null;
 
   return (
     <Form form={form} onSubmit={onSubmit}>

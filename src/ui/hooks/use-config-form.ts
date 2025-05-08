@@ -1,38 +1,29 @@
-import { useEffect, useState } from 'react';
-import * as z from 'zod';
+import { useEffect } from 'react';
+import type { z } from 'zod';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DEFAULT_CONFIG } from '@storage/default';
-import { getStorage, onStorageChange, setStorage } from '@storage/index';
 import { storageSchema } from '@storage/schema';
 import { StorageKey, StorageSchema } from '@storage/type';
-import { useForm } from 'react-hook-form';
+import { useForm, DefaultValues } from 'react-hook-form';
+
+import { useConfigStore } from '@/ui/store/config-store';
 
 export const useConfigForm = <K extends StorageKey>(key: K) => {
-  const [loading, setLoading] = useState(true);
+  const { configs, setConfig } = useConfigStore();
+  const config = configs[key];
   const form = useForm<StorageSchema[K]>({
     resolver: zodResolver(storageSchema[key] as unknown as z.ZodType<StorageSchema[K]>),
-    defaultValues: async () => {
-      const data = await getStorage(key);
-      setLoading(false);
-      return data;
-    },
+    defaultValues: config as DefaultValues<StorageSchema[K]>,
     mode: 'onChange',
   });
 
   useEffect(() => {
-    const { remove } = onStorageChange((changes) => {
-      const data = changes[key];
-      if (data) {
-        form.reset(data.newValue || DEFAULT_CONFIG[key]);
-      }
-    });
-    return remove;
-  }, []);
+    form.reset(config);
+  }, [config, form]);
 
   const onSubmit = (data: StorageSchema[K]) => {
-    return setStorage(key, data);
+    return setConfig(key, data);
   };
 
-  return { form, loading, onSubmit };
+  return { form, onSubmit };
 };

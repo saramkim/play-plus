@@ -11,10 +11,8 @@ import { cn } from '@/ui/lib/utils';
 const { STORAGE_KEY } = SETTINGS.SHORTCUTS;
 
 export function ShortcutsConfigForm() {
-  const { form, loading, onSubmit } = useConfigForm(STORAGE_KEY);
+  const { form, onSubmit } = useConfigForm(STORAGE_KEY);
   const { isDirty, isValid } = form.formState;
-
-  if (loading) return null;
 
   return (
     <Form form={form} onSubmit={onSubmit}>
