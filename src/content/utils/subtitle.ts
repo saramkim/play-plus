@@ -54,9 +54,9 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
     config;
 
   const positions = {
-    top: { top: `${positionOffset}px`, bottom: 'auto' },
-    center: { top: `calc(50% + ${positionOffset}px)`, bottom: 'auto' },
-    bottom: { top: 'auto', bottom: `${positionOffset}px` },
+    top: { top: `calc(1.5em + ${positionOffset}px)`, bottom: 'auto', transform: 'translate(-50%, -50%)' },
+    center: { top: `calc(50% + ${positionOffset}px)`, bottom: 'auto', transform: 'translate(-50%, -50%)' },
+    bottom: { top: 'auto', bottom: `calc(1.5em + ${positionOffset}px)`, transform: 'translate(-50%, 50%)' },
   };
 
   applyStyles(subtitle, {
@@ -66,7 +66,6 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
     whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
-    transform: positionReference === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)',
     backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity * 0.01})`,
   });
 };
