@@ -10,18 +10,24 @@ import { SubtitleData } from '@utils/parse';
 import { toast } from 'sonner';
 
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
+import { useConfigStore } from '@/ui/store/config-store';
+
+const isDefaultSubtitleLanguage = (language: string) => language === 'en' || language === 'ko';
 
 export function useSubtitleAnalysis() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>('en');
   const { activeTab, tabInfo } = useTabInfo();
+  const primarySubtitleLanguage = useConfigStore((state) => state.configs.primarySubtitle.language);
+  const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>(
+    tabInfo?.primarySubtitle || primarySubtitleLanguage
+  );
 
   const activeIndex = useMemo(() => findSubtitleIndex(subtitles, currentTime), [subtitles, currentTime]);
   const defaultSubtitleOptions = useMemo(() => {
     return tabInfo
       ? Object.keys(tabInfo)
-          .filter((key) => key === 'en' || key === 'ko')
+          .filter(isDefaultSubtitleLanguage)
           .filter((key) => tabInfo[key])
           .map((key) => ({ id: key, label: t(LANGUAGES[key]) }))
       : [];
@@ -29,8 +35,9 @@ export function useSubtitleAnalysis() {
 
   useEffect(() => {
     (async () => {
-      const subtitle =
-        subtitleId === 'en' || subtitleId === 'ko' ? tabInfo?.[subtitleId] || [] : await getLocalSubtitle(subtitleId);
+      const subtitle = isDefaultSubtitleLanguage(subtitleId)
+        ? tabInfo?.[subtitleId] || []
+        : await getLocalSubtitle(subtitleId);
       setSubtitles(subtitle.map(({ text, ...rest }) => ({ ...rest, text: stripTags(text) })));
     })();
   }, [subtitleId, tabInfo]);
