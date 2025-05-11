@@ -31,7 +31,8 @@ const pageMap = {
 
 export function App() {
   const [page, setPage] = useState<PageName>((localStorage.getItem(LAST_VIEWED_PAGE_KEY) as PageName) || pageList[0]);
-  const { initializeConfigs, loading } = useConfigStore();
+  const initializeConfigs = useConfigStore((state) => state.initializeConfigs);
+  const loading = useConfigStore((state) => state.loading);
 
   useEffect(() => {
     const isOnboardingComplete = localStorage.getItem(IS_ONBOARDING_COMPLETE_KEY);
