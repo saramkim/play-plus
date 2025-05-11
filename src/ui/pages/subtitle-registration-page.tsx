@@ -5,7 +5,7 @@ import { TabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { CaptionsIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { BookOpenTextIcon, CaptionsIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
@@ -15,6 +15,7 @@ import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-su
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
 import { cn } from '@/ui/lib/utils';
+import { usePageStore } from '@/ui/store/page-store';
 
 export function SubtitleRegistrationPage() {
   const { activeTab, tabInfo } = useTabInfo();
@@ -62,6 +63,7 @@ interface SubtitleItemProps extends SubtitleMetadata {
 function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDelete, onEdit }: SubtitleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { useAsSubtitle, isAvailable } = useSubtitleSettings(activeTab);
+  const setPage = usePageStore((state) => state.setPage);
 
   const isPrimarySubtitle = tabInfo?.primarySubtitle === id;
   const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
@@ -95,6 +97,14 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       </div>
       <div className='flex justify-between items-center text-[13px]'>
         <div className='flex items-center'>
+          <Button
+            variant='ghost'
+            size='xxs'
+            tooltip={t('subtitle_analysis')}
+            onClick={() => setPage('subtitle-analysis', { id })}
+          >
+            <BookOpenTextIcon className='size-5' />
+          </Button>
           <Button
             variant='ghost'
             size='xxs'

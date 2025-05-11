@@ -1,3 +1,4 @@
+import { SubtitleId } from '@storage/subtitle';
 import { PAGE_NAME, PageName } from '@utils/constants';
 import { create } from 'zustand';
 import { combine, persist } from 'zustand/middleware';
@@ -6,7 +7,7 @@ type PageParams = {
   [PAGE_NAME.SUBTITLE_SETTING]: never;
   [PAGE_NAME.VIDEO_SETTING]: never;
   [PAGE_NAME.REVIEW]: never;
-  [PAGE_NAME.SUBTITLE_ANALYSIS]: never;
+  [PAGE_NAME.SUBTITLE_ANALYSIS]: { id: SubtitleId };
   [PAGE_NAME.SUBTITLE_REGISTRATION]: never;
 };
 

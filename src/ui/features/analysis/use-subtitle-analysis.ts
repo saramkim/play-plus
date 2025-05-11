@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { useTabInfo } from '@/ui/hooks/use-tab-info';
 import { useConfigStore } from '@/ui/store/config-store';
+import { usePageParams } from '@/ui/store/page-store';
 
 const isDefaultSubtitleLanguage = (language: string) => language === 'en' || language === 'ko';
 
@@ -18,9 +19,10 @@ export function useSubtitleAnalysis() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const { activeTab, tabInfo } = useTabInfo();
+  const params = usePageParams('subtitle-analysis');
   const primarySubtitleLanguage = useConfigStore((state) => state.configs.primarySubtitle.language);
   const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>(
-    tabInfo?.primarySubtitle || primarySubtitleLanguage
+    params?.id || tabInfo?.primarySubtitle || primarySubtitleLanguage
   );
 
   const activeIndex = useMemo(() => findSubtitleIndex(subtitles, currentTime), [subtitles, currentTime]);
