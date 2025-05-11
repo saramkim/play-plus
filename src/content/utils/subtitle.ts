@@ -38,7 +38,6 @@ export const createSubtitleElement = () => {
   applyStyles(subtitle, {
     lineHeight: '1.5em',
     display: 'none',
-    position: 'absolute',
     left: '50%',
     pointerEvents: 'auto',
     cursor: 'pointer',
@@ -50,8 +49,17 @@ export const createSubtitleElement = () => {
 };
 
 export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema['primarySubtitle']) => {
-  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity } =
-    config;
+  const {
+    enabled,
+    positionMode,
+    positionReference,
+    positionOffset,
+    color,
+    fontSize,
+    fontWeight,
+    lineBreak,
+    backgroundOpacity,
+  } = config;
 
   const positions = {
     top: { top: `calc(1.5em + ${positionOffset}px)`, bottom: 'auto', transform: 'translate(-50%, -50%)' },
@@ -60,13 +68,14 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
   };
 
   applyStyles(subtitle, {
-    ...positions[positionReference],
     display: enabled ? 'block' : 'none',
     color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
     whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
     backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity * 0.01})`,
+    position: positionMode,
+    ...positions[positionReference],
   });
 };
 

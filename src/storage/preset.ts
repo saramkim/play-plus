@@ -4,6 +4,7 @@ export const LEARNING_CONFIG: StorageSchema = {
   primarySubtitle: {
     enabled: true,
     language: 'en',
+    positionMode: 'fixed',
     positionReference: 'center',
     positionOffset: 0,
     color: '#ffffff',
@@ -16,6 +17,7 @@ export const LEARNING_CONFIG: StorageSchema = {
   secondarySubtitle: {
     enabled: true,
     language: 'ko',
+    positionMode: 'fixed',
     positionReference: 'center',
     positionOffset: 80,
     color: '#c9c9c9',

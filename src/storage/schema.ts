@@ -29,6 +29,7 @@ const videoSkipConfigSchema = z.object({
 const subtitleConfigSchema = z.object({
   enabled: z.boolean(),
   language: z.enum(DEFAULT_SUBTITLE_LANGUAGES),
+  positionMode: z.enum(['fixed', 'absolute']),
   positionReference: z.enum(['top', 'center', 'bottom']),
   positionOffset: z.number(),
   color: z.string(),

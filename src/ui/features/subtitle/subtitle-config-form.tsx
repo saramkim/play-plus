@@ -6,10 +6,10 @@ import { Button } from '@/ui/components/button';
 import { ColorPicker } from '@/ui/components/color-picker';
 import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form/form';
 import { SliderField } from '@/ui/components/form/slider-field';
+import { ToggleGroupField } from '@/ui/components/form/toggle-group-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Switch } from '@/ui/components/switch';
 import { Toggle } from '@/ui/components/toggle';
-import { ToggleGroup, ToggleGroupItem } from '@/ui/components/toggle-group';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 import { cn } from '@/ui/lib/utils';
 
@@ -49,65 +49,43 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
           control={form.control}
           name='language'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('language')}</FormLabel>
-              <FormControl>
-                <ToggleGroup
-                  type='single'
-                  variant='outline'
-                  size='sm'
-                  className='w-full'
-                  onValueChange={(value) => {
-                    if (value === 'en' || value === 'ko') {
-                      field.onChange(value);
-                    }
-                  }}
-                  value={field.value}
-                >
-                  {[
-                    { label: t('english'), value: 'en' },
-                    { label: t('korean'), value: 'ko' },
-                  ].map(({ label, value }) => (
-                    <ToggleGroupItem key={value} value={value} aria-label={label}>
-                      {label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </FormControl>
-            </FormItem>
+            <ToggleGroupField
+              label={t('language')}
+              field={field}
+              options={[
+                { label: t('english'), value: 'en' },
+                { label: t('korean'), value: 'ko' },
+              ]}
+            />
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='positionMode'
+          render={({ field }) => (
+            <ToggleGroupField
+              label={t('position_mode')}
+              field={field}
+              options={[
+                { label: t('fixed'), value: 'fixed' },
+                { label: t('responsive'), value: 'absolute' },
+              ]}
+            />
           )}
         />
         <FormField
           control={form.control}
           name='positionReference'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('position_reference')}</FormLabel>
-              <FormControl>
-                <ToggleGroup
-                  type='single'
-                  variant='outline'
-                  size='sm'
-                  className='w-full'
-                  onValueChange={(value) => {
-                    if (value === 'top' || value === 'center' || value === 'bottom') {
-                      field.onChange(value);
-                    }
-                  }}
-                  value={field.value}
-                >
-                  {[
-                    { label: t('top'), value: 'top' },
-                    { label: t('center'), value: 'center' },
-                    { label: t('bottom'), value: 'bottom' },
-                  ].map(({ label, value }) => (
-                    <ToggleGroupItem key={value} value={value} aria-label={label}>
-                      {label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </FormControl>
-            </FormItem>
+            <ToggleGroupField
+              label={t('position_reference')}
+              field={field}
+              options={[
+                { label: t('top'), value: 'top' },
+                { label: t('center'), value: 'center' },
+                { label: t('bottom'), value: 'bottom' },
+              ]}
+            />
           )}
         />
         <FormField
