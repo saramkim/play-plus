@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { setStorageAll } from '@storage/index';
 import { LEARNING_CONFIG } from '@storage/preset';
-import { PAGE_NAME, PageName } from '@utils/constants';
+import { PAGE_NAME } from '@utils/constants';
 
 import { modal } from './components/modal';
 import { Footer } from './layout/footer';
@@ -14,23 +14,20 @@ import { SubtitleRegistrationPage } from './pages/subtitle-registration-page';
 import { SubtitleSettingPage } from './pages/subtitle-setting-page';
 import { VideoSettingPage } from './pages/video-setting-page';
 import { useConfigStore } from './store/config-store';
+import { usePageStore } from './store/page-store';
 
-const pageList = Object.values(PAGE_NAME);
-
-const { SUBTITLE_SETTING, VIDEO_SETTING, REVIEW, SUBTITLE_REGISTRATION, SUBTITLE_ANALYSIS } = PAGE_NAME;
-const LAST_VIEWED_PAGE_KEY = 'lastViewedPage';
 const IS_ONBOARDING_COMPLETE_KEY = 'isOnboardingComplete';
 
 const pageMap = {
-  [SUBTITLE_SETTING]: <SubtitleSettingPage />,
-  [VIDEO_SETTING]: <VideoSettingPage />,
-  [REVIEW]: <ReviewPage />,
-  [SUBTITLE_ANALYSIS]: <SubtitleAnalysisPage />,
-  [SUBTITLE_REGISTRATION]: <SubtitleRegistrationPage />,
+  [PAGE_NAME.SUBTITLE_SETTING]: <SubtitleSettingPage />,
+  [PAGE_NAME.VIDEO_SETTING]: <VideoSettingPage />,
+  [PAGE_NAME.REVIEW]: <ReviewPage />,
+  [PAGE_NAME.SUBTITLE_ANALYSIS]: <SubtitleAnalysisPage />,
+  [PAGE_NAME.SUBTITLE_REGISTRATION]: <SubtitleRegistrationPage />,
 };
 
 export function App() {
-  const [page, setPage] = useState<PageName>((localStorage.getItem(LAST_VIEWED_PAGE_KEY) as PageName) || pageList[0]);
+  const currentPage = usePageStore((state) => state.currentPage);
   const initializeConfigs = useConfigStore((state) => state.initializeConfigs);
   const loading = useConfigStore((state) => state.loading);
 
@@ -60,15 +57,8 @@ export function App() {
 
   return (
     <div className='h-screen flex flex-col select-none text-nowrap'>
-      <Header
-        pageList={pageList}
-        currentPage={page}
-        navigate={(page) => {
-          setPage(page);
-          localStorage.setItem(LAST_VIEWED_PAGE_KEY, page);
-        }}
-      />
-      <main className='h-full overflow-auto'>{loading ? null : pageMap[page]}</main>
+      <Header />
+      <main className='h-full overflow-auto'>{loading ? null : pageMap[currentPage]}</main>
       <Footer />
     </div>
   );
