@@ -4,7 +4,7 @@ import { t } from '@utils/i18n';
 import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
-import { setupLoopHandler } from './features/loop/loop';
+import { loopController } from './features/loop';
 import { fetchSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
 import { elementStore } from './store/element-store';
 import { subtitleStore } from './store/subtitle-store';
@@ -58,7 +58,7 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   const video = await elementStore.initialize();
-  setupLoopHandler(video);
+  loopController.setupLoopHandler(video);
   setupSubtitleSync(video);
 
   return { success: true };

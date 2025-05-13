@@ -4,7 +4,7 @@ import { StorageChange, StorageChanges, StorageSchema } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { findSubtitleIndex } from '@utils/helper';
 
-import { loopCurrentSubtitle, setEndPoint, setStartPoint, toggleLoop } from '@/content/features/loop/loop';
+import { loopController } from '@/content/features/loop';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
@@ -106,10 +106,10 @@ function handleLoopStorageChange({ oldValue, newValue }: StorageChange<StorageSc
 function setKeyBindingsForLoop({ enabled, ...shortcuts }: StorageSchema['loop']) {
   const { toggleLoop: toggleLoopKey, startPoint, endPoint } = shortcuts;
   if (enabled) {
-    keyBindings[toggleLoopKey] = toggleLoop;
-    keyBindings[startPoint] = setStartPoint;
-    keyBindings[endPoint] = setEndPoint;
-    keyBindings[shortcuts.loopCurrentSubtitle] = loopCurrentSubtitle;
+    keyBindings[toggleLoopKey] = loopController.toggleLoop;
+    keyBindings[startPoint] = loopController.setStartPoint;
+    keyBindings[endPoint] = loopController.setEndPoint;
+    keyBindings[shortcuts.loopCurrentSubtitle] = loopController.loopCurrentSubtitle;
   } else {
     Object.values(shortcuts).forEach((value) => delete keyBindings[value]);
   }
