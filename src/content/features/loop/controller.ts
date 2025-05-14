@@ -162,7 +162,7 @@ export class LoopController {
       this.setEndPoint(currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
     } else if (startTime >= endTime) {
       throw new Error(t('error_loop_time_message'));
-    } else if (currentTime < startTime || currentTime > endTime) {
+    } else {
       video.currentTime = startTime;
     }
 
