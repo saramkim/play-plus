@@ -18,12 +18,14 @@ export const LOOP_CONSTANTS = {
   DEFAULT_LOOP_TIME: 10,
 } as const;
 
+type LoopType = 'subtitle' | 'manual';
+
 export class LoopController {
   private enabled = false;
   private isLooping = false;
   private handleTimeUpdate: (() => void) | null = null;
   private isMarkerShowing = false;
-  private loopType: 'subtitle' | 'manual' | null = null;
+  private loopType: LoopType | null = null;
   private markerContainer = elementStore.getLoopMarkerContainer();
   private loopStatusContainer = elementStore.getLoopStatusContainer();
   private loopButton = elementStore.getLoopButton();
@@ -50,6 +52,8 @@ export class LoopController {
   toggleLoop = () => {
     this.loop(!this.isLooping);
   };
+
+  getLoopType = () => this.loopType;
 
   setStartPoint = (time?: number) => {
     const video = elementStore.getVideoElement();
@@ -98,15 +102,12 @@ export class LoopController {
       const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);
       if (!currentSubtitle) throw new Error(t('error_no_subtitle'));
 
-      const { start, end } = currentSubtitle;
       if (this.isLooping && this.loopType === 'subtitle') {
         this.loop(false);
-        this.loopType = null;
       } else {
-        this.setStartPoint(start + delay);
-        this.setEndPoint(end + delay);
-        this.loop(true);
-        this.loopType = 'subtitle';
+        this.setStartPoint(currentSubtitle.start + delay);
+        this.setEndPoint(currentSubtitle.end + delay);
+        this.loop(true, 'subtitle');
       }
     } catch (e) {
       this.handleLoopError(e);
@@ -130,13 +131,18 @@ export class LoopController {
     this.loopButton.addEventListener('click', this.toggleLoop);
   };
 
-  private loop = (isLooping: boolean) => {
+  private loop = (isLooping: boolean, loopType: LoopType = 'manual') => {
     const video = elementStore.getVideoElement();
     if (!video) return;
 
     try {
-      if (isLooping) this.startLoop(video);
-      else this.stopLoop(video);
+      if (isLooping) {
+        this.startLoop(video);
+        this.loopType = loopType;
+      } else {
+        this.stopLoop(video);
+        this.loopType = null;
+      }
 
       this.updateLoopUI(isLooping);
       this.isLooping = isLooping;
@@ -195,9 +201,7 @@ export class LoopController {
       this.loop(false);
       showToast(t('info_loop_stop'), t('info_loop_stop_message'), 'info');
     } else if (currentTime >= endTime) {
-      video.pause();
       video.currentTime = startTime;
-      video.play();
     }
   };
 }

@@ -3,6 +3,7 @@ import { updateStorage } from '@storage/index';
 import { StorageChange, StorageSchema } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { findSubtitleIndex } from '@utils/helper';
+import { SubtitleData } from '@utils/parse';
 
 import { loopController } from '@/content/features/loop';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
@@ -108,18 +109,38 @@ export class KeyBindingManager {
     const { currentTime, duration } = video;
     const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
 
-    if (subtitles && subtitles.length > 0) {
-      const index = findSubtitleIndex(subtitles, currentTime - delay);
-
-      if (skipTime > 0) {
-        const nextSubtitle = subtitles[Math.floor(index) + skipTime];
-        video.currentTime = nextSubtitle ? nextSubtitle.start + delay : duration - 1;
-      } else {
-        const prevSubtitle = subtitles[Math.ceil(index) + skipTime];
-        video.currentTime = prevSubtitle ? prevSubtitle.start + delay : 0;
-      }
-    } else {
+    if (!subtitles?.length) {
       this.skipVideoByTime(video, fallbackTime, fallbackUnit);
+      return;
+    }
+
+    const currentIndex = findSubtitleIndex(subtitles, currentTime - delay);
+    const targetSubtitle = this.findTargetSubtitle(subtitles, currentIndex, skipTime);
+
+    if (targetSubtitle) {
+      this.jumpToSubtitle(video, targetSubtitle, delay);
+    } else {
+      video.currentTime = skipTime > 0 ? duration - 1 : 0;
+    }
+  }
+
+  private findTargetSubtitle(
+    subtitles: SubtitleData[],
+    currentIndex: number,
+    skipTime: number
+  ): SubtitleData | undefined {
+    const targetIndex = skipTime > 0 ? Math.floor(currentIndex) + skipTime : Math.ceil(currentIndex) + skipTime;
+
+    return subtitles[targetIndex];
+  }
+
+  private jumpToSubtitle(video: HTMLVideoElement, subtitle: SubtitleData, delay: number) {
+    const startTime = subtitle.start + delay;
+    video.currentTime = startTime;
+
+    if (loopController.getLoopType() === 'subtitle') {
+      loopController.setStartPoint(startTime);
+      loopController.setEndPoint(subtitle.end + delay);
     }
   }
 
