@@ -76,6 +76,7 @@
   "oldest": { "message": "오래된 순" },
   "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
   "optimize_for_learning": { "message": "학습 최적화" },
+  "play_current_subtitle_once": { "message": "현재 자막 한 번 재생" },
   "position_mode": { "message": "위치 방식" },
   "position_offset": { "message": "위치 조정" },
   "position_reference": { "message": "위치 기준" },
@@ -151,6 +152,7 @@
   "error_try_later": { "message": "나중에 다시 시도해주세요." },
   "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
   "error_no_subtitle": { "message": "자막이 없습니다." },
+  "error_no_current_subtitle": { "message": "현재 자막이 없습니다." },
   "error_unknown": { "message": "알 수 없는 오류" },
   "error_loop_time_message": { "message": "시작 시점이 종료 시점보다 큽니다." },
   "info_loop_stop_message": { "message": "반복 구간을 벗어나 반복을 해제합니다." }

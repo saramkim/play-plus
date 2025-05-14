@@ -73,12 +73,13 @@ export class KeyBindingManager {
   }
 
   private setKeyBindingsForLoop({ enabled, ...shortcuts }: StorageSchema['loop']) {
-    const { toggleLoop: toggleLoopKey, startPoint, endPoint } = shortcuts;
+    const { toggleLoop, startPoint, endPoint, loopCurrentSubtitle, playCurrentSubtitleOnce } = shortcuts;
     if (enabled) {
-      this.keyBindings[toggleLoopKey] = () => loopController.toggleLoop();
+      this.keyBindings[toggleLoop] = () => loopController.toggleLoop();
       this.keyBindings[startPoint] = () => loopController.setStartPoint();
       this.keyBindings[endPoint] = () => loopController.setEndPoint();
-      this.keyBindings[shortcuts.loopCurrentSubtitle] = () => loopController.loopCurrentSubtitle();
+      this.keyBindings[loopCurrentSubtitle] = () => loopController.loopCurrentSubtitle();
+      this.keyBindings[playCurrentSubtitleOnce] = () => loopController.playCurrentSubtitleOnce();
     } else {
       Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
     }

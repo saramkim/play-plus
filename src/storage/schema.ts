@@ -16,6 +16,7 @@ const loopConfigSchema = z.object({
   startPoint: shortcutSchema,
   endPoint: shortcutSchema,
   loopCurrentSubtitle: shortcutSchema,
+  playCurrentSubtitleOnce: shortcutSchema,
 });
 const videoSkipConfigSchema = z.object({
   enabled: z.boolean(),

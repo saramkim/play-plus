@@ -58,5 +58,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
     startPoint: '',
     endPoint: '',
     loopCurrentSubtitle: '',
+    playCurrentSubtitleOnce: '',
   },
 };

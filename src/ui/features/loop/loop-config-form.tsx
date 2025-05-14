@@ -57,6 +57,11 @@ export function LoopConfigForm() {
           name='loopCurrentSubtitle'
           render={({ field }) => <ShortcutField label={t('loop_current_subtitle')} field={field} />}
         />
+        <FormField
+          control={form.control}
+          name='playCurrentSubtitleOnce'
+          render={({ field }) => <ShortcutField label={t('play_current_subtitle_once')} field={field} />}
+        />
       </div>
     </Form>
   );

@@ -31,6 +31,7 @@ export class LoopController {
   private loopButton = elementStore.getLoopButton();
   private startMarker = new LoopMarker(START_MARKER_ID, 'S', this.markerContainer);
   private endMarker = new LoopMarker(END_MARKER_ID, 'E', this.markerContainer);
+  private activeSubtitleEndHandler: (() => void) | null = null;
 
   constructor() {
     this.initialize();
@@ -93,22 +94,41 @@ export class LoopController {
 
   loopCurrentSubtitle = () => {
     try {
-      const video = elementStore.getVideoElement();
-      if (!video) throw new Error(t('error_video_not_found'));
-
-      const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
-      if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
-
-      const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);
-      if (!currentSubtitle) throw new Error(t('error_no_subtitle'));
+      const { startTime, endTime } = this.getCurrentSubtitleInfo();
 
       if (this.isLooping && this.loopType === 'subtitle') {
         this.loop(false);
       } else {
-        this.setStartPoint(currentSubtitle.start + delay);
-        this.setEndPoint(currentSubtitle.end + delay);
+        this.setStartPoint(startTime);
+        this.setEndPoint(endTime);
         this.loop(true, 'subtitle');
       }
+    } catch (e) {
+      this.handleLoopError(e);
+    }
+  };
+
+  playCurrentSubtitleOnce = () => {
+    try {
+      const { video, startTime, endTime } = this.getCurrentSubtitleInfo();
+
+      if (this.activeSubtitleEndHandler) {
+        video.removeEventListener('timeupdate', this.activeSubtitleEndHandler);
+      }
+
+      const handleTimeUpdate = () => {
+        if (video.currentTime >= endTime) {
+          video.pause();
+          video.currentTime = endTime;
+          video.removeEventListener('timeupdate', handleTimeUpdate);
+        }
+      };
+
+      video.currentTime = startTime;
+      video.play();
+      video.addEventListener('timeupdate', handleTimeUpdate);
+
+      this.activeSubtitleEndHandler = handleTimeUpdate;
     } catch (e) {
       this.handleLoopError(e);
     }
@@ -203,5 +223,21 @@ export class LoopController {
     } else if (currentTime >= endTime) {
       video.currentTime = startTime;
     }
+  };
+
+  private getCurrentSubtitleInfo = () => {
+    const video = elementStore.getVideoElement();
+    if (!video) throw new Error(t('error_video_not_found'));
+
+    const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
+    if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
+
+    const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);
+    if (!currentSubtitle) throw new Error(t('error_no_current_subtitle'));
+
+    const startTime = currentSubtitle.start + delay;
+    const endTime = currentSubtitle.end + delay;
+
+    return { video, startTime, endTime };
   };
 }

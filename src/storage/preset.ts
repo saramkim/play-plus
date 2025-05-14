@@ -58,5 +58,6 @@ export const LEARNING_CONFIG: StorageSchema = {
     startPoint: 'BracketLeft',
     endPoint: 'BracketRight',
     loopCurrentSubtitle: 'KeyS',
+    playCurrentSubtitleOnce: 'KeyC',
   },
 };
