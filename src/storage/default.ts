@@ -60,4 +60,10 @@ export const DEFAULT_CONFIG: StorageSchema = {
     loopCurrentSubtitle: '',
     playCurrentSubtitleOnce: '',
   },
+  playbackSpeed: {
+    enabled: false,
+    increase: '',
+    decrease: '',
+    reset: '',
+  },
 };

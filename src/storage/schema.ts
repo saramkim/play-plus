@@ -47,6 +47,14 @@ const shortcutsConfigSchema = z.object({
   togglePrimary: shortcutSchema,
   toggleSecondary: shortcutSchema,
 });
+
+const playbackSpeedConfigSchema = z.object({
+  enabled: z.boolean(),
+  increase: shortcutSchema,
+  decrease: shortcutSchema,
+  reset: shortcutSchema,
+});
+
 export const storageSchema = {
   videoSkip: videoSkipConfigSchema,
   subVideoSkip: videoSkipConfigSchema,
@@ -54,6 +62,7 @@ export const storageSchema = {
   secondarySubtitle: subtitleConfigSchema,
   shortcuts: shortcutsConfigSchema,
   loop: loopConfigSchema,
+  playbackSpeed: playbackSpeedConfigSchema,
 };
 
 export const savedSubtitleSchema = z.object({

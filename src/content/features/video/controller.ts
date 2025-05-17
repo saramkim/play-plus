@@ -4,7 +4,7 @@ import { SETTINGS } from '@utils/constants';
 
 import { KeyBindingManager } from './key-bindings';
 
-const { SHORTCUTS, VIDEO_SKIP, SUB_VIDEO_SKIP, LOOP } = SETTINGS;
+const { SHORTCUTS, VIDEO_SKIP, SUB_VIDEO_SKIP, LOOP, PLAYBACK_SPEED } = SETTINGS;
 
 export class VideoController {
   private keyBindingManager = new KeyBindingManager();
@@ -32,20 +32,27 @@ export class VideoController {
     if (loopChange) {
       this.keyBindingManager.handleLoopStorageChange(loopChange);
     }
+
+    const playbackSpeedChange = changes[PLAYBACK_SPEED.STORAGE_KEY];
+    if (playbackSpeedChange) {
+      this.keyBindingManager.handlePlaybackSpeedStorageChange(playbackSpeedChange);
+    }
   }
 
   private async initialize() {
-    const [shortcuts, videoSkip, subVideoSkip, loop] = await Promise.all([
+    const [shortcuts, videoSkip, subVideoSkip, loop, playbackSpeed] = await Promise.all([
       getStorage(SHORTCUTS.STORAGE_KEY),
       getStorage(VIDEO_SKIP.STORAGE_KEY),
       getStorage(SUB_VIDEO_SKIP.STORAGE_KEY),
       getStorage(LOOP.STORAGE_KEY),
+      getStorage(PLAYBACK_SPEED.STORAGE_KEY),
     ]);
 
     this.keyBindingManager.handleShortcutsStorageChange({ newValue: shortcuts });
     this.keyBindingManager.handleVideoSkipStorageChange({ newValue: videoSkip });
     this.keyBindingManager.handleVideoSkipStorageChange({ newValue: subVideoSkip });
     this.keyBindingManager.handleLoopStorageChange({ newValue: loop });
+    this.keyBindingManager.handlePlaybackSpeedStorageChange({ newValue: playbackSpeed });
 
     document.addEventListener('keydown', this.handleKeyDown);
   }

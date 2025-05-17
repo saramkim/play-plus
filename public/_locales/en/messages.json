@@ -115,6 +115,11 @@
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },
 
+  "playback_speed": { "message": "Playback Speed" },
+  "increase_speed": { "message": "Increase Speed" },
+  "decrease_speed": { "message": "Decrease Speed" },
+  "reset_speed": { "message": "Reset Speed" },
+
   "confirm_delete": { "message": "Are you sure you want to delete?" },
 
   "success_save_subtitle": { "message": "Subtitle saved" },

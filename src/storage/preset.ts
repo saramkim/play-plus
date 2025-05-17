@@ -60,4 +60,10 @@ export const LEARNING_CONFIG: StorageSchema = {
     loopCurrentSubtitle: 'KeyS',
     playCurrentSubtitleOnce: 'KeyC',
   },
+  playbackSpeed: {
+    enabled: true,
+    decrease: 'Comma',
+    increase: 'Period',
+    reset: 'Slash',
+  },
 };

@@ -6,11 +6,12 @@ import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { loopController } from '@/content/features/loop';
+import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
 
-const { SHORTCUTS, LOOP, VIDEO_SKIP } = SETTINGS;
+const { SHORTCUTS, LOOP, VIDEO_SKIP, PLAYBACK_SPEED } = SETTINGS;
 
 export class KeyBindingManager {
   private keyBindings: { [key: string]: () => void } = {};
@@ -38,6 +39,14 @@ export class KeyBindingManager {
       Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
     }
     this.setKeyBindingsForLoop(newValue || DEFAULT_CONFIG[LOOP.STORAGE_KEY]);
+  }
+
+  handlePlaybackSpeedStorageChange({ oldValue, newValue }: StorageChange<StorageSchema['playbackSpeed']>) {
+    if (oldValue) {
+      const { enabled, ...shortcuts } = oldValue;
+      Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
+    }
+    this.setKeyBindingsForPlaybackSpeed(newValue || DEFAULT_CONFIG[PLAYBACK_SPEED.STORAGE_KEY]);
   }
 
   getKeyBindings() {
@@ -80,6 +89,17 @@ export class KeyBindingManager {
       this.keyBindings[endPoint] = () => loopController.setEndPoint();
       this.keyBindings[loopCurrentSubtitle] = () => loopController.loopCurrentSubtitle();
       this.keyBindings[playCurrentSubtitleOnce] = () => loopController.playCurrentSubtitleOnce();
+    } else {
+      Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
+    }
+  }
+
+  private setKeyBindingsForPlaybackSpeed({ enabled, ...shortcuts }: StorageSchema['playbackSpeed']) {
+    const { increase, decrease, reset } = shortcuts;
+    if (enabled) {
+      this.keyBindings[increase] = () => playbackSpeedController.increaseSpeed();
+      this.keyBindings[decrease] = () => playbackSpeedController.decreaseSpeed();
+      this.keyBindings[reset] = () => playbackSpeedController.resetSpeed();
     } else {
       Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
     }

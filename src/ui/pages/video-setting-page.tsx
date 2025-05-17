@@ -1,6 +1,7 @@
 import { SETTINGS } from '@utils/constants';
 
 import { LoopConfigForm } from '@/ui/features/loop/loop-config-form';
+import { PlaybackSpeedConfigForm } from '@/ui/features/video/playback-speed-config-form';
 import { ShortcutsConfigForm } from '@/ui/features/video/shortcuts-config-form';
 import { VideoSkipConfigForm } from '@/ui/features/video/video-skip-config-form';
 
@@ -13,6 +14,7 @@ export function VideoSettingPage() {
       <VideoSkipConfigForm {...SUB_VIDEO_SKIP} />
       <ShortcutsConfigForm />
       <LoopConfigForm />
+      <PlaybackSpeedConfigForm />
     </div>
   );
 }

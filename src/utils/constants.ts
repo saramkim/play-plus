@@ -77,6 +77,9 @@ export const SETTINGS = {
   LOOP: {
     STORAGE_KEY: 'loop',
   },
+  PLAYBACK_SPEED: {
+    STORAGE_KEY: 'playbackSpeed',
+  },
 } as const;
 export type SubtitleSettingStorageKey = (typeof SETTINGS.SUBTITLES)[keyof typeof SETTINGS.SUBTITLES]['STORAGE_KEY'];
 
