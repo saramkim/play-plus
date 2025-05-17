@@ -58,7 +58,7 @@ export function App() {
   return (
     <div className='h-screen flex flex-col select-none text-nowrap'>
       <Header />
-      <main className='h-full overflow-auto'>{loading ? null : pageMap[currentPage]}</main>
+      <main className='flex-1 overflow-auto'>{loading ? null : pageMap[currentPage]}</main>
       <Footer />
     </div>
   );
