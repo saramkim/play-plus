@@ -13,6 +13,7 @@ const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
 const LOOP_BUTTON_ID = 'pp-loop-button';
+const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 
 class ElementStore {
   private videoElement: HTMLVideoElement | null = null;
@@ -23,6 +24,7 @@ class ElementStore {
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
   private loopButton = createElement(LOOP_BUTTON_ID);
+  private playbackSpeedContainer = createElement(PLAYBACK_SPEED_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
     [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: this.primarySubtitle,
@@ -32,6 +34,7 @@ class ElementStore {
   constructor() {
     this.loopButton.appendChild(createLoopIcon());
     this.setupSubtitleElement();
+    this.setupPlaybackSpeedContainer();
   }
 
   async initialize() {
@@ -45,6 +48,7 @@ class ElementStore {
     this.videoElement = null;
     this.toastContainer.replaceChildren();
     this.resetLoopStatus();
+    this.hidePlaybackSpeedStatus();
 
     if (this.subtitleContainerObserver) {
       this.subtitleContainerObserver.disconnect();
@@ -81,6 +85,24 @@ class ElementStore {
     this.loopStatusContainer.classList.remove('show');
     this.loopStatusContainer.classList.remove('spin');
     this.loopButton.classList.remove('active');
+  }
+
+  getPlaybackSpeedContainer() {
+    return this.playbackSpeedContainer;
+  }
+
+  updatePlaybackSpeedStatus(speed: number, isShow = true) {
+    if (!isShow) {
+      this.hidePlaybackSpeedStatus();
+      return;
+    }
+
+    this.playbackSpeedContainer.textContent = `${speed.toFixed(1)}x`;
+    this.playbackSpeedContainer.classList.add('show');
+  }
+
+  hidePlaybackSpeedStatus() {
+    this.playbackSpeedContainer.classList.remove('show');
   }
 
   private setupSubtitleElement() {
@@ -121,9 +143,18 @@ class ElementStore {
     this.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
   }
 
+  private setupPlaybackSpeedContainer() {
+    this.playbackSpeedContainer.classList.add('playback-speed');
+  }
+
   private appendContainer(trackDisplayContainer: Element) {
     const subtitleContainerWrapper = trackDisplayContainer.children[0];
-    const containers = [this.subtitleContainer, this.toastContainer, this.loopStatusContainer];
+    const containers = [
+      this.subtitleContainer,
+      this.toastContainer,
+      this.loopStatusContainer,
+      this.playbackSpeedContainer,
+    ];
 
     containers.forEach((container) => {
       if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(container)) {

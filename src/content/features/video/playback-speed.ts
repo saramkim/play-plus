@@ -1,7 +1,7 @@
 import { elementStore } from '@/content/store/element-store';
 
 export class PlaybackSpeedController {
-  private readonly MIN_SPEED = 0.25;
+  private readonly MIN_SPEED = 0.3;
   private readonly MAX_SPEED = 2.0;
   private readonly SPEED_STEP = 0.1;
 
@@ -13,6 +13,7 @@ export class PlaybackSpeedController {
 
     this.currentSpeed = Math.min(this.MAX_SPEED, this.currentSpeed + this.SPEED_STEP);
     video.playbackRate = this.currentSpeed;
+    elementStore.updatePlaybackSpeedStatus(this.currentSpeed);
   }
 
   decreaseSpeed() {
@@ -21,6 +22,7 @@ export class PlaybackSpeedController {
 
     this.currentSpeed = Math.max(this.MIN_SPEED, this.currentSpeed - this.SPEED_STEP);
     video.playbackRate = this.currentSpeed;
+    elementStore.updatePlaybackSpeedStatus(this.currentSpeed);
   }
 
   resetSpeed() {
@@ -29,6 +31,7 @@ export class PlaybackSpeedController {
 
     this.currentSpeed = 1.0;
     video.playbackRate = this.currentSpeed;
+    elementStore.updatePlaybackSpeedStatus(this.currentSpeed, false);
   }
 
   getCurrentSpeed() {
