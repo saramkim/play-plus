@@ -21,7 +21,7 @@
   "no_saved_subtitles": { "message": "No saved subtitles." },
   "review_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
   "subtitle_analysis_description": {
-    "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have registered!"
+    "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have uploaded!"
   },
   "subtitle_registration_description": { "message": "Upload subtitles to use subtitles in Coupang Play!" },
 
@@ -84,7 +84,7 @@
   "press_any_key": { "message": "Press Any Key" },
   "primary_subtitle": { "message": "Primary Subtitle" },
   "register": { "message": "Register" },
-  "registered_subtitle": { "message": "Registered Subtitle" },
+  "registered_subtitle": { "message": "Uploaded Subtitle" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
   "responsive": { "message": "Responsive" },

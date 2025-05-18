@@ -12,6 +12,9 @@ interface RegisteredSubtitleSelectProps {
 
 export function RegisteredSubtitleSelect({ selectedId, onSelect }: RegisteredSubtitleSelectProps) {
   const { subtitles } = useRegisteredSubtitles();
+
+  if (subtitles.length === 0) return null;
+
   return (
     <Select value={selectedId || ''} onValueChange={onSelect}>
       <SelectTrigger>
