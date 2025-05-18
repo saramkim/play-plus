@@ -10,11 +10,14 @@ const { STORAGE_KEY } = REVIEW;
 
 export function useSavedSubtitle() {
   const [subtitles, setSubtitles] = useState<SavedSubtitle[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const data = await getLocalStorage(STORAGE_KEY);
       if (data) setSubtitles(data);
+      setLoading(false);
     })();
 
     const { remove } = onLocalStorageChange((changes) => {
@@ -43,5 +46,5 @@ export function useSavedSubtitle() {
     });
   };
 
-  return { subtitles, deleteSubtitle };
+  return { subtitles, deleteSubtitle, loading };
 }

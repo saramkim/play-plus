@@ -19,7 +19,7 @@
   },
 
   "no_saved_subtitles": { "message": "No saved subtitles." },
-  "no_saved_subtitles_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
+  "review_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
   "subtitle_analysis_description": {
     "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have registered!"
   },

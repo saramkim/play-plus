@@ -13,29 +13,27 @@ import { useSavedSubtitle } from '@/ui/features/subtitle/use-saved-subtitle';
 
 export function ReviewPage() {
   const [filteredSubtitles, setFilteredSubtitles] = useState<SavedSubtitle[]>([]);
-  const { subtitles, deleteSubtitle } = useSavedSubtitle();
+  const { subtitles, deleteSubtitle, loading } = useSavedSubtitle();
+
+  if (loading) return null;
+  if (subtitles.length === 0) return <EmptyState />;
 
   return (
     <div className='flex flex-col h-full px-4 pt-4'>
       <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='content' />
-      {subtitles.length > 0 ? (
-        <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
-          {filteredSubtitles.map((item) => (
-            <SubtitleItem key={item.content} {...item} onDelete={deleteSubtitle} />
-          ))}
-        </ul>
-      ) : (
-        <EmptyState />
-      )}
+      <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
+        {filteredSubtitles.map((item) => (
+          <SubtitleItem key={item.content} {...item} onDelete={deleteSubtitle} />
+        ))}
+      </ul>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className='flex flex-col justify-center items-center h-full gap-2'>
-      <p className='text-gray-500'>{t('no_saved_subtitles')}</p>
-      <p className='text-gray-500'>{t('no_saved_subtitles_description')}</p>
+    <div className='h-full flex flex-col justify-center p-4'>
+      <p className='text-center text-gray-500'>{t('review_description')}</p>
     </div>
   );
 }
