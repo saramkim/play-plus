@@ -4,6 +4,7 @@ import { PAGE_NAME } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
+import { cn } from '@/ui/lib/utils';
 import { usePageStore } from '@/ui/store/page-store';
 
 const pageList = Object.values(PAGE_NAME);
@@ -18,7 +19,7 @@ const pageTitleMap = {
 export function Header() {
   const currentPage = usePageStore((state) => state.currentPage);
   const setPage = usePageStore((state) => state.setPage);
-  const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const { scrollRef, eventHandlers, allowClick } = useDragScroll();
 
   const handleTabClick = (index: number) => {
@@ -28,25 +29,22 @@ export function Header() {
   };
 
   return (
-    <div
-      ref={scrollRef}
-      {...eventHandlers}
-      className='flex justify-between px-2 pt-1 overflow-x-auto border-b scrollbar-hidden'
-    >
+    <header ref={scrollRef} {...eventHandlers} className='flex overflow-x-auto border-b scrollbar-hidden px-2'>
       {pageList.map((page, index) => (
-        <div
+        <button
           ref={(el) => {
             tabRefs.current[index] = el;
           }}
           key={page}
           onClick={() => handleTabClick(index)}
-          className={`w-full p-2 text-center cursor-pointer text-[15px] rounded-t-md hover:bg-gray-100 ${
-            currentPage === page ? 'border-b-2 border-b-foreground font-bold' : 'text-gray-500 font-medium'
-          }`}
+          className={cn(
+            'flex-1 p-2 text-[15px] hover:bg-gray-100 font-medium',
+            currentPage === page ? 'border-b-2 border-b-primary text-primary pt-2.5' : 'text-gray-500'
+          )}
         >
           {pageTitleMap[page]}
-        </div>
+        </button>
       ))}
-    </div>
+    </header>
   );
 }
