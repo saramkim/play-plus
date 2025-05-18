@@ -27,11 +27,11 @@
 
   "subtitle_count": { "message": "$1 subtitles", "placeholders": { "count": { "content": "$1" } } },
 
-  "subtitle_setting": { "message": "Subtitle Setting" },
-  "video_setting": { "message": "Video Setting" },
+  "subtitle_setting": { "message": "Subtitle" },
+  "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
-  "subtitle_analysis": { "message": "Subtitle Analysis" },
-  "subtitle_registration": { "message": "Subtitle Registration" },
+  "subtitle_analysis": { "message": "Analysis" },
+  "subtitle_registration": { "message": "Upload" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
