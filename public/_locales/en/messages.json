@@ -23,6 +23,7 @@
   "subtitle_analysis_description": {
     "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have registered!"
   },
+  "subtitle_registration_description": { "message": "Upload subtitles to use subtitles in Coupang Play!" },
 
   "subtitle_count": { "message": "$1 subtitles", "placeholders": { "count": { "content": "$1" } } },
 

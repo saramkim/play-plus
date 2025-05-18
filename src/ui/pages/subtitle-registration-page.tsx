@@ -21,35 +21,38 @@ export function SubtitleRegistrationPage() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { subtitles, editSubtitle, deleteSubtitle } = useRegisteredSubtitles();
+  const { subtitles, editSubtitle, deleteSubtitle, loading } = useRegisteredSubtitles();
+
+  if (loading) return null;
+  if (subtitles.length === 0) return <EmptyState />;
 
   return (
-    <div className='flex flex-col h-full p-4'>
+    <div className='h-full flex flex-col p-4'>
       <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
+      <ul className='h-full flex flex-col overflow-auto pr-1 pb-1'>
+        {filteredSubtitles.map((item) => (
+          <SubtitleItem
+            key={item.id}
+            {...item}
+            activeTab={activeTab}
+            tabInfo={tabInfo}
+            onDelete={deleteSubtitle}
+            onEdit={editSubtitle}
+          />
+        ))}
+      </ul>
+      <footer className='border-t pt-4'>
+        <SubtitleUploader />
+      </footer>
+    </div>
+  );
+}
 
-      {subtitles.length > 0 ? (
-        <>
-          <ul className='flex flex-col h-full overflow-auto pr-1 pb-1'>
-            {filteredSubtitles.map((item) => (
-              <SubtitleItem
-                key={item.id}
-                {...item}
-                activeTab={activeTab}
-                tabInfo={tabInfo}
-                onDelete={deleteSubtitle}
-                onEdit={editSubtitle}
-              />
-            ))}
-          </ul>
-          <footer className='border-t pt-4'>
-            <SubtitleUploader />
-          </footer>
-        </>
-      ) : (
-        <div className='flex flex-col justify-center h-full'>
-          <SubtitleUploader />
-        </div>
-      )}
+function EmptyState() {
+  return (
+    <div className='h-full flex flex-col justify-center gap-3 p-4'>
+      <p className='text-center text-gray-500'>{t('subtitle_registration_description')}</p>
+      <SubtitleUploader />
     </div>
   );
 }

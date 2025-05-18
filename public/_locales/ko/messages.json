@@ -23,6 +23,9 @@
   "subtitle_analysis_description": {
     "message": "시청중인 영상의 자막이나,\n등록한 자막을 선택해 자막을 분석해보세요!"
   },
+  "subtitle_registration_description": {
+    "message": "자막을 업로드하여 쿠팡플레이에서 자막을 사용해보세요!"
+  },
 
   "subtitle_count": { "message": "$1개의 자막", "placeholders": { "count": { "content": "$1" } } },
 

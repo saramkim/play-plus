@@ -12,11 +12,14 @@ const { STORAGE_KEY } = REGISTRATION;
 
 export function useRegisteredSubtitles() {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const data = await getLocalStorage(STORAGE_KEY);
       if (data) setSubtitles(data);
+      setLoading(false);
     })();
 
     const { remove } = onLocalStorageChange((changes) => {
@@ -43,5 +46,5 @@ export function useRegisteredSubtitles() {
     });
   };
 
-  return { subtitles, editSubtitle, deleteSubtitle };
+  return { subtitles, editSubtitle, deleteSubtitle, loading };
 }
