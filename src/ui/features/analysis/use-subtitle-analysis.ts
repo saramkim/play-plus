@@ -9,16 +9,17 @@ import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { SubtitleData } from '@utils/parse';
 import { toast } from 'sonner';
 
-import { useTabInfo } from '@/ui/hooks/use-tab-info';
 import { useConfigStore } from '@/ui/store/config-store';
 import { usePageParams } from '@/ui/store/page-store';
+import { useTabStore } from '@/ui/store/tab-store';
 
 const isDefaultSubtitleLanguage = (language: string) => language === 'en' || language === 'ko';
 
 export function useSubtitleAnalysis() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const { activeTab, tabInfo } = useTabInfo();
+  const activeTab = useTabStore((state) => state.activeTab);
+  const tabInfo = useTabStore((state) => state.tabInfo);
   const params = usePageParams('subtitle-analysis');
   const primarySubtitleLanguage = useConfigStore((state) => state.configs.primarySubtitle.language);
   const primarySubtitleDelay = useConfigStore((state) => state.configs.primarySubtitle.delay);

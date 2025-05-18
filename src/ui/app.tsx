@@ -15,6 +15,7 @@ import { SubtitleSettingPage } from './pages/subtitle-setting-page';
 import { VideoSettingPage } from './pages/video-setting-page';
 import { useConfigStore } from './store/config-store';
 import { usePageStore } from './store/page-store';
+import { useTabStore } from './store/tab-store';
 
 const IS_ONBOARDING_COMPLETE_KEY = 'isOnboardingComplete';
 
@@ -30,6 +31,7 @@ export function App() {
   const currentPage = usePageStore((state) => state.currentPage);
   const initializeConfigs = useConfigStore((state) => state.initializeConfigs);
   const loading = useConfigStore((state) => state.loading);
+  const initializeTab = useTabStore((state) => state.initialize);
 
   useEffect(() => {
     const isOnboardingComplete = localStorage.getItem(IS_ONBOARDING_COMPLETE_KEY);
@@ -49,10 +51,17 @@ export function App() {
 
     let cleanup: (() => void) | undefined;
     (async () => {
-      const { remove } = await initializeConfigs();
-      cleanup = remove;
+      const { remove: removeConfigListener } = await initializeConfigs();
+      const removeTabListener = await initializeTab();
+      cleanup = () => {
+        removeConfigListener();
+        removeTabListener();
+      };
     })();
-    return () => cleanup?.();
+
+    return () => {
+      cleanup?.();
+    };
   }, []);
 
   return (

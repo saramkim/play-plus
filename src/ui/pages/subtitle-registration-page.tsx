@@ -13,12 +13,13 @@ import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
 import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
 import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
-import { useTabInfo } from '@/ui/hooks/use-tab-info';
 import { cn } from '@/ui/lib/utils';
 import { usePageStore } from '@/ui/store/page-store';
+import { useTabStore } from '@/ui/store/tab-store';
 
 export function SubtitleRegistrationPage() {
-  const { activeTab, tabInfo } = useTabInfo();
+  const activeTab = useTabStore((state) => state.activeTab);
+  const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
   const { subtitles, editSubtitle, deleteSubtitle } = useRegisteredSubtitles();
 
