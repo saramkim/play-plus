@@ -6,8 +6,8 @@ import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { loopController } from '@/content/features/loop';
-import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
+import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
 

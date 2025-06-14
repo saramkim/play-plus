@@ -1,7 +1,8 @@
-import { elementStore } from '@/content/store/element-store';
 import { DEFAULT_CONFIG } from '@storage/default';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
+
+import { elementStore } from '@/content/store/element-store';
 
 const { STORAGE_KEY } = SETTINGS.PLAYBACK_SPEED;
 export class PlaybackSpeedController {

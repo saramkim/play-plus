@@ -4,8 +4,8 @@ import './content.css';
 import { loopController } from './features/loop';
 import { initializeSubtitleSync, onSubtitleStorageChange } from './features/subtitle/subtitle';
 import { videoController } from './features/video';
-import { initializeMessageListener } from './message-handler';
 import { playbackSpeedController } from './features/video/playback-speed';
+import { initializeMessageListener } from './message-handler';
 
 async function init() {
   initializeMessageListener();
