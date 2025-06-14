@@ -1,0 +1,53 @@
+---
+description: 개발 환경 설정 방법과 필요한 도구들을 안내하는 가이드입니다. 프로젝트를 시작하기 위한 필수 요구사항과 초기 설정 방법을 상세히 설명합니다.
+globs: 
+alwaysApply: false
+---
+# 개발 환경 설정 가이드
+
+## 필수 요구사항
+
+- Node.js (최신 LTS 버전 권장)
+- Yarn 패키지 매니저
+
+## 초기 설정
+
+1. 의존성 설치:
+```bash
+yarn install
+```
+
+2. 개발 서버 실행:
+```bash
+yarn dev
+```
+
+3. 프로덕션 빌드:
+```bash
+yarn build
+```
+
+## 개발 도구
+
+- TypeScript: 정적 타입 체크
+- ESLint: 코드 품질 관리
+- Webpack: 모듈 번들링
+- PostCSS: CSS 전처리
+
+## VS Code 설정
+
+프로젝트는 `.vscode/` 디렉토리에 VS Code 설정을 포함하고 있습니다:
+- 권장 확장 프로그램
+- 디버깅 설정
+- 작업 공간 설정
+
+## Git 설정
+
+- `.gitignore` 파일이 프로젝트에 포함되어 있습니다
+- 주요 제외 항목:
+  - `node_modules/`
+  - `dist/`
+  - `.yarn/`
+  - 빌드 결과물
+
+

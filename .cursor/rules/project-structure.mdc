@@ -1,0 +1,34 @@
+---
+description: 프로젝트의 전체적인 구조와 주요 디렉토리, 설정 파일들을 설명하는 가이드입니다.
+globs: 
+alwaysApply: false
+---
+# 프로젝트 구조 가이드
+
+이 프로젝트는 Chrome 확장 프로그램을 위한 코드베이스입니다.
+
+## 주요 디렉토리 구조
+
+- `src/`: 소스 코드의 메인 디렉토리
+  - `ui/`: 사용자 인터페이스 관련 컴포넌트
+  - `background/`: 백그라운드 스크립트
+  - `content/`: 콘텐츠 스크립트
+  - `utils/`: 유틸리티 함수
+  - `storage/`: 스토리지 관련 로직
+  - `assets/`: 정적 자산 파일들
+
+## 설정 파일
+
+- [package.json](mdc:package.json): 프로젝트 의존성 및 스크립트
+- [tsconfig.json](mdc:tsconfig.json): TypeScript 설정
+- [webpack.config.js](mdc:webpack.config.js): 웹팩 빌드 설정
+- [eslint.config.mjs](mdc:eslint.config.mjs): ESLint 설정
+- [postcss.config.js](mdc:postcss.config.js): PostCSS 설정
+
+## 빌드 결과물
+
+- `dist/`: 빌드된 확장 프로그램 파일
+- `public/`: 정적 파일들
+
+
+
