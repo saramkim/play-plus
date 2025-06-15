@@ -1,7 +1,14 @@
+@import 'tailwindcss' important;
+@import 'tw-animate-css' important;
+
 :root {
   --primary: oklch(0.6608 0.111 192.3);
   --destructive: oklch(0.4794 0.168 28.6);
   --warning: oklch(0.769 0.188 70.08);
+}
+
+#pp-root {
+  all: initial;
 }
 
 #pp-subtitle-container {

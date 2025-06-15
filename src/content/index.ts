@@ -26,15 +26,9 @@ function initializeStorageChange() {
 
 function renderReactApp() {
   const container = document.createElement('div');
-
+  container.id = 'pp-root';
   document.body.appendChild(container);
-
-  const shadowRoot = container.attachShadow({ mode: 'open' });
-  const reactContainer = document.createElement('div');
-
-  shadowRoot.appendChild(reactContainer);
-
-  renderApp(reactContainer);
+  renderApp(container);
 }
 
 init();
