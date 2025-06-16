@@ -1,10 +1,38 @@
 import { useState, useRef, useEffect } from 'react';
 
-import { Minimize2Icon, SlidersVerticalIcon, SkipBackIcon, SkipForwardIcon } from 'lucide-react';
+import {
+  Minimize2Icon,
+  SlidersVerticalIcon,
+  SkipBackIcon,
+  SkipForwardIcon,
+  ChevronsUpIcon,
+  ChevronsDownIcon,
+} from 'lucide-react';
 
+import { playbackSpeedController } from '@/content/features/video/playback-speed';
+import { skipVideoTime } from '@/content/features/video/video-navigation';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
+
+const buttonList = [
+  {
+    Icon: SkipBackIcon,
+    onClick: () => skipVideoTime(-1, 'subtitles', 10, 'seconds'),
+  },
+  {
+    Icon: SkipForwardIcon,
+    onClick: () => skipVideoTime(1, 'subtitles', 10, 'seconds'),
+  },
+  {
+    Icon: ChevronsUpIcon,
+    onClick: () => playbackSpeedController.increaseSpeed(),
+  },
+  {
+    Icon: ChevronsDownIcon,
+    onClick: () => playbackSpeedController.decreaseSpeed(),
+  },
+];
 
 export function Controller() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -12,11 +40,6 @@ export function Controller() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const controllerRef = useRef<HTMLDivElement>(null);
-
-  const buttonList = [
-    { Icon: SkipBackIcon, onClick: () => {} },
-    { Icon: SkipForwardIcon, onClick: () => {} },
-  ];
 
   const handleExpand = () => {
     const expandedWidth = buttonList.length * BUTTON_SIZE;
