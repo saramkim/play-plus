@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
   Minimize2Icon,
@@ -11,6 +11,7 @@ import {
 
 import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
+import { useDrag } from '@/content/hooks/use-drag';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
@@ -37,9 +38,10 @@ const buttonList = [
 export function Controller() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: window.innerWidth - BUTTON_SIZE * 2, y: BUTTON_SIZE });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartPos = useRef({ x: 0, y: 0 });
-  const controllerRef = useRef<HTMLDivElement>(null);
+
+  const { elementRef, handleMouseDown } = useDrag({
+    onDrag: (x, y) => setPosition({ x, y }),
+  });
 
   const handleExpand = () => {
     const expandedWidth = buttonList.length * BUTTON_SIZE;
@@ -51,53 +53,10 @@ export function Controller() {
     setIsExpanded((prev) => !prev);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    const rect = controllerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    dragStartPos.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !controllerRef.current) return;
-
-    const rect = controllerRef.current.getBoundingClientRect();
-
-    const newX = e.clientX - dragStartPos.current.x;
-    const newY = e.clientY - dragStartPos.current.y;
-
-    const maxX = window.innerWidth - rect.width;
-    const maxY = window.innerHeight - rect.height;
-
-    setPosition({
-      x: Math.min(Math.max(0, newX), maxX),
-      y: Math.min(Math.max(0, newY), maxY),
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
   useEffect(() => {
     const handleResize = () => {
-      if (!controllerRef.current) return;
-      const rect = controllerRef.current.getBoundingClientRect();
+      if (!elementRef.current) return;
+      const rect = elementRef.current.getBoundingClientRect();
 
       const maxX = window.innerWidth - rect.width;
       const maxY = window.innerHeight - rect.height;
@@ -114,7 +73,7 @@ export function Controller() {
 
   return (
     <div
-      ref={controllerRef}
+      ref={elementRef}
       className='absolute top-0 left-0 shadow-lg rounded-lg z-[9999] select-none overflow-hidden pointer-events-auto'
       style={{
         transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
