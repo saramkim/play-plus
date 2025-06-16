@@ -28,7 +28,21 @@ function renderReactApp() {
   const container = document.createElement('div');
   container.id = 'pp-root';
   document.body.appendChild(container);
+  handleFullscreenChange(container);
   renderApp(container);
+}
+
+function handleFullscreenChange(root: HTMLElement) {
+  document.addEventListener('fullscreenchange', () => {
+    const fullscreenElement = document.fullscreenElement;
+    const videoElement = document.querySelector('video');
+
+    if (fullscreenElement && videoElement && videoElement.parentElement) {
+      videoElement.parentElement.appendChild(root);
+    } else {
+      document.body.appendChild(root);
+    }
+  });
 }
 
 init();
