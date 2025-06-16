@@ -148,7 +148,6 @@ class ElementStore {
   }
 
   private appendContainer(trackDisplayContainer: Element) {
-    const subtitleContainerWrapper = trackDisplayContainer.children[0];
     const containers = [
       this.subtitleContainer,
       this.toastContainer,
@@ -157,8 +156,8 @@ class ElementStore {
     ];
 
     containers.forEach((container) => {
-      if (subtitleContainerWrapper && !subtitleContainerWrapper.contains(container)) {
-        subtitleContainerWrapper.appendChild(container);
+      if (!trackDisplayContainer.contains(container)) {
+        trackDisplayContainer.appendChild(container);
       }
     });
   }
