@@ -79,7 +79,6 @@
   "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
   "optimize_for_learning": { "message": "학습 최적화" },
   "play_current_subtitle_once": { "message": "현재 자막 한 번 재생" },
-  "position_mode": { "message": "위치 방식" },
   "position_offset": { "message": "위치 조정" },
   "position_reference": { "message": "위치 기준" },
   "press_any_key": { "message": "키를 눌러 입력하세요" },

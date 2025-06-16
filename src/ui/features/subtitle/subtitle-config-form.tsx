@@ -61,20 +61,6 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
         />
         <FormField
           control={form.control}
-          name='positionMode'
-          render={({ field }) => (
-            <ToggleGroupField
-              label={t('position_mode')}
-              field={field}
-              options={[
-                { label: t('fixed'), value: 'fixed' },
-                { label: t('responsive'), value: 'absolute' },
-              ]}
-            />
-          )}
-        />
-        <FormField
-          control={form.control}
           name='positionReference'
           render={({ field }) => (
             <ToggleGroupField

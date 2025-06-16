@@ -4,7 +4,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
   primarySubtitle: {
     enabled: false,
     language: 'en',
-    positionMode: 'absolute',
     positionReference: 'bottom',
     positionOffset: 100,
     color: '#ffffff',
@@ -17,7 +16,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
   secondarySubtitle: {
     enabled: false,
     language: 'ko',
-    positionMode: 'absolute',
     positionReference: 'bottom',
     positionOffset: 0,
     color: '#ffffff',

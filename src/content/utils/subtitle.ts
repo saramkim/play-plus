@@ -43,23 +43,15 @@ export const createSubtitleElement = () => {
     cursor: 'pointer',
     zIndex: '1000',
     padding: '0 0.5em',
+    position: 'absolute',
   });
 
   return subtitle;
 };
 
 export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema['primarySubtitle']) => {
-  const {
-    enabled,
-    positionMode,
-    positionReference,
-    positionOffset,
-    color,
-    fontSize,
-    fontWeight,
-    lineBreak,
-    backgroundOpacity,
-  } = config;
+  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity } =
+    config;
 
   const positions = {
     top: { top: `calc(1.5em + ${positionOffset}px)`, bottom: 'auto', transform: 'translate(-50%, -50%)' },
@@ -74,7 +66,6 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
     fontWeight: `${200 + 100 * fontWeight}`,
     whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
     backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity * 0.01})`,
-    position: positionMode,
     ...positions[positionReference],
   });
 };
