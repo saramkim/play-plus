@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import { SavedSubtitle } from '@storage/type';
-import { COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message/index';
 import { PlayIcon, Trash2Icon } from 'lucide-react';
@@ -54,7 +53,6 @@ function SubtitleItem({ content, savedAt, url, startTime, onDelete }: SubtitleIt
             variant='ghost'
             size='xxs'
             tooltip={t('view_video')}
-            disabled={!url.startsWith(COUPANG_PLAY_PLAY_URL)}
             onClick={() => sendMessage('viewVideo', { url, startTime })}
           >
             <PlayIcon />

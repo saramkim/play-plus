@@ -1,9 +1,9 @@
 import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
 import { updateTabInfo } from '@storage/tab';
-import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_PLAY_URL } from '@utils/constants';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
+import { PLATFORM_MAP, PLATFORM_URL_LIST, PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
@@ -50,7 +50,7 @@ chrome.webRequest.onSendHeaders.addListener(
 
     sendMessageToTab(tabId, 'fetchVideoMetadata', { url, headers: requestHeaders ?? [] });
   },
-  { urls: [`${COUPANG_PLAY_BASE_URL}/api/playback/play?*`] },
+  { urls: [`${PLATFORM_MAP.coupangPlay.subtitleApiUrl}?*`] },
   ['requestHeaders']
 );
 
@@ -78,9 +78,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     if (tab.active) setSessionStorage('activeTab', tab);
 
-    if (tab.url?.startsWith(COUPANG_PLAY_BASE_URL)) sendMessageToTab(tabId, 'resetElement');
+    if (PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url))) sendMessageToTab(tabId, 'resetElement');
 
-    if (tab.url?.startsWith(COUPANG_PLAY_PLAY_URL)) {
+    if (PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url))) {
       const response = await sendMessageToTab(tabId, 'detectVideo');
       if (!response.success) return;
 

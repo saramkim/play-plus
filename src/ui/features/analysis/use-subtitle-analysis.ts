@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
-import { COUPANG_PLAY_PLAY_URL, DefaultSubtitleLanguage, LANGUAGES } from '@utils/constants';
+import { DefaultSubtitleLanguage, LANGUAGES } from '@utils/constants';
 import { findSubtitleIndex, stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { SubtitleData } from '@utils/parse';
+import { PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 import { toast } from 'sonner';
 
 import { useConfigStore } from '@/ui/store/config-store';
@@ -69,7 +70,7 @@ export function useSubtitleAnalysis() {
 
   useEffect(() => {
     (async () => {
-      if (!activeTab?.id || !activeTab.url?.startsWith(COUPANG_PLAY_PLAY_URL)) {
+      if (!activeTab?.id || !PLATFORM_VIDEO_URL_LIST.some((url) => activeTab.url?.startsWith(url))) {
         setCurrentTime(0);
         return;
       }
