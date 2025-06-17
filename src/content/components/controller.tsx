@@ -37,7 +37,7 @@ const buttonList = [
 
 export function Controller() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - BUTTON_SIZE * 2, y: BUTTON_SIZE });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const { elementRef, handleMouseDown } = useDrag({
     onDrag: (x, y) => setPosition({ x, y }),
@@ -55,11 +55,13 @@ export function Controller() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (!elementRef.current) return;
+      if (!elementRef.current?.parentElement) return;
+
+      const parentRect = elementRef.current.parentElement.getBoundingClientRect();
       const rect = elementRef.current.getBoundingClientRect();
 
-      const maxX = window.innerWidth - rect.width;
-      const maxY = window.innerHeight - rect.height;
+      const maxX = parentRect.width - rect.width;
+      const maxY = parentRect.height - rect.height;
 
       setPosition((prev) => ({
         x: Math.min(Math.max(0, prev.x), maxX),
@@ -83,8 +85,8 @@ export function Controller() {
       <div className='bg-neutral-800 flex items-center' onMouseDown={handleMouseDown}>
         {isExpanded && (
           <div className='flex items-center'>
-            {buttonList.map((button) => (
-              <IconButton key={button.Icon.name} Icon={button.Icon} onClick={button.onClick} />
+            {buttonList.map((button, index) => (
+              <IconButton key={index} Icon={button.Icon} onClick={button.onClick} />
             ))}
           </div>
         )}

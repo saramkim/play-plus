@@ -1,5 +1,6 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
+import { renderApp } from '@/content/app';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
 import { getPlatformStrategy } from '@/content/platform/strategy';
 import { createElement, createLoopIcon } from '@/content/utils/dom';
@@ -8,6 +9,7 @@ import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subt
 import { subtitleStore } from './subtitle-store';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
+const REACT_ROOT_ID = 'pp-root';
 const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
@@ -17,6 +19,7 @@ const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 class ElementStore {
   private videoElement: HTMLVideoElement | null = null;
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
+  private reactRoot = createElement(REACT_ROOT_ID);
   private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
@@ -33,6 +36,7 @@ class ElementStore {
     this.loopButton.appendChild(createLoopIcon());
     this.setupSubtitleElement();
     this.setupPlaybackSpeedContainer();
+    renderApp(this.reactRoot);
   }
 
   async initialize() {
@@ -147,6 +151,7 @@ class ElementStore {
 
   private appendContainer(trackDisplayContainer: Element) {
     const containers = [
+      this.reactRoot,
       this.subtitleContainer,
       this.toastContainer,
       this.loopStatusContainer,

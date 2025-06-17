@@ -8,29 +8,32 @@ export function useDrag({ onDrag }: UseDragProps) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
+  const maxCoordinate = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
 
-    const rect = elementRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!elementRef.current?.parentElement) return;
+
+    const parentRect = elementRef.current.parentElement.getBoundingClientRect();
+    const rect = elementRef.current.getBoundingClientRect();
 
     dragStartPos.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX + parentRect.left - rect.left,
+      y: e.clientY + parentRect.top - rect.top,
+    };
+    maxCoordinate.current = {
+      x: parentRect.width - rect.width,
+      y: parentRect.height - rect.height,
     };
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !elementRef.current) return;
-
-    const rect = elementRef.current.getBoundingClientRect();
+    if (!isDragging) return;
 
     const newX = e.clientX - dragStartPos.current.x;
     const newY = e.clientY - dragStartPos.current.y;
-
-    const maxX = window.innerWidth - rect.width;
-    const maxY = window.innerHeight - rect.height;
+    const { x: maxX, y: maxY } = maxCoordinate.current;
 
     onDrag(Math.min(Math.max(0, newX), maxX), Math.min(Math.max(0, newY), maxY));
   };
