@@ -1,12 +1,11 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
-import { createElement, createLoopIcon, detectVideoElement } from '@/content/utils/dom';
+import { getPlatformStrategy } from '@/content/platform/strategy';
+import { createElement, createLoopIcon } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
 import { subtitleStore } from './subtitle-store';
-
-const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const TOAST_CONTAINER_ID = 'pp-toast-container';
@@ -18,8 +17,6 @@ const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 class ElementStore {
   private videoElement: HTMLVideoElement | null = null;
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
-  private primarySubtitle = createSubtitleElement();
-  private secondarySubtitle = createSubtitleElement();
   private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
@@ -27,9 +24,10 @@ class ElementStore {
   private playbackSpeedContainer = createElement(PLAYBACK_SPEED_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
-    [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: this.primarySubtitle,
-    [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: this.secondarySubtitle,
+    [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
+    [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: createSubtitleElement(),
   };
+  private platformStrategy = getPlatformStrategy(window.location.href);
 
   constructor() {
     this.loopButton.appendChild(createLoopIcon());
@@ -38,7 +36,7 @@ class ElementStore {
   }
 
   async initialize() {
-    const video = await detectVideoElement();
+    const video = await this.platformStrategy.detectVideo();
     this.videoElement = video;
     this.setupContainer();
     return video;
@@ -119,20 +117,20 @@ class ElementStore {
   }
 
   private setupContainer() {
-    const trackDisplayContainer = document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
+    const trackDisplayContainer = this.platformStrategy.getTrackDisplayContainer();
     if (trackDisplayContainer) {
       this.appendContainer(trackDisplayContainer);
       this.observeContainer(trackDisplayContainer);
     }
 
-    const sliderContainer = document.querySelector('div.slider');
-    if (sliderContainer) {
-      sliderContainer.appendChild(this.loopMarkerContainer);
+    const progressBarContainer = this.platformStrategy.getProgressBarContainer();
+    if (progressBarContainer) {
+      progressBarContainer.appendChild(this.loopMarkerContainer);
     }
 
-    const controlsLeft = document.querySelector('.controls-left');
-    if (controlsLeft) {
-      controlsLeft.appendChild(this.loopButton);
+    const loopButtonContainer = this.platformStrategy.getLoopButtonContainer();
+    if (loopButtonContainer) {
+      loopButtonContainer.appendChild(this.loopButton);
     }
   }
 
