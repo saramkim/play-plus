@@ -5,9 +5,9 @@ import { SETTINGS } from '@utils/constants';
 
 import { loopController } from '@/content/features/loop';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
-import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
 import { elementStore } from '@/content/store/element-store';
+import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 
 const { SHORTCUTS, LOOP, VIDEO_SKIP, PLAYBACK_SPEED } = SETTINGS;
 
@@ -95,9 +95,9 @@ export class KeyBindingManager {
   private setKeyBindingsForPlaybackSpeed({ enabled, ...shortcuts }: StorageSchema['playbackSpeed']) {
     const { increase, decrease, reset } = shortcuts;
     if (enabled) {
-      this.keyBindings[increase] = () => playbackSpeedController.increaseSpeed();
-      this.keyBindings[decrease] = () => playbackSpeedController.decreaseSpeed();
-      this.keyBindings[reset] = () => playbackSpeedController.resetSpeed();
+      this.keyBindings[increase] = () => usePlaybackSpeedStore.getState().increaseSpeed();
+      this.keyBindings[decrease] = () => usePlaybackSpeedStore.getState().decreaseSpeed();
+      this.keyBindings[reset] = () => usePlaybackSpeedStore.getState().resetSpeed();
     } else {
       Object.values(shortcuts).forEach((value) => delete this.keyBindings[value]);
     }

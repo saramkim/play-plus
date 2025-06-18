@@ -12,7 +12,6 @@ const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const REACT_ROOT_ID = 'pp-root';
 const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
-const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 
 class ElementStore {
   private videoElement: HTMLVideoElement | null = null;
@@ -20,7 +19,6 @@ class ElementStore {
   private reactRoot = createElement(REACT_ROOT_ID);
   private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
-  private playbackSpeedContainer = createElement(PLAYBACK_SPEED_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
     [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
@@ -30,7 +28,6 @@ class ElementStore {
 
   constructor() {
     this.setupSubtitleElement();
-    this.setupPlaybackSpeedContainer();
     renderApp(this.reactRoot);
   }
 
@@ -45,7 +42,6 @@ class ElementStore {
     this.videoElement = null;
     this.toastContainer.replaceChildren();
     this.resetLoopStatus();
-    this.hidePlaybackSpeedStatus();
 
     if (this.subtitleContainerObserver) {
       this.subtitleContainerObserver.disconnect();
@@ -71,24 +67,6 @@ class ElementStore {
 
   resetLoopStatus() {
     this.loopMarkerContainer.classList.remove('show');
-  }
-
-  getPlaybackSpeedContainer() {
-    return this.playbackSpeedContainer;
-  }
-
-  updatePlaybackSpeedStatus(speed: number, isShow = true) {
-    if (!isShow) {
-      this.hidePlaybackSpeedStatus();
-      return;
-    }
-
-    this.playbackSpeedContainer.textContent = `${speed.toFixed(1)}x`;
-    this.playbackSpeedContainer.classList.add('show');
-  }
-
-  hidePlaybackSpeedStatus() {
-    this.playbackSpeedContainer.classList.remove('show');
   }
 
   private setupSubtitleElement() {
@@ -124,12 +102,8 @@ class ElementStore {
     this.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
   }
 
-  private setupPlaybackSpeedContainer() {
-    this.playbackSpeedContainer.classList.add('playback-speed');
-  }
-
   private appendContainer(trackDisplayContainer: Element) {
-    const containers = [this.reactRoot, this.subtitleContainer, this.toastContainer, this.playbackSpeedContainer];
+    const containers = [this.reactRoot, this.subtitleContainer, this.toastContainer];
 
     containers.forEach((container) => {
       if (!trackDisplayContainer.contains(container)) {

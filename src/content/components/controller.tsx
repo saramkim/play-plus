@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 
 import { loopController } from '@/content/features/loop';
-import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
 import { useDrag } from '@/content/hooks/use-drag';
 import { useLoopStore } from '@/content/store/loop-store';
+import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
@@ -23,6 +23,8 @@ export function Controller() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const isLooping = useLoopStore((state) => state.isLooping);
+  const increaseSpeed = usePlaybackSpeedStore((state) => state.increaseSpeed);
+  const decreaseSpeed = usePlaybackSpeedStore((state) => state.decreaseSpeed);
 
   const { elementRef, handleMouseDown } = useDrag({
     onDrag: (x, y) => setPosition({ x, y }),
@@ -40,11 +42,11 @@ export function Controller() {
       },
       {
         Icon: ChevronsUpIcon,
-        onClick: () => playbackSpeedController.increaseSpeed(),
+        onClick: increaseSpeed,
       },
       {
         Icon: ChevronsDownIcon,
-        onClick: () => playbackSpeedController.decreaseSpeed(),
+        onClick: decreaseSpeed,
       },
       {
         Icon: RepeatIcon,
@@ -52,7 +54,7 @@ export function Controller() {
         className: isLooping ? 'text-primary hover:text-primary' : undefined,
       },
     ],
-    [isLooping]
+    [isLooping, increaseSpeed, decreaseSpeed]
   );
 
   const handleExpand = () => {

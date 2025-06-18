@@ -1,56 +1,26 @@
-import { DEFAULT_CONFIG } from '@storage/default';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
 import { elementStore } from '@/content/store/element-store';
+import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 
 const { STORAGE_KEY } = SETTINGS.PLAYBACK_SPEED;
 export class PlaybackSpeedController {
-  private readonly MIN_SPEED = 0.3;
-  private readonly MAX_SPEED = 2.0;
-  private readonly SPEED_STEP = 0.1;
+  constructor() {
+    usePlaybackSpeedStore.subscribe((state) => {
+      const video = elementStore.getVideoElement();
+      if (!video) return;
 
-  private currentSpeed = 1.0;
+      video.playbackRate = state.currentSpeed;
+    });
+  }
 
-  onStorageChange = (changes: StorageChanges) => {
+  onStorageChange(changes: StorageChanges) {
     const playbackSpeedChanges = changes[STORAGE_KEY];
     if (playbackSpeedChanges) {
-      const { enabled } = playbackSpeedChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
-      if (!enabled) {
-        this.resetSpeed();
-      }
+      const enabled = playbackSpeedChanges.newValue?.enabled;
+      if (!enabled) usePlaybackSpeedStore.getState().resetSpeed();
     }
-  };
-
-  increaseSpeed() {
-    const video = elementStore.getVideoElement();
-    if (!video) return;
-
-    this.currentSpeed = Math.min(this.MAX_SPEED, this.currentSpeed + this.SPEED_STEP);
-    video.playbackRate = this.currentSpeed;
-    elementStore.updatePlaybackSpeedStatus(this.currentSpeed);
-  }
-
-  decreaseSpeed() {
-    const video = elementStore.getVideoElement();
-    if (!video) return;
-
-    this.currentSpeed = Math.max(this.MIN_SPEED, this.currentSpeed - this.SPEED_STEP);
-    video.playbackRate = this.currentSpeed;
-    elementStore.updatePlaybackSpeedStatus(this.currentSpeed);
-  }
-
-  resetSpeed() {
-    const video = elementStore.getVideoElement();
-    if (!video) return;
-
-    this.currentSpeed = 1.0;
-    video.playbackRate = this.currentSpeed;
-    elementStore.updatePlaybackSpeedStatus(this.currentSpeed, false);
-  }
-
-  getCurrentSpeed() {
-    return this.currentSpeed;
   }
 }
 
