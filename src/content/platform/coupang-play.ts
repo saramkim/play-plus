@@ -31,8 +31,4 @@ export class CoupangPlayStrategy implements PlatformStrategy {
   getProgressBarContainer() {
     return document.querySelector('div.slider');
   }
-
-  getLoopButtonContainer() {
-    return document.querySelector('.controls-left');
-  }
 }

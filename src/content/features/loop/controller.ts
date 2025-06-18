@@ -1,12 +1,11 @@
 import { DEFAULT_CONFIG } from '@storage/default';
-import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
-import { createElement, createLoopIcon, showToast } from '@/content/utils/dom';
+import { showToast } from '@/content/utils/dom';
 import { findSubtitle } from '@/content/utils/subtitle';
 
 import { END_MARKER_ID, LoopMarker, START_MARKER_ID } from './marker';
@@ -21,14 +20,12 @@ export const LOOP_CONSTANTS = {
 type LoopType = 'subtitle' | 'manual';
 
 export class LoopController {
-  private enabled = false;
   private isLooping = false;
   private handleTimeUpdate: (() => void) | null = null;
   private isMarkerShowing = false;
   private loopType: LoopType | null = null;
   private markerContainer = elementStore.getLoopMarkerContainer();
   private loopStatusContainer = elementStore.getLoopStatusContainer();
-  private loopButton = elementStore.getLoopButton();
   private startMarker = new LoopMarker(START_MARKER_ID, 'S', this.markerContainer);
   private endMarker = new LoopMarker(END_MARKER_ID, 'E', this.markerContainer);
   private activeSubtitleEndHandler: (() => void) | null = null;
@@ -46,7 +43,6 @@ export class LoopController {
         elementStore.resetLoopStatus();
         this.isMarkerShowing = false;
       }
-      this.loopButton.classList.toggle('show', enabled);
     }
   };
 
@@ -134,21 +130,13 @@ export class LoopController {
     }
   };
 
-  private initialize = async () => {
-    const data = await getStorage(STORAGE_KEY);
-    this.enabled = data.enabled;
+  private initialize = () => {
     this.initializeLoopUI();
   };
 
   private initializeLoopUI = () => {
-    const loopIcon = createElement('pp-loop-icon');
-    loopIcon.appendChild(createLoopIcon());
-    this.loopStatusContainer.appendChild(loopIcon);
     this.loopStatusContainer.appendChild(this.startMarker.getStatus());
     this.loopStatusContainer.appendChild(this.endMarker.getStatus());
-
-    this.loopButton.classList.toggle('show', this.enabled);
-    this.loopButton.addEventListener('click', this.toggleLoop);
   };
 
   private loop = (isLooping: boolean, loopType: LoopType = 'manual') => {
@@ -195,7 +183,6 @@ export class LoopController {
   };
 
   private updateLoopUI = (isLooping: boolean) => {
-    this.loopButton.classList.toggle('active', isLooping);
     this.loopStatusContainer.classList.toggle('show', isLooping);
     this.loopStatusContainer.classList.toggle('spin', isLooping);
   };

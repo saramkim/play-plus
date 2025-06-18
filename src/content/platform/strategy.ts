@@ -6,7 +6,6 @@ export interface PlatformStrategy {
   detectVideo(): HTMLVideoElement | Promise<HTMLVideoElement>;
   getTrackDisplayContainer(): Element | null;
   getProgressBarContainer(): Element | null;
-  getLoopButtonContainer(): Element | null;
 }
 
 const PlatformStrategyMap: Record<PlatformName, new () => PlatformStrategy> = {

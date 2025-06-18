@@ -3,7 +3,7 @@ import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 import { renderApp } from '@/content/app';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
 import { getPlatformStrategy } from '@/content/platform/strategy';
-import { createElement, createLoopIcon } from '@/content/utils/dom';
+import { createElement } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
 import { subtitleStore } from './subtitle-store';
@@ -13,7 +13,6 @@ const REACT_ROOT_ID = 'pp-root';
 const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
-const LOOP_BUTTON_ID = 'pp-loop-button';
 const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 
 class ElementStore {
@@ -23,7 +22,6 @@ class ElementStore {
   private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
-  private loopButton = createElement(LOOP_BUTTON_ID);
   private playbackSpeedContainer = createElement(PLAYBACK_SPEED_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
@@ -33,7 +31,6 @@ class ElementStore {
   private platformStrategy = getPlatformStrategy(window.location.href);
 
   constructor() {
-    this.loopButton.appendChild(createLoopIcon());
     this.setupSubtitleElement();
     this.setupPlaybackSpeedContainer();
     renderApp(this.reactRoot);
@@ -74,10 +71,6 @@ class ElementStore {
     return this.loopStatusContainer;
   }
 
-  getLoopButton() {
-    return this.loopButton;
-  }
-
   getToastContainer() {
     return this.toastContainer;
   }
@@ -86,7 +79,6 @@ class ElementStore {
     this.loopMarkerContainer.classList.remove('show');
     this.loopStatusContainer.classList.remove('show');
     this.loopStatusContainer.classList.remove('spin');
-    this.loopButton.classList.remove('active');
   }
 
   getPlaybackSpeedContainer() {
@@ -130,11 +122,6 @@ class ElementStore {
     const progressBarContainer = this.platformStrategy.getProgressBarContainer();
     if (progressBarContainer) {
       progressBarContainer.appendChild(this.loopMarkerContainer);
-    }
-
-    const loopButtonContainer = this.platformStrategy.getLoopButtonContainer();
-    if (loopButtonContainer) {
-      loopButtonContainer.appendChild(this.loopButton);
     }
   }
 

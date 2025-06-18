@@ -7,8 +7,10 @@ import {
   SkipForwardIcon,
   ChevronsUpIcon,
   ChevronsDownIcon,
+  RepeatIcon,
 } from 'lucide-react';
 
+import { loopController } from '@/content/features/loop';
 import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
 import { useDrag } from '@/content/hooks/use-drag';
@@ -32,6 +34,10 @@ const buttonList = [
   {
     Icon: ChevronsDownIcon,
     onClick: () => playbackSpeedController.decreaseSpeed(),
+  },
+  {
+    Icon: RepeatIcon,
+    onClick: () => loopController.toggleLoop(),
   },
 ];
 
