@@ -12,7 +12,6 @@ const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const REACT_ROOT_ID = 'pp-root';
 const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
-const LOOP_STATUS_CONTAINER_ID = 'pp-loop-status-container';
 const PLAYBACK_SPEED_CONTAINER_ID = 'pp-playback-speed-container';
 
 class ElementStore {
@@ -21,7 +20,6 @@ class ElementStore {
   private reactRoot = createElement(REACT_ROOT_ID);
   private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
-  private loopStatusContainer = createElement(LOOP_STATUS_CONTAINER_ID);
   private playbackSpeedContainer = createElement(PLAYBACK_SPEED_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
@@ -67,18 +65,12 @@ class ElementStore {
     return this.loopMarkerContainer;
   }
 
-  getLoopStatusContainer() {
-    return this.loopStatusContainer;
-  }
-
   getToastContainer() {
     return this.toastContainer;
   }
 
   resetLoopStatus() {
     this.loopMarkerContainer.classList.remove('show');
-    this.loopStatusContainer.classList.remove('show');
-    this.loopStatusContainer.classList.remove('spin');
   }
 
   getPlaybackSpeedContainer() {
@@ -137,13 +129,7 @@ class ElementStore {
   }
 
   private appendContainer(trackDisplayContainer: Element) {
-    const containers = [
-      this.reactRoot,
-      this.subtitleContainer,
-      this.toastContainer,
-      this.loopStatusContainer,
-      this.playbackSpeedContainer,
-    ];
+    const containers = [this.reactRoot, this.subtitleContainer, this.toastContainer, this.playbackSpeedContainer];
 
     containers.forEach((container) => {
       if (!trackDisplayContainer.contains(container)) {

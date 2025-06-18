@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import {
   Minimize2Icon,
@@ -14,40 +14,46 @@ import { loopController } from '@/content/features/loop';
 import { playbackSpeedController } from '@/content/features/video/playback-speed';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
 import { useDrag } from '@/content/hooks/use-drag';
+import { useLoopStore } from '@/content/store/loop-store';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
 
-const buttonList = [
-  {
-    Icon: SkipBackIcon,
-    onClick: () => skipVideoTime(-1, 'subtitles', 10, 'seconds'),
-  },
-  {
-    Icon: SkipForwardIcon,
-    onClick: () => skipVideoTime(1, 'subtitles', 10, 'seconds'),
-  },
-  {
-    Icon: ChevronsUpIcon,
-    onClick: () => playbackSpeedController.increaseSpeed(),
-  },
-  {
-    Icon: ChevronsDownIcon,
-    onClick: () => playbackSpeedController.decreaseSpeed(),
-  },
-  {
-    Icon: RepeatIcon,
-    onClick: () => loopController.toggleLoop(),
-  },
-];
-
 export function Controller() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const isLooping = useLoopStore((state) => state.isLooping);
 
   const { elementRef, handleMouseDown } = useDrag({
     onDrag: (x, y) => setPosition({ x, y }),
   });
+
+  const buttonList = useMemo(
+    () => [
+      {
+        Icon: SkipBackIcon,
+        onClick: () => skipVideoTime(-1, 'subtitles', 10, 'seconds'),
+      },
+      {
+        Icon: SkipForwardIcon,
+        onClick: () => skipVideoTime(1, 'subtitles', 10, 'seconds'),
+      },
+      {
+        Icon: ChevronsUpIcon,
+        onClick: () => playbackSpeedController.increaseSpeed(),
+      },
+      {
+        Icon: ChevronsDownIcon,
+        onClick: () => playbackSpeedController.decreaseSpeed(),
+      },
+      {
+        Icon: RepeatIcon,
+        onClick: () => loopController.toggleLoop(),
+        className: isLooping ? 'text-primary hover:text-primary' : undefined,
+      },
+    ],
+    [isLooping]
+  );
 
   const handleExpand = () => {
     const expandedWidth = buttonList.length * BUTTON_SIZE;
@@ -92,7 +98,7 @@ export function Controller() {
         {isExpanded && (
           <div className='flex items-center'>
             {buttonList.map((button, index) => (
-              <IconButton key={index} Icon={button.Icon} onClick={button.onClick} />
+              <IconButton key={index} Icon={button.Icon} onClick={button.onClick} className={button.className} />
             ))}
           </div>
         )}
