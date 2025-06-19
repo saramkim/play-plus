@@ -19,7 +19,7 @@ import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
 
-export function Controller() {
+export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const isLooping = useLoopStore((state) => state.isLooping);
@@ -90,7 +90,7 @@ export function Controller() {
   return (
     <div
       ref={elementRef}
-      className='absolute top-0 left-0 shadow-lg rounded-lg z-[9999] select-none overflow-hidden pointer-events-auto'
+      className={cn('absolute top-0 left-0 shadow-lg rounded-lg select-none pointer-events-auto', className)}
       style={{
         transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
         willChange: 'transform',
