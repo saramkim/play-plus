@@ -1,15 +1,17 @@
 import { PLATFORM_MAP, PlatformName } from '@utils/platform';
 
 import { CoupangPlayStrategy } from './coupang-play';
+import { YoutubeStrategy } from './youtube';
 
 export interface PlatformStrategy {
-  detectVideo(): HTMLVideoElement | Promise<HTMLVideoElement>;
+  detectVideo(): HTMLVideoElement | Promise<HTMLVideoElement> | null;
   getTrackDisplayContainer(): Element | null;
   getProgressBarContainer(): Element | null;
 }
 
 const PlatformStrategyMap: Record<PlatformName, new () => PlatformStrategy> = {
   coupangPlay: CoupangPlayStrategy,
+  youtube: YoutubeStrategy,
 };
 
 export const getPlatformStrategy = (url: string) => {

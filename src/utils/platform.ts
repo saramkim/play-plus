@@ -4,6 +4,11 @@ export const PLATFORM_MAP = {
     videoUrl: 'https://www.coupangplay.com/play',
     subtitleApiUrl: 'https://www.coupangplay.com/api/playback/play',
   },
+  youtube: {
+    url: 'https://www.youtube.com',
+    videoUrl: 'https://www.youtube.com/watch',
+    subtitleApiUrl: 'https://www.youtube.com/api/timedtext',
+  },
 } as const;
 
 export type PlatformName = keyof typeof PLATFORM_MAP;

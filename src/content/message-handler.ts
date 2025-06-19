@@ -58,6 +58,8 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   const video = await elementStore.initialize();
+  if (!video) return { success: false, message: t('error_video_not_found') };
+
   loopController.setupLoopHandler(video);
   setupSubtitleSync(video);
 
