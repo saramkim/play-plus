@@ -3,7 +3,7 @@ import { migrateLegacyStorage } from '@storage/migration';
 import { updateTabInfo } from '@storage/tab';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
-import { PLATFORM_MAP, PLATFORM_URL_LIST, PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
+import { PLATFORM_SUBTITLE_API_URL_LIST, PLATFORM_URL_LIST, PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
@@ -44,13 +44,13 @@ chrome.sidePanel
   .catch((error) => console.error('Error setting panel behavior:', error));
 
 chrome.webRequest.onSendHeaders.addListener(
-  async ({ tabId, url, requestHeaders }) => {
+  ({ tabId, url, requestHeaders }) => {
     const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
     sendMessageToTab(tabId, 'fetchVideoMetadata', { url, headers: requestHeaders ?? [] });
   },
-  { urls: [`${PLATFORM_MAP.coupangPlay.subtitleApiUrl}?*`] },
+  { urls: PLATFORM_SUBTITLE_API_URL_LIST.map((url) => `${url}?*`) },
   ['requestHeaders']
 );
 

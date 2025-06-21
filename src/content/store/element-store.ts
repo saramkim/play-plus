@@ -2,7 +2,7 @@ import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
 import { renderApp } from '@/content/app';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
-import { getPlatformStrategy } from '@/content/platform/strategy';
+import { platform } from '@/content/platform/strategy';
 import { createElement } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
@@ -24,7 +24,6 @@ class ElementStore {
     [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
     [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: createSubtitleElement(),
   };
-  private platformStrategy = getPlatformStrategy(window.location.href);
 
   constructor() {
     this.setupSubtitleElement();
@@ -32,7 +31,8 @@ class ElementStore {
   }
 
   async initialize() {
-    const video = await this.platformStrategy.detectVideo();
+    const video = await platform.detectVideo();
+    if (video) platform.afterVideoDetected?.(video);
     this.videoElement = video;
     this.setupContainer();
     return video;
@@ -83,13 +83,13 @@ class ElementStore {
   }
 
   private setupContainer() {
-    const trackDisplayContainer = this.platformStrategy.getTrackDisplayContainer();
+    const trackDisplayContainer = platform.getTrackDisplayContainer();
     if (trackDisplayContainer) {
       this.appendContainer(trackDisplayContainer);
       this.observeContainer(trackDisplayContainer);
     }
 
-    const progressBarContainer = this.platformStrategy.getProgressBarContainer();
+    const progressBarContainer = platform.getProgressBarContainer();
     if (progressBarContainer) {
       progressBarContainer.appendChild(this.loopMarkerContainer);
     }

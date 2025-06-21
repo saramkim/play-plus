@@ -5,7 +5,8 @@ import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
 import { loopController } from './features/loop';
-import { fetchSubtitles, setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
+import { setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
+import { platform } from './platform/strategy';
 import { elementStore } from './store/element-store';
 import { subtitleStore } from './store/subtitle-store';
 
@@ -42,10 +43,10 @@ export function initializeMessageListener() {
 }
 
 const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
-  const subtitles = await fetchSubtitles(url, headers);
+  const subtitles = await platform.fetchSubtitles(url, headers);
 
   for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
-    const subtitleData = subtitles.find((subtitle) => subtitle.lang === lang)?.subtitleData;
+    const subtitleData = subtitles?.find((subtitle) => subtitle.lang === lang)?.subtitleData;
     if (subtitleData) {
       subtitleStore.setSubtitleCache(lang, subtitleData);
       await sendMessage('updateSubtitles', { lang, subtitleData });

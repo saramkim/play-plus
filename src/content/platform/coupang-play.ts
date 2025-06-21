@@ -1,3 +1,5 @@
+import { fetchSubtitles } from '@/content/features/subtitle/subtitle';
+
 import { PlatformStrategy } from './strategy';
 
 const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
@@ -30,5 +32,9 @@ export class CoupangPlayStrategy implements PlatformStrategy {
 
   getProgressBarContainer() {
     return document.querySelector('div.slider');
+  }
+
+  async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
+    return fetchSubtitles(url, headers);
   }
 }
