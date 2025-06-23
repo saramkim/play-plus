@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 
 import {
   Minimize2Icon,
@@ -12,7 +12,6 @@ import {
 
 import { loopController } from '@/content/features/loop';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
-import { useDrag } from '@/content/hooks/use-drag';
 import { useLoopStore } from '@/content/store/loop-store';
 import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 import { cn } from '@/ui/lib/utils';
@@ -21,20 +20,15 @@ const BUTTON_SIZE = 40;
 
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const isLooping = useLoopStore((state) => state.isLooping);
   const increaseSpeed = usePlaybackSpeedStore((state) => state.increaseSpeed);
   const decreaseSpeed = usePlaybackSpeedStore((state) => state.decreaseSpeed);
-
-  const { elementRef, handleMouseDown } = useDrag({
-    onDrag: (x, y) => setPosition({ x, y }),
-  });
 
   const buttonList = useMemo(
     () => [
       {
         Icon: SkipBackIcon,
-        onClick: () => skipVideoTime(-1, 'subtitles', 10, 'seconds'),
+        onClick: () => skipVideoTime(-1, 'subtitles', -10, 'seconds'),
       },
       {
         Icon: SkipForwardIcon,
@@ -57,46 +51,14 @@ export function Controller({ className }: { className?: string }) {
     [isLooping, increaseSpeed, decreaseSpeed]
   );
 
-  const handleExpand = () => {
-    const expandedWidth = buttonList.length * BUTTON_SIZE;
-
-    setPosition((prev) => ({
-      ...prev,
-      x: isExpanded ? prev.x + expandedWidth : prev.x - expandedWidth,
-    }));
-    setIsExpanded((prev) => !prev);
-  };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (!elementRef.current?.parentElement) return;
-
-      const parentRect = elementRef.current.parentElement.getBoundingClientRect();
-      const rect = elementRef.current.getBoundingClientRect();
-
-      const maxX = parentRect.width - rect.width;
-      const maxY = parentRect.height - rect.height;
-
-      setPosition((prev) => ({
-        x: Math.min(Math.max(0, prev.x), maxX),
-        y: Math.min(Math.max(0, prev.y), maxY),
-      }));
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   return (
     <div
-      ref={elementRef}
-      className={cn('absolute top-0 left-0 shadow-lg rounded-lg select-none pointer-events-auto', className)}
-      style={{
-        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
-        willChange: 'transform',
-      }}
+      className={cn(
+        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto',
+        className
+      )}
     >
-      <div className='bg-neutral-800 flex items-center' onMouseDown={handleMouseDown}>
+      <div className='bg-neutral-800 flex items-center'>
         {isExpanded && (
           <div className='flex items-center'>
             {buttonList.map((button, index) => (
@@ -106,7 +68,10 @@ export function Controller({ className }: { className?: string }) {
         )}
 
         <div className='flex items-center'>
-          <IconButton Icon={isExpanded ? Minimize2Icon : SlidersVerticalIcon} onClick={handleExpand} />
+          <IconButton
+            Icon={isExpanded ? Minimize2Icon : SlidersVerticalIcon}
+            onClick={() => setIsExpanded((prev) => !prev)}
+          />
         </div>
       </div>
     </div>
