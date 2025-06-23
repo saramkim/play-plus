@@ -16,6 +16,10 @@
   font-family: Pretendard;
 }
 
+#pp-subtitle-container > p:hover {
+  outline: 1px solid currentColor;
+}
+
 #pp-loop-marker-container {
   position: absolute;
   top: -30px;

@@ -3,32 +3,13 @@ import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { useToastStore } from '@/content/store/toast-store';
-import { createTooltip } from '@/content/utils/dom';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
-  const tooltip = getTooltip();
-  const showTooltip = (event: MouseEvent) => {
-    subtitleElement.style.outline = '1px solid currentColor';
-    tooltip.style.opacity = '1';
-    updateTooltipPosition(event);
-  };
-  const updateTooltipPosition = (event: MouseEvent) => {
-    tooltip.style.top = `${event.pageY + 10}px`;
-    tooltip.style.left = `${event.pageX + 10}px`;
-  };
-  const hideTooltip = () => {
-    subtitleElement.style.outline = 'none';
-    tooltip.style.opacity = '0';
-  };
-  const handleSubtitleClick = async (event: MouseEvent) => {
+  const handleSubtitleClick = (event: MouseEvent) => {
     event.stopPropagation();
-    hideTooltip();
     saveSubtitleWithToast(subtitleElement);
   };
 
-  subtitleElement.addEventListener('mouseover', showTooltip);
-  subtitleElement.addEventListener('mousemove', updateTooltipPosition);
-  subtitleElement.addEventListener('mouseout', hideTooltip);
   subtitleElement.addEventListener('click', handleSubtitleClick);
 }
 
@@ -40,18 +21,6 @@ export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
   } catch (error) {
     addToast(`✖ ${t('error_save_subtitle')}`, (error as Error).message);
   }
-}
-
-const SUBTITLE_TOOLTIP_ID = 'pp-subtitle-tooltip';
-
-function getTooltip(): HTMLElement {
-  const existingTooltip = document.getElementById(SUBTITLE_TOOLTIP_ID);
-  if (existingTooltip) return existingTooltip;
-
-  const tooltip = createTooltip(t('click_to_save'));
-  tooltip.id = SUBTITLE_TOOLTIP_ID;
-  document.body.appendChild(tooltip);
-  return tooltip;
 }
 
 async function saveSubtitle(subtitleElement: HTMLElement) {

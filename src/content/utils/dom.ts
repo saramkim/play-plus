@@ -2,28 +2,6 @@ export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclar
   Object.assign(element.style, styles);
 };
 
-export const createTooltip = (text?: string) => {
-  const tooltip = document.createElement('div');
-
-  applyStyles(tooltip, {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '12px',
-    lineHeight: '16px',
-    whiteSpace: 'nowrap',
-    zIndex: '1000',
-    pointerEvents: 'none',
-    opacity: '0',
-    transition: 'opacity 0.2s ease',
-  });
-  tooltip.textContent = text ?? '';
-
-  return tooltip;
-};
-
 export const createElement = (id: string, tagName: string = 'div') => {
   const element = document.createElement(tagName);
   element.id = id;
