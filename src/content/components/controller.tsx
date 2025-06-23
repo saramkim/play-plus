@@ -45,7 +45,7 @@ export function Controller({ className }: { className?: string }) {
       {
         Icon: RepeatIcon,
         onClick: () => loopController.toggleLoop(),
-        className: isLooping ? 'text-primary hover:text-primary' : undefined,
+        className: isLooping ? 'text-teal-500 hover:text-teal-500' : undefined,
       },
     ],
     [isLooping, increaseSpeed, decreaseSpeed]
@@ -54,26 +54,19 @@ export function Controller({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto',
+        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-neutral-800/80',
         className
       )}
     >
-      <div className='bg-neutral-800 flex items-center'>
-        {isExpanded && (
-          <div className='flex items-center'>
-            {buttonList.map((button, index) => (
-              <IconButton key={index} Icon={button.Icon} onClick={button.onClick} className={button.className} />
-            ))}
-          </div>
-        )}
+      {isExpanded &&
+        buttonList.map((button, index) => (
+          <IconButton key={index} Icon={button.Icon} onClick={button.onClick} className={button.className} />
+        ))}
 
-        <div className='flex items-center'>
-          <IconButton
-            Icon={isExpanded ? Minimize2Icon : SlidersVerticalIcon}
-            onClick={() => setIsExpanded((prev) => !prev)}
-          />
-        </div>
-      </div>
+      <IconButton
+        Icon={isExpanded ? Minimize2Icon : SlidersVerticalIcon}
+        onClick={() => setIsExpanded((prev) => !prev)}
+      />
     </div>
   );
 }
