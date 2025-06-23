@@ -7,6 +7,7 @@ import { cn } from '@/ui/lib/utils';
 import { Controller } from './components/controller';
 import { LoopStatus } from './components/loop-status';
 import { PlaybackSpeedDisplay } from './components/playback-speed-display';
+import { ToastContainer } from './components/toast';
 import { useAutoHide } from './hooks/use-auto-hide';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
       <Controller className={cn(isVisible ? 'opacity-100' : 'opacity-0', 'transition-opacity duration-300')} />
       <LoopStatus />
       <PlaybackSpeedDisplay />
+      <ToastContainer />
     </div>
   );
 }

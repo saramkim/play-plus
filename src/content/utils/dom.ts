@@ -1,26 +1,3 @@
-import { elementStore } from '@/content/store/element-store';
-
-export const detectVideoElement = (): Promise<HTMLVideoElement> => {
-  return new Promise((resolve) => {
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          const addedNodes = Array.from(mutation.addedNodes);
-          const video = addedNodes.find((node) => node instanceof HTMLVideoElement);
-
-          if (video) {
-            observer.disconnect();
-            resolve(video);
-            return;
-          }
-        }
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-  });
-};
-
 export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>) => {
   Object.assign(element.style, styles);
 };
@@ -52,26 +29,6 @@ export const createElement = (id: string, tagName: string = 'div') => {
   element.id = id;
   return element;
 };
-
-export function showToast(title: string, message: string, type: 'success' | 'error' | 'info') {
-  const container = elementStore.getToastContainer();
-  const toast = document.createElement('div');
-  const titleElement = document.createElement('span');
-  const messageElement = document.createElement('span');
-
-  toast.classList.add('toast', `toast-${type}`);
-  titleElement.classList.add('toast-title');
-  titleElement.textContent = title;
-  messageElement.textContent = message;
-
-  toast.appendChild(titleElement);
-  toast.appendChild(messageElement);
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
-}
 
 export const createMarker = (id: string, text: string) => {
   const container = createElement(id);

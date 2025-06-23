@@ -1,12 +1,6 @@
 @import 'tailwindcss' important;
 @import 'tw-animate-css' important;
 
-:root {
-  --primary: oklch(0.6608 0.111 192.3);
-  --destructive: oklch(0.4794 0.168 28.6);
-  --warning: oklch(0.769 0.188 70.08);
-}
-
 #pp-root {
   all: initial;
 }
@@ -20,44 +14,6 @@
   font-size: min(1.8vw, 3vh);
   text-shadow: black 2px 2px 2px;
   font-family: Pretendard;
-}
-
-#pp-toast-container {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1em;
-}
-
-#pp-toast-container .toast {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6em;
-  padding: 10px 14px;
-  border-radius: 8px;
-  color: white;
-  font-size: 13px;
-  animation: pp-fade-in-out 3s forwards;
-}
-
-#pp-toast-container .toast-success {
-  background-color: var(--primary);
-}
-
-#pp-toast-container .toast-error {
-  background-color: var(--destructive);
-}
-
-#pp-toast-container .toast-info {
-  background-color: var(--warning);
-}
-
-#pp-toast-container .toast .toast-title {
-  font-size: 14px;
-  font-weight: 600;
 }
 
 #pp-loop-marker-container {
@@ -79,7 +35,7 @@
   width: 15px;
   height: 30px;
   opacity: 0.8;
-  color: var(--primary);
+  color: oklch(0.6608 0.111 192.3);
 }
 #pp-loop-marker-container .loop-marker:hover {
   opacity: 1;
@@ -99,23 +55,4 @@
 }
 #pp-loop-marker-container #loop-marker-end {
   left: 10%;
-}
-
-@keyframes pp-fade-in-out {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  90% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
 }

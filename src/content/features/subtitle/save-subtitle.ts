@@ -2,7 +2,8 @@ import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { createTooltip, showToast } from '@/content/utils/dom';
+import { useToastStore } from '@/content/store/toast-store';
+import { createTooltip } from '@/content/utils/dom';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
   const tooltip = getTooltip();
@@ -32,11 +33,12 @@ export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
 }
 
 export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
+  const { addToast } = useToastStore.getState();
   try {
     const subtitle = await saveSubtitle(subtitleElement);
-    showToast(`✔ ${t('success_save_subtitle')}`, subtitle, 'success');
+    addToast(`✔ ${t('success_save_subtitle')}`, subtitle);
   } catch (error) {
-    showToast(`✖ ${t('error_save_subtitle')}`, (error as Error).message, 'error');
+    addToast(`✖ ${t('error_save_subtitle')}`, (error as Error).message);
   }
 }
 

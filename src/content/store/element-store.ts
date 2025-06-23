@@ -10,14 +10,12 @@ import { subtitleStore } from './subtitle-store';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const REACT_ROOT_ID = 'pp-root';
-const TOAST_CONTAINER_ID = 'pp-toast-container';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 
 class ElementStore {
   private videoElement: HTMLVideoElement | null = null;
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
   private reactRoot = createElement(REACT_ROOT_ID);
-  private toastContainer = createElement(TOAST_CONTAINER_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
@@ -40,7 +38,6 @@ class ElementStore {
 
   reset() {
     this.videoElement = null;
-    this.toastContainer.replaceChildren();
     this.resetLoopStatus();
 
     if (this.subtitleContainerObserver) {
@@ -59,10 +56,6 @@ class ElementStore {
 
   getLoopMarkerContainer() {
     return this.loopMarkerContainer;
-  }
-
-  getToastContainer() {
-    return this.toastContainer;
   }
 
   resetLoopStatus() {
@@ -103,7 +96,7 @@ class ElementStore {
   }
 
   private appendContainer(trackDisplayContainer: Element) {
-    const containers = [this.reactRoot, this.subtitleContainer, this.toastContainer];
+    const containers = [this.reactRoot, this.subtitleContainer];
 
     containers.forEach((container) => {
       if (!trackDisplayContainer.contains(container)) {

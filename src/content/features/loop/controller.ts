@@ -6,7 +6,7 @@ import { t } from '@utils/i18n';
 import { elementStore } from '@/content/store/element-store';
 import { useLoopStore } from '@/content/store/loop-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
-import { showToast } from '@/content/utils/dom';
+import { useToastStore } from '@/content/store/toast-store';
 import { findSubtitle } from '@/content/utils/subtitle';
 
 import { END_MARKER_ID, LoopMarker, START_MARKER_ID } from './marker';
@@ -172,7 +172,7 @@ export class LoopController {
 
   private handleLoopError = (e: unknown) => {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
-    showToast(`✖ ${t('error_loop')}`, message, 'error');
+    useToastStore.getState().addToast(`✖ ${t('error_loop')}`, message);
   };
 
   private showLoopMarkers = () => {
@@ -189,7 +189,7 @@ export class LoopController {
 
     if (isOutsideLoopRange(currentTime, startTime, endTime)) {
       this.loop(false);
-      showToast(t('info_loop_stop'), t('info_loop_stop_message'), 'info');
+      useToastStore.getState().addToast(t('info_loop_stop'), t('info_loop_stop_message'));
     } else if (currentTime >= endTime) {
       video.currentTime = startTime;
     }
