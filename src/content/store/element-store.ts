@@ -39,6 +39,9 @@ class ElementStore {
   reset() {
     this.videoElement = null;
     this.resetLoopStatus();
+    for (const subtitleElement of Object.values(this.subtitleElementMap)) {
+      subtitleElement.textContent = '';
+    }
 
     if (this.subtitleContainerObserver) {
       this.subtitleContainerObserver.disconnect();
