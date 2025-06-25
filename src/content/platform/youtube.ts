@@ -1,5 +1,6 @@
 import { Language } from '@utils/constants';
 import { SubtitleData } from '@utils/parse';
+import { PLATFORM_MAP } from '@utils/platform';
 
 import { arrayToHeadersObject } from '@/content/utils/subtitle';
 
@@ -27,8 +28,8 @@ export class YoutubeStrategy implements PlatformStrategy {
     return video;
   }
 
-  getTrackDisplayContainer() {
-    return document.querySelector('#ytp-caption-window-container');
+  getVideoPlayer() {
+    return document.querySelector('#movie_player');
   }
 
   getProgressBarContainer() {
@@ -51,6 +52,8 @@ export class YoutubeStrategy implements PlatformStrategy {
     url: string,
     headerList: chrome.webRequest.HttpHeader[]
   ): Promise<{ lang: Language; subtitleData: SubtitleData[] }[] | null> {
+    if (!window.location.href.startsWith(PLATFORM_MAP.youtube.videoUrl)) return null;
+
     try {
       const headers = {
         ...arrayToHeadersObject(headerList),

@@ -2,8 +2,6 @@ import { fetchSubtitles } from '@/content/features/subtitle/subtitle';
 
 import { PlatformStrategy } from './strategy';
 
-const TRACK_DISPLAY_CONTAINER_CLASS_NAME = 'vjs-text-track-display';
-
 export class CoupangPlayStrategy implements PlatformStrategy {
   async detectVideo(): Promise<HTMLVideoElement> {
     return new Promise((resolve) => {
@@ -26,8 +24,8 @@ export class CoupangPlayStrategy implements PlatformStrategy {
     });
   }
 
-  getTrackDisplayContainer() {
-    return document.getElementsByClassName(TRACK_DISPLAY_CONTAINER_CLASS_NAME)[0];
+  getVideoPlayer() {
+    return document.querySelector('[data-cy="main-video"]');
   }
 
   getProgressBarContainer() {

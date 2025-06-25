@@ -76,33 +76,16 @@ class ElementStore {
   }
 
   private setupContainer() {
-    const trackDisplayContainer = platform.getTrackDisplayContainer();
-    if (trackDisplayContainer) {
-      this.appendContainer(trackDisplayContainer);
-      this.observeContainer(trackDisplayContainer);
+    const videoPlayer = platform.getVideoPlayer();
+    if (videoPlayer) {
+      videoPlayer.appendChild(this.reactRoot);
+      videoPlayer.appendChild(this.subtitleContainer);
     }
 
     const progressBarContainer = platform.getProgressBarContainer();
     if (progressBarContainer) {
       progressBarContainer.appendChild(this.loopMarkerContainer);
     }
-  }
-
-  private observeContainer(trackDisplayContainer: Element) {
-    this.subtitleContainerObserver = new MutationObserver(() => {
-      this.appendContainer(trackDisplayContainer);
-    });
-    this.subtitleContainerObserver.observe(trackDisplayContainer, { childList: true });
-  }
-
-  private appendContainer(trackDisplayContainer: Element) {
-    const containers = [this.reactRoot, this.subtitleContainer];
-
-    containers.forEach((container) => {
-      if (!trackDisplayContainer.contains(container)) {
-        trackDisplayContainer.appendChild(container);
-      }
-    });
   }
 }
 

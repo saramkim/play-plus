@@ -7,7 +7,7 @@ import { YoutubeStrategy } from './youtube';
 
 export interface PlatformStrategy {
   detectVideo(): HTMLVideoElement | Promise<HTMLVideoElement | null> | null;
-  getTrackDisplayContainer(): Element | null;
+  getVideoPlayer(): Element | null;
   getProgressBarContainer(): Element | null;
   fetchSubtitles(
     url: string,
