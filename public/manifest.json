@@ -9,7 +9,7 @@
     "128": "icons/play-plus_128x.png"
   },
   "permissions": ["storage", "tabs", "webRequest", "sidePanel", "unlimitedStorage"],
-  "host_permissions": ["https://www.coupangplay.com/*", "https://www.youtube.com/*"],
+  "host_permissions": ["https://www.coupangplay.com/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -21,7 +21,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.coupangplay.com/*", "https://www.youtube.com/*"],
+      "matches": ["https://www.coupangplay.com/*"],
       "js": ["content.js"]
     }
   ],
