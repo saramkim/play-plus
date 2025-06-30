@@ -25,7 +25,7 @@ export class CoupangPlayStrategy implements PlatformStrategy {
   }
 
   getVideoPlayer() {
-    return document.querySelector('[data-cy="main-video"]');
+    return document.querySelector('#playerWrapper');
   }
 
   getProgressBarContainer() {

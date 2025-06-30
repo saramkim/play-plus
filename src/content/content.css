@@ -1,11 +1,8 @@
 @import 'tailwindcss' important;
 @import 'tw-animate-css' important;
 
-#pp-root {
-  all: initial;
-}
-
 #pp-subtitle-container {
+  position: absolute;
   width: 100%;
   height: 100%;
   text-align: center;
