@@ -12,7 +12,7 @@ export function LoopStatus() {
   }
 
   return (
-    <div className='absolute top-4 right-4 text-white font-bold bg-black/50 rounded py-1 px-2'>
+    <div className='absolute top-4 right-4 text-white font-bold bg-black/50 rounded py-2 px-3'>
       <div className='flex items-center gap-2'>
         <span>{formatTime(startTime)}</span>
         <span>~</span>

@@ -18,7 +18,7 @@ function Toast({ toast }: ToastProps) {
   }, [toast.id, removeToast]);
 
   return (
-    <div className='flex flex-col gap-1.5 py-1 px-2 rounded text-white animate-in fade-in-0 slide-in-from-right-2 duration-300 bg-black/50'>
+    <div className='flex flex-col gap-1.5 py-2 px-3 rounded text-white animate-in fade-in-0 slide-in-from-right-2 duration-300 bg-black/50'>
       <span className='font-medium text-sm'>{toast.title}</span>
       <span className='text-xs'>{toast.message}</span>
     </div>
