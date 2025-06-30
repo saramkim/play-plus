@@ -6,6 +6,7 @@ import { platform } from '@/content/platform/strategy';
 import { createElement } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
+import { usePlaybackSpeedStore } from './playback-speed-store';
 import { subtitleStore } from './subtitle-store';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
@@ -39,6 +40,8 @@ class ElementStore {
   reset() {
     this.videoElement = null;
     this.resetLoopStatus();
+    usePlaybackSpeedStore.getState().resetSpeed();
+
     for (const subtitleElement of Object.values(this.subtitleElementMap)) {
       subtitleElement.textContent = '';
     }
