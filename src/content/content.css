@@ -11,6 +11,7 @@
   font-size: min(1.8vw, 3vh);
   text-shadow: black 2px 2px 2px;
   font-family: Pretendard;
+  user-select: none;
 }
 
 #pp-subtitle-container > p:hover {
