@@ -1,9 +1,6 @@
-import { formatTime } from '@utils/helper';
-
 import { elementStore } from '@/content/store/element-store';
 import { createMarker } from '@/content/utils/dom';
 
-import { LOOP_CONSTANTS } from './controller';
 import { getPositionByMouse, getTimeByOffsetLeft } from './utils';
 
 export const START_MARKER_ID = 'loop-marker-start';
@@ -11,40 +8,21 @@ export const END_MARKER_ID = 'loop-marker-end';
 
 export class LoopMarker {
   private marker: HTMLElement;
-  private status: HTMLElement;
   private isDragging: boolean;
-  private time: number;
   private container: HTMLElement;
+  private setTime: (time: number) => void;
 
-  constructor(id: string, label: string, container: HTMLElement) {
+  constructor(id: string, label: string, container: HTMLElement, setTime: (time: number) => void) {
     this.marker = createMarker(id, label);
-    this.status = document.createElement('div');
     this.isDragging = false;
-    this.time = id === START_MARKER_ID ? 0 : LOOP_CONSTANTS.DEFAULT_LOOP_TIME;
     this.container = container;
+    this.setTime = setTime;
     this.initialize();
   }
 
   updateTime(time: number) {
-    if (this.time === time) return;
-    this.time = time;
-    this.status.textContent = formatTime(time);
+    this.setTime(time);
     this.moveByTime(time);
-  }
-
-  moveByTime(time: number) {
-    const video = elementStore.getVideoElement();
-    if (!video) return;
-    const position = `${(time / video.duration) * 100}%`;
-    this.updatePosition(position);
-  }
-
-  getTime() {
-    return this.time;
-  }
-
-  getStatus() {
-    return this.status;
   }
 
   private initialize() {
@@ -63,6 +41,13 @@ export class LoopMarker {
     });
   }
 
+  private moveByTime(time: number) {
+    const video = elementStore.getVideoElement();
+    if (!video) return;
+    const position = `${(time / video.duration) * 100}%`;
+    this.updatePosition(position);
+  }
+
   private handleMouseUp = () => {
     if (!this.isDragging) return;
 
@@ -70,8 +55,8 @@ export class LoopMarker {
     if (!video) return;
 
     this.isDragging = false;
-    this.time = getTimeByOffsetLeft(this.container, this.marker.offsetLeft, video.duration);
-    this.status.textContent = formatTime(this.time);
+    const time = getTimeByOffsetLeft(this.container, this.marker.offsetLeft, video.duration);
+    this.setTime(time);
 
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('mousemove', this.handleMouseMove);

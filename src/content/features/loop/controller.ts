@@ -23,8 +23,14 @@ type LoopType = 'subtitle' | 'manual';
 export class LoopController {
   private handleTimeUpdate: (() => void) | null = null;
   private markerContainer = elementStore.getLoopMarkerContainer();
-  private startMarker = new LoopMarker(START_MARKER_ID, 'S', this.markerContainer);
-  private endMarker = new LoopMarker(END_MARKER_ID, 'E', this.markerContainer);
+  private startMarker = new LoopMarker(
+    START_MARKER_ID,
+    'S',
+    this.markerContainer,
+    useLoopStore.getState().setStartTime
+  );
+  private endMarker = new LoopMarker(END_MARKER_ID, 'E', this.markerContainer, useLoopStore.getState().setEndTime);
+  private isMarkerShowing = false;
   private activeSubtitleEndHandler: (() => void) | null = null;
 
   onLoopStorageChange = (changes: StorageChanges) => {
@@ -34,7 +40,7 @@ export class LoopController {
       if (!enabled) {
         this.loop(false);
         elementStore.resetLoopStatus();
-        useLoopStore.getState().setMarkerShowing(false);
+        this.isMarkerShowing = false;
       }
     }
   };
@@ -53,14 +59,12 @@ export class LoopController {
     const { currentTime } = video;
     const startTime = time !== undefined ? Math.max(time, 0) : currentTime;
 
-    const { isMarkerShowing } = useLoopStore.getState();
-    if (!isMarkerShowing) {
+    if (!this.isMarkerShowing) {
       this.showLoopMarkers();
       this.setEndPoint(currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
     }
 
     this.startMarker.updateTime(startTime);
-    useLoopStore.getState().setStartTime(startTime);
   };
 
   setEndPoint = (time?: number) => {
@@ -70,18 +74,16 @@ export class LoopController {
     const { currentTime, duration } = video;
     const endTime = time !== undefined ? Math.min(time, duration - 1) : currentTime;
 
-    const { isMarkerShowing } = useLoopStore.getState();
-    if (!isMarkerShowing) {
+    if (!this.isMarkerShowing) {
       this.showLoopMarkers();
       this.setStartPoint(currentTime - LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
     }
 
     this.endMarker.updateTime(endTime);
-    useLoopStore.getState().setEndTime(endTime);
   };
 
   setupLoopHandler = (video: HTMLVideoElement) => {
-    useLoopStore.getState().setMarkerShowing(false);
+    this.isMarkerShowing = false;
     useLoopStore.getState().setLooping(false);
     this.handleTimeUpdate = () => this.timeUpdateHandler(video);
   };
@@ -148,11 +150,9 @@ export class LoopController {
 
   private startLoop = (video: HTMLVideoElement) => {
     const { currentTime } = video;
-    const startTime = this.startMarker.getTime();
-    const endTime = this.endMarker.getTime();
-    const { isMarkerShowing } = useLoopStore.getState();
+    const { startTime, endTime } = useLoopStore.getState();
 
-    if (!isMarkerShowing) {
+    if (!this.isMarkerShowing) {
       this.showLoopMarkers();
       this.setStartPoint(currentTime);
       this.setEndPoint(currentTime + LOOP_CONSTANTS.DEFAULT_LOOP_TIME);
@@ -177,15 +177,14 @@ export class LoopController {
 
   private showLoopMarkers = () => {
     this.markerContainer.classList.add('show');
-    useLoopStore.getState().setMarkerShowing(true);
+    this.isMarkerShowing = true;
   };
 
   private timeUpdateHandler = (video: HTMLVideoElement) => {
     const { currentTime } = video;
     if (currentTime === 0) return;
 
-    const startTime = this.startMarker.getTime();
-    const endTime = this.endMarker.getTime();
+    const { startTime, endTime } = useLoopStore.getState();
 
     if (isOutsideLoopRange(currentTime, startTime, endTime)) {
       this.loop(false);
