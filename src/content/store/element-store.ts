@@ -6,6 +6,7 @@ import { platform } from '@/content/platform/strategy';
 import { createElement } from '@/content/utils/dom';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
 
+import { useLoopStore } from './loop-store';
 import { usePlaybackSpeedStore } from './playback-speed-store';
 import { subtitleStore } from './subtitle-store';
 
@@ -66,6 +67,7 @@ class ElementStore {
 
   resetLoopStatus() {
     this.loopMarkerContainer.classList.remove('show');
+    useLoopStore.getState().reset();
   }
 
   private setupSubtitleElement() {
