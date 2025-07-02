@@ -28,7 +28,7 @@ export function PlaybackSpeedDisplay() {
   if (!isVisible) return null;
 
   return (
-    <div className='absolute top-4 left-4 text-white font-bold bg-black/50 rounded py-2 px-3'>
+    <div className='absolute top-4 left-4 text-white font-bold bg-black/80 backdrop-blur-sm rounded py-2 px-3'>
       <span>{currentSpeed.toFixed(1)}x</span>
     </div>
   );

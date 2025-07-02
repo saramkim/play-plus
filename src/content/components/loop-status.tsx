@@ -16,7 +16,7 @@ export function LoopStatus() {
     <div
       className={cn(
         'absolute top-4 right-4 font-bold rounded py-2 px-3',
-        isLooping ? 'text-white bg-black/50' : 'text-white/50 bg-black/20'
+        isLooping ? 'text-white bg-black/80 backdrop-blur-sm' : 'text-white/50 bg-black/20'
       )}
     >
       <div className='flex items-center gap-2'>

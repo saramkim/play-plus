@@ -54,7 +54,7 @@ export function Controller({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-neutral-800/80',
+        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-black/80',
         className
       )}
     >
@@ -74,10 +74,7 @@ export function Controller({ className }: { className?: string }) {
 function IconButton({ Icon, className, ...props }: { Icon: React.ElementType } & React.ComponentProps<'button'>) {
   return (
     <button
-      className={cn(
-        'text-neutral-300 hover:text-neutral-100 cursor-pointer flex items-center justify-center',
-        className
-      )}
+      className={cn('text-white/70 hover:text-white cursor-pointer flex items-center justify-center', className)}
       style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
       {...props}
     >
