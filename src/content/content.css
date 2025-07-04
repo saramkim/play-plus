@@ -1,6 +1,10 @@
 @import 'tailwindcss' important;
 @import 'tw-animate-css' important;
 
+img {
+  display: inline;
+}
+
 #pp-subtitle-container {
   position: absolute;
   width: 100%;
