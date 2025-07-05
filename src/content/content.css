@@ -1,6 +1,10 @@
 @import 'tailwindcss' important;
 @import 'tw-animate-css' important;
 
+:root {
+  --pp-primary: oklch(0.6608 0.111 192.3);
+}
+
 img {
   display: inline;
 }
@@ -41,7 +45,7 @@ img {
   width: 15px;
   height: 30px;
   opacity: 0.8;
-  color: oklch(0.6608 0.111 192.3);
+  color: var(--pp-primary);
 }
 #pp-loop-marker-container .loop-marker:hover {
   opacity: 1;

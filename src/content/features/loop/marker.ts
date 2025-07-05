@@ -25,6 +25,10 @@ export class LoopMarker {
     this.moveByTime(time);
   }
 
+  updateState(enabled: boolean) {
+    this.marker.style.color = enabled ? 'var(--pp-primary)' : 'darkgray';
+  }
+
   private initialize() {
     this.container.appendChild(this.marker);
     this.setupEventListeners();

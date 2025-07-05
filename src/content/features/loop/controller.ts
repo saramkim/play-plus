@@ -25,13 +25,20 @@ export class LoopController {
   private markerContainer = elementStore.getLoopMarkerContainer();
   private startMarker = new LoopMarker(
     START_MARKER_ID,
-    'S',
+    'A',
     this.markerContainer,
     useLoopStore.getState().setStartTime
   );
-  private endMarker = new LoopMarker(END_MARKER_ID, 'E', this.markerContainer, useLoopStore.getState().setEndTime);
+  private endMarker = new LoopMarker(END_MARKER_ID, 'B', this.markerContainer, useLoopStore.getState().setEndTime);
   private isMarkerShowing = false;
   private activeSubtitleEndHandler: (() => void) | null = null;
+
+  constructor() {
+    useLoopStore.subscribe((state) => {
+      this.startMarker.updateState(state.isLooping);
+      this.endMarker.updateState(state.isLooping);
+    });
+  }
 
   onLoopStorageChange = (changes: StorageChanges) => {
     const loopChanges = changes[STORAGE_KEY];
