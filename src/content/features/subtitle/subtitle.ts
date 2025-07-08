@@ -102,9 +102,13 @@ async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
 
 function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {
   const subtitle = findSubtitle(data, currentTime);
+
   if (subtitle) {
-    subtitleElement.innerHTML = subtitle.text;
-    subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = subtitle.start.toString();
+    const startTime = String(subtitle.start);
+    if (subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] !== startTime) {
+      subtitleElement.innerHTML = subtitle.text;
+      subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = startTime;
+    }
   } else {
     subtitleElement.innerHTML = '';
     delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
