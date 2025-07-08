@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 import ReactDOM from 'react-dom/client';
 
@@ -10,11 +10,20 @@ import { PlaybackSpeedDisplay } from './components/playback-speed-display';
 import { ToastContainer } from './components/toast';
 import { useAutoHide } from './hooks/use-auto-hide';
 import { usePadding } from './hooks/use-padding';
+import { elementStore } from './store/element-store';
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const subtitleMountRef = useRef<HTMLDivElement>(null);
   const isVisible = useAutoHide(containerRef);
   const { paddingX, paddingY } = usePadding();
+
+  useEffect(() => {
+    const subtitleContainer = elementStore.getSubtitleContainer();
+    if (subtitleContainer && subtitleMountRef.current) {
+      subtitleMountRef.current.appendChild(subtitleContainer);
+    }
+  }, []);
 
   return (
     <div
@@ -27,6 +36,7 @@ function App() {
         <LoopStatus />
         <PlaybackSpeedDisplay />
         <ToastContainer />
+        <div ref={subtitleMountRef} />
       </div>
     </div>
   );

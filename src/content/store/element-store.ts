@@ -19,7 +19,6 @@ class ElementStore {
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
   private reactRoot = createElement(REACT_ROOT_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
-  private subtitleContainerObserver: MutationObserver | null = null;
   private subtitleElementMap = {
     [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
     [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: createSubtitleElement(),
@@ -46,11 +45,6 @@ class ElementStore {
     for (const subtitleElement of Object.values(this.subtitleElementMap)) {
       subtitleElement.textContent = '';
     }
-
-    if (this.subtitleContainerObserver) {
-      this.subtitleContainerObserver.disconnect();
-      this.subtitleContainerObserver = null;
-    }
   }
 
   getSubtitleElement(key: SubtitleSettingStorageKey) {
@@ -63,6 +57,10 @@ class ElementStore {
 
   getLoopMarkerContainer() {
     return this.loopMarkerContainer;
+  }
+
+  getSubtitleContainer() {
+    return this.subtitleContainer;
   }
 
   resetLoopStatus() {
@@ -87,7 +85,6 @@ class ElementStore {
     const videoPlayer = platform.getVideoPlayer();
     if (videoPlayer) {
       videoPlayer.appendChild(this.reactRoot);
-      videoPlayer.appendChild(this.subtitleContainer);
     }
 
     const progressBarContainer = platform.getProgressBarContainer();
