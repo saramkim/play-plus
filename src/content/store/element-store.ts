@@ -15,7 +15,6 @@ const REACT_ROOT_ID = 'pp-root';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 
 class ElementStore {
-  private videoElement: HTMLVideoElement | null = null;
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
   private reactRoot = createElement(REACT_ROOT_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
@@ -29,16 +28,19 @@ class ElementStore {
     renderApp(this.reactRoot);
   }
 
-  async initialize() {
-    const video = await platform.detectVideo();
-    if (video) platform.afterVideoDetected?.(video);
-    this.videoElement = video;
-    this.setupContainer();
-    return video;
+  setupContainer() {
+    const videoPlayer = platform.getVideoPlayer();
+    if (videoPlayer) {
+      videoPlayer.appendChild(this.reactRoot);
+    }
+
+    const progressBarContainer = platform.getProgressBarContainer();
+    if (progressBarContainer) {
+      progressBarContainer.appendChild(this.loopMarkerContainer);
+    }
   }
 
   reset() {
-    this.videoElement = null;
     this.resetLoopStatus();
     usePlaybackSpeedStore.getState().resetSpeed();
 
@@ -49,10 +51,6 @@ class ElementStore {
 
   getSubtitleElement(key: SubtitleSettingStorageKey) {
     return this.subtitleElementMap[key];
-  }
-
-  getVideoElement() {
-    return this.videoElement;
   }
 
   getLoopMarkerContainer() {
@@ -79,18 +77,6 @@ class ElementStore {
     }
 
     this.subtitleContainer.replaceChildren(fragment);
-  }
-
-  private setupContainer() {
-    const videoPlayer = platform.getVideoPlayer();
-    if (videoPlayer) {
-      videoPlayer.appendChild(this.reactRoot);
-    }
-
-    const progressBarContainer = platform.getProgressBarContainer();
-    if (progressBarContainer) {
-      progressBarContainer.appendChild(this.loopMarkerContainer);
-    }
   }
 }
 

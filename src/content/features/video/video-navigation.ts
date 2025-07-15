@@ -3,8 +3,9 @@ import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { loopController } from '@/content/features/loop';
-import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
+
+import { videoManager } from './video-manager';
 
 export function skipVideoTime(
   skipTime: number,
@@ -12,7 +13,7 @@ export function skipVideoTime(
   fallbackTime: number,
   fallbackUnit: StorageSchema['videoSkip']['fallbackUnit']
 ) {
-  const video = elementStore.getVideoElement();
+  const video = videoManager.get();
   if (!video) return;
 
   if (skipTimeUnit === 'subtitles') {

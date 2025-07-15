@@ -1,14 +1,15 @@
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
-import { elementStore } from '@/content/store/element-store';
 import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
+
+import { videoManager } from './video-manager';
 
 const { STORAGE_KEY } = SETTINGS.PLAYBACK_SPEED;
 export class PlaybackSpeedController {
   constructor() {
     usePlaybackSpeedStore.subscribe((state) => {
-      const video = elementStore.getVideoElement();
+      const video = videoManager.get();
       if (!video) return;
 
       video.playbackRate = state.currentSpeed;

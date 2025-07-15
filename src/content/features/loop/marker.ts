@@ -1,4 +1,4 @@
-import { elementStore } from '@/content/store/element-store';
+import { videoManager } from '@/content/features/video/video-manager';
 import { createMarker } from '@/content/utils/dom';
 
 import { getPositionByMouse, getTimeByOffsetLeft } from './utils';
@@ -46,7 +46,7 @@ export class LoopMarker {
   }
 
   private moveByTime(time: number) {
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) return;
     const position = `${(time / video.duration) * 100}%`;
     this.updatePosition(position);
@@ -55,7 +55,7 @@ export class LoopMarker {
   private handleMouseUp = () => {
     if (!this.isDragging) return;
 
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) return;
 
     this.isDragging = false;

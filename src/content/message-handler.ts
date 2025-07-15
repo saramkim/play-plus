@@ -5,16 +5,20 @@ import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
 import { loopController } from './features/loop';
-import { setupSubtitleSync, syncSubtitles } from './features/subtitle/subtitle';
+import { syncSubtitles } from './features/subtitle/subtitle';
+import { videoManager } from './features/video/video-manager';
 import { platform } from './platform/strategy';
 import { elementStore } from './store/element-store';
 import { subtitleStore } from './store/subtitle-store';
+import { useVideoStore } from './store/video-store';
+
+let timeUpdateHandler: ((this: HTMLVideoElement, ev: Event) => any) | null = null;
 
 export function initializeMessageListener() {
   onMessage(({ message, params, sendResponse }) => {
     switch (message) {
       case 'resetElement': {
-        elementStore.reset();
+        handleResetElement();
         break;
       }
       case 'detectVideo': {
@@ -42,6 +46,17 @@ export function initializeMessageListener() {
   });
 }
 
+const handleResetElement = () => {
+  const video = videoManager.get();
+  if (video && timeUpdateHandler) {
+    video.removeEventListener('timeupdate', timeUpdateHandler);
+    timeUpdateHandler = null;
+  }
+  elementStore.reset();
+  videoManager.reset();
+  useVideoStore.getState().setCurrentTime(0);
+};
+
 const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
   const subtitles = await platform.fetchSubtitles(url, headers);
 
@@ -58,17 +73,26 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 };
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
-  const video = await elementStore.initialize();
+  const video = await platform.detectVideo();
   if (!video) return { success: false, message: t('error_video_not_found') };
 
+  videoManager.set(video);
+  useVideoStore.getState().setCurrentTime(video.currentTime);
+
+  timeUpdateHandler = () => {
+    useVideoStore.getState().setCurrentTime(video.currentTime);
+  };
+  video.addEventListener('timeupdate', timeUpdateHandler);
+
+  platform.afterVideoDetected?.(video);
+  elementStore.setupContainer();
   loopController.setupLoopHandler(video);
-  setupSubtitleSync(video);
 
   return { success: true };
 };
 
 const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) => {
-  const video = elementStore.getVideoElement();
+  const video = videoManager.get();
   if (!video) return;
 
   if (video.readyState >= 3) {
@@ -87,16 +111,16 @@ const handleSetSubtitle = async (
     subtitleStore.setSubtitleCache(subtitleId, subtitle);
   }
   subtitleStore.setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
-  const video = elementStore.getVideoElement();
+  const video = videoManager.get();
   if (video) {
-    syncSubtitles(video, true);
+    syncSubtitles(video.currentTime, true);
     return { success: true };
   }
   return { success: false, message: t('error_video_not_found') };
 };
 
 const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> => {
-  const video = elementStore.getVideoElement();
+  const video = videoManager.get();
   if (video) return { success: true, data: video.currentTime };
   return { success: false, message: t('error_video_not_found') };
 };

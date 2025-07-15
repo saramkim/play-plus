@@ -7,6 +7,7 @@ import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/store/element-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
+import { useVideoStore } from '@/content/store/video-store';
 import {
   applySubtitleStyles,
   arrayToHeadersObject,
@@ -16,8 +17,6 @@ import {
 
 const { SUBTITLES } = SETTINGS;
 
-let handleVideoTimeupdate: (() => void) | null;
-
 export async function onSubtitleStorageChange(changes: StorageChanges) {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const change = changes[STORAGE_KEY];
@@ -26,16 +25,8 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
     const newConfig = change.newValue || DEFAULT_CONFIG[STORAGE_KEY];
     subtitleStore.setSubtitleSetting(STORAGE_KEY, newConfig);
 
-    const video = elementStore.getVideoElement();
-    if (!video) continue;
-
-    syncSubtitles(video, true);
-
-    if (newConfig.enabled) {
-      if (!handleVideoTimeupdate) setupSubtitleSync(video);
-    } else if (Object.values(subtitleStore.getSubtitleSettings()).every(({ enabled }) => !enabled)) {
-      stopSubtitleSync(video);
-    }
+    const { currentTime } = useVideoStore.getState();
+    syncSubtitles(currentTime, true);
   }
 }
 
@@ -44,6 +35,7 @@ export async function initializeSubtitleSync() {
     const data = await getStorage(STORAGE_KEY);
     subtitleStore.setSubtitleSetting(STORAGE_KEY, data);
   }
+  setupSubtitleSync();
 }
 
 export async function fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
@@ -53,18 +45,7 @@ export async function fetchSubtitles(url: string, headers: chrome.webRequest.Htt
   );
 }
 
-export function setupSubtitleSync(video: HTMLVideoElement) {
-  syncSubtitles(video, true);
-  handleVideoTimeupdate = () => {
-    syncSubtitles(video);
-    sendMessage('updateCurrentTime', video.currentTime);
-  };
-  video.addEventListener('timeupdate', handleVideoTimeupdate);
-}
-
-export function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) {
-  const { currentTime } = video;
-
+export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
   for (const [key, config] of Object.entries(subtitleStore.getSubtitleSettings())) {
     const { language, enabled, delay } = config;
     const customSubtitleId = subtitleStore.getCustomSubtitleId(key);
@@ -79,6 +60,13 @@ export function syncSubtitles(video: HTMLVideoElement, hasStyleChanged = false) 
   }
 }
 
+function setupSubtitleSync() {
+  useVideoStore.subscribe(({ currentTime }) => {
+    syncSubtitles(currentTime);
+    sendMessage('updateCurrentTime', currentTime);
+  });
+}
+
 async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
   const headers = {
     ...arrayToHeadersObject(headerList),
@@ -86,13 +74,6 @@ async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.Htt
   };
   const response = await fetch(url, { headers });
   return extractSubtitleApiInfoFromResponse(await response.json());
-}
-
-function stopSubtitleSync(video: HTMLVideoElement) {
-  if (handleVideoTimeupdate) {
-    video.removeEventListener('timeupdate', handleVideoTimeupdate);
-    handleVideoTimeupdate = null;
-  }
 }
 
 async function fetchSubtitle(url: string): Promise<SubtitleData[]> {

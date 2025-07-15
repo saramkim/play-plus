@@ -3,6 +3,7 @@ import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
+import { videoManager } from '@/content/features/video/video-manager';
 import { elementStore } from '@/content/store/element-store';
 import { useLoopStore } from '@/content/store/loop-store';
 import { subtitleStore } from '@/content/store/subtitle-store';
@@ -60,7 +61,7 @@ export class LoopController {
   getLoopType = () => useLoopStore.getState().loopType;
 
   setStartPoint = (time?: number) => {
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) return;
 
     const { currentTime } = video;
@@ -75,7 +76,7 @@ export class LoopController {
   };
 
   setEndPoint = (time?: number) => {
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) return;
 
     const { currentTime, duration } = video;
@@ -139,7 +140,7 @@ export class LoopController {
   };
 
   private loop = (isLooping: boolean, loopType: LoopType = 'manual') => {
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) return;
 
     try {
@@ -202,7 +203,7 @@ export class LoopController {
   };
 
   private getCurrentSubtitleInfo = () => {
-    const video = elementStore.getVideoElement();
+    const video = videoManager.get();
     if (!video) throw new Error(t('error_video_not_found'));
 
     const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
