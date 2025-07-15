@@ -6,7 +6,7 @@ import { sendMessage } from '@utils/message/index';
 import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/store/element-store';
-import { subtitleStore } from '@/content/store/subtitle-store';
+import { useSubtitleStore } from '@/content/store/subtitle-store';
 import { useVideoStore } from '@/content/store/video-store';
 import {
   applySubtitleStyles,
@@ -23,7 +23,7 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
     if (!change) continue;
 
     const newConfig = change.newValue || DEFAULT_CONFIG[STORAGE_KEY];
-    subtitleStore.setSubtitleSetting(STORAGE_KEY, newConfig);
+    useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, newConfig);
 
     const { currentTime } = useVideoStore.getState();
     syncSubtitles(currentTime, true);
@@ -33,7 +33,7 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
 export async function initializeSubtitleSync() {
   for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
     const data = await getStorage(STORAGE_KEY);
-    subtitleStore.setSubtitleSetting(STORAGE_KEY, data);
+    useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, data);
   }
   setupSubtitleSync();
 }
@@ -46,10 +46,10 @@ export async function fetchSubtitles(url: string, headers: chrome.webRequest.Htt
 }
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
-  for (const [key, config] of Object.entries(subtitleStore.getSubtitleSettings())) {
+  const { subtitleSettings, customSubtitleId, subtitleCache } = useSubtitleStore.getState();
+  for (const [key, config] of Object.entries(subtitleSettings)) {
     const { language, enabled, delay } = config;
-    const customSubtitleId = subtitleStore.getCustomSubtitleId(key);
-    const data = subtitleStore.getSubtitleCache(customSubtitleId ?? language);
+    const data = subtitleCache[customSubtitleId[key] ?? language];
     const subtitleElement = elementStore.getSubtitleElement(key);
 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);

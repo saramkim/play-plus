@@ -9,7 +9,7 @@ import { syncSubtitles } from './features/subtitle/subtitle';
 import { videoManager } from './features/video/video-manager';
 import { platform } from './platform/strategy';
 import { elementStore } from './store/element-store';
-import { subtitleStore } from './store/subtitle-store';
+import { useSubtitleStore } from './store/subtitle-store';
 import { useVideoStore } from './store/video-store';
 
 let timeUpdateHandler: ((this: HTMLVideoElement, ev: Event) => any) | null = null;
@@ -63,10 +63,10 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
   for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
     const subtitleData = subtitles?.find((subtitle) => subtitle.lang === lang)?.subtitleData;
     if (subtitleData) {
-      subtitleStore.setSubtitleCache(lang, subtitleData);
+      useSubtitleStore.getState().setSubtitleCache(lang, subtitleData);
       await sendMessage('updateSubtitles', { lang, subtitleData });
     } else {
-      subtitleStore.deleteSubtitleCache(lang);
+      useSubtitleStore.getState().deleteSubtitleCache(lang);
       await sendMessage('updateSubtitles', { lang, subtitleData: null });
     }
   }
@@ -106,11 +106,11 @@ const handleSetSubtitle = async (
   action: SetSubtitleAction,
   { subtitleId }: MessageSchema['setPrimarySubtitle']['params'] | MessageSchema['setSecondarySubtitle']['params']
 ): Promise<MessageResponse<'setPrimarySubtitle' | 'setSecondarySubtitle'>> => {
-  if (subtitleId && !subtitleStore.hasSubtitleCache(subtitleId)) {
+  if (subtitleId && !useSubtitleStore.getState().hasSubtitleCache(subtitleId)) {
     const subtitle = await getLocalSubtitle(subtitleId);
-    subtitleStore.setSubtitleCache(subtitleId, subtitle);
+    useSubtitleStore.getState().setSubtitleCache(subtitleId, subtitle);
   }
-  subtitleStore.setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
+  useSubtitleStore.getState().setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
   const video = videoManager.get();
   if (video) {
     syncSubtitles(video.currentTime, true);

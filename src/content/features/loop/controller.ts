@@ -6,7 +6,7 @@ import { t } from '@utils/i18n';
 import { videoManager } from '@/content/features/video/video-manager';
 import { elementStore } from '@/content/store/element-store';
 import { useLoopStore } from '@/content/store/loop-store';
-import { subtitleStore } from '@/content/store/subtitle-store';
+import { useSubtitleStore } from '@/content/store/subtitle-store';
 import { useToastStore } from '@/content/store/toast-store';
 import { findSubtitle } from '@/content/utils/subtitle';
 
@@ -206,7 +206,7 @@ export class LoopController {
     const video = videoManager.get();
     if (!video) throw new Error(t('error_video_not_found'));
 
-    const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
+    const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
     const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);

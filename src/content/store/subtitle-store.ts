@@ -3,60 +3,73 @@ import { SubtitleId } from '@storage/subtitle';
 import { StorageSchema } from '@storage/type';
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 import { SubtitleData } from '@utils/parse';
+import { create } from 'zustand';
 
-type SubtitleConfig = StorageSchema['primarySubtitle'];
-type SubtitleCacheKey = SubtitleConfig['language'] | SubtitleId;
+export type SubtitleConfig = StorageSchema['primarySubtitle'];
+export type SubtitleCacheKey = SubtitleConfig['language'] | SubtitleId;
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
-class SubtitleStore {
-  private subtitleCache = new Map<SubtitleCacheKey, SubtitleData[]>();
-  private subtitleSettings: Record<SubtitleSettingStorageKey, SubtitleConfig> = {
-    [PRIMARY.STORAGE_KEY]: DEFAULT_CONFIG[PRIMARY.STORAGE_KEY],
-    [SECONDARY.STORAGE_KEY]: DEFAULT_CONFIG[SECONDARY.STORAGE_KEY],
-  };
-  private customSubtitleId: Record<SubtitleSettingStorageKey, SubtitleId | null> = {
-    [PRIMARY.STORAGE_KEY]: null,
-    [SECONDARY.STORAGE_KEY]: null,
-  };
+interface SubtitleStoreState {
+  subtitleCache: Partial<Record<SubtitleCacheKey, SubtitleData[]>>;
+  subtitleSettings: Record<SubtitleSettingStorageKey, SubtitleConfig>;
+  customSubtitleId: Record<SubtitleSettingStorageKey, SubtitleId | null>;
 
-  getSubtitleCache(key: SubtitleCacheKey) {
-    return this.subtitleCache.get(key);
-  }
+  setSubtitleCache: (key: SubtitleCacheKey, data: SubtitleData[]) => void;
+  deleteSubtitleCache: (key: SubtitleCacheKey) => void;
+  hasSubtitleCache: (key: SubtitleCacheKey) => boolean;
 
-  setSubtitleCache(key: SubtitleCacheKey, data: SubtitleData[]) {
-    this.subtitleCache.set(key, data);
-  }
+  getPrimarySubtitleAndDelay: () => { subtitles: SubtitleData[] | undefined; delay: number };
 
-  deleteSubtitleCache(key: SubtitleCacheKey) {
-    this.subtitleCache.delete(key);
-  }
+  setSubtitleSetting: (key: SubtitleSettingStorageKey, settings: SubtitleConfig) => void;
 
-  hasSubtitleCache(key: SubtitleCacheKey) {
-    return this.subtitleCache.has(key);
-  }
-
-  getPrimarySubtitleAndDelay() {
-    const id = this.getCustomSubtitleId(PRIMARY.STORAGE_KEY);
-    const { language, delay } = this.getSubtitleSettings()[PRIMARY.STORAGE_KEY];
-    return { subtitles: this.getSubtitleCache(id ?? language), delay };
-  }
-
-  getSubtitleSettings() {
-    return this.subtitleSettings;
-  }
-
-  setSubtitleSetting(key: SubtitleSettingStorageKey, settings: SubtitleConfig) {
-    this.subtitleSettings[key] = { ...this.subtitleSettings[key], ...settings };
-  }
-
-  getCustomSubtitleId(key: SubtitleSettingStorageKey) {
-    return this.customSubtitleId[key];
-  }
-
-  setCustomSubtitleId(key: SubtitleSettingStorageKey, id: SubtitleId | null) {
-    this.customSubtitleId[key] = id;
-  }
+  setCustomSubtitleId: (key: SubtitleSettingStorageKey, id: SubtitleId | null) => void;
 }
 
-export const subtitleStore = new SubtitleStore();
+const initialState = {
+  subtitleCache: {},
+  subtitleSettings: {
+    [PRIMARY.STORAGE_KEY]: DEFAULT_CONFIG[PRIMARY.STORAGE_KEY],
+    [SECONDARY.STORAGE_KEY]: DEFAULT_CONFIG[SECONDARY.STORAGE_KEY],
+  },
+  customSubtitleId: {
+    [PRIMARY.STORAGE_KEY]: null,
+    [SECONDARY.STORAGE_KEY]: null,
+  },
+};
+
+export const useSubtitleStore = create<SubtitleStoreState>((set, get) => ({
+  ...initialState,
+
+  setSubtitleCache: (key, data) =>
+    set((state) => ({
+      subtitleCache: { ...state.subtitleCache, [key]: data },
+    })),
+  deleteSubtitleCache: (key) =>
+    set((state) => {
+      const { [key]: _, ...rest } = state.subtitleCache;
+      return { subtitleCache: rest };
+    }),
+  hasSubtitleCache: (key) => Object.prototype.hasOwnProperty.call(get().subtitleCache, key),
+
+  getPrimarySubtitleAndDelay: () => {
+    const state = get();
+    const id = state.customSubtitleId[PRIMARY.STORAGE_KEY];
+    const { language, delay } = state.subtitleSettings[PRIMARY.STORAGE_KEY];
+    const subtitles = state.subtitleCache[id ?? language];
+    return { subtitles, delay };
+  },
+
+  setSubtitleSetting: (key, settings) =>
+    set((state) => ({
+      subtitleSettings: {
+        ...state.subtitleSettings,
+        [key]: { ...state.subtitleSettings[key], ...settings },
+      },
+    })),
+
+  setCustomSubtitleId: (key, id) =>
+    set((state) => ({
+      customSubtitleId: { ...state.customSubtitleId, [key]: id },
+    })),
+}));

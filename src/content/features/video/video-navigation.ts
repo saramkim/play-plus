@@ -3,7 +3,7 @@ import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { loopController } from '@/content/features/loop';
-import { subtitleStore } from '@/content/store/subtitle-store';
+import { useSubtitleStore } from '@/content/store/subtitle-store';
 
 import { videoManager } from './video-manager';
 
@@ -30,7 +30,7 @@ function skipVideoBySubtitles(
   fallbackUnit: StorageSchema['videoSkip']['fallbackUnit']
 ) {
   const { currentTime, duration } = video;
-  const { subtitles, delay } = subtitleStore.getPrimarySubtitleAndDelay();
+  const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
 
   if (!subtitles?.length) {
     skipVideoByTime(video, fallbackTime, fallbackUnit);

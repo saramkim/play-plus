@@ -8,7 +8,7 @@ import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subt
 
 import { useLoopStore } from './loop-store';
 import { usePlaybackSpeedStore } from './playback-speed-store';
-import { subtitleStore } from './subtitle-store';
+import { useSubtitleStore } from './subtitle-store';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const REACT_ROOT_ID = 'pp-root';
@@ -69,7 +69,8 @@ class ElementStore {
   private setupSubtitleElement() {
     const fragment = document.createDocumentFragment();
 
-    for (const [key, config] of Object.entries(subtitleStore.getSubtitleSettings())) {
+    const { subtitleSettings } = useSubtitleStore.getState();
+    for (const [key, config] of Object.entries(subtitleSettings)) {
       const subtitleElement = this.subtitleElementMap[key];
       applySubtitleStyles(subtitleElement, config);
       setupSubtitleSaveHandler(subtitleElement);
