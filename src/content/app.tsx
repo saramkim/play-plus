@@ -1,32 +1,21 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 
 import ReactDOM from 'react-dom/client';
 
 import { cn } from '@/ui/lib/utils';
 
 import { Controller } from './components/controller';
-import { FocusMode } from './components/focus-mode';
 import { LoopStatus } from './components/loop-status';
 import { PlaybackSpeedDisplay } from './components/playback-speed-display';
+import { Subtitles } from './components/subtitles';
 import { ToastContainer } from './components/toast';
 import { useAutoHide } from './hooks/use-auto-hide';
 import { usePadding } from './hooks/use-padding';
-import { elementStore } from './store/element-store';
-import { useFocusModeStore } from './store/focus-mode-store';
 
 function App() {
-  const isFocusMode = useFocusModeStore((state) => state.isFocusMode);
   const containerRef = useRef<HTMLDivElement>(null);
-  const subtitleMountRef = useRef<HTMLDivElement>(null);
   const isVisible = useAutoHide(containerRef);
   const { paddingX, paddingY } = usePadding();
-
-  useEffect(() => {
-    const subtitleContainer = elementStore.getSubtitleContainer();
-    if (subtitleContainer && subtitleMountRef.current) {
-      subtitleMountRef.current.appendChild(subtitleContainer);
-    }
-  }, []);
 
   return (
     <div
@@ -39,8 +28,7 @@ function App() {
         <LoopStatus />
         <PlaybackSpeedDisplay />
         <ToastContainer />
-        <div ref={subtitleMountRef} />
-        {isFocusMode && <FocusMode />}
+        <Subtitles />
       </div>
     </div>
   );
