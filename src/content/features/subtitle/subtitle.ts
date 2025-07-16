@@ -61,6 +61,9 @@ export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
 }
 
 function setupSubtitleSync() {
+  const { currentTime } = useVideoStore.getState();
+  syncSubtitles(currentTime, true);
+
   useVideoStore.subscribe(({ currentTime }) => {
     syncSubtitles(currentTime);
     sendMessage('updateCurrentTime', currentTime);
