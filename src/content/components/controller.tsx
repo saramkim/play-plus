@@ -8,10 +8,12 @@ import {
   ChevronsUpIcon,
   ChevronsDownIcon,
   RepeatIcon,
+  ScanEyeIcon,
 } from 'lucide-react';
 
 import { loopController } from '@/content/features/loop';
 import { skipVideoTime } from '@/content/features/video/video-navigation';
+import { useFocusModeStore } from '@/content/store/focus-mode-store';
 import { useLoopStore } from '@/content/store/loop-store';
 import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 import { cn } from '@/ui/lib/utils';
@@ -21,6 +23,7 @@ const BUTTON_SIZE = 40;
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isLooping = useLoopStore((state) => state.isLooping);
+  const isFocusMode = useFocusModeStore((state) => state.isFocusMode);
   const increaseSpeed = usePlaybackSpeedStore((state) => state.increaseSpeed);
   const decreaseSpeed = usePlaybackSpeedStore((state) => state.decreaseSpeed);
 
@@ -45,16 +48,22 @@ export function Controller({ className }: { className?: string }) {
       {
         Icon: RepeatIcon,
         onClick: () => loopController.toggleLoop(),
-        className: isLooping ? 'text-teal-500 hover:text-teal-500' : undefined,
+        className: isLooping ? 'text-teal-500 hover:text-teal-400' : undefined,
+      },
+      {
+        Icon: ScanEyeIcon,
+        onClick: () => useFocusModeStore.getState().toggle(),
+        className: isFocusMode ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
     ],
-    [isLooping, increaseSpeed, decreaseSpeed]
+    [isLooping, isFocusMode, increaseSpeed, decreaseSpeed]
   );
 
   return (
     <div
       className={cn(
-        'absolute top-1/2 right-0 -translate-y-1/2 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-black/80',
+        'absolute top-1/2 right-0 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-black/80',
+        isFocusMode ? '-translate-y-[calc(100%+80px)]' : '-translate-y-1/2',
         className
       )}
     >

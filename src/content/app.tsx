@@ -5,14 +5,17 @@ import ReactDOM from 'react-dom/client';
 import { cn } from '@/ui/lib/utils';
 
 import { Controller } from './components/controller';
+import { FocusMode } from './components/focus-mode';
 import { LoopStatus } from './components/loop-status';
 import { PlaybackSpeedDisplay } from './components/playback-speed-display';
 import { ToastContainer } from './components/toast';
 import { useAutoHide } from './hooks/use-auto-hide';
 import { usePadding } from './hooks/use-padding';
 import { elementStore } from './store/element-store';
+import { useFocusModeStore } from './store/focus-mode-store';
 
 function App() {
+  const isFocusMode = useFocusModeStore((state) => state.isFocusMode);
   const containerRef = useRef<HTMLDivElement>(null);
   const subtitleMountRef = useRef<HTMLDivElement>(null);
   const isVisible = useAutoHide(containerRef);
@@ -37,6 +40,7 @@ function App() {
         <PlaybackSpeedDisplay />
         <ToastContainer />
         <div ref={subtitleMountRef} />
+        {isFocusMode && <FocusMode />}
       </div>
     </div>
   );

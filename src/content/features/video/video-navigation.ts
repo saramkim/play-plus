@@ -47,7 +47,7 @@ function skipVideoBySubtitles(
   }
 }
 
-function findTargetSubtitle(
+export function findTargetSubtitle(
   subtitles: SubtitleData[],
   currentIndex: number,
   skipTime: number
