@@ -10,19 +10,14 @@ import { PlaybackSpeedDisplay } from './components/playback-speed-display';
 import { Subtitles } from './components/subtitles';
 import { ToastContainer } from './components/toast';
 import { useAutoHide } from './hooks/use-auto-hide';
-import { usePadding } from './hooks/use-padding';
+import { Container } from './layout/container';
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isVisible = useAutoHide(containerRef);
-  const { paddingX, paddingY } = usePadding();
 
   return (
-    <div
-      ref={containerRef}
-      className='absolute'
-      style={{ top: paddingY, bottom: paddingY, left: paddingX, right: paddingX }}
-    >
+    <Container ref={containerRef}>
       <div className='relative size-full pointer-events-none z-[9999]'>
         <Controller className={cn(isVisible ? 'opacity-100' : 'opacity-0')} />
         <LoopStatus />
@@ -30,7 +25,7 @@ function App() {
         <ToastContainer />
         <Subtitles />
       </div>
-    </div>
+    </Container>
   );
 }
 
