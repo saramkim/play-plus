@@ -24,7 +24,7 @@ function App() {
       style={{ top: paddingY, bottom: paddingY, left: paddingX, right: paddingX }}
     >
       <div className='relative size-full pointer-events-none z-[9999]'>
-        <Controller className={cn(isVisible ? 'opacity-100' : 'opacity-0', 'transition-opacity duration-300')} />
+        <Controller className={cn(isVisible ? 'opacity-100' : 'opacity-0')} />
         <LoopStatus />
         <PlaybackSpeedDisplay />
         <ToastContainer />

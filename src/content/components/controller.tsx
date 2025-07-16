@@ -62,7 +62,7 @@ export function Controller({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'absolute top-1/2 right-0 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-black/80',
+        'absolute top-1/2 right-0 shadow-lg rounded-lg select-none pointer-events-auto flex items-center bg-black/50 hover:bg-black/80 transition-all duration-300',
         isFocusMode ? '-translate-y-[calc(100%+80px)]' : '-translate-y-1/2',
         className
       )}
