@@ -9,12 +9,25 @@ import { useVideoStore } from '@/content/store/video-store';
 import { cn } from '@/ui/lib/utils';
 
 export function FocusMode() {
+  const primarySubtitleEnabled = useSubtitleStore((state) => state.subtitleSettings.primarySubtitle.enabled);
+  const secondarySubtitleEnabled = useSubtitleStore((state) => state.subtitleSettings.secondarySubtitle.enabled);
+
+  return (
+    <div className='absolute top-1/2 -translate-y-1/2 z-50 h-[160px] w-full pointer-events-auto'>
+      {primarySubtitleEnabled && <PrimarySubtitle />}
+      {secondarySubtitleEnabled && <SecondarySubtitle />}
+    </div>
+  );
+}
+
+function PrimarySubtitle() {
   const subtitles = useSubtitleStore((state) => {
     const id = state.customSubtitleId.primarySubtitle;
     const { language } = state.subtitleSettings.primarySubtitle;
     return state.subtitleCache[id ?? language];
   });
   const delay = useSubtitleStore((state) => state.subtitleSettings.primarySubtitle.delay);
+
   const currentTime = useVideoStore((state) => state.currentTime);
 
   const currentIndex = useMemo(
@@ -51,7 +64,7 @@ export function FocusMode() {
   };
 
   return (
-    <div className='absolute top-1/2 -translate-y-1/2 z-50 flex w-full h-[160px] pointer-events-auto'>
+    <div className='flex size-full'>
       <SubtitleContainer className='flex-1 bg-black/30 hover:bg-black/50 p-3' onClick={goToPrev}>
         <Subtitle className='text-gray-200 text-lg' text={prevSubtitle?.text ?? ''} />
       </SubtitleContainer>
@@ -67,6 +80,28 @@ export function FocusMode() {
   );
 }
 
+function SecondarySubtitle() {
+  const subtitles = useSubtitleStore((state) => {
+    const id = state.customSubtitleId.secondarySubtitle;
+    const { language } = state.subtitleSettings.secondarySubtitle;
+    return state.subtitleCache[id ?? language];
+  });
+  const delay = useSubtitleStore((state) => state.subtitleSettings.secondarySubtitle.delay);
+  const currentTime = useVideoStore((state) => state.currentTime);
+
+  const currentIndex = useMemo(
+    () => (subtitles ? findSubtitleIndex(subtitles, currentTime - delay) : -1),
+    [subtitles, currentTime, delay]
+  );
+  const currentSubtitle = useMemo(() => (subtitles ? subtitles[currentIndex] : null), [subtitles, currentIndex]);
+
+  return (
+    <div className='absolute top-full left-1/2 -translate-x-1/2'>
+      <Subtitle className='text-gray-200 text-lg' text={currentSubtitle?.text ?? ''} />
+    </div>
+  );
+}
+
 function SubtitleContainer({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
     <div className={cn('flex items-center justify-center transition', className)} {...props}>
@@ -78,7 +113,7 @@ function SubtitleContainer({ className, children, ...props }: React.ComponentPro
 function Subtitle({ className, text, ...props }: React.ComponentProps<'p'> & { text: string }) {
   return (
     <p
-      className={cn('text-center whitespace-pre-line select-none', className)}
+      className={cn('text-center whitespace-pre-line select-none text-shadow-lg', className)}
       {...props}
       dangerouslySetInnerHTML={{ __html: text }}
     />
