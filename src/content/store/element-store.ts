@@ -1,6 +1,5 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
-import { renderApp } from '@/content/app';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
 import { platform } from '@/content/platform/strategy';
 import { createElement } from '@/content/utils/dom';
@@ -25,7 +24,6 @@ class ElementStore {
 
   constructor() {
     this.setupSubtitleElement();
-    renderApp(this.reactRoot);
   }
 
   setupContainer() {
@@ -47,6 +45,10 @@ class ElementStore {
     for (const subtitleElement of Object.values(this.subtitleElementMap)) {
       subtitleElement.textContent = '';
     }
+  }
+
+  getReactRoot() {
+    return this.reactRoot;
   }
 
   getSubtitleElement(key: SubtitleSettingStorageKey) {
