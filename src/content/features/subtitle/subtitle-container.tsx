@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { elementStore } from '@/content/store/element-store';
+import { elementStore } from '@/content/core/store/element-store';
 
 export function SubtitleContainer() {
   const subtitleMountRef = useRef<HTMLDivElement>(null);

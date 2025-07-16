@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { useToastStore, type Toast as ToastType } from '@/content/store/toast-store';
+import { useToastStore, type Toast as ToastType } from '@/content/core/store/toast-store';
 
 interface ToastProps {
   toast: ToastType;

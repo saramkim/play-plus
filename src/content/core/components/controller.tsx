@@ -11,11 +11,11 @@ import {
   ScanEyeIcon,
 } from 'lucide-react';
 
+import { useFocusModeStore } from '@/content/features/focus-mode/focus-mode-store';
 import { loopController } from '@/content/features/loop';
-import { skipVideoTime } from '@/content/features/video/video-navigation';
-import { useFocusModeStore } from '@/content/store/focus-mode-store';
-import { useLoopStore } from '@/content/store/loop-store';
-import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
+import { useLoopStore } from '@/content/features/loop/loop-store';
+import { skipVideoTime } from '@/content/features/navigation/video-navigation';
+import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;

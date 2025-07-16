@@ -1,7 +1,7 @@
-import { videoManager } from '@/content/features/video/video-manager';
-import { createMarker } from '@/content/utils/dom';
+import { createMarker } from '@/content/core/utils/dom';
+import { videoManager } from '@/content/core/video/video-manager';
 
-import { getPositionByMouse, getTimeByOffsetLeft } from './utils';
+import { getPositionByMouse, getTimeByOffsetLeft } from './loop-utils';
 
 export const START_MARKER_ID = 'loop-marker-start';
 export const END_MARKER_ID = 'loop-marker-end';

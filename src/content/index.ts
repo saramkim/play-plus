@@ -2,12 +2,12 @@ import { onStorageChange } from '@storage/index';
 
 import './content.css';
 import { renderApp } from './app';
+import { elementStore } from './core/store/element-store';
 import { loopController } from './features/loop';
+import { playbackSpeedController } from './features/playback-speed/playback-speed';
 import { initializeSubtitleSync, onSubtitleStorageChange } from './features/subtitle/subtitle';
-import { videoController } from './features/video';
-import { playbackSpeedController } from './features/video/playback-speed';
+import { videoController } from './features/video/video-controller';
 import { initializeMessageListener } from './message-handler';
-import { elementStore } from './store/element-store';
 
 async function init() {
   initializeMessageListener();

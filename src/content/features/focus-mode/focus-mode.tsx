@@ -3,10 +3,10 @@ import { memo, useMemo } from 'react';
 import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
-import { videoManager } from '@/content/features/video/video-manager';
-import { findTargetSubtitle } from '@/content/features/video/video-navigation';
-import { useSubtitleStore } from '@/content/store/subtitle-store';
-import { useVideoStore } from '@/content/store/video-store';
+import { useVideoStore } from '@/content/core/store/video-store';
+import { videoManager } from '@/content/core/video/video-manager';
+import { findTargetSubtitle } from '@/content/features/navigation/video-navigation';
+import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { cn } from '@/ui/lib/utils';
 
 export function FocusMode() {

@@ -2,7 +2,7 @@ import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { useToastStore } from '@/content/store/toast-store';
+import { useToastStore } from '@/content/core/store/toast-store';
 
 export function setupSubtitleSaveHandler(subtitleElement: HTMLElement) {
   const handleSubtitleClick = (event: MouseEvent) => {

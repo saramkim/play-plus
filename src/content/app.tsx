@@ -4,13 +4,13 @@ import ReactDOM from 'react-dom/client';
 
 import { cn } from '@/ui/lib/utils';
 
-import { Controller } from './components/controller';
-import { LoopStatus } from './components/loop-status';
-import { PlaybackSpeedDisplay } from './components/playback-speed-display';
-import { Subtitles } from './components/subtitles';
-import { ToastContainer } from './components/toast';
-import { useAutoHide } from './hooks/use-auto-hide';
-import { Container } from './layout/container';
+import { Container } from './core/components/container';
+import { Controller } from './core/components/controller';
+import { ToastContainer } from './core/components/toast';
+import { useAutoHide } from './core/hooks/use-auto-hide';
+import { LoopStatus } from './features/loop/loop-status-widget';
+import { PlaybackSpeedDisplay } from './features/playback-speed/playback-speed-display';
+import { SubtitleDisplay } from './features/subtitle/subtitle-display';
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,7 +23,7 @@ function App() {
         <LoopStatus />
         <PlaybackSpeedDisplay />
         <ToastContainer />
-        <Subtitles />
+        <SubtitleDisplay />
       </div>
     </Container>
   );

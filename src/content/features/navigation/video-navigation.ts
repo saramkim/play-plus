@@ -2,10 +2,10 @@ import { StorageSchema } from '@storage/type';
 import { findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
+import { videoManager } from '@/content/core/video/video-manager';
 import { loopController } from '@/content/features/loop';
-import { useSubtitleStore } from '@/content/store/subtitle-store';
+import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
-import { videoManager } from './video-manager';
 
 export function skipVideoTime(
   skipTime: number,

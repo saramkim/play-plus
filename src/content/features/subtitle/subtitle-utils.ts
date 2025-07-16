@@ -1,7 +1,7 @@
 import { StorageSchema } from '@storage/type';
 import { SubtitleData } from '@utils/parse';
 
-import { applyStyles } from '@/content/utils/dom';
+import { applyStyles } from '@/content/core/utils/dom';
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {

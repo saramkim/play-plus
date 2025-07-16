@@ -3,11 +3,11 @@ import { updateStorage } from '@storage/index';
 import { StorageChange, StorageSchema } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
+import { elementStore } from '@/content/core/store/element-store';
 import { loopController } from '@/content/features/loop';
+import { skipVideoTime } from '@/content/features/navigation/video-navigation';
+import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
-import { skipVideoTime } from '@/content/features/video/video-navigation';
-import { elementStore } from '@/content/store/element-store';
-import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
 
 const { SHORTCUTS, LOOP, VIDEO_SKIP, PLAYBACK_SPEED } = SETTINGS;
 

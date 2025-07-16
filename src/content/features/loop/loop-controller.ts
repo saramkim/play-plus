@@ -3,15 +3,15 @@ import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 import { t } from '@utils/i18n';
 
-import { videoManager } from '@/content/features/video/video-manager';
-import { elementStore } from '@/content/store/element-store';
-import { useLoopStore } from '@/content/store/loop-store';
-import { useSubtitleStore } from '@/content/store/subtitle-store';
-import { useToastStore } from '@/content/store/toast-store';
-import { findSubtitle } from '@/content/utils/subtitle';
+import { elementStore } from '@/content/core/store/element-store';
+import { useToastStore } from '@/content/core/store/toast-store';
+import { videoManager } from '@/content/core/video/video-manager';
+import { useLoopStore } from '@/content/features/loop/loop-store';
+import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
+import { findSubtitle } from '@/content/features/subtitle/subtitle-utils';
 
-import { END_MARKER_ID, LoopMarker, START_MARKER_ID } from './marker';
-import { isOutsideLoopRange } from './utils';
+import { END_MARKER_ID, LoopMarker, START_MARKER_ID } from './loop-marker';
+import { isOutsideLoopRange } from './loop-utils';
 
 const { STORAGE_KEY } = SETTINGS.LOOP;
 

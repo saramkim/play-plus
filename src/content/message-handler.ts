@@ -4,13 +4,13 @@ import { t } from '@utils/i18n';
 import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
+import { elementStore } from './core/store/element-store';
+import { useVideoStore } from './core/store/video-store';
+import { videoManager } from './core/video/video-manager';
 import { loopController } from './features/loop';
 import { syncSubtitles } from './features/subtitle/subtitle';
-import { videoManager } from './features/video/video-manager';
+import { useSubtitleStore } from './features/subtitle/subtitle-store';
 import { platform } from './platform/strategy';
-import { elementStore } from './store/element-store';
-import { useSubtitleStore } from './store/subtitle-store';
-import { useVideoStore } from './store/video-store';
 
 let timeUpdateHandler: ((this: HTMLVideoElement, ev: Event) => any) | null = null;
 

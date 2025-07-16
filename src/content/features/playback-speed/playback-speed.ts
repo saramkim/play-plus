@@ -1,9 +1,9 @@
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
-import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
+import { videoManager } from '@/content/core/video/video-manager';
+import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 
-import { videoManager } from './video-manager';
 
 const { STORAGE_KEY } = SETTINGS.PLAYBACK_SPEED;
 export class PlaybackSpeedController {

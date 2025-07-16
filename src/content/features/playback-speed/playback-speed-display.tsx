@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { usePlaybackSpeedStore } from '@/content/store/playback-speed-store';
+import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 
 export function PlaybackSpeedDisplay() {
   const [isVisible, setIsVisible] = useState(false);

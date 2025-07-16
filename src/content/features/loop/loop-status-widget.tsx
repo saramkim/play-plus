@@ -1,6 +1,6 @@
 import { formatTime } from '@utils/helper';
 
-import { useLoopStore } from '@/content/store/loop-store';
+import { useLoopStore } from '@/content/features/loop/loop-store';
 import { cn } from '@/ui/lib/utils';
 
 export function LoopStatus() {

@@ -2,11 +2,11 @@ import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
 
-import { KeyBindingManager } from './key-bindings';
+import { KeyBindingManager } from '@/content/features/navigation/key-bindings';
 
 const { SHORTCUTS, VIDEO_SKIP, SUB_VIDEO_SKIP, LOOP, PLAYBACK_SPEED } = SETTINGS;
 
-export class VideoController {
+class VideoController {
   private keyBindingManager = new KeyBindingManager();
 
   constructor() {
@@ -74,3 +74,5 @@ export class VideoController {
     return ['INPUT', 'TEXTAREA'].includes(activeElementTag);
   }
 }
+
+export const videoController = new VideoController();

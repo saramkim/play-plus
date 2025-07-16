@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { usePadding } from '@/content/hooks/use-padding';
+import { usePadding } from '@/content/core/hooks/use-padding';
 import { cn } from '@/ui/lib/utils';
 
 export function Container({ className, ...props }: Omit<React.ComponentProps<'div'>, 'style'>) {

@@ -2,7 +2,7 @@ import { Language } from '@utils/constants';
 import { SubtitleData } from '@utils/parse';
 import { PLATFORM_MAP } from '@utils/platform';
 
-import { arrayToHeadersObject } from '@/content/utils/subtitle';
+import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
 import { PlatformStrategy } from './strategy';
 

@@ -1,13 +1,12 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
+import { createElement } from '@/content/core/utils/dom';
+import { useLoopStore } from '@/content/features/loop/loop-store';
+import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
+import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
+import { applySubtitleStyles, createSubtitleElement } from '@/content/features/subtitle/subtitle-utils';
 import { platform } from '@/content/platform/strategy';
-import { createElement } from '@/content/utils/dom';
-import { applySubtitleStyles, createSubtitleElement } from '@/content/utils/subtitle';
-
-import { useLoopStore } from './loop-store';
-import { usePlaybackSpeedStore } from './playback-speed-store';
-import { useSubtitleStore } from './subtitle-store';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const REACT_ROOT_ID = 'pp-root';

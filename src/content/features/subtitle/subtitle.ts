@@ -5,15 +5,15 @@ import { REVIEW, SETTINGS } from '@utils/constants';
 import { sendMessage } from '@utils/message/index';
 import { parseVTT, SubtitleData } from '@utils/parse';
 
-import { elementStore } from '@/content/store/element-store';
-import { useSubtitleStore } from '@/content/store/subtitle-store';
-import { useVideoStore } from '@/content/store/video-store';
+import { elementStore } from '@/content/core/store/element-store';
+import { useVideoStore } from '@/content/core/store/video-store';
+import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import {
   applySubtitleStyles,
   arrayToHeadersObject,
   extractSubtitleApiInfoFromResponse,
   findSubtitle,
-} from '@/content/utils/subtitle';
+} from '@/content/features/subtitle/subtitle-utils';
 
 const { SUBTITLES } = SETTINGS;
 
