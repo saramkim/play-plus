@@ -10,7 +10,7 @@ export type SubtitleCacheKey = SubtitleConfig['language'] | SubtitleId;
 
 const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
 
-interface SubtitleStoreState {
+export interface SubtitleStoreState {
   subtitleCache: Partial<Record<SubtitleCacheKey, SubtitleData[]>>;
   subtitleSettings: Record<SubtitleSettingStorageKey, SubtitleConfig>;
   customSubtitleId: Record<SubtitleSettingStorageKey, SubtitleId | null>;
