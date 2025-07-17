@@ -12,8 +12,6 @@ import { syncSubtitles } from './features/subtitle/subtitle';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
 import { platform } from './platform/strategy';
 
-let timeUpdateHandler: ((this: HTMLVideoElement, ev: Event) => any) | null = null;
-
 export function initializeMessageListener() {
   onMessage(({ message, params, sendResponse }) => {
     switch (message) {
@@ -47,11 +45,6 @@ export function initializeMessageListener() {
 }
 
 const handleResetElement = () => {
-  const video = videoManager.get();
-  if (video && timeUpdateHandler) {
-    video.removeEventListener('timeupdate', timeUpdateHandler);
-    timeUpdateHandler = null;
-  }
   elementStore.reset();
   videoManager.reset();
   useVideoStore.getState().setCurrentTime(0);
@@ -79,10 +72,11 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   videoManager.set(video);
   useVideoStore.getState().setCurrentTime(video.currentTime);
 
-  timeUpdateHandler = () => {
+  const updateCurrentTime = () => {
     useVideoStore.getState().setCurrentTime(video.currentTime);
+    video.requestVideoFrameCallback(updateCurrentTime);
   };
-  video.addEventListener('timeupdate', timeUpdateHandler);
+  video.requestVideoFrameCallback(updateCurrentTime);
 
   platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
