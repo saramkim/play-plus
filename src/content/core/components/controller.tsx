@@ -9,6 +9,7 @@ import {
   ChevronsDownIcon,
   RepeatIcon,
   ScanEyeIcon,
+  ZapIcon,
 } from 'lucide-react';
 
 import { useFocusModeStore } from '@/content/features/focus-mode/focus-mode-store';
@@ -16,6 +17,8 @@ import { loopController } from '@/content/features/loop';
 import { useLoopStore } from '@/content/features/loop/loop-store';
 import { skipVideoTime } from '@/content/features/navigation/video-navigation';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
+import { gapSkipper } from '@/content/features/skipper/gap-skipper';
+import { useGapSkipperStore } from '@/content/features/skipper/gap-skipper-store';
 import { cn } from '@/ui/lib/utils';
 
 const BUTTON_SIZE = 40;
@@ -24,6 +27,7 @@ export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isLooping = useLoopStore((state) => state.isLooping);
   const isFocusMode = useFocusModeStore((state) => state.isFocusMode);
+  const isGapSkipping = useGapSkipperStore((state) => state.enabled);
   const increaseSpeed = usePlaybackSpeedStore((state) => state.increaseSpeed);
   const decreaseSpeed = usePlaybackSpeedStore((state) => state.decreaseSpeed);
 
@@ -55,8 +59,13 @@ export function Controller({ className }: { className?: string }) {
         onClick: () => useFocusModeStore.getState().toggle(),
         className: isFocusMode ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
+      {
+        Icon: ZapIcon,
+        onClick: () => (isGapSkipping ? gapSkipper.stop() : gapSkipper.start()),
+        className: isGapSkipping ? 'text-teal-500 hover:text-teal-400' : undefined,
+      },
     ],
-    [isLooping, isFocusMode, increaseSpeed, decreaseSpeed]
+    [isLooping, isFocusMode, isGapSkipping, increaseSpeed, decreaseSpeed]
   );
 
   return (
