@@ -1,4 +1,5 @@
 import { StorageSchema } from '@storage/type';
+import { isInTimeRange, toFixedTime } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { applyStyles } from '@/content/core/utils/dom';
@@ -16,6 +17,7 @@ export const extractSubtitleApiInfoFromResponse = (response: ApiResponse) => {
 };
 
 export const findSubtitle = (subtitles: SubtitleData[], time: number) => {
+  const fixedTime = toFixedTime(time);
   let left = 0;
   let right = subtitles.length - 1;
 
@@ -23,9 +25,9 @@ export const findSubtitle = (subtitles: SubtitleData[], time: number) => {
     const mid = Math.floor((left + right) / 2);
     const { start, end } = subtitles[mid];
 
-    if (start <= time && time <= end) return subtitles[mid];
+    if (isInTimeRange(start, end, time)) return subtitles[mid];
 
-    if (time < start) right = mid - 1;
+    if (fixedTime < toFixedTime(start)) right = mid - 1;
     else left = mid + 1;
   }
 
