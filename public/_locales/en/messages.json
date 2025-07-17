@@ -120,6 +120,12 @@
   "decrease_speed": { "message": "Decrease Speed" },
   "reset_speed": { "message": "Reset Speed" },
 
+  "previous_subtitle": { "message": "Previous Subtitle" },
+  "next_subtitle": { "message": "Next Subtitle" },
+  "loop_playback": { "message": "Loop Playback" },
+  "focus_mode": { "message": "Focus Mode" },
+  "skip_subtitle_gap": { "message": "Skip Subtitle Gap" },
+
   "confirm_delete": { "message": "Are you sure you want to delete?" },
 
   "success_save_subtitle": { "message": "Subtitle saved" },

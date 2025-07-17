@@ -121,6 +121,12 @@
   "decrease_speed": { "message": "속도 감소" },
   "reset_speed": { "message": "속도 초기화" },
 
+  "previous_subtitle": { "message": "이전 자막" },
+  "next_subtitle": { "message": "다음 자막" },
+  "loop_playback": { "message": "구간 반복 재생" },
+  "focus_mode": { "message": "집중 모드" },
+  "skip_subtitle_gap": { "message": "자막 간격 건너뛰기" },
+
   "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
 
   "success_save_subtitle": { "message": "자막 저장 완료" },

@@ -20,6 +20,7 @@ import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playbac
 import { gapSkipper } from '@/content/features/skipper/gap-skipper';
 import { useGapSkipperStore } from '@/content/features/skipper/gap-skipper-store';
 import { cn } from '@/ui/lib/utils';
+import { t } from '@utils/i18n';
 
 const BUTTON_SIZE = 40;
 
@@ -34,32 +35,39 @@ export function Controller({ className }: { className?: string }) {
   const buttonList = useMemo(
     () => [
       {
+        title: t('previous_subtitle'),
         Icon: SkipBackIcon,
         onClick: () => skipVideoTime(-1, 'subtitles', -10, 'seconds'),
       },
       {
+        title: t('next_subtitle'),
         Icon: SkipForwardIcon,
         onClick: () => skipVideoTime(1, 'subtitles', 10, 'seconds'),
       },
       {
+        title: t('increase_speed'),
         Icon: ChevronsUpIcon,
         onClick: increaseSpeed,
       },
       {
+        title: t('decrease_speed'),
         Icon: ChevronsDownIcon,
         onClick: decreaseSpeed,
       },
       {
+        title: t('loop_playback'),
         Icon: RepeatIcon,
         onClick: () => loopController.toggleLoop(),
         className: isLooping ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
       {
+        title: t('focus_mode'),
         Icon: ScanEyeIcon,
         onClick: () => useFocusModeStore.getState().toggle(),
         className: isFocusMode ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
       {
+        title: t('skip_subtitle_gap'),
         Icon: ZapIcon,
         onClick: () => (isGapSkipping ? gapSkipper.stop() : gapSkipper.start()),
         className: isGapSkipping ? 'text-teal-500 hover:text-teal-400' : undefined,
@@ -76,10 +84,7 @@ export function Controller({ className }: { className?: string }) {
         className
       )}
     >
-      {isExpanded &&
-        buttonList.map((button, index) => (
-          <IconButton key={index} Icon={button.Icon} onClick={button.onClick} className={button.className} />
-        ))}
+      {isExpanded && buttonList.map((button) => <IconButton key={button.title} {...button} />)}
 
       <IconButton
         Icon={isExpanded ? Minimize2Icon : SlidersVerticalIcon}
