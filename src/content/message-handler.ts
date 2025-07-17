@@ -48,6 +48,7 @@ const handleResetElement = () => {
   elementStore.reset();
   videoManager.reset();
   useVideoStore.getState().setCurrentTime(0);
+  loopController.resetLoop();
 };
 
 const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
@@ -80,7 +81,6 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
 
   platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
-  loopController.setupLoopHandler(video);
 
   return { success: true };
 };

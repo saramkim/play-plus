@@ -5,6 +5,7 @@ import { t } from '@utils/i18n';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useToastStore } from '@/content/core/store/toast-store';
+import { useVideoStore } from '@/content/core/store/video-store';
 import { videoManager } from '@/content/core/video/video-manager';
 import { useLoopStore } from '@/content/features/loop/loop-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
@@ -22,7 +23,6 @@ export const LOOP_CONSTANTS = {
 type LoopType = 'subtitle' | 'manual';
 
 export class LoopController {
-  private handleTimeUpdate: (() => void) | null = null;
   private markerContainer = elementStore.getLoopMarkerContainer();
   private startMarker = new LoopMarker(
     START_MARKER_ID,
@@ -32,7 +32,7 @@ export class LoopController {
   );
   private endMarker = new LoopMarker(END_MARKER_ID, 'B', this.markerContainer, useLoopStore.getState().setEndTime);
   private isMarkerShowing = false;
-  private activeSubtitleEndHandler: (() => void) | null = null;
+  private unsubscribeLoop: (() => void) | null = null;
 
   constructor() {
     useLoopStore.subscribe((state) => {
@@ -90,10 +90,9 @@ export class LoopController {
     this.endMarker.updateTime(endTime);
   };
 
-  setupLoopHandler = (video: HTMLVideoElement) => {
+  resetLoop = () => {
     this.isMarkerShowing = false;
     useLoopStore.getState().setLooping(false);
-    this.handleTimeUpdate = () => this.timeUpdateHandler(video);
   };
 
   loopCurrentSubtitle = () => {
@@ -115,25 +114,21 @@ export class LoopController {
 
   playCurrentSubtitleOnce = () => {
     try {
-      const { video, startTime, endTime } = this.getCurrentSubtitleInfo();
+      const video = videoManager.get();
+      if (!video) throw new Error(t('error_video_not_found'));
 
-      if (this.activeSubtitleEndHandler) {
-        video.removeEventListener('timeupdate', this.activeSubtitleEndHandler);
-      }
+      const { startTime, endTime } = this.getCurrentSubtitleInfo();
 
-      const handleTimeUpdate = () => {
-        if (video.currentTime >= endTime) {
+      const unsubscribe = useVideoStore.subscribe(({ currentTime }) => {
+        if (currentTime >= endTime) {
           video.pause();
           video.currentTime = endTime;
-          video.removeEventListener('timeupdate', handleTimeUpdate);
+          unsubscribe();
         }
-      };
+      });
 
       video.currentTime = startTime;
       video.play();
-      video.addEventListener('timeupdate', handleTimeUpdate);
-
-      this.activeSubtitleEndHandler = handleTimeUpdate;
     } catch (e) {
       this.handleLoopError(e);
     }
@@ -148,7 +143,7 @@ export class LoopController {
         this.startLoop(video);
         useLoopStore.getState().setLooping(true, loopType);
       } else {
-        this.stopLoop(video);
+        this.stopLoop();
         useLoopStore.getState().setLooping(false);
       }
     } catch (e) {
@@ -170,12 +165,25 @@ export class LoopController {
       video.currentTime = startTime;
     }
 
+    this.unsubscribeLoop = useVideoStore.subscribe(({ currentTime }) => {
+      const { startTime, endTime } = useLoopStore.getState();
+
+      if (isOutsideLoopRange(currentTime, startTime, endTime)) {
+        this.loop(false);
+        useToastStore.getState().addToast(t('info_loop_stop'), t('info_loop_stop_message'));
+      } else if (currentTime > endTime) {
+        video.currentTime = startTime;
+      }
+    });
+
     video.play();
-    video.addEventListener('timeupdate', this.handleTimeUpdate!);
   };
 
-  private stopLoop = (video: HTMLVideoElement) => {
-    video.removeEventListener('timeupdate', this.handleTimeUpdate!);
+  private stopLoop = () => {
+    if (this.unsubscribeLoop) {
+      this.unsubscribeLoop();
+      this.unsubscribeLoop = null;
+    }
   };
 
   private handleLoopError = (e: unknown) => {
@@ -188,33 +196,17 @@ export class LoopController {
     this.isMarkerShowing = true;
   };
 
-  private timeUpdateHandler = (video: HTMLVideoElement) => {
-    const { currentTime } = video;
-    if (currentTime === 0) return;
-
-    const { startTime, endTime } = useLoopStore.getState();
-
-    if (isOutsideLoopRange(currentTime, startTime, endTime)) {
-      this.loop(false);
-      useToastStore.getState().addToast(t('info_loop_stop'), t('info_loop_stop_message'));
-    } else if (currentTime >= endTime) {
-      video.currentTime = startTime;
-    }
-  };
-
   private getCurrentSubtitleInfo = () => {
-    const video = videoManager.get();
-    if (!video) throw new Error(t('error_video_not_found'));
-
     const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
-    const currentSubtitle = findSubtitle(subtitles, video.currentTime - delay);
+    const { currentTime } = useVideoStore.getState();
+    const currentSubtitle = findSubtitle(subtitles, currentTime - delay);
     if (!currentSubtitle) throw new Error(t('error_no_current_subtitle'));
 
     const startTime = currentSubtitle.start + delay;
     const endTime = currentSubtitle.end + delay;
 
-    return { video, startTime, endTime };
+    return { startTime, endTime };
   };
 }
