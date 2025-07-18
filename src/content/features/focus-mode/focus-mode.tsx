@@ -27,7 +27,7 @@ export function FocusMode() {
   );
 
   return (
-    <div className='absolute top-1/2 -translate-y-1/2 z-50 h-[160px] w-full pointer-events-auto'>
+    <div className='absolute top-1/2 -translate-y-1/2 z-50 h-[160px] w-full pointer-events-auto text-[calc(min(1.8vw,3vh))] leading-normal'>
       {primarySubtitle.enabled && (
         <MemoizedPrimarySubtitle subtitles={primarySubtitles} currentIndex={primarySubtitleIndex} />
       )}
@@ -73,18 +73,15 @@ function PrimarySubtitle({ subtitles, currentIndex }: SubtitleProps) {
   return (
     <div className='flex size-full'>
       <ClickableSubtitleRegion className='flex-1 bg-black/30 hover:bg-black/50 p-3' onClick={goToPrev}>
-        <RenderedSubtitleText className='text-gray-200 text-lg' text={prevSubtitle?.text ?? ''} />
+        <RenderedSubtitleText className='text-gray-200 text-[0.6em]' text={prevSubtitle?.text ?? ''} />
       </ClickableSubtitleRegion>
 
       <ClickableSubtitleRegion className='w-2/5 bg-black/50 hover:bg-black/70 p-4' onClick={handleRepeat}>
-        <RenderedSubtitleText
-          className='text-white text-[26px] leading-10 font-semibold'
-          text={currentSubtitle?.text ?? ''}
-        />
+        <RenderedSubtitleText className='text-white text-[1em] font-medium' text={currentSubtitle?.text ?? ''} />
       </ClickableSubtitleRegion>
 
       <ClickableSubtitleRegion className='flex-1 bg-black/30 hover:bg-black/50 p-3' onClick={goToNext}>
-        <RenderedSubtitleText className='text-gray-200 text-lg' text={nextSubtitle?.text ?? ''} />
+        <RenderedSubtitleText className='text-gray-200 text-[0.6em]' text={nextSubtitle?.text ?? ''} />
       </ClickableSubtitleRegion>
     </div>
   );
@@ -95,7 +92,7 @@ function SecondarySubtitle({ subtitles, currentIndex }: SubtitleProps) {
 
   return (
     <div className='absolute top-full left-1/2 -translate-x-1/2'>
-      <RenderedSubtitleText className='text-gray-200 text-lg' text={currentSubtitle?.text ?? ''} />
+      <RenderedSubtitleText className='text-gray-200 text-[0.6em]' text={currentSubtitle?.text ?? ''} />
     </div>
   );
 }
