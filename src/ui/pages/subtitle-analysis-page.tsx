@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { formatTime } from '@utils/helper';
+import { formatTime , cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { SubtitleData } from '@utils/parse';
 import { GalleryVertical } from 'lucide-react';
@@ -11,7 +11,7 @@ import { RegisteredSubtitleSelect } from '@/ui/features/analysis/registered-subt
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
-import { cn } from '@/ui/lib/utils';
+
 
 const ESTIMATED_ITEM_HEIGHT = 37;
 const GAP_HEIGHT = 4;

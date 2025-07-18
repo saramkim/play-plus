@@ -4,6 +4,7 @@ import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
+import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { BookOpenTextIcon, CaptionsIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
@@ -13,7 +14,6 @@ import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
 import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
 import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
-import { cn } from '@/ui/lib/utils';
 import { usePageStore } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
 

@@ -1,13 +1,12 @@
 import { memo, useMemo } from 'react';
 
-import { findSubtitleIndex } from '@utils/helper';
+import { cn, findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 
 import { useVideoStore } from '@/content/core/store/video-store';
 import { videoManager } from '@/content/core/video/video-manager';
 import { findTargetSubtitle } from '@/content/features/navigation/video-navigation';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
-import { cn } from '@/ui/lib/utils';
 
 export function FocusMode() {
   const { primarySubtitle, secondarySubtitle } = useSubtitleStore((state) => state.subtitleSettings);

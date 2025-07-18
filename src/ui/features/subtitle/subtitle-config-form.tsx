@@ -1,4 +1,5 @@
 import { SETTINGS } from '@utils/constants';
+import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { WrapTextIcon } from 'lucide-react';
 
@@ -11,7 +12,6 @@ import { NumberInput } from '@/ui/components/number-input';
 import { Switch } from '@/ui/components/switch';
 import { Toggle } from '@/ui/components/toggle';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
-import { cn } from '@/ui/lib/utils';
 
 type SubtitleConfigFormProps = typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY;
 

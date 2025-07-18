@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 
+import { cn } from '@utils/helper';
 import ReactDOM from 'react-dom/client';
-
-import { cn } from '@/ui/lib/utils';
 
 import { Container } from './core/components/container';
 import { Controller } from './core/components/controller';

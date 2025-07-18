@@ -1,4 +1,11 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 import { SubtitleData } from './parse';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export const formatTime = (seconds: number): string => {
   const roundedSeconds = Math.round(seconds);

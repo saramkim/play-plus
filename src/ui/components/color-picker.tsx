@@ -1,4 +1,4 @@
-import { cn } from '@/ui/lib/utils';
+import { cn } from '@utils/helper';
 
 interface ColorPickerProps extends Omit<React.ComponentProps<'input'>, 'value' | 'type'> {
   value: string;

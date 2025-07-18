@@ -1,4 +1,5 @@
 import { SETTINGS } from '@utils/constants';
+import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
@@ -8,7 +9,6 @@ import { NumberInput } from '@/ui/components/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
-import { cn } from '@/ui/lib/utils';
 
 type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
 

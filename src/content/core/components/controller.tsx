@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 
+import { cn } from '@utils/helper';
+import { t } from '@utils/i18n';
 import {
   Minimize2Icon,
   SlidersVerticalIcon,
@@ -19,8 +21,6 @@ import { skipVideoTime } from '@/content/features/navigation/video-navigation';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { gapSkipper } from '@/content/features/skipper/gap-skipper';
 import { useGapSkipperStore } from '@/content/features/skipper/gap-skipper-store';
-import { cn } from '@/ui/lib/utils';
-import { t } from '@utils/i18n';
 
 const BUTTON_SIZE = 40;
 

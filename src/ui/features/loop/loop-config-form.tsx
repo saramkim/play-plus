@@ -1,3 +1,4 @@
+import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
@@ -5,7 +6,6 @@ import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form/for
 import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
-import { cn } from '@/ui/lib/utils';
 
 export function LoopConfigForm() {
   const { form, onSubmit } = useConfigForm('loop');

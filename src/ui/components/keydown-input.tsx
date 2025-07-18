@@ -1,7 +1,7 @@
+import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { XIcon } from 'lucide-react';
 
-import { cn } from '@/ui/lib/utils';
 
 import { Input } from './input';
 
