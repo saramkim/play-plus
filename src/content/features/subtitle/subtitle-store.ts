@@ -19,7 +19,7 @@ export interface SubtitleStoreState {
   deleteSubtitleCache: (key: SubtitleCacheKey) => void;
   hasSubtitleCache: (key: SubtitleCacheKey) => boolean;
 
-  getPrimarySubtitleAndDelay: () => { subtitles: SubtitleData[] | undefined; delay: number };
+  getPrimarySubtitle: () => SubtitleData[] | undefined;
 
   setSubtitleSetting: (key: SubtitleSettingStorageKey, settings: SubtitleConfig) => void;
 
@@ -52,12 +52,12 @@ export const useSubtitleStore = create<SubtitleStoreState>((set, get) => ({
     }),
   hasSubtitleCache: (key) => Object.prototype.hasOwnProperty.call(get().subtitleCache, key),
 
-  getPrimarySubtitleAndDelay: () => {
+  getPrimarySubtitle: () => {
     const state = get();
     const id = state.customSubtitleId[PRIMARY.STORAGE_KEY];
-    const { language, delay } = state.subtitleSettings[PRIMARY.STORAGE_KEY];
+    const { language } = state.subtitleSettings[PRIMARY.STORAGE_KEY];
     const subtitles = state.subtitleCache[id ?? language];
-    return { subtitles, delay };
+    return subtitles;
   },
 
   setSubtitleSetting: (key, settings) =>

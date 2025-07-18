@@ -23,9 +23,6 @@ export function useSubtitleAnalysis() {
   const tabInfo = useTabStore((state) => state.tabInfo);
   const params = usePageParams('subtitle-analysis');
   const primarySubtitleLanguage = useConfigStore((state) => state.configs.primarySubtitle.language);
-  const primarySubtitleDelay = useConfigStore((state) => state.configs.primarySubtitle.delay);
-  const secondarySubtitleLanguage = useConfigStore((state) => state.configs.secondarySubtitle.language);
-  const secondarySubtitleDelay = useConfigStore((state) => state.configs.secondarySubtitle.delay);
   const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>(
     params?.id || tabInfo?.primarySubtitle || primarySubtitleLanguage
   );
@@ -41,11 +38,6 @@ export function useSubtitleAnalysis() {
   }, [tabInfo]);
 
   useEffect(() => {
-    const isPrimarySubtitle = subtitleId === (tabInfo?.primarySubtitle || primarySubtitleLanguage);
-    const isSecondarySubtitle = subtitleId === (tabInfo?.secondarySubtitle || secondarySubtitleLanguage);
-    const calculateTime = (time: number) =>
-      isPrimarySubtitle ? time + primarySubtitleDelay : isSecondarySubtitle ? time + secondarySubtitleDelay : time;
-
     (async () => {
       const subtitle = isDefaultSubtitleLanguage(subtitleId)
         ? tabInfo?.[subtitleId] || []
@@ -54,19 +46,12 @@ export function useSubtitleAnalysis() {
       setSubtitles(
         subtitle.map(({ text, start, end }) => ({
           text: stripTags(text),
-          start: calculateTime(start),
-          end: calculateTime(end),
+          start,
+          end,
         }))
       );
     })();
-  }, [
-    subtitleId,
-    tabInfo,
-    primarySubtitleLanguage,
-    primarySubtitleDelay,
-    secondarySubtitleLanguage,
-    secondarySubtitleDelay,
-  ]);
+  }, [subtitleId, tabInfo]);
 
   useEffect(() => {
     (async () => {

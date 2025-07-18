@@ -18,12 +18,12 @@ export function FocusMode() {
   const secondarySubtitles = subtitleCache[customSubtitleId.secondarySubtitle ?? secondarySubtitle.language];
 
   const primarySubtitleIndex = useMemo(
-    () => findSubtitleIndex(primarySubtitles ?? [], currentTime - primarySubtitle.delay),
-    [primarySubtitles, currentTime, primarySubtitle.delay]
+    () => findSubtitleIndex(primarySubtitles ?? [], currentTime),
+    [primarySubtitles, currentTime]
   );
   const secondarySubtitleIndex = useMemo(
-    () => findSubtitleIndex(secondarySubtitles ?? [], currentTime - secondarySubtitle.delay),
-    [secondarySubtitles, currentTime, secondarySubtitle.delay]
+    () => findSubtitleIndex(secondarySubtitles ?? [], currentTime),
+    [secondarySubtitles, currentTime]
   );
 
   return (

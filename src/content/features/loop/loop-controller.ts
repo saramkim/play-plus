@@ -197,15 +197,15 @@ export class LoopController {
   };
 
   private getCurrentSubtitleInfo = () => {
-    const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
+    const subtitles = useSubtitleStore.getState().getPrimarySubtitle();
     if (!subtitles || subtitles.length === 0) throw new Error(t('error_no_subtitle'));
 
     const { currentTime } = useVideoStore.getState();
-    const currentSubtitle = findSubtitle(subtitles, currentTime - delay);
+    const currentSubtitle = findSubtitle(subtitles, currentTime);
     if (!currentSubtitle) throw new Error(t('error_no_current_subtitle'));
 
-    const startTime = currentSubtitle.start + delay;
-    const endTime = currentSubtitle.end + delay;
+    const startTime = currentSubtitle.start;
+    const endTime = currentSubtitle.end;
 
     return { startTime, endTime };
   };

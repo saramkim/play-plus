@@ -17,10 +17,10 @@ class GapSkipper {
       const video = videoManager.get();
       if (!video) return;
 
-      const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
+      const subtitles = useSubtitleStore.getState().getPrimarySubtitle();
       if (!subtitles || subtitles.length === 0) return;
 
-      const currentIndex = findSubtitleIndex(subtitles, currentTime - delay);
+      const currentIndex = findSubtitleIndex(subtitles, currentTime);
       const currentSubtitle = subtitles[currentIndex];
       const nextSubtitle = findTargetSubtitle(subtitles, currentIndex, 1);
 

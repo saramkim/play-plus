@@ -11,7 +11,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
     fontWeight: 3,
     backgroundOpacity: 0,
     lineBreak: true,
-    delay: 0,
   },
   secondarySubtitle: {
     enabled: false,
@@ -23,7 +22,6 @@ export const DEFAULT_CONFIG: StorageSchema = {
     fontWeight: 3,
     backgroundOpacity: 0,
     lineBreak: true,
-    delay: 0,
   },
   videoSkip: {
     enabled: true,

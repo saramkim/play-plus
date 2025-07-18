@@ -135,18 +135,6 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name='delay'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('sync_adjustment')}(s)</FormLabel>
-              <FormControl>
-                <NumberInput {...field} step={0.1} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </div>
     </Form>
   );

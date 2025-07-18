@@ -37,7 +37,6 @@ const subtitleConfigSchema = z.object({
   fontWeight: z.number().min(1).max(6),
   backgroundOpacity: z.number().min(0).max(100),
   lineBreak: z.boolean(),
-  delay: z.number(),
 });
 const shortcutsConfigSchema = z.object({
   enabled: z.boolean(),

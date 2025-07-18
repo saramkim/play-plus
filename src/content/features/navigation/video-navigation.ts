@@ -6,7 +6,6 @@ import { videoManager } from '@/content/core/video/video-manager';
 import { loopController } from '@/content/features/loop';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
-
 export function skipVideoTime(
   skipTime: number,
   skipTimeUnit: StorageSchema['videoSkip']['skipTimeUnit'],
@@ -30,18 +29,18 @@ function skipVideoBySubtitles(
   fallbackUnit: StorageSchema['videoSkip']['fallbackUnit']
 ) {
   const { currentTime, duration } = video;
-  const { subtitles, delay } = useSubtitleStore.getState().getPrimarySubtitleAndDelay();
+  const subtitles = useSubtitleStore.getState().getPrimarySubtitle();
 
   if (!subtitles?.length) {
     skipVideoByTime(video, fallbackTime, fallbackUnit);
     return;
   }
 
-  const currentIndex = findSubtitleIndex(subtitles, currentTime - delay);
+  const currentIndex = findSubtitleIndex(subtitles, currentTime);
   const targetSubtitle = findTargetSubtitle(subtitles, currentIndex, skipTime);
 
   if (targetSubtitle) {
-    jumpToSubtitle(video, targetSubtitle, delay);
+    jumpToSubtitle(video, targetSubtitle);
   } else {
     video.currentTime = skipTime > 0 ? duration - 1 : 0;
   }
@@ -56,13 +55,13 @@ export function findTargetSubtitle(
   return subtitles[targetIndex];
 }
 
-function jumpToSubtitle(video: HTMLVideoElement, subtitle: SubtitleData, delay: number) {
-  const startTime = subtitle.start + delay;
+function jumpToSubtitle(video: HTMLVideoElement, subtitle: SubtitleData) {
+  const startTime = subtitle.start;
   video.currentTime = startTime;
 
   if (loopController.getLoopType() === 'subtitle') {
     loopController.setStartPoint(startTime);
-    loopController.setEndPoint(subtitle.end + delay);
+    loopController.setEndPoint(subtitle.end);
   }
 }
 

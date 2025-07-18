@@ -48,14 +48,14 @@ export async function fetchSubtitles(url: string, headers: chrome.webRequest.Htt
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
   const { subtitleSettings, customSubtitleId, subtitleCache } = useSubtitleStore.getState();
   for (const [key, config] of Object.entries(subtitleSettings)) {
-    const { language, enabled, delay } = config;
+    const { language, enabled } = config;
     const data = subtitleCache[customSubtitleId[key] ?? language];
     const subtitleElement = elementStore.getSubtitleElement(key);
 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);
 
     if (data && enabled) {
-      setupSubtitle(subtitleElement, data, currentTime - delay);
+      setupSubtitle(subtitleElement, data, currentTime);
     }
   }
 }
