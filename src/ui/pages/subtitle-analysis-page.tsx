@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { formatTime , cn } from '@utils/helper';
+import { formatTime, cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { SubtitleData } from '@utils/parse';
 import { GalleryVertical } from 'lucide-react';
@@ -11,7 +11,6 @@ import { RegisteredSubtitleSelect } from '@/ui/features/analysis/registered-subt
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
-
 
 const ESTIMATED_ITEM_HEIGHT = 37;
 const GAP_HEIGHT = 4;
@@ -28,7 +27,7 @@ export function SubtitleAnalysisPage() {
   } = useSubtitleAnalysis();
 
   return (
-    <div className='h-full flex flex-col overflow-hidden'>
+    <div className='h-full flex flex-col'>
       <header className='flex items-center justify-between border-b p-2'>
         <div className='flex items-center gap-1 overflow-x-auto'>
           <RegisteredSubtitleSelect
@@ -93,7 +92,7 @@ function SubtitleAnalysis({ subtitles, activeIndex, handleSaveSubtitle, handlePl
   );
 
   return (
-    <div className='relative h-full'>
+    <div className='relative h-full overflow-hidden'>
       <div ref={containerRef} className='h-full overflow-y-auto p-2' onScroll={handleScroll}>
         <div className='flex flex-col gap-2'>
           <div className='flex items-center justify-between'>
