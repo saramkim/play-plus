@@ -6,7 +6,7 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { BookOpenTextIcon, CaptionsIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { BookOpenTextIcon, CaptionsIcon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
@@ -29,7 +29,7 @@ export function SubtitleRegistrationPage() {
   return (
     <div className='h-full flex flex-col p-4'>
       <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
-      <ul className='h-full flex flex-col overflow-auto pr-1 pb-1'>
+      <ul className='h-full flex flex-col gap-2 overflow-auto py-2 px-1'>
         {filteredSubtitles.map((item) => (
           <SubtitleItem
             key={item.id}
@@ -73,8 +73,13 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
   const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
 
   return (
-    <li key={id} className='flex flex-col gap-[6px] py-2 border-b'>
-      <div>
+    <li
+      className={cn(
+        'rounded-lg border shadow-sm transition-colors duration-150',
+        isPrimarySubtitle || isSecondarySubtitle ? 'bg-primary/20' : 'bg-background'
+      )}
+    >
+      <div className='flex flex-col gap-3 p-3'>
         {isEditing ? (
           <SubtitleEditForm
             id={id}
@@ -84,56 +89,55 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             closeEditMode={() => setIsEditing(false)}
           />
         ) : (
-          <div className='flex items-center gap-[6px] group w-fit flex-wrap min-h-6'>
-            <span className='text-[13px] text-gray-500'>{t(LANGUAGES[language])}</span>
+          <div
+            className='flex items-center gap-1 w-fit flex-wrap min-h-6 hover:bg-gray-50 rounded cursor-pointer transition-colors duration-150'
+            onClick={() => setIsEditing(true)}
+          >
+            <span className='text-[13px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full'>
+              {t(LANGUAGES[language])}
+            </span>
             <p className='text-[15px] font-medium text-wrap'>{title}</p>
+          </div>
+        )}
+
+        <div className='flex justify-between items-center text-[13px]'>
+          <div className='flex items-center gap-1'>
             <Button
               variant='ghost'
               size='xxs'
-              tooltip={t('edit')}
-              className='hidden group-hover:inline-flex'
-              onClick={() => setIsEditing(true)}
+              tooltip={t('subtitle_analysis')}
+              onClick={() => setPage('subtitle-analysis', { id })}
             >
-              <PencilIcon />
+              <BookOpenTextIcon className='size-5' />
             </Button>
+            <Button
+              variant='ghost'
+              size='xxs'
+              tooltip={t('primary_subtitle')}
+              className={cn(isPrimarySubtitle && 'text-primary!')}
+              disabled={!isAvailable}
+              onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
+            >
+              <CaptionsIcon className='size-5' />
+            </Button>
+            <Button
+              variant='ghost'
+              size='xxs'
+              tooltip={t('secondary_subtitle')}
+              className={cn(isSecondarySubtitle && 'text-primary!')}
+              disabled={!isAvailable}
+              onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
+            >
+              <CaptionsIcon className='size-5' />
+            </Button>
+            {!isPrimarySubtitle && !isSecondarySubtitle && (
+              <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(id)}>
+                <Trash2Icon />
+              </Button>
+            )}
           </div>
-        )}
-      </div>
-      <div className='flex justify-between items-center text-[13px]'>
-        <div className='flex items-center'>
-          <Button
-            variant='ghost'
-            size='xxs'
-            tooltip={t('subtitle_analysis')}
-            onClick={() => setPage('subtitle-analysis', { id })}
-          >
-            <BookOpenTextIcon className='size-5' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='xxs'
-            tooltip={t('primary_subtitle')}
-            className={cn(isPrimarySubtitle && 'text-primary!')}
-            disabled={!isAvailable}
-            onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
-          >
-            <CaptionsIcon className='size-5' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='xxs'
-            tooltip={t('secondary_subtitle')}
-            className={cn(isSecondarySubtitle && 'text-primary!')}
-            disabled={!isAvailable}
-            onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
-          >
-            <CaptionsIcon className='size-5' />
-          </Button>
-          <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(id)}>
-            <Trash2Icon />
-          </Button>
+          <p className='text-gray-500 text-[12px]'>{new Date(savedAt).toLocaleString()}</p>
         </div>
-        <p className='text-gray-800'>{new Date(savedAt).toLocaleString()}</p>
       </div>
     </li>
   );
