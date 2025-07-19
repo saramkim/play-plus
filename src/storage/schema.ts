@@ -74,4 +74,5 @@ export const subtitleMetadataSchema = z.object({
   title: z.string(),
   language: z.custom<Language>(),
   savedAt: z.string(),
+  delay: z.number().optional(),
 });

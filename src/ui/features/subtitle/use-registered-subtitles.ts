@@ -34,6 +34,11 @@ export function useRegisteredSubtitles() {
     setLocalStorage(STORAGE_KEY, newSubtitles);
   };
 
+  const updateDelay = (id: SubtitleId, delay: number) => {
+    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, delay } : v));
+    setLocalStorage(STORAGE_KEY, newSubtitles);
+  };
+
   const deleteSubtitle = (id: SubtitleId) => {
     modal.confirm({
       title: t('delete'),
@@ -46,5 +51,5 @@ export function useRegisteredSubtitles() {
     });
   };
 
-  return { subtitles, editSubtitle, deleteSubtitle, loading };
+  return { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading };
 }

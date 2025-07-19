@@ -6,10 +6,11 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { BookOpenTextIcon, CaptionsIcon, Trash2Icon } from 'lucide-react';
+import { BookOpenTextIcon, CaptionsIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
+import { SubtitleDelayForm } from '@/ui/features/subtitle/subtitle-delay-form';
 import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
 import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
 import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
@@ -21,7 +22,7 @@ export function SubtitleRegistrationPage() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { subtitles, editSubtitle, deleteSubtitle, loading } = useRegisteredSubtitles();
+  const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useRegisteredSubtitles();
 
   if (loading) return null;
   if (subtitles.length === 0) return <EmptyState />;
@@ -33,11 +34,12 @@ export function SubtitleRegistrationPage() {
         {filteredSubtitles.map((item) => (
           <SubtitleItem
             key={item.id}
-            {...item}
+            data={item}
             activeTab={activeTab}
             tabInfo={tabInfo}
             onDelete={deleteSubtitle}
             onEdit={editSubtitle}
+            onUpdateDelay={updateDelay}
           />
         ))}
       </ul>
@@ -57,20 +59,23 @@ function EmptyState() {
   );
 }
 
-interface SubtitleItemProps extends SubtitleMetadata {
+interface SubtitleItemProps {
+  data: SubtitleMetadata;
   activeTab: chrome.tabs.Tab | null;
   tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
   onEdit: (id: SubtitleId, title: string, language: Language) => void;
+  onUpdateDelay: (id: SubtitleId, delay: number) => void;
 }
 
-function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDelete, onEdit }: SubtitleItemProps) {
+function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDelay }: SubtitleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isDelayEditing, setIsDelayEditing] = useState(false);
   const { useAsSubtitle, isAvailable } = useSubtitleSettings(activeTab);
   const setPage = usePageStore((state) => state.setPage);
 
-  const isPrimarySubtitle = tabInfo?.primarySubtitle === id;
-  const isSecondarySubtitle = tabInfo?.secondarySubtitle === id;
+  const isPrimarySubtitle = tabInfo?.primarySubtitle === data.id;
+  const isSecondarySubtitle = tabInfo?.secondarySubtitle === data.id;
 
   return (
     <li
@@ -82,9 +87,9 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
       <div className='flex flex-col gap-3 p-3'>
         {isEditing ? (
           <SubtitleEditForm
-            id={id}
-            initialTitle={title}
-            initialLanguage={language}
+            id={data.id}
+            initialTitle={data.title}
+            initialLanguage={data.language}
             onEdit={onEdit}
             closeEditMode={() => setIsEditing(false)}
           />
@@ -94,50 +99,64 @@ function SubtitleItem({ id, title, language, savedAt, activeTab, tabInfo, onDele
             onClick={() => setIsEditing(true)}
           >
             <span className='text-[13px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full'>
-              {t(LANGUAGES[language])}
+              {t(LANGUAGES[data.language])}
             </span>
-            <p className='text-[15px] font-medium text-wrap'>{title}</p>
+            <p className='text-[15px] font-medium text-wrap'>{data.title}</p>
           </div>
         )}
 
-        <div className='flex justify-between items-center text-[13px]'>
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='ghost'
-              size='xxs'
-              tooltip={t('subtitle_analysis')}
-              onClick={() => setPage('subtitle-analysis', { id })}
-            >
-              <BookOpenTextIcon className='size-5' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='xxs'
-              tooltip={t('primary_subtitle')}
-              className={cn(isPrimarySubtitle && 'text-primary!')}
-              disabled={!isAvailable}
-              onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : id)}
-            >
-              <CaptionsIcon className='size-5' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='xxs'
-              tooltip={t('secondary_subtitle')}
-              className={cn(isSecondarySubtitle && 'text-primary!')}
-              disabled={!isAvailable}
-              onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : id)}
-            >
-              <CaptionsIcon className='size-5' />
-            </Button>
-            {!isPrimarySubtitle && !isSecondarySubtitle && (
-              <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(id)}>
-                <Trash2Icon />
+        {isDelayEditing ? (
+          <SubtitleDelayForm
+            initialDelay={data.delay}
+            onUpdateDelay={(delay) => {
+              onUpdateDelay(data.id, delay);
+              setIsDelayEditing(false);
+            }}
+            closeEditMode={() => setIsDelayEditing(false)}
+          />
+        ) : (
+          <div className='flex justify-between items-center text-[13px]'>
+            <div className='flex items-center gap-1'>
+              <Button
+                variant='ghost'
+                size='xxs'
+                tooltip={t('subtitle_analysis')}
+                onClick={() => setPage('subtitle-analysis', { id: data.id })}
+              >
+                <BookOpenTextIcon className='size-5' />
               </Button>
-            )}
+              <Button
+                variant='ghost'
+                size='xxs'
+                tooltip={t('primary_subtitle')}
+                className={cn(isPrimarySubtitle && 'text-primary!')}
+                disabled={!isAvailable}
+                onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : data.id)}
+              >
+                <CaptionsIcon className='size-5' />
+              </Button>
+              <Button
+                variant='ghost'
+                size='xxs'
+                tooltip={t('secondary_subtitle')}
+                className={cn(isSecondarySubtitle && 'text-primary!')}
+                disabled={!isAvailable}
+                onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : data.id)}
+              >
+                <CaptionsIcon className='size-5' />
+              </Button>
+              <Button variant='ghost' size='xxs' tooltip={t('sync_adjustment')} onClick={() => setIsDelayEditing(true)}>
+                <Settings2Icon className='size-5' />
+              </Button>
+              {!isPrimarySubtitle && !isSecondarySubtitle && (
+                <Button variant='ghost' size='xxs' tooltip={t('delete')} onClick={() => onDelete(data.id)}>
+                  <Trash2Icon />
+                </Button>
+              )}
+            </div>
+            <p className='text-gray-500 text-[12px]'>{new Date(data.savedAt).toLocaleString()}</p>
           </div>
-          <p className='text-gray-500 text-[12px]'>{new Date(savedAt).toLocaleString()}</p>
-        </div>
+        )}
       </div>
     </li>
   );
