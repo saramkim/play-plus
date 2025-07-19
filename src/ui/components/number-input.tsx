@@ -7,7 +7,12 @@ interface NumberInputProps extends Omit<React.ComponentProps<'input'>, 'onChange
 
 export function NumberInput({ value, onChange, ...props }: NumberInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(parseFloat(e.target.value));
+    const { value, min } = e.target;
+    if (value === '') {
+      onChange(min !== '' ? parseFloat(min) : 0);
+    } else {
+      onChange(parseFloat(value));
+    }
   };
 
   return <Input type='number' value={value.toString()} onChange={handleChange} {...props} />;
