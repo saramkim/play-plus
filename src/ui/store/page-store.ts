@@ -8,7 +8,7 @@ type PageParams = {
   [PAGE_NAME.VIDEO_SETTING]: never;
   [PAGE_NAME.REVIEW]: never;
   [PAGE_NAME.SUBTITLE_ANALYSIS]: { id: SubtitleId };
-  [PAGE_NAME.SUBTITLE_REGISTRATION]: never;
+  [PAGE_NAME.SUBTITLE_IMPORT]: never;
 };
 
 export type PageStore = ReturnType<typeof usePageStore.getState>;
@@ -29,6 +29,7 @@ export const usePageStore = create(
     {
       name: 'page-store',
       partialize: (state) => ({ currentPage: state.currentPage }),
+      version: 1,
     }
   )
 );

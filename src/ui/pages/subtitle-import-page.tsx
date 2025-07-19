@@ -10,19 +10,19 @@ import { BookOpenTextIcon, CaptionsIcon, Settings2Icon, Trash2Icon } from 'lucid
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
-import { SubtitleDelayForm } from '@/ui/features/subtitle/subtitle-delay-form';
-import { SubtitleEditForm } from '@/ui/features/subtitle/subtitle-edit-form';
-import { SubtitleUploader } from '@/ui/features/subtitle/subtitle-uploader';
-import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
+import { SubtitleDelayForm } from '@/ui/features/subtitle-import/subtitle-delay-form';
+import { SubtitleEditForm } from '@/ui/features/subtitle-import/subtitle-edit-form';
+import { SubtitleUploader } from '@/ui/features/subtitle-import/subtitle-uploader';
+import { useImportedSubtitles } from '@/ui/features/subtitle-import/use-imported-subtitles';
 import { usePageStore } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
 
-export function SubtitleRegistrationPage() {
+export function SubtitleImportPage() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useRegisteredSubtitles();
+  const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useImportedSubtitles();
 
   if (loading) return null;
   if (subtitles.length === 0) return <EmptyState />;

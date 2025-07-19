@@ -12,7 +12,7 @@ const pageTitleMap = {
   [PAGE_NAME.SUBTITLE_SETTING]: t('subtitle_setting'),
   [PAGE_NAME.VIDEO_SETTING]: t('video_setting'),
   [PAGE_NAME.REVIEW]: t('review'),
-  [PAGE_NAME.SUBTITLE_REGISTRATION]: t('subtitle_registration'),
+  [PAGE_NAME.SUBTITLE_IMPORT]: t('subtitle_import'),
   [PAGE_NAME.SUBTITLE_ANALYSIS]: t('subtitle_analysis'),
 };
 

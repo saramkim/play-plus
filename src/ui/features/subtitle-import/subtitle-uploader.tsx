@@ -181,7 +181,7 @@ export function SubtitleUploader() {
               {t('cancel')}
             </Button>
             <Button type='submit' className='w-full' disabled={isUploading}>
-              {t('register')}
+              {t('upload')}
             </Button>
           </div>
         </form>

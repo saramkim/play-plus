@@ -10,7 +10,7 @@ import { Header } from './layout/header';
 import { OnboardingContent } from './layout/onboarding-content';
 import { ReviewPage } from './pages/review-page';
 import { SubtitleAnalysisPage } from './pages/subtitle-analysis-page';
-import { SubtitleRegistrationPage } from './pages/subtitle-registration-page';
+import { SubtitleImportPage } from './pages/subtitle-import-page';
 import { SubtitleSettingPage } from './pages/subtitle-setting-page';
 import { VideoSettingPage } from './pages/video-setting-page';
 import { useConfigStore } from './store/config-store';
@@ -24,7 +24,7 @@ const pageMap = {
   [PAGE_NAME.VIDEO_SETTING]: <VideoSettingPage />,
   [PAGE_NAME.REVIEW]: <ReviewPage />,
   [PAGE_NAME.SUBTITLE_ANALYSIS]: <SubtitleAnalysisPage />,
-  [PAGE_NAME.SUBTITLE_REGISTRATION]: <SubtitleRegistrationPage />,
+  [PAGE_NAME.SUBTITLE_IMPORT]: <SubtitleImportPage />,
 };
 
 export function App() {

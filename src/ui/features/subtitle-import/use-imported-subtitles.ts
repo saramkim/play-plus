@@ -10,7 +10,7 @@ import { modal } from '@/ui/components/modal';
 
 const { STORAGE_KEY } = REGISTRATION;
 
-export function useRegisteredSubtitles() {
+export function useImportedSubtitles() {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 

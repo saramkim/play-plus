@@ -3,7 +3,7 @@ import { LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
-import { useRegisteredSubtitles } from '@/ui/features/subtitle/use-registered-subtitles';
+import { useImportedSubtitles } from '@/ui/features/subtitle-import/use-imported-subtitles';
 
 interface RegisteredSubtitleSelectProps {
   selectedId: SubtitleId | null;
@@ -11,14 +11,14 @@ interface RegisteredSubtitleSelectProps {
 }
 
 export function RegisteredSubtitleSelect({ selectedId, onSelect }: RegisteredSubtitleSelectProps) {
-  const { subtitles } = useRegisteredSubtitles();
+  const { subtitles } = useImportedSubtitles();
 
   if (subtitles.length === 0) return null;
 
   return (
     <Select value={selectedId || ''} onValueChange={onSelect}>
       <SelectTrigger>
-        <SelectValue placeholder={t('registered_subtitle')} />
+        <SelectValue placeholder={t('imported_subtitles')} />
       </SelectTrigger>
       <SelectContent>
         {subtitles.map((option) => (
