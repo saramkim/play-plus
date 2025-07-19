@@ -63,9 +63,9 @@ export const findSubtitleIndex = (subtitles: SubtitleData[], time: number): numb
   return -1;
 };
 
-export const toFixedTime = (n: number, precision = 100) => Math.round(n * precision);
+export const toFixedTime = (n: number, precision = 1000) => Math.round(n * precision);
 
-export const isInTimeRange = (start: number, end: number, time: number, precision = 100) => {
+export const isInTimeRange = (start: number, end: number, time: number, precision = 1000) => {
   const t = toFixedTime(time, precision);
   return toFixedTime(start, precision) <= t && t <= toFixedTime(end, precision);
 };
