@@ -2,18 +2,14 @@ import { DEFAULT_CONFIG } from '@storage/default';
 import { getStorage } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
+import { findSubtitle } from '@utils/helper';
 import { sendMessage } from '@utils/message/index';
-import { parseVTT, SubtitleData } from '@utils/parse';
+import { SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
-import {
-  applySubtitleStyles,
-  arrayToHeadersObject,
-  extractSubtitleApiInfoFromResponse,
-  findSubtitle,
-} from '@/content/features/subtitle/subtitle-utils';
+import { applySubtitleStyles } from '@/content/features/subtitle/subtitle-utils';
 
 const { SUBTITLES } = SETTINGS;
 
@@ -36,13 +32,6 @@ export async function initializeSubtitleSync() {
     useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, data);
   }
   setupSubtitleSync();
-}
-
-export async function fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
-  const subtitleApiInfoList = await fetchVideoMetadata(url, headers);
-  return Promise.all(
-    subtitleApiInfoList.map(async ({ lang, url }) => ({ lang, subtitleData: await fetchSubtitle(url) }))
-  );
 }
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
@@ -68,20 +57,6 @@ function setupSubtitleSync() {
     syncSubtitles(currentTime);
     sendMessage('updateCurrentTime', currentTime);
   });
-}
-
-async function fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
-  const headers = {
-    ...arrayToHeadersObject(headerList),
-    'X-Extension-Request': 'true', // 무한 루프 방지용 커스텀 헤더
-  };
-  const response = await fetch(url, { headers });
-  return extractSubtitleApiInfoFromResponse(await response.json());
-}
-
-async function fetchSubtitle(url: string): Promise<SubtitleData[]> {
-  const response = await fetch(url);
-  return parseVTT(await response.text());
 }
 
 function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {

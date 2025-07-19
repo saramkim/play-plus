@@ -1,6 +1,7 @@
 import { DEFAULT_CONFIG } from '@storage/default';
 import { StorageChanges } from '@storage/type';
 import { SETTINGS } from '@utils/constants';
+import { findSubtitle } from '@utils/helper';
 import { t } from '@utils/i18n';
 
 import { elementStore } from '@/content/core/store/element-store';
@@ -9,7 +10,6 @@ import { useVideoStore } from '@/content/core/store/video-store';
 import { videoManager } from '@/content/core/video/video-manager';
 import { useLoopStore } from '@/content/features/loop/loop-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
-import { findSubtitle } from '@/content/features/subtitle/subtitle-utils';
 
 import { END_MARKER_ID, LoopMarker, START_MARKER_ID } from './loop-marker';
 import { isOutsideLoopRange } from './loop-utils';

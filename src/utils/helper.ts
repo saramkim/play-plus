@@ -32,6 +32,24 @@ export const formatTime = (seconds: number): string => {
   return parts.join(':');
 };
 
+export const findSubtitle = (subtitles: SubtitleData[], time: number) => {
+  const fixedTime = toFixedTime(time);
+  let left = 0;
+  let right = subtitles.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const { start, end } = subtitles[mid];
+
+    if (isInTimeRange(start, end, time)) return subtitles[mid];
+
+    if (fixedTime < toFixedTime(start)) right = mid - 1;
+    else left = mid + 1;
+  }
+
+  return undefined;
+};
+
 /**
  * 주어진 시간에 해당하는 자막 인덱스를 반환한다.
  *
