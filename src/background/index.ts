@@ -36,6 +36,10 @@ onMessage(({ message, params, sender, sendResponse }) => {
       sendMessageToTab(params.tabId, message, params).then(sendResponse);
       return true;
     }
+    case 'updateSubtitleDelay': {
+      sendMessageToTab(params.tabId, message, params);
+      break;
+    }
   }
 });
 

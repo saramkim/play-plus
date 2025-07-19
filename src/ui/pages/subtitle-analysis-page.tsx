@@ -7,10 +7,10 @@ import { SubtitleData } from '@utils/parse';
 import { GalleryVertical } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
-import { RegisteredSubtitleSelect } from '@/ui/features/analysis/registered-subtitle-select';
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
+import { ImportedSubtitleSelect } from '@/ui/features/subtitle-import/imported-subtitle-select';
 
 const ESTIMATED_ITEM_HEIGHT = 37;
 const GAP_HEIGHT = 4;
@@ -30,7 +30,7 @@ export function SubtitleAnalysisPage() {
     <div className='h-full flex flex-col'>
       <header className='flex items-center justify-between border-b p-2'>
         <div className='flex items-center gap-1 overflow-x-auto'>
-          <RegisteredSubtitleSelect
+          <ImportedSubtitleSelect
             selectedId={subtitleId === 'en' || subtitleId === 'ko' ? null : subtitleId}
             onSelect={setSubtitleId}
           />

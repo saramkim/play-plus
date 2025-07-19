@@ -5,12 +5,13 @@ import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { sendMessage } from '@utils/message';
 
 import { modal } from '@/ui/components/modal';
 
 const { STORAGE_KEY } = REGISTRATION;
 
-export function useImportedSubtitles() {
+export function useImportedSubtitles(activeTab?: chrome.tabs.Tab | null) {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +38,9 @@ export function useImportedSubtitles() {
   const updateDelay = (id: SubtitleId, delay: number) => {
     const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, delay } : v));
     setLocalStorage(STORAGE_KEY, newSubtitles);
+    if (activeTab?.id) {
+      sendMessage('updateSubtitleDelay', { tabId: activeTab.id, subtitleId: id, delay });
+    }
   };
 
   const deleteSubtitle = (id: SubtitleId) => {

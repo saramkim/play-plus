@@ -22,7 +22,7 @@ export function SubtitleImportPage() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
-  const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useImportedSubtitles();
+  const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useImportedSubtitles(activeTab);
 
   if (loading) return null;
   if (subtitles.length === 0) return <EmptyState />;
@@ -131,7 +131,9 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
                 tooltip={t('primary_subtitle')}
                 className={cn(isPrimarySubtitle && 'text-primary!')}
                 disabled={!isAvailable}
-                onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : data.id)}
+                onClick={() =>
+                  useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : data.id, data.delay ?? 0)
+                }
               >
                 <CaptionsIcon className='size-5' />
               </Button>
@@ -141,7 +143,13 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
                 tooltip={t('secondary_subtitle')}
                 className={cn(isSecondarySubtitle && 'text-primary!')}
                 disabled={!isAvailable}
-                onClick={() => useAsSubtitle(SET_SUBTITLE_ACTION.SET_SECONDARY, isSecondarySubtitle ? null : data.id)}
+                onClick={() =>
+                  useAsSubtitle(
+                    SET_SUBTITLE_ACTION.SET_SECONDARY,
+                    isSecondarySubtitle ? null : data.id,
+                    data.delay ?? 0
+                  )
+                }
               >
                 <CaptionsIcon className='size-5' />
               </Button>

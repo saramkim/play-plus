@@ -8,11 +8,11 @@ import { PLATFORM_URL_LIST } from '@utils/platform';
 import { modal } from '@/ui/components/modal';
 
 export function useSubtitleSettings(activeTab: chrome.tabs.Tab | null) {
-  const useAsSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null) => {
+  const useAsSubtitle = async (action: SetSubtitleAction, subtitleId: SubtitleId | null, delay: number) => {
     const tabId = activeTab?.id;
     if (!tabId) return;
 
-    const response = await sendMessage(action, { tabId, subtitleId });
+    const response = await sendMessage(action, { tabId, subtitleId, delay });
     if (response.success) {
       updateTabInfo(tabId, { [SET_SUBTITLE_STORAGE_KEY_MAP[action]]: subtitleId });
     } else {

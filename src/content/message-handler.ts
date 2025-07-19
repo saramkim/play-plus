@@ -8,7 +8,6 @@ import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
 import { loopController } from './features/loop';
-import { syncSubtitles } from './features/subtitle/subtitle';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
 import { platform } from './platform/strategy';
 
@@ -35,6 +34,10 @@ export function initializeMessageListener() {
       case 'setSecondarySubtitle': {
         handleSetSubtitle(message, params).then(sendResponse);
         return true;
+      }
+      case 'updateSubtitleDelay': {
+        handleUpdateSubtitleDelay(params);
+        break;
       }
       case 'getVideoTime': {
         handleGetVideoTime().then(sendResponse);
@@ -98,19 +101,40 @@ const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) =>
 
 const handleSetSubtitle = async (
   action: SetSubtitleAction,
-  { subtitleId }: MessageSchema['setPrimarySubtitle']['params'] | MessageSchema['setSecondarySubtitle']['params']
+  { subtitleId, delay }: MessageSchema['setPrimarySubtitle']['params'] | MessageSchema['setSecondarySubtitle']['params']
 ): Promise<MessageResponse<'setPrimarySubtitle' | 'setSecondarySubtitle'>> => {
+  const video = videoManager.get();
+  if (!video) return { success: false, message: t('error_video_not_found') };
+
   if (subtitleId && !useSubtitleStore.getState().hasSubtitleCache(subtitleId)) {
     const subtitle = await getLocalSubtitle(subtitleId);
-    useSubtitleStore.getState().setSubtitleCache(subtitleId, subtitle);
+    const updatedSubtitle = subtitle.map((data) => ({
+      ...data,
+      start: data.start + delay,
+      end: data.end + delay,
+    }));
+    useSubtitleStore.getState().setSubtitleCache(subtitleId, updatedSubtitle);
   }
+
   useSubtitleStore.getState().setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
+  useVideoStore.getState().setCurrentTime(video.currentTime);
+
+  return { success: true };
+};
+
+const handleUpdateSubtitleDelay = async ({ subtitleId, delay }: MessageSchema['updateSubtitleDelay']['params']) => {
   const video = videoManager.get();
-  if (video) {
-    syncSubtitles(video.currentTime, true);
-    return { success: true };
-  }
-  return { success: false, message: t('error_video_not_found') };
+  if (!video) return;
+
+  const subtitle = await getLocalSubtitle(subtitleId);
+  const updatedSubtitle = subtitle.map((data) => ({
+    ...data,
+    start: data.start + delay,
+    end: data.end + delay,
+  }));
+
+  useSubtitleStore.getState().setSubtitleCache(subtitleId, updatedSubtitle);
+  useVideoStore.getState().setCurrentTime(video.currentTime);
 };
 
 const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> => {
