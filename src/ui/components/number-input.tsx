@@ -1,6 +1,6 @@
 import { Input } from './input';
 
-interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+interface NumberInputProps extends Omit<React.ComponentProps<'input'>, 'onChange' | 'value'> {
   value: number;
   onChange: (value: number) => void;
 }

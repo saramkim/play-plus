@@ -75,3 +75,5 @@ export const stripTags = (line: string): string => {
   const doc = parser.parseFromString(`<div>${line}</div>`, 'text/html');
   return doc.body.textContent?.trim() ?? '';
 };
+
+export const round = (value: number, decimals = 1) => Number(value.toFixed(decimals));
