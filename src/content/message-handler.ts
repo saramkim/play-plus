@@ -73,15 +73,13 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   const video = await platform.detectVideo();
   if (!video) return { success: false, message: t('error_video_not_found') };
 
+  const currentVideo = videoManager.get();
+  if (video === currentVideo) {
+    console.debug('Same video already initialized, skipping');
+    return { success: true };
+  }
+
   videoManager.set(video);
-  useVideoStore.getState().setCurrentTime(video.currentTime);
-
-  const updateCurrentTime = () => {
-    useVideoStore.getState().setCurrentTime(video.currentTime);
-    video.requestVideoFrameCallback(updateCurrentTime);
-  };
-  video.requestVideoFrameCallback(updateCurrentTime);
-
   platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
 
