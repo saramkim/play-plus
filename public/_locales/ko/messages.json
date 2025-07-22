@@ -2,7 +2,7 @@
   "app_name": { "message": "Play Plus" },
   "extension_name": { "message": "Play Plus - 쿠팡플레이 기능 확장" },
   "extension_description": {
-    "message": "이중 자막, 자막 커스터마이징, 영상 이동 설정, 단축키 설정, 구간 반복, 자막 저장 및 복습, 자막 등록 기능을 제공합니다."
+    "message": "이중 자막, 자막 업로드, 반복 재생 등 언어 학습을 위한 기능을 쿠팡플레이에서 사용할 수 있게 해줍니다."
   },
   "action_default_title": { "message": "Play Plus 열기" },
 
