@@ -11,7 +11,7 @@ import { modal } from '@/ui/components/modal';
 
 const { STORAGE_KEY } = REGISTRATION;
 
-export function useImportedSubtitles(activeTab?: chrome.tabs.Tab | null) {
+export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 

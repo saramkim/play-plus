@@ -3,22 +3,22 @@ import { LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
-import { useImportedSubtitles } from '@/ui/features/subtitle-import/use-imported-subtitles';
+import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
 
-interface ImportedSubtitleSelectProps {
+interface UploadedSubtitleSelectProps {
   selectedId: SubtitleId | null;
   onSelect: (subtitleId: SubtitleId) => void;
 }
 
-export function ImportedSubtitleSelect({ selectedId, onSelect }: ImportedSubtitleSelectProps) {
-  const { subtitles } = useImportedSubtitles();
+export function UploadedSubtitleSelect({ selectedId, onSelect }: UploadedSubtitleSelectProps) {
+  const { subtitles } = useUploadedSubtitles();
 
   if (subtitles.length === 0) return null;
 
   return (
     <Select value={selectedId || ''} onValueChange={onSelect}>
       <SelectTrigger>
-        <SelectValue placeholder={t('imported_subtitles')} />
+        <SelectValue placeholder={t('uploaded_subtitles')} />
       </SelectTrigger>
       <SelectContent>
         {subtitles.map((option) => (

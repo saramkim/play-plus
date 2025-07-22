@@ -10,7 +10,7 @@ import { SubtitleData } from '@utils/parse';
 import { PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 import { toast } from 'sonner';
 
-import { useImportedSubtitles } from '@/ui/features/subtitle-import/use-imported-subtitles';
+import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
 import { useConfigStore } from '@/ui/store/config-store';
 import { usePageParams } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
@@ -24,7 +24,7 @@ export function useSubtitleAnalysis() {
   const tabInfo = useTabStore((state) => state.tabInfo);
   const params = usePageParams('subtitle-analysis');
   const primarySubtitleLanguage = useConfigStore((state) => state.configs.primarySubtitle.language);
-  const { subtitles: importedSubtitles } = useImportedSubtitles();
+  const { subtitles: uploadedSubtitles } = useUploadedSubtitles();
   const [subtitleId, setSubtitleId] = useState<DefaultSubtitleLanguage | SubtitleId>(
     params?.id || tabInfo?.primarySubtitle || primarySubtitleLanguage
   );
@@ -46,13 +46,13 @@ export function useSubtitleAnalysis() {
         setSubtitles(subtitle.map(({ text, start, end }) => ({ text: stripTags(text), start, end })));
       } else {
         const subtitle = await getLocalSubtitle(subtitleId);
-        const delay = importedSubtitles.find(({ id }) => id === subtitleId)?.delay || 0;
+        const delay = uploadedSubtitles.find(({ id }) => id === subtitleId)?.delay || 0;
         setSubtitles(
           subtitle.map(({ text, start, end }) => ({ text: stripTags(text), start: start + delay, end: end + delay }))
         );
       }
     })();
-  }, [subtitleId, tabInfo, importedSubtitles]);
+  }, [subtitleId, tabInfo, uploadedSubtitles]);
 
   useEffect(() => {
     (async () => {

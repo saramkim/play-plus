@@ -8,7 +8,7 @@ type PageParams = {
   [PAGE_NAME.VIDEO_SETTING]: never;
   [PAGE_NAME.REVIEW]: never;
   [PAGE_NAME.SUBTITLE_ANALYSIS]: { id: SubtitleId };
-  [PAGE_NAME.SUBTITLE_IMPORT]: never;
+  [PAGE_NAME.SUBTITLE_UPLOAD]: never;
 };
 
 export type PageStore = ReturnType<typeof usePageStore.getState>;

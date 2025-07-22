@@ -32,7 +32,7 @@
   "video_setting": { "message": "영상 설정" },
   "review": { "message": "복습" },
   "subtitle_analysis": { "message": "자막 분석" },
-  "subtitle_import": { "message": "자막 추가" },
+  "subtitle_upload": { "message": "자막 업로드" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
@@ -84,7 +84,7 @@
   "press_any_key": { "message": "키를 눌러 입력하세요" },
   "primary_subtitle": { "message": "메인 자막" },
   "upload": { "message": "업로드" },
-  "imported_subtitles": { "message": "추가한 자막" },
+  "uploaded_subtitles": { "message": "업로드한 자막" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
   "responsive": { "message": "반응형" },

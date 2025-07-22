@@ -31,7 +31,7 @@
   "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
   "subtitle_analysis": { "message": "Analysis" },
-  "subtitle_import": { "message": "Import" },
+  "subtitle_upload": { "message": "Upload" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
@@ -83,7 +83,7 @@
   "press_any_key": { "message": "Press Any Key" },
   "primary_subtitle": { "message": "Primary Subtitle" },
   "upload": { "message": "Upload" },
-  "imported_subtitles": { "message": "Imported Subtitles" },
+  "uploaded_subtitles": { "message": "Uploaded Subtitles" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
   "responsive": { "message": "Responsive" },
