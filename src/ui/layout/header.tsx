@@ -29,7 +29,7 @@ export function Header() {
   };
 
   return (
-    <header ref={scrollRef} {...eventHandlers} className='flex overflow-x-auto border-b scrollbar-hidden px-2'>
+    <header ref={scrollRef} {...eventHandlers} className='flex overflow-x-auto border-b scrollbar-hidden px-1'>
       {pageList.map((page, index) => (
         <button
           ref={(el) => {
