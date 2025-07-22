@@ -12,6 +12,7 @@ import {
   RepeatIcon,
   ScanEyeIcon,
   ZapIcon,
+  Repeat1Icon,
 } from 'lucide-react';
 
 import { useFocusModeStore } from '@/content/features/focus-mode/focus-mode-store';
@@ -27,6 +28,7 @@ const BUTTON_SIZE = 40;
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isLooping = useLoopStore((state) => state.isLooping);
+  const loopType = useLoopStore((state) => state.loopType);
   const isFocusMode = useFocusModeStore((state) => state.isFocusMode);
   const isGapSkipping = useGapSkipperStore((state) => state.enabled);
   const increaseSpeed = usePlaybackSpeedStore((state) => state.increaseSpeed);
@@ -58,7 +60,13 @@ export function Controller({ className }: { className?: string }) {
         title: t('loop_playback'),
         Icon: RepeatIcon,
         onClick: () => loopController.toggleLoop(),
-        className: isLooping ? 'text-teal-500 hover:text-teal-400' : undefined,
+        className: isLooping && loopType === 'manual' ? 'text-teal-500 hover:text-teal-400' : undefined,
+      },
+      {
+        title: t('loop_current_subtitle'),
+        Icon: Repeat1Icon,
+        onClick: () => loopController.toggleLoop('subtitle'),
+        className: isLooping && loopType === 'subtitle' ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
       {
         title: t('focus_mode'),
@@ -73,7 +81,7 @@ export function Controller({ className }: { className?: string }) {
         className: isGapSkipping ? 'text-teal-500 hover:text-teal-400' : undefined,
       },
     ],
-    [isLooping, isFocusMode, isGapSkipping, increaseSpeed, decreaseSpeed]
+    [isLooping, loopType, isFocusMode, isGapSkipping, increaseSpeed, decreaseSpeed]
   );
 
   return (
