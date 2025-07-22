@@ -4,7 +4,7 @@ export type LoopType = 'subtitle' | 'manual';
 
 interface LoopState {
   isLooping: boolean;
-  loopType: LoopType | null;
+  loopType: LoopType;
   startTime: number;
   endTime: number;
 
@@ -16,19 +16,16 @@ interface LoopState {
 
 const initialState = {
   isLooping: false,
-  loopType: null,
+  loopType: 'manual',
   startTime: 0,
   endTime: 0,
-};
+} as const;
 
 export const useLoopStore = create<LoopState>((set) => ({
   ...initialState,
 
-  setLooping: (isLooping: boolean, loopType: LoopType = 'manual') => {
-    set({
-      isLooping,
-      loopType: isLooping ? loopType : null,
-    });
+  setLooping: (isLooping, loopType = 'manual') => {
+    set({ isLooping, loopType });
   },
   setStartTime: (time: number) => {
     set({ startTime: Math.max(0, time) });

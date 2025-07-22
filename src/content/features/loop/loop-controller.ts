@@ -53,9 +53,17 @@ export class LoopController {
     }
   };
 
-  toggleLoop = () => {
-    const { isLooping } = useLoopStore.getState();
-    this.loop(!isLooping);
+  toggleLoop = (loopType: LoopType = 'manual') => {
+    const { isLooping, loopType: currentType } = useLoopStore.getState();
+
+    if (isLooping) {
+      this.loop(false);
+      if (currentType !== loopType) {
+        this.loop(true, loopType);
+      }
+    } else {
+      this.loop(true, loopType);
+    }
   };
 
   getLoopType = () => useLoopStore.getState().loopType;
@@ -95,23 +103,6 @@ export class LoopController {
     useLoopStore.getState().setLooping(false);
   };
 
-  loopCurrentSubtitle = () => {
-    try {
-      const { startTime, endTime } = this.getCurrentSubtitleInfo();
-      const { isLooping, loopType } = useLoopStore.getState();
-
-      if (isLooping && loopType === 'subtitle') {
-        this.loop(false);
-      } else {
-        this.setStartPoint(startTime);
-        this.setEndPoint(endTime);
-        this.loop(true, 'subtitle');
-      }
-    } catch (e) {
-      this.handleLoopError(e);
-    }
-  };
-
   playCurrentSubtitleOnce = () => {
     try {
       const video = videoManager.get();
@@ -134,12 +125,18 @@ export class LoopController {
     }
   };
 
-  private loop = (isLooping: boolean, loopType: LoopType = 'manual') => {
+  private loop = (enabled: boolean, loopType: LoopType = 'manual') => {
     const video = videoManager.get();
     if (!video) return;
 
     try {
-      if (isLooping) {
+      if (enabled) {
+        if (loopType === 'subtitle') {
+          const { startTime, endTime } = this.getCurrentSubtitleInfo();
+          this.setStartPoint(startTime);
+          this.setEndPoint(endTime);
+        }
+
         this.startLoop(video);
         useLoopStore.getState().setLooping(true, loopType);
       } else {
