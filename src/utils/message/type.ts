@@ -14,13 +14,13 @@ export type MessageSchema = {
     params: { url: string; startTime: number };
   };
   setPrimarySubtitle: {
-    params: { tabId: number; subtitleId: SubtitleId | null; delay: number };
+    params: { subtitleId: SubtitleId | null; delay: number };
   };
   setSecondarySubtitle: {
-    params: { tabId: number; subtitleId: SubtitleId | null; delay: number };
+    params: { subtitleId: SubtitleId | null; delay: number };
   };
   updateSubtitleDelay: {
-    params: { tabId: number; subtitleId: SubtitleId; delay: number };
+    params: { subtitleId: SubtitleId; delay: number };
   };
   updateCurrentTime: {
     params: number;

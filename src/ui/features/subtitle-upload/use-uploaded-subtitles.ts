@@ -5,7 +5,7 @@ import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { sendMessage } from '@utils/message';
+import { sendMessageToTab } from '@utils/message';
 
 import { modal } from '@/ui/components/modal';
 
@@ -39,7 +39,7 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
     const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, delay } : v));
     setLocalStorage(STORAGE_KEY, newSubtitles);
     if (activeTab?.id) {
-      sendMessage('updateSubtitleDelay', { tabId: activeTab.id, subtitleId: id, delay });
+      sendMessageToTab(activeTab.id, 'updateSubtitleDelay', { subtitleId: id, delay });
     }
   };
 

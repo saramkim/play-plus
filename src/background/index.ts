@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-onMessage(({ message, params, sender, sendResponse }) => {
+onMessage(({ message, params, sender }) => {
   switch (message) {
     case 'viewVideo': {
       handleViewVideo(params);
@@ -29,15 +29,6 @@ onMessage(({ message, params, sender, sendResponse }) => {
       if (!tabId) break;
       const { lang, subtitleData } = params;
       updateTabInfo(tabId, { [lang]: subtitleData });
-      break;
-    }
-    case 'setPrimarySubtitle':
-    case 'setSecondarySubtitle': {
-      sendMessageToTab(params.tabId, message, params).then(sendResponse);
-      return true;
-    }
-    case 'updateSubtitleDelay': {
-      sendMessageToTab(params.tabId, message, params);
       break;
     }
   }
