@@ -1,6 +1,6 @@
 {
   "name": "play-plus",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "description": "Enhance your Coupang Play experience with custom features.",
   "packageManager": "yarn@4.9.1",
   "scripts": {
