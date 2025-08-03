@@ -34,9 +34,20 @@ onMessage(({ message, params, sender }) => {
   }
 });
 
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error('Error setting panel behavior:', error));
+chrome.runtime.getPlatformInfo((info) => {
+  const isAndroid = info.os === 'android';
+
+  chrome.sidePanel
+    .setPanelBehavior({ openPanelOnActionClick: !isAndroid })
+    .catch((error) => console.error('Error setting panel behavior:', error));
+
+  if (isAndroid) {
+    chrome.action.onClicked.addListener((tab) => {
+      if (!tab?.id) return;
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html'), active: true });
+    });
+  }
+});
 
 chrome.webRequest.onSendHeaders.addListener(
   ({ tabId, url, requestHeaders }) => {
