@@ -27,9 +27,21 @@ export function useSavedSubtitle() {
     return remove;
   }, []);
 
-  const deleteSubtitle = (content: string) => {
+  const saveSubtitle = async (content: string, url: string, startTime: number) => {
+    const data = {
+      content,
+      url,
+      startTime,
+      savedAt: new Date().toISOString(),
+    };
+    const newSubtitles = [...subtitles, data];
+    await setLocalStorage(STORAGE_KEY, newSubtitles);
+    toast.success(t('success_save_subtitle'));
+  };
+
+  const deleteSubtitle = async (content: string) => {
     const filtered = subtitles.filter((v) => v.content !== content);
-    setLocalStorage(STORAGE_KEY, filtered);
+    await setLocalStorage(STORAGE_KEY, filtered);
 
     toast(t('delete'), {
       description: content,
@@ -46,5 +58,5 @@ export function useSavedSubtitle() {
     });
   };
 
-  return { subtitles, deleteSubtitle, loading };
+  return { subtitles, saveSubtitle, deleteSubtitle, loading };
 }

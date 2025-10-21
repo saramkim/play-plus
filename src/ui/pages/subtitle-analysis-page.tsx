@@ -22,7 +22,8 @@ export function SubtitleAnalysisPage() {
     setSubtitleId,
     activeIndex,
     defaultSubtitleOptions,
-    handleSaveSubtitle,
+    handleToggleSubtitle,
+    isSubtitleSaved,
     handlePlayVideo,
   } = useSubtitleAnalysis();
 
@@ -54,7 +55,8 @@ export function SubtitleAnalysisPage() {
         <SubtitleAnalysis
           subtitles={subtitles}
           activeIndex={activeIndex}
-          handleSaveSubtitle={handleSaveSubtitle}
+          handleToggleSubtitle={handleToggleSubtitle}
+          isSubtitleSaved={isSubtitleSaved}
           handlePlayVideo={handlePlayVideo}
         />
       )}
@@ -73,11 +75,18 @@ function EmptyState() {
 interface SubtitleAnalysisProps {
   subtitles: SubtitleData[];
   activeIndex: number;
-  handleSaveSubtitle: (subtitle: SubtitleData) => void;
+  handleToggleSubtitle: (subtitle: SubtitleData) => void;
+  isSubtitleSaved: (content: string) => boolean;
   handlePlayVideo: (start: number) => void;
 }
 
-function SubtitleAnalysis({ subtitles, activeIndex, handleSaveSubtitle, handlePlayVideo }: SubtitleAnalysisProps) {
+function SubtitleAnalysis({
+  subtitles,
+  activeIndex,
+  handleToggleSubtitle,
+  isSubtitleSaved,
+  handlePlayVideo,
+}: SubtitleAnalysisProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -116,8 +125,9 @@ function SubtitleAnalysis({ subtitles, activeIndex, handleSaveSubtitle, handlePl
                   <SubtitleItem
                     subtitle={subtitle}
                     isActive={index === activeIndex}
+                    isSaved={isSubtitleSaved(subtitle.text)}
                     onClick={() => handlePlayVideo(subtitle.start)}
-                    onSave={handleSaveSubtitle}
+                    onToggleSave={handleToggleSubtitle}
                     style={{ marginBottom: `${GAP_HEIGHT}px` }}
                   />
                 </div>

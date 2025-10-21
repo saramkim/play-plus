@@ -130,6 +130,7 @@
   "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
 
   "success_save_subtitle": { "message": "자막 저장 완료" },
+  "success_delete_subtitle": { "message": "자막 삭제 완료" },
   "error_save_subtitle": { "message": "자막 저장 실패" },
   "error_loop": { "message": "구간 반복 실패" },
   "info_loop_stop": { "message": "구간 반복 해제" },

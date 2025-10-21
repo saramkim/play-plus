@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { DefaultSubtitleLanguage, LANGUAGES } from '@utils/constants';
 import { findSubtitleIndex, stripTags } from '@utils/helper';
@@ -10,6 +9,7 @@ import { SubtitleData } from '@utils/parse';
 import { PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 import { toast } from 'sonner';
 
+import { useSavedSubtitle } from '@/ui/features/subtitle/use-saved-subtitle';
 import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
 import { useConfigStore } from '@/ui/store/config-store';
 import { usePageParams } from '@/ui/store/page-store';
@@ -20,6 +20,7 @@ const isDefaultSubtitleLanguage = (language: string) => language === 'en' || lan
 export function useSubtitleAnalysis() {
   const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
+  const { subtitles: savedSubtitles, saveSubtitle, deleteSubtitle } = useSavedSubtitle();
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const params = usePageParams('subtitle-analysis');
@@ -38,6 +39,10 @@ export function useSubtitleAnalysis() {
           .map((key) => ({ id: key, label: t(LANGUAGES[key]) }))
       : [];
   }, [tabInfo]);
+
+  const isSubtitleSaved = useMemo(() => {
+    return (content: string) => savedSubtitles.some((saved) => saved.content === content);
+  }, [savedSubtitles]);
 
   useEffect(() => {
     (async () => {
@@ -75,22 +80,14 @@ export function useSubtitleAnalysis() {
     return remove;
   }, []);
 
-  const handleSaveSubtitle = async (subtitle: SubtitleData) => {
+  const handleToggleSubtitle = async (subtitle: SubtitleData) => {
     const content = subtitle.text;
-    const prevData = (await getLocalStorage('savedSubtitles')) || [];
-    const isDuplicated = prevData.some(({ content: prevContent }) => prevContent === content);
+    const isSaved = isSubtitleSaved(content);
 
-    if (isDuplicated) {
-      toast.error(t('error_duplicate_subtitle'));
+    if (isSaved) {
+      await deleteSubtitle(content);
     } else {
-      const data = {
-        content,
-        url: activeTab?.url || '',
-        startTime: subtitle.start,
-        savedAt: new Date().toISOString(),
-      };
-      await setLocalStorage('savedSubtitles', [...prevData, data]);
-      toast.success(t('success_save_subtitle'));
+      await saveSubtitle(content, activeTab?.url || '', subtitle.start);
     }
   };
 
@@ -109,6 +106,7 @@ export function useSubtitleAnalysis() {
     activeIndex,
     defaultSubtitleOptions,
     handlePlayVideo,
-    handleSaveSubtitle,
+    handleToggleSubtitle,
+    isSubtitleSaved,
   };
 }

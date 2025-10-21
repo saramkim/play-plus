@@ -129,6 +129,7 @@
   "confirm_delete": { "message": "Are you sure you want to delete?" },
 
   "success_save_subtitle": { "message": "Subtitle saved" },
+  "success_delete_subtitle": { "message": "Subtitle deleted" },
   "error_save_subtitle": { "message": "Failed to save subtitle" },
   "error_loop": { "message": "Failed to loop" },
   "info_loop_stop": { "message": "Loop is stopped" },
