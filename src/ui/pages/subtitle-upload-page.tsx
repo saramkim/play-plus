@@ -6,7 +6,7 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { BookOpenTextIcon, CaptionsIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
+import { BookOpenTextIcon, CaptionsIcon, CaptionsOffIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
@@ -95,7 +95,10 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
           />
         ) : (
           <div
-            className='flex items-center gap-1 w-fit flex-wrap min-h-6 hover:bg-gray-50 rounded cursor-pointer transition-colors duration-150'
+            className={cn(
+              'flex items-center gap-1 w-fit flex-wrap min-h-6  rounded cursor-pointer transition-colors duration-150',
+              isPrimarySubtitle || isSecondarySubtitle ? 'hover:bg-primary/10' : 'hover:bg-gray-50'
+            )}
             onClick={() => setIsEditing(true)}
           >
             <span className='text-[13px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full'>
@@ -135,7 +138,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
                   useAsSubtitle(SET_SUBTITLE_ACTION.SET_PRIMARY, isPrimarySubtitle ? null : data.id, data.delay ?? 0)
                 }
               >
-                <CaptionsIcon className='size-5' />
+                {isPrimarySubtitle ? <CaptionsOffIcon className='size-5' /> : <CaptionsIcon className='size-5' />}
               </Button>
               <Button
                 variant='ghost'
@@ -151,7 +154,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
                   )
                 }
               >
-                <CaptionsIcon className='size-5' />
+                {isSecondarySubtitle ? <CaptionsOffIcon className='size-5' /> : <CaptionsIcon className='size-5' />}
               </Button>
               <Button variant='ghost' size='xxs' tooltip={t('sync_adjustment')} onClick={() => setIsDelayEditing(true)}>
                 <Settings2Icon className='size-5' />
