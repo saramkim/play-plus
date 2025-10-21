@@ -1,5 +1,6 @@
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { REVIEW } from '@utils/constants';
+import { stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
 
 import { useToastStore } from '@/content/core/store/toast-store';
@@ -24,7 +25,8 @@ export async function saveSubtitleWithToast(subtitleElement: HTMLElement) {
 }
 
 async function saveSubtitle(subtitleElement: HTMLElement) {
-  const content = subtitleElement.textContent?.replace(/\n/g, ' ');
+  const rawContent = subtitleElement.textContent || '';
+  const content = stripTags(rawContent);
   const startTimeDataAttribute = subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
 
   if (!content) throw new Error(t('error_no_subtitle'));
