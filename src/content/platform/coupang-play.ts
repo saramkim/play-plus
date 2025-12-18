@@ -7,12 +7,23 @@ import { PlatformStrategy } from './strategy';
 export class CoupangPlayStrategy implements PlatformStrategy {
   async detectVideo(): Promise<HTMLVideoElement> {
     return new Promise((resolve) => {
+      const findVideoInNodes = (nodes: Node[]): HTMLVideoElement | null => {
+        for (const node of nodes) {
+          if (node instanceof HTMLVideoElement) {
+            return node;
+          }
+          if (node instanceof Element && node.children.length > 0) {
+            const video = findVideoInNodes(Array.from(node.children));
+            if (video) return video;
+          }
+        }
+        return null;
+      };
+
       const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
-          if (mutation.type === 'childList') {
-            const addedNodes = Array.from(mutation.addedNodes);
-            const video = addedNodes.find((node) => node instanceof HTMLVideoElement);
-
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            const video = findVideoInNodes(Array.from(mutation.addedNodes));
             if (video) {
               observer.disconnect();
               resolve(video);
@@ -56,9 +67,11 @@ export class CoupangPlayStrategy implements PlatformStrategy {
   }
 
   private extractSubtitleApiInfoFromResponse(response: ApiResponse) {
-    return response.data.raw.text_tracks
-      .filter(({ kind }) => kind === 'subtitles')
-      .map(({ srclang, src }) => ({ lang: srclang!, url: src }));
+    return (
+      response.data.raw.text_tracks
+        ?.filter(({ kind }) => kind === 'subtitles')
+        ?.map(({ srclang, src }) => ({ lang: srclang!, url: src })) ?? []
+    );
   }
 }
 
