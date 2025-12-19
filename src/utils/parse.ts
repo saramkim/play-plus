@@ -16,27 +16,67 @@ export const parseVTT = (data: string) => {
   const lines = data.split('\n');
   const startIndex = lines[0].includes('WEBVTT') ? 1 : 0;
   let currentSubtitle = { ...INITIAL_SUBTITLE };
+  let inMetadataBlock = false; // NOTE, STYLE, REGION 블록 추적
+  let hasTiming = false; // 시간 라인이 파싱되었는지 명시적 플래그
 
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
 
+    // NOTE, STYLE, REGION 블록 시작 감지
+    if (/^(NOTE|STYLE|REGION)$/i.test(line)) {
+      inMetadataBlock = true;
+      continue;
+    }
+
+    // 메타데이터 블록 내부 처리: 빈 줄이 나오면 블록 종료
+    if (inMetadataBlock) {
+      if (line === '') {
+        inMetadataBlock = false;
+      }
+      continue;
+    }
+
+    // 시간 라인 체크를 먼저 수행
     if (line.includes('-->')) {
-      const [start, endAndOptions] = line.split(' --> ');
-      const [end, ...options] = endAndOptions.split(/\s+/);
-      currentSubtitle.start = timeToSeconds(start.trim());
-      currentSubtitle.end = timeToSeconds(end.trim());
-      if (options.length > 0) currentSubtitle.settings = options;
-    } else if (line === '') {
-      if (currentSubtitle.text.trim()) {
+      // 탭이나 여러 공백을 처리하기 위해 정규식 사용
+      const timeMatch = line.match(/^(.+?)\s+-->\s+(.+?)(?:\s+(.+))?$/);
+      if (timeMatch) {
+        const [, start, end, options] = timeMatch;
+        currentSubtitle.start = timeToSeconds(start.trim());
+        currentSubtitle.end = timeToSeconds(end.trim());
+        if (options) {
+          currentSubtitle.settings = options.trim().split(/\s+/);
+        }
+        hasTiming = true;
+      }
+      continue;
+    }
+
+    // 빈 줄 처리: 자막 블록 종료
+    if (line === '') {
+      if (currentSubtitle.text.trim() && hasTiming) {
         subtitles.push({ ...currentSubtitle });
       }
       currentSubtitle = { ...INITIAL_SUBTITLE };
-    } else {
-      currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + sanitize(line);
+      hasTiming = false;
+      continue;
     }
+
+    // Cue identifier/인덱스 처리: 시간이 아직 파싱되지 않은 상태에서만 체크
+    // (즉, 빈 줄 이후 새로운 블록 시작 시에만)
+    if (!hasTiming) {
+      const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+      if (nextLine.includes('-->')) {
+        continue; // Cue identifier 또는 인덱스로 간주하고 무시
+      }
+    }
+
+    // 자막 텍스트 추가
+    currentSubtitle.text += (currentSubtitle.text ? '\n' : '') + sanitize(line);
   }
 
-  if (currentSubtitle.text.trim()) {
+  // 마지막 자막 블록 처리
+  if (currentSubtitle.text.trim() && hasTiming) {
     subtitles.push({ ...currentSubtitle });
   }
 
