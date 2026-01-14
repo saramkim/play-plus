@@ -5,30 +5,219 @@ alwaysApply: false
 ---
 # 프로젝트 구조 가이드
 
-이 프로젝트는 Chrome 확장 프로그램을 위한 코드베이스입니다.
+이 프로젝트는 **Coupang Play**를 향상시키는 Chrome 확장 프로그램입니다. Manifest V3를 사용하며, React 기반의 UI와 콘텐츠 스크립트로 구성되어 있습니다.
 
-## 주요 디렉토리 구조
+## 전체 디렉토리 구조
 
-- `src/`: 소스 코드의 메인 디렉토리
-  - `ui/`: 사용자 인터페이스 관련 컴포넌트
-  - `background/`: 백그라운드 스크립트
-  - `content/`: 콘텐츠 스크립트
-  - `utils/`: 유틸리티 함수
-  - `storage/`: 스토리지 관련 로직
-  - `assets/`: 정적 자산 파일들
+```
+play-plus/
+├── .cursor/              # Cursor IDE 설정 및 룰
+│   └── rules/           # 프로젝트 룰 파일
+├── dist/                # 빌드 결과물 (gitignore)
+├── public/              # 정적 파일
+│   ├── _locales/       # 다국어 지원 파일
+│   ├── icons/          # 확장 프로그램 아이콘
+│   └── manifest.json   # Chrome 확장 프로그램 매니페스트
+├── src/                 # 소스 코드
+│   ├── assets/         # 이미지, 폰트 등 정적 자산
+│   ├── background/     # 백그라운드 서비스 워커
+│   ├── content/        # 콘텐츠 스크립트
+│   ├── storage/        # Chrome Storage 관리
+│   ├── ui/             # React 기반 UI 앱
+│   ├── utils/          # 유틸리티 함수
+│   └── type.d.ts       # 전역 타입 정의
+├── components.json      # shadcn/ui 설정
+├── eslint.config.mjs   # ESLint 설정
+├── package.json        # 프로젝트 의존성 및 스크립트
+├── postcss.config.js   # PostCSS 설정
+├── tsconfig.json       # TypeScript 설정
+├── webpack.config.js   # Webpack 빌드 설정
+└── yarn.lock           # Yarn 잠금 파일
+```
+
+## 주요 디렉토리 상세
+
+### `src/` - 소스 코드 메인 디렉토리
+
+#### `src/ui/` - React UI 앱
+Chrome 확장 프로그램의 사이드 패널에서 실행되는 React 앱입니다.
+
+- **`index.tsx`**: UI 앱 진입점, React DOM 렌더링
+- **`app.tsx`**: 메인 앱 컴포넌트
+- **`index.html`**: HTML 템플릿
+- **`style.css`**: Tailwind CSS 진입점
+- **`components/`**: 재사용 가능한 UI 컴포넌트
+  - shadcn/ui 기반 컴포넌트 (button, input, select, slider 등)
+  - form 컴포넌트
+  - modal 컴포넌트
+- **`features/`**: 기능별 모듈
+  - `analysis/`: 자막 분석 기능
+  - `loop/`: 루프 재생 기능
+  - `subtitle/`: 자막 관리 기능
+  - `subtitle-upload/`: 자막 업로드 기능
+  - `video/`: 비디오 제어 기능
+- **`pages/`**: 페이지 컴포넌트
+  - `review-page.tsx`: 리뷰 페이지
+  - `subtitle-analysis-page.tsx`: 자막 분석 페이지
+  - `subtitle-setting-page.tsx`: 자막 설정 페이지
+  - `subtitle-upload-page.tsx`: 자막 업로드 페이지
+  - `video-setting-page.tsx`: 비디오 설정 페이지
+- **`hooks/`**: 커스텀 React 훅
+  - `use-click-outside.ts`
+  - `use-config-form.ts`
+  - `use-drag-scroll.ts`
+- **`contexts/`**: React 컨텍스트
+  - `theme-provider-context.tsx`: 테마 제공자
+- **`store/`**: Zustand 상태 관리
+  - `config-store.ts`: 설정 상태
+  - `page-store.ts`: 페이지 상태
+  - `tab-store.ts`: 탭 상태
+- **`layout/`**: 레이아웃 컴포넌트
+  - `sonner/`: 토스트 알림 컴포넌트
+
+#### `src/content/` - 콘텐츠 스크립트
+웹 페이지(Coupang Play)에 주입되는 스크립트입니다.
+
+- **`index.ts`**: 콘텐츠 스크립트 진입점
+- **`app.tsx`**: React 앱 렌더링 (페이지 내)
+- **`content.css`**: 콘텐츠 스크립트 스타일
+- **`message-handler.ts`**: 메시지 핸들러
+- **`features/`**: 기능별 모듈
+  - `focus-mode/`: 포커스 모드
+  - `loop/`: 루프 재생 제어
+  - `navigation/`: 네비게이션 기능
+  - `playback-speed/`: 재생 속도 제어
+  - `skipper/`: 스킵 기능
+  - `subtitle/`: 자막 동기화 및 표시
+  - `video/`: 비디오 제어
+- **`core/`**: 핵심 기능
+  - `components/`: 코어 컴포넌트
+  - `hooks/`: 코어 훅
+  - `store/`: 코어 상태 관리
+    - `element-store.ts`: DOM 요소 저장소
+  - `utils/`: 코어 유틸리티
+  - `video/`: 비디오 관련 코어 로직
+- **`platform/`**: 플랫폼별 구현
+
+#### `src/background/` - 백그라운드 서비스 워커
+Chrome 확장 프로그램의 백그라운드 프로세스입니다.
+
+- **`index.ts`**: 서비스 워커 진입점
+  - 확장 프로그램 설치/업데이트 처리
+  - 메시지 리스너
+  - 탭 관리
+  - 웹 요청 인터셉터
+  - 사이드 패널 제어
+
+#### `src/storage/` - Chrome Storage 관리
+Chrome Storage API를 래핑한 모듈입니다.
+
+- **`index.ts`**: 스토리지 메인 API
+- **`schema.ts`**: 스토리지 스키마 정의
+- **`type.ts`**: 타입 정의
+- **`default.ts`**: 기본값 정의
+- **`migration.ts`**: 스토리지 마이그레이션 로직
+- **`preset.ts`**: 프리셋 관리
+- **`subtitle.ts`**: 자막 스토리지
+- **`tab.ts`**: 탭 정보 스토리지
+
+#### `src/utils/` - 유틸리티 함수
+공통으로 사용되는 유틸리티 함수들입니다.
+
+- **`constants.ts`**: 상수 정의
+- **`helper.ts`**: 헬퍼 함수
+- **`i18n.ts`**: 국제화 유틸리티
+- **`parse.ts`**: 파싱 유틸리티
+- **`platform.ts`**: 플랫폼 관련 유틸리티
+- **`message/`**: 메시지 통신
+  - `index.ts`: 메시지 API
+  - `type.ts`: 메시지 타입 정의
+
+#### `src/assets/` - 정적 자산
+이미지, 폰트 등 정적 파일들입니다.
+
+#### `src/type.d.ts` - 전역 타입 정의
+전역 타입 확장 및 유틸리티 타입 정의입니다.
+
+### `public/` - 정적 파일
+
+#### `manifest.json`
+Chrome 확장 프로그램 매니페스트 파일입니다.
+- Manifest V3 사용
+- 권한: storage, tabs, webRequest, sidePanel, unlimitedStorage
+- 호스트 권한: `https://www.coupangplay.com/*`
+- 사이드 패널 기본 경로: `index.html`
+
+#### `_locales/`
+다국어 지원 파일입니다. 기본 로케일: `ko`
+
+#### `icons/`
+확장 프로그램 아이콘 파일들입니다.
+- `play-plus_16x.png`
+- `play-plus_48x.png`
+- `play-plus_128x.png`
 
 ## 설정 파일
 
-- [package.json](mdc:package.json): 프로젝트 의존성 및 스크립트
-- [tsconfig.json](mdc:tsconfig.json): TypeScript 설정
-- [webpack.config.js](mdc:webpack.config.js): 웹팩 빌드 설정
-- [eslint.config.mjs](mdc:eslint.config.mjs): ESLint 설정
-- [postcss.config.js](mdc:postcss.config.js): PostCSS 설정
+### `package.json`
+- 프로젝트 메타데이터 및 의존성 관리
+- 스크립트:
+  - `build`: 프로덕션 빌드
+  - `build:dev`: 개발 빌드
+  - `watch`: 파일 변경 감지 및 자동 빌드
+  - `dev`: 개발 서버 (clean + build:dev + watch)
+  - `type-check`: TypeScript 타입 체크
+  - `clean`: dist 디렉토리 정리
+  - `lint`: ESLint 검사
+  - `lint:fix`: ESLint 자동 수정
+
+### `tsconfig.json`
+- TypeScript 컴파일러 설정
+- 경로 별칭: `@/*`, `@storage/*`, `@utils/*`
+- 엄격 모드 활성화
+- JSX: React 자동 런타임
+
+### `webpack.config.js`
+- 모듈 번들링 설정
+- 진입점: `ui/index.tsx`, `background/index.ts`, `content/index.ts`
+- 로더: Babel (TSX), ts-loader (TS), CSS 로더
+- 플러그인: HtmlWebpackPlugin, CopyWebpackPlugin, BundleAnalyzerPlugin
+- 코드 스플리팅: 비동기 청크 분리
+
+### `eslint.config.mjs`
+- ESLint 플랫 구성 (Flat Config)
+- 플러그인: TypeScript, React, Import, Unicorn
+- 주요 규칙:
+  - 파일명: kebab-case
+  - Import 순서 및 그룹화
+  - 상대 경로 금지 (별칭 사용)
+  - Default export 금지 (TS 파일)
+
+### `postcss.config.js`
+- PostCSS 설정
+- Tailwind CSS 플러그인 사용
+
+### `components.json`
+- shadcn/ui 설정 파일
+- 스타일: New York
+- Tailwind CSS 경로: `src/ui/style.css`
+- 별칭: `@/ui/components`, `@/ui/lib/utils`, `@/ui/hooks`
 
 ## 빌드 결과물
 
-- `dist/`: 빌드된 확장 프로그램 파일
-- `public/`: 정적 파일들
+### `dist/` 디렉토리
+빌드 후 생성되는 파일들:
+- `index.html`, `index.js`: UI 앱
+- `background.js`: 백그라운드 서비스 워커
+- `content.js`: 콘텐츠 스크립트
+- `manifest.json`: 매니페스트 파일
+- `icons/`: 아이콘 파일들
+- `_locales/`: 다국어 파일들
 
+## 아키텍처 특징
 
-
+1. **모듈화**: 기능별로 명확히 분리된 디렉토리 구조
+2. **타입 안정성**: TypeScript 엄격 모드 사용
+3. **코드 품질**: ESLint를 통한 일관된 코드 스타일
+4. **재사용성**: 공통 컴포넌트 및 유틸리티 모듈화
+5. **확장성**: 기능별 모듈 구조로 쉬운 기능 추가
