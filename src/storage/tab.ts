@@ -9,7 +9,12 @@ export type TabInfo = {
   secondarySubtitle?: SubtitleId | null;
   en?: SubtitleData[] | null;
   ko?: SubtitleData[] | null;
+  connectionStatus?: ConnectionStatus;
+  videoStatus?: VideoStatus;
 };
+
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
+export type VideoStatus = 'idle' | 'detecting' | 'detected' | 'not_detected';
 
 export const updateTabInfo = async (tabId: number, info: TabInfo) => {
   const currentInfo = await getTabInfo(tabId);

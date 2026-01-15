@@ -5,6 +5,33 @@ import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 import { PLATFORM_SUBTITLE_API_URL_LIST, PLATFORM_URL_LIST, PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
+const updateConnectedStatus = (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
+  updateTabInfo(tabId, {
+    connectionStatus: 'connected',
+    videoStatus: isVideoUrl ? (hasVideo ? 'detected' : 'not_detected') : 'idle',
+  });
+};
+
+const updateDisconnectedStatus = (tabId: number, isVideoUrl: boolean) => {
+  updateTabInfo(tabId, {
+    connectionStatus: 'disconnected',
+    videoStatus: isVideoUrl ? 'not_detected' : 'idle',
+  });
+};
+
+const checkContentConnection = async (tabId: number, isVideoUrl: boolean) => {
+  try {
+    const response = await sendMessageToTab(tabId, 'pingContent');
+    if (response.success) {
+      updateConnectedStatus(tabId, isVideoUrl, response.data.hasVideo);
+    } else {
+      updateDisconnectedStatus(tabId, isVideoUrl);
+    }
+  } catch (error) {
+    updateDisconnectedStatus(tabId, isVideoUrl);
+  }
+};
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
     console.log('Extension updated. Starting legacy storage migration...');
@@ -29,6 +56,13 @@ onMessage(({ message, params, sender }) => {
       if (!tabId) break;
       const { lang, subtitleData } = params;
       updateTabInfo(tabId, { [lang]: subtitleData });
+      break;
+    }
+    case 'contentStatus': {
+      const tabId = sender.tab?.id;
+      if (!tabId) break;
+      const { hasVideo, isVideoUrl } = params;
+      updateConnectedStatus(tabId, isVideoUrl, hasVideo);
       break;
     }
   }
@@ -78,17 +112,38 @@ const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['p
 chrome.tabs.onActivated.addListener(async (tabInfo) => {
   const tab = await chrome.tabs.get(tabInfo.tabId);
   setSessionStorage('activeTab', tab);
+  if (tab.id && PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url))) {
+    const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
+    updateTabInfo(tab.id, {
+      connectionStatus: 'connecting',
+      videoStatus: isVideoUrl ? 'detecting' : 'idle',
+    });
+    checkContentConnection(tab.id, isVideoUrl);
+  }
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     if (tab.active) setSessionStorage('activeTab', tab);
 
-    if (PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url))) sendMessageToTab(tabId, 'resetElement');
+    const isPlatformUrl = PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url));
+    const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
 
-    if (PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url))) {
+    if (isPlatformUrl) {
+      updateTabInfo(tabId, {
+        connectionStatus: 'connecting',
+        videoStatus: isVideoUrl ? 'detecting' : 'idle',
+      });
+      checkContentConnection(tabId, isVideoUrl);
+      sendMessageToTab(tabId, 'resetElement');
+    }
+
+    if (isVideoUrl) {
       const response = await sendMessageToTab(tabId, 'detectVideo');
-      if (!response.success) return;
+      if (!response.success) {
+        updateConnectedStatus(tabId, true, false);
+        return;
+      }
 
       const message = messageQueue.find(({ url }) => url === tab.url);
       if (message) {

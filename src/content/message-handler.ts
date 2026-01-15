@@ -3,6 +3,7 @@ import { DEFAULT_SUBTITLE_LANGUAGES, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAc
 import { t } from '@utils/i18n';
 import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
+import { PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
 import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
@@ -49,6 +50,8 @@ export function initializeMessageListener() {
       }
     }
   });
+
+  reportContentStatus(Boolean(videoManager.get()));
 }
 
 const handleResetElement = () => {
@@ -75,7 +78,10 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   const video = await platform.detectVideo();
-  if (!video) return { success: false, message: t('error_video_not_found') };
+  if (!video) {
+    reportContentStatus(false);
+    return { success: false, message: t('error_video_not_found') };
+  }
 
   const currentVideo = videoManager.get();
   if (video === currentVideo) {
@@ -86,6 +92,7 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   videoManager.set(video);
   platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
+  reportContentStatus(true);
 
   return { success: true };
 };
@@ -143,4 +150,9 @@ const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> =>
   const video = videoManager.get();
   if (video) return { success: true, data: video.currentTime };
   return { success: false, message: t('error_video_not_found') };
+};
+
+const reportContentStatus = (hasVideo: boolean) => {
+  const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
+  sendMessage('contentStatus', { hasVideo, isVideoUrl });
 };

@@ -31,6 +31,9 @@ export type MessageSchema = {
   pingContent: {
     response: { hasVideo: boolean };
   };
+  contentStatus: {
+    params: { hasVideo: boolean; isVideoUrl: boolean };
+  };
   getVideoTime: {
     response: number;
   };
