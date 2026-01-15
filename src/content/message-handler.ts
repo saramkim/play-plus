@@ -54,10 +54,13 @@ export function initializeMessageListener() {
   reportContentStatus(Boolean(videoManager.get()));
 }
 
+export const retryVideoDetection = () => initializeVideo();
+
 const handleResetElement = () => {
   elementStore.reset();
   videoManager.reset();
   useVideoStore.getState().setCurrentTime(0);
+  useVideoStore.getState().setDetectionStatus('idle');
   loopController.resetLoop();
 };
 
@@ -77,9 +80,11 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 };
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
+  useVideoStore.getState().setDetectionStatus('detecting');
   const video = await platform.detectVideo();
   if (!video) {
     reportContentStatus(false);
+    useVideoStore.getState().setDetectionStatus('failed');
     return { success: false, message: t('error_video_not_found') };
   }
 
@@ -92,6 +97,7 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   videoManager.set(video);
   platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
+  useVideoStore.getState().setDetectionStatus('detected');
   reportContentStatus(true);
 
   return { success: true };

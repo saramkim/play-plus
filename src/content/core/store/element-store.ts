@@ -9,12 +9,14 @@ import { applySubtitleStyles, createSubtitleElement } from '@/content/features/s
 import { platform } from '@/content/platform/strategy';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
-const REACT_ROOT_ID = 'pp-root';
+const VIDEO_ROOT_ID = 'pp-video-root';
+const SYSTEM_ROOT_ID = 'pp-system-root';
 const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 
 class ElementStore {
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
-  private reactRoot = createElement(REACT_ROOT_ID);
+  private videoRoot = createElement(VIDEO_ROOT_ID);
+  private systemRoot = createElement(SYSTEM_ROOT_ID);
   private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
   private subtitleElementMap = {
     [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
@@ -28,8 +30,8 @@ class ElementStore {
   setupContainer() {
     const videoPlayer = platform.getVideoPlayer();
     if (videoPlayer) {
-      videoPlayer.appendChild(this.reactRoot);
-    }
+      videoPlayer.appendChild(this.videoRoot);
+    } 
 
     const progressBarContainer = platform.getProgressBarContainer();
     if (progressBarContainer) {
@@ -46,8 +48,18 @@ class ElementStore {
     }
   }
 
-  getReactRoot() {
-    return this.reactRoot;
+  setupSystemContainer() {
+    if (!this.systemRoot.parentElement) {
+      document.body.appendChild(this.systemRoot);
+    }
+  }
+
+  getVideoRoot() {
+    return this.videoRoot;
+  }
+
+  getSystemRoot() {
+    return this.systemRoot;
   }
 
   getSubtitleElement(key: SubtitleSettingStorageKey) {

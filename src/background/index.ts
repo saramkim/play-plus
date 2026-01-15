@@ -135,7 +135,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         videoStatus: isVideoUrl ? 'detecting' : 'idle',
       });
       checkContentConnection(tabId, isVideoUrl);
-      sendMessageToTab(tabId, 'resetElement');
+      try {
+        await sendMessageToTab(tabId, 'resetElement');
+      } catch (error) {
+        // Ignore reset failures; detectVideo will still run if needed.
+      }
     }
 
     if (isVideoUrl) {

@@ -10,6 +10,7 @@ class VideoManager {
     this.stopTimeTracking();
 
     this.video = video;
+    useVideoStore.getState().setHasVideo(true);
     this.startTimeTracking(video);
   }
 
@@ -20,6 +21,7 @@ class VideoManager {
   reset() {
     this.video = null;
     this.stopTimeTracking();
+    useVideoStore.getState().setHasVideo(false);
   }
 
   private startTimeTracking(video: HTMLVideoElement) {

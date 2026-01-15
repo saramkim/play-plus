@@ -13,7 +13,8 @@ async function init() {
   initializeMessageListener();
   initializeStorageChange();
   await initializeSubtitleSync();
-  renderApp(elementStore.getReactRoot());
+  elementStore.setupSystemContainer();
+  renderApp(elementStore.getSystemRoot(), elementStore.getVideoRoot());
 }
 
 function initializeStorageChange() {
