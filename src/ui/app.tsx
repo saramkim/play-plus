@@ -6,6 +6,7 @@ import { PAGE_NAME } from '@utils/constants';
 
 import { modal } from './components/modal';
 import { Footer } from './layout/footer';
+import { ConnectionStatus } from './layout/connection-status';
 import { Header } from './layout/header';
 import { OnboardingContent } from './layout/onboarding-content';
 import { ReviewPage } from './pages/review-page';
@@ -66,6 +67,7 @@ export function App() {
 
   return (
     <div className='h-screen flex flex-col select-none text-nowrap'>
+      <ConnectionStatus />
       <Header />
       <main className='flex-1 overflow-auto'>{loading ? null : pageMap[currentPage]}</main>
       <Footer />

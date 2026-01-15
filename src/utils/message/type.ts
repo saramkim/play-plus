@@ -28,6 +28,9 @@ export type MessageSchema = {
   updateSubtitles: {
     params: { lang: string; subtitleData: SubtitleData[] | null };
   };
+  pingContent: {
+    response: { hasVideo: boolean };
+  };
   getVideoTime: {
     response: number;
   };

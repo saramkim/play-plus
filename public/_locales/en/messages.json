@@ -115,6 +115,18 @@
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },
 
+  "connection_checking": { "message": "Checking connection" },
+  "connection_content_connected": { "message": "Content script connected" },
+  "connection_content_disconnected": { "message": "Content script not connected" },
+  "connection_video_detected": { "message": "Video detected" },
+  "connection_video_not_detected": { "message": "Video not detected" },
+  "connection_current_tab": {
+    "message": "Current tab: $1",
+    "placeholders": { "title": { "content": "$1" } }
+  },
+  "connection_not_coupang_tab": { "message": "Not a Coupang Play tab" },
+  "connection_no_tab": { "message": "No tab" },
+
   "playback_speed": { "message": "Playback Speed" },
   "increase_speed": { "message": "Increase Speed" },
   "decrease_speed": { "message": "Decrease Speed" },

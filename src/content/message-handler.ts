@@ -43,6 +43,10 @@ export function initializeMessageListener() {
         handleGetVideoTime().then(sendResponse);
         return true;
       }
+      case 'pingContent': {
+        sendResponse({ success: true, data: { hasVideo: Boolean(videoManager.get()) } });
+        break;
+      }
     }
   });
 }
