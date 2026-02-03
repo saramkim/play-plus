@@ -93,7 +93,8 @@ chrome.webRequest.onSendHeaders.addListener(
     const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
     if (hasCustomHeader) return;
 
-    sendMessageToTab(tabId, 'fetchVideoMetadata', { url, headers: requestHeaders ?? [] });
+    if (tabId < 0) return;
+    sendSubtitleRequest(tabId, { url, headers: requestHeaders ?? [] });
   },
   { urls: [`${COUPANG_PLAY_SUBTITLE_API_URL}?*`] },
   ['requestHeaders']
@@ -101,7 +102,22 @@ chrome.webRequest.onSendHeaders.addListener(
 
 type ViewVideoMessage = MessageSchema['viewVideo']['params'] & { videoId: string | null };
 
+type PendingSubtitleRequest = {
+  url: string;
+  headers: chrome.webRequest.HttpHeader[];
+};
+
 const messageQueue: ViewVideoMessage[] = [];
+const pendingSubtitleRequests = new Map<number, PendingSubtitleRequest>();
+
+const sendSubtitleRequest = async (tabId: number, payload: PendingSubtitleRequest) => {
+  try {
+    await sendMessageToTab(tabId, 'fetchVideoMetadata', payload);
+    pendingSubtitleRequests.delete(tabId);
+  } catch {
+    pendingSubtitleRequests.set(tabId, payload);
+  }
+};
 
 const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['params']) => {
   const tabs = await chrome.tabs.query({});
@@ -162,6 +178,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (!response.success) {
         updateConnectedStatus(tabId, true, false);
         return;
+      }
+
+      const pendingRequest = pendingSubtitleRequests.get(tabId);
+      if (pendingRequest) {
+        await sendSubtitleRequest(tabId, pendingRequest);
       }
 
       const tabVideoId = getCoupangPlayVideoId(tab.url);

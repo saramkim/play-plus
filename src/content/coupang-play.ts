@@ -123,7 +123,7 @@ class CoupangPlayStrategy {
 
   private extractSubtitleApiInfoFromResponse(response: ApiResponse) {
     return (
-      response.data.raw.text_tracks
+      response.data?.raw?.text_tracks
         ?.filter(({ kind }) => kind === 'subtitles')
         ?.map(({ srclang, src }) => ({ lang: srclang!, url: src })) ?? []
     );
