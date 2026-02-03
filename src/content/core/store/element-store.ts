@@ -1,7 +1,7 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
 import { createElement } from '@/content/core/utils/dom';
-import { coupangStrategy } from '@/content/coupang-strategy';
+import { coupangStrategy } from '@/content/coupang-play';
 import { useLoopStore } from '@/content/features/loop/loop-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';

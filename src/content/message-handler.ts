@@ -12,7 +12,7 @@ import { MessageSchema } from '@utils/message/type';
 import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
-import { coupangStrategy } from './coupang-strategy';
+import { coupangStrategy } from './coupang-play';
 import { loopController } from './features/loop';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
 

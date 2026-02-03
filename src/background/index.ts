@@ -6,6 +6,7 @@ import {
   COUPANG_PLAY_SUBTITLE_API_URL,
   COUPANG_PLAY_VIDEO_URL_LIST,
 } from '@utils/constants';
+import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
@@ -98,18 +99,28 @@ chrome.webRequest.onSendHeaders.addListener(
   ['requestHeaders']
 );
 
-const messageQueue: MessageSchema['viewVideo']['params'][] = [];
+type ViewVideoMessage = MessageSchema['viewVideo']['params'] & { videoId: string | null };
+
+const messageQueue: ViewVideoMessage[] = [];
 
 const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['params']) => {
   const tabs = await chrome.tabs.query({});
-  const matchingTab = tabs.find((tab) => tab.active && tab.url === url) || tabs.find((tab) => tab.url === url);
+  const videoId = getCoupangPlayVideoId(url);
+  const matchingTabs = tabs.filter((tab) =>
+    videoId ? getCoupangPlayVideoId(tab.url) === videoId : tab.url === url
+  );
+  const matchingTab = matchingTabs.find((tab) => tab.active) ?? matchingTabs[0];
 
   if (matchingTab?.id) {
     await chrome.tabs.update(matchingTab.id, { active: true });
-    sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
+    if (matchingTab.status === 'complete') {
+      sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
+    } else {
+      messageQueue.push({ url, startTime, videoId });
+    }
   } else {
     await chrome.tabs.create({ url });
-    messageQueue.push({ url, startTime });
+    messageQueue.push({ url, startTime, videoId });
   }
 };
 
@@ -153,10 +164,24 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         return;
       }
 
-      const message = messageQueue.find(({ url }) => url === tab.url);
-      if (message) {
-        sendMessageToTab(tabId, 'playVideo', message);
-        messageQueue.splice(messageQueue.indexOf(message), 1);
+      const tabVideoId = getCoupangPlayVideoId(tab.url);
+      let messageIndex = -1;
+
+      if (tabVideoId) {
+        for (let i = messageQueue.length - 1; i >= 0; i -= 1) {
+          if (messageQueue[i].videoId === tabVideoId) {
+            messageIndex = i;
+            break;
+          }
+        }
+      } else {
+        messageIndex = messageQueue.findIndex(({ url }) => url === tab.url);
+      }
+
+      if (messageIndex >= 0) {
+        const { startTime } = messageQueue[messageIndex];
+        sendMessageToTab(tabId, 'playVideo', { startTime });
+        messageQueue.splice(messageIndex, 1);
       }
     }
   }

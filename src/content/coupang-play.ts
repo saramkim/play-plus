@@ -2,9 +2,8 @@ import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
-import { VideoStrategy } from './coupang-strategy';
 
-export class CoupangPlayStrategy implements VideoStrategy {
+class CoupangPlayStrategy {
   /**
    * 쿠팡플레이는 "가짜/이전 비디오 → 실제 영상 비디오"로 교체되는 경우가 있음.
    *
@@ -131,6 +130,8 @@ export class CoupangPlayStrategy implements VideoStrategy {
   }
 }
 
+export const coupangStrategy = new CoupangPlayStrategy();
+
 type ApiResponse = {
   success: boolean;
   data: {
@@ -192,3 +193,4 @@ type ApiResponse = {
   'body-signature': string;
   'client-ip': string;
 };
+

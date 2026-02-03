@@ -82,7 +82,6 @@ Chrome 확장 프로그램의 사이드 패널에서 실행되는 React 앱입�
 - **`app.tsx`**: React 앱 렌더링 (페이지 내)
 - **`content.css`**: 콘텐츠 스크립트 스타일
 - **`message-handler.ts`**: 메시지 핸들러
-- **`coupang-strategy.ts`**: 쿠팡플레이 전용 비디오 전략
 - **`coupang-play.ts`**: 쿠팡플레이 플랫폼 구현
 - **`features/`**: 기능별 모듈
   - `focus-mode/`: 포커스 모드
