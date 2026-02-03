@@ -2,9 +2,9 @@ import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
-import { PlatformStrategy } from './strategy';
+import { VideoStrategy } from './coupang-strategy';
 
-export class CoupangPlayStrategy implements PlatformStrategy {
+export class CoupangPlayStrategy implements VideoStrategy {
   /**
    * 쿠팡플레이는 "가짜/이전 비디오 → 실제 영상 비디오"로 교체되는 경우가 있음.
    *

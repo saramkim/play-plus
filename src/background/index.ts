@@ -1,9 +1,13 @@
 import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
 import { updateTabInfo } from '@storage/tab';
+import {
+  COUPANG_PLAY_BASE_URL,
+  COUPANG_PLAY_SUBTITLE_API_URL,
+  COUPANG_PLAY_VIDEO_URL_LIST,
+} from '@utils/constants';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
-import { PLATFORM_SUBTITLE_API_URL_LIST, PLATFORM_URL_LIST, PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
 const updateConnectedStatus = (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
   updateTabInfo(tabId, {
@@ -27,7 +31,7 @@ const checkContentConnection = async (tabId: number, isVideoUrl: boolean) => {
     } else {
       updateDisconnectedStatus(tabId, isVideoUrl);
     }
-  } catch (error) {
+  } catch {
     updateDisconnectedStatus(tabId, isVideoUrl);
   }
 };
@@ -90,7 +94,7 @@ chrome.webRequest.onSendHeaders.addListener(
 
     sendMessageToTab(tabId, 'fetchVideoMetadata', { url, headers: requestHeaders ?? [] });
   },
-  { urls: PLATFORM_SUBTITLE_API_URL_LIST.map((url) => `${url}?*`) },
+  { urls: [`${COUPANG_PLAY_SUBTITLE_API_URL}?*`] },
   ['requestHeaders']
 );
 
@@ -112,8 +116,8 @@ const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['p
 chrome.tabs.onActivated.addListener(async (tabInfo) => {
   const tab = await chrome.tabs.get(tabInfo.tabId);
   setSessionStorage('activeTab', tab);
-  if (tab.id && PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url))) {
-    const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
+  if (tab.id && tab.url?.startsWith(COUPANG_PLAY_BASE_URL)) {
+    const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
     updateTabInfo(tab.id, {
       connectionStatus: 'connecting',
       videoStatus: isVideoUrl ? 'detecting' : 'idle',
@@ -126,8 +130,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     if (tab.active) setSessionStorage('activeTab', tab);
 
-    const isPlatformUrl = PLATFORM_URL_LIST.some((url) => tab.url?.startsWith(url));
-    const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
+    const isPlatformUrl = Boolean(tab.url?.startsWith(COUPANG_PLAY_BASE_URL));
+    const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
 
     if (isPlatformUrl) {
       updateTabInfo(tabId, {
@@ -137,7 +141,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       checkContentConnection(tabId, isVideoUrl);
       try {
         await sendMessageToTab(tabId, 'resetElement');
-      } catch (error) {
+      } catch {
         // Ignore reset failures; detectVideo will still run if needed.
       }
     }

@@ -1,6 +1,13 @@
 export const DEFAULT_SUBTITLE_LANGUAGES = ['en', 'ko'] as const;
 export type DefaultSubtitleLanguage = (typeof DEFAULT_SUBTITLE_LANGUAGES)[number];
 
+export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
+export const COUPANG_PLAY_VIDEO_URL_LIST = [
+  `${COUPANG_PLAY_BASE_URL}/play`,
+  `${COUPANG_PLAY_BASE_URL}/en/play`,
+];
+export const COUPANG_PLAY_SUBTITLE_API_URL = `${COUPANG_PLAY_BASE_URL}/api/playback/play`;
+
 export const LANGUAGES = {
   en: 'english',
   ko: 'korean',

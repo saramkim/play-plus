@@ -1,12 +1,12 @@
 import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
 
 import { createElement } from '@/content/core/utils/dom';
+import { coupangStrategy } from '@/content/coupang-strategy';
 import { useLoopStore } from '@/content/features/loop/loop-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { applySubtitleStyles, createSubtitleElement } from '@/content/features/subtitle/subtitle-utils';
-import { platform } from '@/content/platform/strategy';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const VIDEO_ROOT_ID = 'pp-video-root';
@@ -28,12 +28,12 @@ class ElementStore {
   }
 
   setupContainer() {
-    const videoPlayer = platform.getVideoPlayer();
+    const videoPlayer = coupangStrategy.getVideoPlayer();
     if (videoPlayer) {
       videoPlayer.appendChild(this.videoRoot);
     } 
 
-    const progressBarContainer = platform.getProgressBarContainer();
+    const progressBarContainer = coupangStrategy.getProgressBarContainer();
     if (progressBarContainer) {
       progressBarContainer.appendChild(this.loopMarkerContainer);
     }

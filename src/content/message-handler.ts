@@ -1,16 +1,20 @@
 import { getLocalSubtitle } from '@storage/subtitle';
-import { DEFAULT_SUBTITLE_LANGUAGES, SET_SUBTITLE_STORAGE_KEY_MAP, SetSubtitleAction } from '@utils/constants';
+import {
+  COUPANG_PLAY_VIDEO_URL_LIST,
+  DEFAULT_SUBTITLE_LANGUAGES,
+  SET_SUBTITLE_STORAGE_KEY_MAP,
+  SetSubtitleAction,
+} from '@utils/constants';
 import { t } from '@utils/i18n';
 import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
-import { PLATFORM_VIDEO_URL_LIST } from '@utils/platform';
 
 import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
+import { coupangStrategy } from './coupang-strategy';
 import { loopController } from './features/loop';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
-import { platform } from './platform/strategy';
 
 export function initializeMessageListener() {
   onMessage(({ message, params, sendResponse }) => {
@@ -65,7 +69,7 @@ const handleResetElement = () => {
 };
 
 const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
-  const subtitles = await platform.fetchSubtitles(url, headers);
+  const subtitles = await coupangStrategy.fetchSubtitles(url, headers);
 
   for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
     const subtitleData = subtitles?.find((subtitle) => subtitle.lang === lang)?.subtitleData;
@@ -81,7 +85,7 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
 
 const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   useVideoStore.getState().setDetectionStatus('detecting');
-  const video = await platform.detectVideo();
+  const video = await coupangStrategy.detectVideo();
   if (!video) {
     reportContentStatus(false);
     useVideoStore.getState().setDetectionStatus('failed');
@@ -95,7 +99,6 @@ const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
   }
 
   videoManager.set(video);
-  platform.afterVideoDetected?.(video);
   elementStore.setupContainer();
   useVideoStore.getState().setDetectionStatus('detected');
   reportContentStatus(true);
@@ -159,6 +162,6 @@ const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> =>
 };
 
 const reportContentStatus = (hasVideo: boolean) => {
-  const isVideoUrl = PLATFORM_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
+  const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
   sendMessage('contentStatus', { hasVideo, isVideoUrl });
 };

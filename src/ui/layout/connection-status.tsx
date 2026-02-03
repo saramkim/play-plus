@@ -1,9 +1,9 @@
 import { type ComponentType, useEffect, useState } from 'react';
 
+import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { sendMessageToTab } from '@utils/message';
-import { PLATFORM_MAP } from '@utils/platform';
 import { Link2, Link2Off, Loader2, Video, VideoOff } from 'lucide-react';
 
 import { useTabStore } from '@/ui/store/tab-store';
@@ -11,8 +11,9 @@ import { useTabStore } from '@/ui/store/tab-store';
 export function ConnectionStatus() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
-  const isCoupangPlay = Boolean(activeTab?.url?.startsWith(PLATFORM_MAP.coupangPlay.url));
-  const isVideoUrl = Boolean(activeTab?.url?.startsWith(PLATFORM_MAP.coupangPlay.videoUrl));
+  const tabUrl = activeTab?.url;
+  const isCoupangPlay = Boolean(tabUrl?.startsWith(COUPANG_PLAY_BASE_URL));
+  const isVideoUrl = Boolean(tabUrl && COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tabUrl.startsWith(url)));
   const [isDetecting, setIsDetecting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
