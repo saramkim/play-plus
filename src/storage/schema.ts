@@ -42,6 +42,8 @@ const shortcutsConfigSchema = z.object({
   enabled: z.boolean(),
   savePrimary: shortcutSchema,
   saveSecondary: shortcutSchema,
+  copyPrimary: shortcutSchema,
+  copySecondary: shortcutSchema,
   togglePrimary: shortcutSchema,
   toggleSecondary: shortcutSchema,
 });

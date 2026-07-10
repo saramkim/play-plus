@@ -7,6 +7,7 @@ import { elementStore } from '@/content/core/store/element-store';
 import { loopController } from '@/content/features/loop';
 import { skipVideoTime } from '@/content/features/navigation/video-navigation';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
+import { copySubtitleWithToast } from '@/content/features/subtitle/copy-subtitle';
 import { saveSubtitleWithToast } from '@/content/features/subtitle/save-subtitle';
 
 const { SHORTCUTS, LOOP, VIDEO_SKIP, PLAYBACK_SPEED } = SETTINGS;
@@ -54,11 +55,14 @@ export class KeyBindingManager {
   private setKeyBindingsForShortcuts({ enabled, ...shortcuts }: StorageSchema['shortcuts']) {
     if (enabled) {
       const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
-      const { savePrimary, saveSecondary, togglePrimary, toggleSecondary } = shortcuts;
+      const { savePrimary, saveSecondary, copyPrimary, copySecondary, togglePrimary, toggleSecondary } = shortcuts;
 
       this.keyBindings[savePrimary] = () => saveSubtitleWithToast(elementStore.getSubtitleElement(PRIMARY.STORAGE_KEY));
       this.keyBindings[saveSecondary] = () =>
         saveSubtitleWithToast(elementStore.getSubtitleElement(SECONDARY.STORAGE_KEY));
+      this.keyBindings[copyPrimary] = () => copySubtitleWithToast(elementStore.getSubtitleElement(PRIMARY.STORAGE_KEY));
+      this.keyBindings[copySecondary] = () =>
+        copySubtitleWithToast(elementStore.getSubtitleElement(SECONDARY.STORAGE_KEY));
       this.keyBindings[togglePrimary] = () =>
         updateStorage(PRIMARY.STORAGE_KEY, (value) => ({ enabled: !value.enabled }));
       this.keyBindings[toggleSecondary] = () =>

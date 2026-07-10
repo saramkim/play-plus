@@ -52,6 +52,16 @@ export function ShortcutsConfigForm() {
         />
         <FormField
           control={form.control}
+          name='copyPrimary'
+          render={({ field }) => <ShortcutField label={t('copy_primary_subtitle')} field={field} />}
+        />
+        <FormField
+          control={form.control}
+          name='copySecondary'
+          render={({ field }) => <ShortcutField label={t('copy_secondary_subtitle')} field={field} />}
+        />
+        <FormField
+          control={form.control}
           name='togglePrimary'
           render={({ field }) => <ShortcutField label={t('toggle_primary_subtitle')} field={field} />}
         />

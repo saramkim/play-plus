@@ -90,6 +90,8 @@
   "responsive": { "message": "반응형" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
+  "copy_primary_subtitle": { "message": "메인 자막 복사" },
+  "copy_secondary_subtitle": { "message": "서브 자막 복사" },
   "save": { "message": "저장" },
   "search_term": { "message": "검색어" },
   "search": { "message": "검색" },
@@ -148,8 +150,10 @@
   "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
 
   "success_save_subtitle": { "message": "자막 저장 완료" },
+  "success_copy_subtitle": { "message": "자막 복사 완료" },
   "success_delete_subtitle": { "message": "자막 삭제 완료" },
   "error_save_subtitle": { "message": "자막 저장 실패" },
+  "error_copy_subtitle": { "message": "자막 복사 실패" },
   "error_loop": { "message": "구간 반복 실패" },
   "info_loop_stop": { "message": "구간 반복 해제" },
 

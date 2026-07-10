@@ -45,6 +45,8 @@ export const LEARNING_CONFIG: StorageSchema = {
     enabled: true,
     savePrimary: 'KeyE',
     saveSecondary: 'KeyR',
+    copyPrimary: 'KeyZ',
+    copySecondary: 'KeyX',
     togglePrimary: 'KeyQ',
     toggleSecondary: 'KeyW',
   },
