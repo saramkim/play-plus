@@ -1,6 +1,6 @@
 import { useVideoStore } from '@/content/core/store/video-store';
 
-class VideoManager {
+export class VideoManager {
   private video: HTMLVideoElement | null = null;
   private frameCallbackId: number | null = null;
 
@@ -18,10 +18,18 @@ class VideoManager {
     return this.video;
   }
 
-  reset() {
-    this.video = null;
+  isCurrent(video: HTMLVideoElement) {
+    return this.video === video && video.isConnected;
+  }
+
+  clear() {
     this.stopTimeTracking();
+    this.video = null;
     useVideoStore.getState().setHasVideo(false);
+  }
+
+  reset() {
+    this.clear();
   }
 
   private startTimeTracking(video: HTMLVideoElement) {
@@ -34,7 +42,7 @@ class VideoManager {
   }
 
   private stopTimeTracking() {
-    if (!this.frameCallbackId) return;
+    if (this.frameCallbackId === null) return;
 
     this.video?.cancelVideoFrameCallback(this.frameCallbackId);
     this.frameCallbackId = null;
