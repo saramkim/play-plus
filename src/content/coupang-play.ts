@@ -14,7 +14,7 @@ class CoupangPlayStrategy {
    * - 짧은 시간(기본 1초) 동안 교체 비디오를 감시해서 발견되면 그걸 확정
    * - 1초 내 교체가 없으면 기존 후보가 "그럴듯"할 때만 확정(주로 리로드 케이스)
    */
-  async detectVideo({ swapWindowMs = 1000, timeoutMs = 10000 } = {}): Promise<HTMLVideoElement | null> {
+  async detectVideo({ swapWindowMs = 1000, timeoutMs = 30000 } = {}): Promise<HTMLVideoElement | null> {
 
     const findVideoInNodes = (nodes: Node[]): HTMLVideoElement | null => {
       for (const node of nodes) {
@@ -35,6 +35,15 @@ class CoupangPlayStrategy {
       if (video.readyState >= 2) return true;
       return false;
     };
+
+    const isLikelyAdvertisement = (video: HTMLVideoElement) => {
+      const source = video.currentSrc || video.src;
+      return (
+        !source.startsWith('blob:') && Number.isFinite(video.duration) && video.duration > 0 && video.duration <= 60
+      );
+    };
+
+    const isContentVideo = (video: HTMLVideoElement) => isPlausibleVideo(video) && !isLikelyAdvertisement(video);
 
     const initialCandidate = findVideoInNodes([document.body]);
 
@@ -58,7 +67,7 @@ class CoupangPlayStrategy {
         // 1초 교체 윈도우 종료 시점:
         // - 교체 비디오를 못 찾았으면 initial 후보를 "그럴듯"할 때만 확정
 
-        if (initialCandidate && isPlausibleVideo(initialCandidate)) {
+        if (initialCandidate && isContentVideo(initialCandidate)) {
           settle(initialCandidate);
           return;
         }
@@ -75,7 +84,7 @@ class CoupangPlayStrategy {
           if (initialCandidate && video === initialCandidate) continue;
 
           // 2) 교체 윈도우 내에 새 비디오가 들어오면 우선 확정
-          if (isPlausibleVideo(video)) {
+          if (isContentVideo(video)) {
             settle(video);
             return;
           }

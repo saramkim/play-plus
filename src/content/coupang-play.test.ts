@@ -59,6 +59,22 @@ describe('coupangStrategy DOM adapter', () => {
     await expect(result).resolves.toBe(lateVideo);
   });
 
+  it('waits for content when a short direct-source advertisement is replaced', async () => {
+    const player = addPlayer();
+    const advertisement = addPlausibleVideo(player);
+    Object.defineProperty(advertisement, 'duration', { configurable: true, value: 15 });
+    const result = coupangStrategy.detectVideo({ swapWindowMs: 100, timeoutMs: 3000 });
+
+    await vi.advanceTimersByTimeAsync(1500);
+    advertisement.remove();
+    const content = addPlausibleVideo(player);
+    content.src = 'blob:https://www.coupangplay.com/content';
+    Object.defineProperty(content, 'duration', { configurable: true, value: 700 });
+    await vi.runAllTicks();
+
+    await expect(result).resolves.toBe(content);
+  });
+
   it('ignores videos outside the player and returns null at the timeout', async () => {
     addPlayer();
     const disconnect = vi.spyOn(MutationObserver.prototype, 'disconnect');
