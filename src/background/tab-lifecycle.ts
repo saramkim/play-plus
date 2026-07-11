@@ -60,7 +60,7 @@ export const handleTabCompleted = async (
   if (!response.success) {
     await dependencies.updateTabInfo(tabId, {
       connectionStatus: 'connected',
-      videoStatus: 'not_detected',
+      videoStatus: 'detecting',
     });
     return;
   }

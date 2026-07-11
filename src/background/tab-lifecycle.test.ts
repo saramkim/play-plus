@@ -16,7 +16,7 @@ const createDependencies = () => ({
 });
 
 describe('handleTabCompleted', () => {
-  it('marks a video as not detected and stops when detection fails', async () => {
+  it('keeps detecting when the initial detection response is not ready', async () => {
     const dependencies = createDependencies();
     dependencies.sendMessageToTab
       .mockResolvedValueOnce({ success: true })
@@ -27,7 +27,7 @@ describe('handleTabCompleted', () => {
     expect(dependencies.setActiveTab).toHaveBeenCalledOnce();
     expect(dependencies.updateTabInfo).toHaveBeenLastCalledWith(7, {
       connectionStatus: 'connected',
-      videoStatus: 'not_detected',
+      videoStatus: 'detecting',
     });
     expect(dependencies.takePendingSubtitleRequest).not.toHaveBeenCalled();
     expect(dependencies.takeViewAction).not.toHaveBeenCalled();
