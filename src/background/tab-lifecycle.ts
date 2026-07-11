@@ -1,4 +1,4 @@
-import { setSessionStorage } from '@storage/index';
+import { setSessionStorage } from '@storage/session';
 import { updateTabInfo } from '@storage/tab';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';

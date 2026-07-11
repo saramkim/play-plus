@@ -1,5 +1,5 @@
-import { setSessionStorage } from '@storage/index';
 import { migrateLegacyStorage } from '@storage/migration';
+import { setSessionStorage } from '@storage/session';
 import { updateTabInfo } from '@storage/tab';
 import {
   COUPANG_PLAY_BASE_URL,

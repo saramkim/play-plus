@@ -1,4 +1,4 @@
-import { getSessionStorage, onSessionStorageChange } from '@storage/index';
+import { getSessionStorage, onSessionStorageChange } from '@storage/session';
 import { TabInfo, getTabInfo, onTabInfoChange } from '@storage/tab';
 import { create } from 'zustand';
 import { combine } from 'zustand/middleware';

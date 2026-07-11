@@ -1,4 +1,4 @@
-import { getSessionStorage, setSessionStorage } from '@storage/index';
+import { getSessionStorage, setSessionStorage } from '@storage/session';
 
 export type PendingViewAction = {
   url: string;
