@@ -10,6 +10,7 @@
 # Built files
 dist/
 node_modules/
+.worktrees/
 
 # Local environment files
 .env
