@@ -34,16 +34,22 @@ export const migrateLegacyStorage = () => {
   return Promise.all(migrationPromises);
 };
 
-const migrateStorage = async <T extends StorageKey>(oldKey: string, newKey: T, transform: TransformFunction<T>) => {
+export const migrateStorage = async <T extends StorageKey>(
+  oldKey: string,
+  newKey: T,
+  transform: TransformFunction<T>
+) => {
   try {
     const result = await chrome.storage.sync.get(oldKey);
     const oldData = result[oldKey];
-    if (!oldData) return false;
+    if (oldData === undefined) return false;
 
+    const transformed = transform(oldData);
+    await chrome.storage.sync.set({ [newKey]: transformed });
     await chrome.storage.sync.remove(oldKey);
-    await chrome.storage.sync.set({ [newKey]: transform(oldData) });
     return true;
   } catch (error) {
     console.error(`Migration failed for ${oldKey} to ${newKey}:`, error);
+    throw error;
   }
 };

@@ -1,4 +1,5 @@
 import { DEFAULT_CONFIG } from './default';
+import { storageSchema } from './schema';
 import {
   LocalStorageChanges,
   LocalStorageKey,
@@ -22,8 +23,7 @@ export const setStorageAll = (config: StorageSchema) => {
 export const getStorage = <K extends StorageKey>(key: K): Promise<StorageSchema[K]> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(key, (result) => {
-      const value = { ...DEFAULT_CONFIG[key], ...result[key] };
-      resolve(value);
+      resolve(validateStorageValue(key, result[key]));
     });
   });
 };
@@ -33,12 +33,29 @@ export const getStorageAll = (): Promise<StorageSchema> => {
   return new Promise<StorageSchema>((resolve) => {
     chrome.storage.sync.get(configKeys, (result) => {
       const configs = configKeys.reduce(
-        (acc, key) => ({ ...acc, [key]: { ...DEFAULT_CONFIG[key], ...result[key] } }),
+        (acc, key) => ({ ...acc, [key]: validateStorageValue(key as StorageKey, result[key]) }),
         {} as StorageSchema
       );
       resolve(configs);
     });
   });
+};
+
+const validateStorageValue = <K extends StorageKey>(key: K, persisted: unknown): StorageSchema[K] => {
+  const candidate = { ...DEFAULT_CONFIG[key], ...(typeof persisted === 'object' ? persisted : {}) };
+  const schema = storageSchema[key];
+  const result = schema.safeParse(candidate);
+  if (result.success) return result.data as StorageSchema[K];
+
+  console.warn('Invalid persisted storage value', { key, issues: result.error.issues });
+  const sanitized = { ...candidate } as Record<string, unknown>;
+  for (const issue of result.error.issues) {
+    const field = issue.path[0];
+    if (typeof field === 'string') sanitized[field] = (DEFAULT_CONFIG[key] as Record<string, unknown>)[field];
+  }
+
+  const sanitizedResult = schema.safeParse(sanitized);
+  return sanitizedResult.success ? (sanitizedResult.data as StorageSchema[K]) : DEFAULT_CONFIG[key];
 };
 
 export const updateStorage = async <K extends StorageKey>(
