@@ -7,6 +7,10 @@ export const COUPANG_PLAY_VIDEO_URL_LIST = [
   `${COUPANG_PLAY_BASE_URL}/en/play`,
 ];
 export const COUPANG_PLAY_SUBTITLE_API_URL = `${COUPANG_PLAY_BASE_URL}/api/playback/play`;
+export const COUPANG_PLAY_SELECTORS = {
+  player: '#playerWrapper',
+  progressBar: 'div.slider',
+} as const;
 
 export const LANGUAGES = {
   en: 'english',

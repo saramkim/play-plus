@@ -1,4 +1,6 @@
+import { COUPANG_PLAY_SELECTORS } from '@utils/constants';
 import { parseVTT, SubtitleData } from '@utils/parse';
+import { z } from 'zod';
 
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
@@ -12,8 +14,7 @@ class CoupangPlayStrategy {
    * - 짧은 시간(기본 1초) 동안 교체 비디오를 감시해서 발견되면 그걸 확정
    * - 1초 내 교체가 없으면 기존 후보가 "그럴듯"할 때만 확정(주로 리로드 케이스)
    */
-  async detectVideo(): Promise<HTMLVideoElement | null> {
-    const SWAP_WINDOW_MS = 1000;
+  async detectVideo({ swapWindowMs = 1000, timeoutMs = 10000 } = {}): Promise<HTMLVideoElement | null> {
 
     const findVideoInNodes = (nodes: Node[]): HTMLVideoElement | null => {
       for (const node of nodes) {
@@ -38,11 +39,12 @@ class CoupangPlayStrategy {
     const initialCandidate = findVideoInNodes([document.body]);
 
     return new Promise((resolve) => {
-      const start = Date.now();
       let settled = false;
 
       const cleanup = () => {
         observer.disconnect();
+        window.clearTimeout(swapTimer);
+        window.clearTimeout(timeoutTimer);
       };
 
       const settle = (video: HTMLVideoElement | null) => {
@@ -73,7 +75,7 @@ class CoupangPlayStrategy {
           if (initialCandidate && video === initialCandidate) continue;
 
           // 2) 교체 윈도우 내에 새 비디오가 들어오면 우선 확정
-          if (Date.now() - start <= SWAP_WINDOW_MS) {
+          if (isPlausibleVideo(video)) {
             settle(video);
             return;
           }
@@ -83,21 +85,21 @@ class CoupangPlayStrategy {
       observer.observe(document.body, { childList: true, subtree: true });
 
       // 1초 뒤에 교체 윈도우 종료 판단
-      window.setTimeout(() => {
+      const swapTimer = window.setTimeout(() => {
         if (settled) return;
         trySettleOnWindowEnd();
         // 1초 내 교체 비디오가 없었다면, initial이 그럴듯할 때만 성공. 아니면 실패.
-        if (!settled) settle(null);
-      }, SWAP_WINDOW_MS);
+      }, swapWindowMs);
+      const timeoutTimer = window.setTimeout(() => settle(null), timeoutMs);
     });
   }
 
   getVideoPlayer() {
-    return document.querySelector('#playerWrapper');
+    return document.querySelector(COUPANG_PLAY_SELECTORS.player);
   }
 
   getProgressBarContainer() {
-    return document.querySelector('div.slider');
+    return document.querySelector(COUPANG_PLAY_SELECTORS.progressBar);
   }
 
   async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
@@ -121,76 +123,30 @@ class CoupangPlayStrategy {
     return parseVTT(await response.text());
   }
 
-  private extractSubtitleApiInfoFromResponse(response: ApiResponse) {
-    return (
-      response.data?.raw?.text_tracks
-        ?.filter(({ kind }) => kind === 'subtitles')
-        ?.map(({ srclang, src }) => ({ lang: srclang!, url: src })) ?? []
-    );
+  private extractSubtitleApiInfoFromResponse(response: unknown) {
+    const result = playbackResponseSchema.safeParse(response);
+    if (!result.success) {
+      throw new Error('Invalid Coupang Play playback response');
+    }
+
+    return result.data.data.raw.text_tracks
+      .filter(({ kind }) => kind === 'subtitles')
+      .map(({ srclang, src }) => ({ lang: srclang, url: src }));
   }
 }
 
 export const coupangStrategy = new CoupangPlayStrategy();
 
-type ApiResponse = {
-  success: boolean;
-  data: {
-    raw: {
-      account_id: string;
-      created_at: string;
-      cue_points: {
-        force_stop: boolean;
-        id: string;
-        metadata: string;
-        name: string;
-        time: number;
-        type: string;
-      }[];
-      duration: number;
-      id: string;
-      published_at: string;
-      sources: {
-        key_systems: {
-          'com.apple.fps.1_0'?: {
-            certificate_url?: string;
-            key_request_url: string;
-            license_url?: string;
-          };
-          'com.widevine.alpha'?: {
-            certificate_url?: string;
-            key_request_url: string;
-            license_url?: string;
-          };
-        };
-        src: string;
-        type: string;
-      }[];
-      text_tracks: {
-        account_id: string | null;
-        asset_id: string | null;
-        bandwidth: number | null;
-        default: boolean | null;
-        height: number | null;
-        id: string | null;
-        kind: string;
-        label: string;
-        mime_type: string;
-        sources: { src: string }[];
-        src: string;
-        srclang: 'en' | 'ko';
-        width: number | null;
-      }[];
-      updated_at: string;
-    };
-    preferredDrm: string | null;
-    streamId: string;
-  };
-  meta: {
-    now: number;
-    requestId: string;
-  };
-  'x-payload-signature': string;
-  'body-signature': string;
-  'client-ip': string;
-};
-
+const playbackResponseSchema = z.object({
+  data: z.object({
+    raw: z.object({
+      text_tracks: z.array(
+        z.object({
+          kind: z.string(),
+          srclang: z.string(),
+          src: z.string(),
+        })
+      ),
+    }),
+  }),
+});

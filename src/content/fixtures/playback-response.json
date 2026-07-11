@@ -1,0 +1,18 @@
+{
+  "data": {
+    "raw": {
+      "text_tracks": [
+        {
+          "kind": "subtitles",
+          "srclang": "en",
+          "src": "https://cdn.example.com/en.vtt"
+        },
+        {
+          "kind": "captions",
+          "srclang": "ko",
+          "src": "https://cdn.example.com/ko.vtt"
+        }
+      ]
+    }
+  }
+}
