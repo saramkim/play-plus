@@ -1,5 +1,6 @@
 @import 'tailwindcss' important;
 @import 'tw-animate-css' important;
+@source not inline('static');
 
 :root {
   --pp-primary: oklch(0.6608 0.111 192.3);
