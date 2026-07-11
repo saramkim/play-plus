@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { PendingSubtitleRequest, PendingViewAction } from '@/background/pending-actions';
+
 import { savedSubtitleSchema, storageSchema, subtitleMetadataSchema } from './schema';
 
 // common type
@@ -30,6 +32,8 @@ export type LocalStorageChanges = {
 // chrome.storage.session
 export type SessionStorageSchema = {
   activeTab: chrome.tabs.Tab;
+  pendingViewActions: PendingViewAction[];
+  pendingSubtitleRequests: Record<number, PendingSubtitleRequest>;
 };
 export type SessionStorageKey = keyof SessionStorageSchema;
 export type SessionStorageChanges = {

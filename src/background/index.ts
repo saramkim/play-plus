@@ -10,6 +10,13 @@ import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
+import {
+  enqueueViewAction,
+  PendingSubtitleRequest,
+  savePendingSubtitleRequest,
+} from './pending-actions';
+import { createTabLifecycleDependencies, handleTabCompleted } from './tab-lifecycle';
+
 const updateConnectedStatus = (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
   updateTabInfo(tabId, {
     connectionStatus: 'connected',
@@ -100,22 +107,11 @@ chrome.webRequest.onSendHeaders.addListener(
   ['requestHeaders']
 );
 
-type ViewVideoMessage = MessageSchema['viewVideo']['params'] & { videoId: string | null };
-
-type PendingSubtitleRequest = {
-  url: string;
-  headers: chrome.webRequest.HttpHeader[];
-};
-
-const messageQueue: ViewVideoMessage[] = [];
-const pendingSubtitleRequests = new Map<number, PendingSubtitleRequest>();
-
 const sendSubtitleRequest = async (tabId: number, payload: PendingSubtitleRequest) => {
   try {
     await sendMessageToTab(tabId, 'fetchVideoMetadata', payload);
-    pendingSubtitleRequests.delete(tabId);
   } catch {
-    pendingSubtitleRequests.set(tabId, payload);
+    await savePendingSubtitleRequest(tabId, payload);
   }
 };
 
@@ -132,11 +128,11 @@ const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['p
     if (matchingTab.status === 'complete') {
       sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
     } else {
-      messageQueue.push({ url, startTime, videoId });
+      await enqueueViewAction({ url, startTime, videoId });
     }
   } else {
     await chrome.tabs.create({ url });
-    messageQueue.push({ url, startTime, videoId });
+    await enqueueViewAction({ url, startTime, videoId });
   }
 };
 
@@ -154,56 +150,10 @@ chrome.tabs.onActivated.addListener(async (tabInfo) => {
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    if (tab.active) setSessionStorage('activeTab', tab);
-
-    const isPlatformUrl = Boolean(tab.url?.startsWith(COUPANG_PLAY_BASE_URL));
-    const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
-
-    if (isPlatformUrl) {
-      updateTabInfo(tabId, {
-        connectionStatus: 'connecting',
-        videoStatus: isVideoUrl ? 'detecting' : 'idle',
-      });
-      checkContentConnection(tabId, isVideoUrl);
-      try {
-        await sendMessageToTab(tabId, 'resetElement');
-      } catch {
-        // Ignore reset failures; detectVideo will still run if needed.
-      }
-    }
-
-    if (isVideoUrl) {
-      const response = await sendMessageToTab(tabId, 'detectVideo');
-      if (!response.success) {
-        updateConnectedStatus(tabId, true, false);
-        return;
-      }
-
-      const pendingRequest = pendingSubtitleRequests.get(tabId);
-      if (pendingRequest) {
-        await sendSubtitleRequest(tabId, pendingRequest);
-      }
-
-      const tabVideoId = getCoupangPlayVideoId(tab.url);
-      let messageIndex = -1;
-
-      if (tabVideoId) {
-        for (let i = messageQueue.length - 1; i >= 0; i -= 1) {
-          if (messageQueue[i].videoId === tabVideoId) {
-            messageIndex = i;
-            break;
-          }
-        }
-      } else {
-        messageIndex = messageQueue.findIndex(({ url }) => url === tab.url);
-      }
-
-      if (messageIndex >= 0) {
-        const { startTime } = messageQueue[messageIndex];
-        sendMessageToTab(tabId, 'playVideo', { startTime });
-        messageQueue.splice(messageIndex, 1);
-      }
-    }
-  }
+  if (changeInfo.status !== 'complete') return;
+  await handleTabCompleted(tabId, tab, {
+    ...createTabLifecycleDependencies,
+    checkContentConnection,
+    sendSubtitleRequest,
+  });
 });
