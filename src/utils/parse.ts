@@ -42,8 +42,12 @@ export const parseVTT = (data: string) => {
       const timeMatch = line.match(/^(.+?)\s+-->\s+(.+?)(?:\s+(.+))?$/);
       if (timeMatch) {
         const [, start, end, options] = timeMatch;
-        currentSubtitle.start = timeToSeconds(start.trim());
-        currentSubtitle.end = timeToSeconds(end.trim());
+        const startTime = timeToSeconds(start.trim());
+        const endTime = timeToSeconds(end.trim());
+        if (startTime === null || endTime === null) continue;
+
+        currentSubtitle.start = startTime;
+        currentSubtitle.end = endTime;
         if (options) {
           currentSubtitle.settings = options.trim().split(/\s+/);
         }
@@ -106,7 +110,7 @@ export const parseSRT = (data: string) => {
     if (step === 0 && /^\d+$/.test(line)) {
       step = 1;
     } else if (step === 1 && line.includes('-->')) {
-      const [start, end] = line.split(' --> ').map((time) => timeToSeconds(time.trim().replace(',', '.')));
+      const [start, end] = line.split(' --> ').map((time) => timeToSeconds(time.trim()) ?? 0);
       currentSubtitle.start = start;
       currentSubtitle.end = end;
       step = 2;
@@ -171,15 +175,9 @@ const sanitize = (dirtyText: string) => {
 };
 
 const timeToSeconds = (time: string) => {
-  const parts = time.split(':').map(parseFloat);
+  const match = time.match(/^(?:(\d+):)?(\d{2}):(\d{2})([.,]\d+)?$/);
+  if (!match) return null;
 
-  if (parts.length === 3) {
-    const [h, m, s] = parts;
-    return h * 3600 + m * 60 + s;
-  } else if (parts.length === 2) {
-    const [m, s] = parts;
-    return m * 60 + s;
-  }
-
-  return 0;
+  const [, hours = '0', minutes, seconds, fraction = ''] = match;
+  return Number(hours) * 3600 + Number(minutes) * 60 + Number(`${seconds}${fraction.replace(',', '.')}`);
 };

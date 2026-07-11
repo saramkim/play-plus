@@ -9,6 +9,7 @@
 
 # Built files
 dist/
+node_modules/
 
 # Local environment files
 .env

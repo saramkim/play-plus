@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { SubtitleId } from './subtitle';
 
 const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
-const shortcutSchema = z
+export const shortcutSchema = z
   .string()
   .refine((shortcut) => !RESERVED_SHORTCUTS.includes(shortcut), { message: t('error_reserved_shortcuts') });
 
@@ -27,7 +27,7 @@ const videoSkipConfigSchema = z.object({
   fallbackTime: z.number(),
   fallbackUnit: z.enum(['seconds', 'minutes']),
 });
-const subtitleConfigSchema = z.object({
+export const subtitleConfigSchema = z.object({
   enabled: z.boolean(),
   language: z.enum(DEFAULT_SUBTITLE_LANGUAGES),
   positionReference: z.enum(['top', 'center', 'bottom']),

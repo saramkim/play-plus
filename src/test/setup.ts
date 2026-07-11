@@ -4,6 +4,7 @@ Object.defineProperty(globalThis, 'chrome', {
   configurable: true,
   value: {
     runtime: { sendMessage: vi.fn() },
+    i18n: { getMessage: vi.fn((key: string) => key) },
     storage: {
       sync: {
         get: vi.fn(),
