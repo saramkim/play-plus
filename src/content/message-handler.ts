@@ -15,6 +15,45 @@ import { videoManager } from './core/video/video-manager';
 import { coupangStrategy } from './coupang-play';
 import { loopController } from './features/loop';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
+import { VideoLifecycleEvent, VideoLifecycleMonitor } from './video-lifecycle/video-lifecycle-monitor';
+
+export type VideoLifecycleDependencies = {
+  getVideo: () => HTMLVideoElement | null;
+  isCurrentVideo: (video: HTMLVideoElement) => boolean;
+  setVideo: (video: HTMLVideoElement) => void;
+  clearVideo: () => void;
+  setupContainer: () => void;
+  resetElements: () => void;
+  resetLoop: () => void;
+  setCurrentTime: (time: number) => void;
+  setDetectionStatus: (status: 'idle' | 'detecting' | 'detected' | 'failed') => void;
+  reportContentStatus: (hasVideo: boolean) => void;
+};
+
+export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependencies) => {
+  return (event: VideoLifecycleEvent) => {
+    if (event.state === 'content' && event.video) {
+      if (!dependencies.isCurrentVideo(event.video)) {
+        dependencies.setVideo(event.video);
+        dependencies.setupContainer();
+      }
+      dependencies.setDetectionStatus('detected');
+      dependencies.reportContentStatus(true);
+      return;
+    }
+
+    if (dependencies.getVideo()) {
+      dependencies.clearVideo();
+      dependencies.resetElements();
+      dependencies.resetLoop();
+      dependencies.setCurrentTime(0);
+    }
+    dependencies.setDetectionStatus(event.delayed ? 'failed' : 'detecting');
+    dependencies.reportContentStatus(false);
+  };
+};
+
+const videoLifecycleMonitor = new VideoLifecycleMonitor();
 
 export function initializeMessageListener() {
   onMessage(({ message, params, sendResponse }) => {
@@ -24,8 +63,8 @@ export function initializeMessageListener() {
         break;
       }
       case 'detectVideo': {
-        initializeVideo().then(sendResponse);
-        return true;
+        sendResponse(toDetectionResponse(videoLifecycleMonitor.refresh()));
+        break;
       }
       case 'fetchVideoMetadata': {
         handleFetchVideoMetadata(params);
@@ -54,17 +93,13 @@ export function initializeMessageListener() {
       }
     }
   });
-
-  reportContentStatus(Boolean(videoManager.get()));
+  videoLifecycleMonitor.start(handleVideoLifecycle);
 }
 
-export const retryVideoDetection = () => initializeVideo();
+export const retryVideoDetection = () => Promise.resolve(toDetectionResponse(videoLifecycleMonitor.refresh()));
 
 const handleResetElement = () => {
   elementStore.reset();
-  videoManager.reset();
-  useVideoStore.getState().setCurrentTime(0);
-  useVideoStore.getState().setDetectionStatus('idle');
   loopController.resetLoop();
 };
 
@@ -81,29 +116,6 @@ const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVi
       await sendMessage('updateSubtitles', { lang, subtitleData: null });
     }
   }
-};
-
-const initializeVideo = async (): Promise<MessageResponse<'detectVideo'>> => {
-  useVideoStore.getState().setDetectionStatus('detecting');
-  const video = await coupangStrategy.detectVideo();
-  if (!video) {
-    reportContentStatus(false);
-    useVideoStore.getState().setDetectionStatus('failed');
-    return { success: false, message: t('error_video_not_found') };
-  }
-
-  const currentVideo = videoManager.get();
-  if (video === currentVideo) {
-    console.debug('Same video already initialized, skipping');
-    return { success: true };
-  }
-
-  videoManager.set(video);
-  elementStore.setupContainer();
-  useVideoStore.getState().setDetectionStatus('detected');
-  reportContentStatus(true);
-
-  return { success: true };
 };
 
 const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) => {
@@ -164,4 +176,22 @@ const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> =>
 const reportContentStatus = (hasVideo: boolean) => {
   const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
   sendMessage('contentStatus', { hasVideo, isVideoUrl });
+};
+
+const handleVideoLifecycle = createVideoLifecycleHandler({
+  getVideo: () => videoManager.get(),
+  isCurrentVideo: (video) => videoManager.isCurrent(video),
+  setVideo: (video) => videoManager.set(video),
+  clearVideo: () => videoManager.clear(),
+  setupContainer: () => elementStore.setupContainer(),
+  resetElements: () => elementStore.reset(),
+  resetLoop: () => loopController.resetLoop(),
+  setCurrentTime: (time) => useVideoStore.getState().setCurrentTime(time),
+  setDetectionStatus: (status) => useVideoStore.getState().setDetectionStatus(status),
+  reportContentStatus,
+});
+
+const toDetectionResponse = (event: VideoLifecycleEvent): MessageResponse<'detectVideo'> => {
+  if (event.state === 'content') return { success: true };
+  return { success: false, message: t('error_video_not_found') };
 };
