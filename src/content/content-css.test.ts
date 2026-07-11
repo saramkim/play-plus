@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 // @ts-expect-error Tailwind's PostCSS plugin does not expose TypeScript declarations for direct imports.
 import tailwindcss from '@tailwindcss/postcss';
 import postcss from 'postcss';
+
 import { describe, expect, it } from 'vitest';
 
 describe('content stylesheet isolation', () => {

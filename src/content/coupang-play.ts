@@ -1,6 +1,7 @@
+import { z } from 'zod';
+
 import { COUPANG_PLAY_SELECTORS } from '@utils/constants';
 import { parseVTT, SubtitleData } from '@utils/parse';
-import { z } from 'zod';
 
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 

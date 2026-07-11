@@ -1,9 +1,10 @@
 
+import { useRef, useState } from 'react';
+
 import { SubtitleId } from '@storage/subtitle';
 import { Language } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { CheckIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';

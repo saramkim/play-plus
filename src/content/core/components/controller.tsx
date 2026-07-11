@@ -1,4 +1,6 @@
 
+import { useState, useMemo } from 'react';
+
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import {
@@ -13,7 +15,6 @@ import {
   ZapIcon,
   Repeat1Icon,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
 
 import { useFocusModeStore } from '@/content/features/focus-mode/focus-mode-store';
 import { loopController } from '@/content/features/loop';

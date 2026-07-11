@@ -1,11 +1,12 @@
 
+import { useRef, useState } from 'react';
+
 import { getLocalStorage, setLocalStorage } from '@storage/index';
 import { setLocalSubtitle } from '@storage/subtitle';
 import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { FileTextIcon, FileUpIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';

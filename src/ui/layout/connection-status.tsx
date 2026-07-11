@@ -1,10 +1,11 @@
 
+import { type ComponentType, useEffect, useState } from 'react';
+
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { sendMessageToTab } from '@utils/message';
 import { Link2, Link2Off, Loader2, Video, VideoOff } from 'lucide-react';
-import { type ComponentType, useEffect, useState } from 'react';
 
 import { useTabStore } from '@/ui/store/tab-store';
 

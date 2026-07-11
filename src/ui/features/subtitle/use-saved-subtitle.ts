@@ -1,9 +1,10 @@
 
+import { useEffect, useState } from 'react';
+
 import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
 import { SavedSubtitle } from '@storage/type';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 const { STORAGE_KEY } = REVIEW;

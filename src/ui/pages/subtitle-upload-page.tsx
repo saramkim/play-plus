@@ -1,4 +1,6 @@
 
+import { useState } from 'react';
+
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
 import { SubtitleMetadata } from '@storage/type';
@@ -6,7 +8,6 @@ import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { BookOpenTextIcon, CaptionsIcon, CaptionsOffIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
-import { useState } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';

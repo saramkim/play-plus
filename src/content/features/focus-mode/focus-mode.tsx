@@ -1,7 +1,8 @@
 
+import { memo, useMemo } from 'react';
+
 import { cn, findSubtitleIndex } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
-import { memo, useMemo } from 'react';
 
 import { useVideoStore } from '@/content/core/store/video-store';
 import { videoManager } from '@/content/core/video/video-manager';

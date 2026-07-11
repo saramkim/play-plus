@@ -1,7 +1,8 @@
 
+import { useEffect, useState } from 'react';
+
 import { cn } from '@utils/helper';
 import { XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 
 import { modalService } from './modal-service';

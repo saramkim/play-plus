@@ -1,8 +1,9 @@
 import pluginJs from '@eslint/js';
+import globals from 'globals';
+
 import pluginImport from 'eslint-plugin-import';
 import pluginReact from 'eslint-plugin-react';
 import pluginUnicorn from 'eslint-plugin-unicorn';
-import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
