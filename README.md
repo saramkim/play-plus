@@ -83,7 +83,7 @@ yarn lint
 yarn lint:fix
 ```
 
-자세한 개발 환경 설정은 [`.cursor/rules/development-setup.mdc`](.cursor/rules/development-setup.mdc)를 참고하세요.
+개발 환경과 작업 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 기술 스택
 
@@ -112,7 +112,6 @@ yarn lint:fix
 
 ```
 play-plus/
-├── .cursor/              # Cursor IDE 설정 및 룰
 ├── dist/                # 빌드 결과물
 ├── public/              # 정적 파일 (manifest.json, icons, locales)
 ├── src/                 # 소스 코드
@@ -131,7 +130,7 @@ play-plus/
 └── webpack.config.js   # Webpack 빌드 설정
 ```
 
-자세한 프로젝트 구조는 [`.cursor/rules/project-structure.mdc`](.cursor/rules/project-structure.mdc)를 참고하세요.
+프로젝트 구조와 작업 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 아키텍처
 
@@ -141,7 +140,7 @@ Play Plus는 **Chrome 확장 프로그램 Manifest V3**를 기반으로 하며, 
 2. **백그라운드 스크립트** (`src/background/`): 서비스 워커
 3. **콘텐츠 스크립트** (`src/content/`): 웹 페이지에 주입되는 스크립트
 
-자세한 아키텍처 설명은 [`.cursor/rules/source-code-structure.mdc`](.cursor/rules/source-code-structure.mdc)를 참고하세요.
+아키텍처와 컨텍스트별 역할은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 커밋 컨벤션
 
@@ -161,7 +160,7 @@ Play Plus는 **Chrome 확장 프로그램 Manifest V3**를 기반으로 하며, 
 - `chore`: 빌드, 설정, 도구 관련 변경
 - `docs`: 문서 변경
 
-자세한 커밋 컨벤션은 [`.cursor/rules/commit-conventions.mdc`](.cursor/rules/commit-conventions.mdc)를 참고하세요.
+커밋 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 라이선스
 
