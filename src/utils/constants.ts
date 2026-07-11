@@ -9,7 +9,9 @@ export const COUPANG_PLAY_VIDEO_URL_LIST = [
 export const COUPANG_PLAY_SUBTITLE_API_URL = `${COUPANG_PLAY_BASE_URL}/api/playback/play`;
 export const COUPANG_PLAY_SELECTORS = {
   player: '#playerWrapper',
+  mainVideo: 'video[data-cy="main-video"]',
   progressBar: 'div.slider',
+  advertisement: '[class*="AdOverlay_"]',
 } as const;
 
 export const LANGUAGES = {
