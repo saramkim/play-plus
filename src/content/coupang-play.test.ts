@@ -106,14 +106,36 @@ describe('coupangStrategy playback response adapter', () => {
     ]);
   });
 
-  it.each([{}, { data: { raw: { text_tracks: [{ kind: 'subtitles', srclang: 3, src: null }] } } }])(
-    'rejects an invalid playback response',
-    async (response) => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify(response)));
+  it('ignores non-subtitle tracks and falls back to sources when src is absent', async () => {
+    const response = {
+      data: {
+        raw: {
+          text_tracks: [
+            { kind: 'metadata', label: 'chapters' },
+            {
+              kind: 'subtitles',
+              srclang: 'ko',
+              src: null,
+              sources: [{ src: 'https://cdn.example.com/ko.vtt' }],
+            },
+          ],
+        },
+      },
+    };
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(response)))
+      .mockResolvedValueOnce(new Response('WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n안녕하세요'));
 
-      await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
-        'Invalid Coupang Play playback response'
-      );
-    }
-  );
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
+      { lang: 'ko', subtitleData: [{ start: 1, end: 2, text: '안녕하세요' }] },
+    ]);
+  });
+
+  it('rejects an invalid playback response envelope', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({})));
+
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
+      'Invalid Coupang Play playback response'
+    );
+  });
 });

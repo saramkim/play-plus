@@ -129,9 +129,11 @@ class CoupangPlayStrategy {
       throw new Error('Invalid Coupang Play playback response');
     }
 
-    return result.data.data.raw.text_tracks
-      .filter(({ kind }) => kind === 'subtitles')
-      .map(({ srclang, src }) => ({ lang: srclang, url: src }));
+    return result.data.data.raw.text_tracks.flatMap(({ kind, srclang, src, sources }) => {
+      if (kind !== 'subtitles' || !srclang) return [];
+      const url = src ?? sources?.[0]?.src;
+      return url ? [{ lang: srclang, url }] : [];
+    });
   }
 }
 
@@ -143,8 +145,9 @@ const playbackResponseSchema = z.object({
       text_tracks: z.array(
         z.object({
           kind: z.string(),
-          srclang: z.string(),
-          src: z.string(),
+          srclang: z.string().nullish(),
+          src: z.string().nullish(),
+          sources: z.array(z.object({ src: z.string() })).optional(),
         })
       ),
     }),
