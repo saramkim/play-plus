@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
 
 import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { t } from '@utils/i18n';
 import { XIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';

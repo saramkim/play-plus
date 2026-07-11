@@ -1,7 +1,7 @@
-import { useState } from 'react';
 
 import { t } from '@utils/i18n';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from './button';
 

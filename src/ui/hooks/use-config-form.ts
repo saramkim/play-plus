@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-import type { z } from 'zod';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { storageSchema } from '@storage/schema';
 import { StorageKey, StorageSchema } from '@storage/type';
+import { useEffect } from 'react';
 import { useForm, DefaultValues } from 'react-hook-form';
+import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useConfigStore } from '@/ui/store/config-store';

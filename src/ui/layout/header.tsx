@@ -1,8 +1,8 @@
-import { useRef } from 'react';
 
 import { PAGE_NAME } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
+import { useRef } from 'react';
 
 import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
 import { usePageStore } from '@/ui/store/page-store';

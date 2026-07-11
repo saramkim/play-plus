@@ -1,7 +1,7 @@
-import { z } from 'zod';
 
 import { DEFAULT_SUBTITLE_LANGUAGES, Language } from '@utils/constants';
 import { t } from '@utils/i18n';
+import { z } from 'zod';
 
 import { SubtitleId } from './subtitle';
 

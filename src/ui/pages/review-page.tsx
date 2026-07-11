@@ -1,9 +1,9 @@
-import { useState } from 'react';
 
 import { SavedSubtitle } from '@storage/type';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message/index';
 import { PlayIcon, Trash2Icon } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { CopyButton } from '@/ui/components/copy-button';

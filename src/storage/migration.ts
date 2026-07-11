@@ -6,19 +6,19 @@ type LegacyMigration<T extends StorageKey> = {
   transform: TransformFunction<T>;
 };
 
-const createMigration = <T extends StorageKey>(migration: LegacyMigration<T>) => migration;
+const _createMigration = <T extends StorageKey>(migration: LegacyMigration<T>) => migration;
 
 export const LEGACY_MIGRATIONS = {
   // Example migrations:
   // 1.4.x => 1.5.x
-  // skipTime: createMigration({
+  // skipTime: _createMigration({
   //   newKey: SETTINGS.VIDEO_SKIP.STORAGE_KEY,
   //   transform: (oldData) => ({
   //     ...DEFAULT_CONFIG[SETTINGS.VIDEO_SKIP.STORAGE_KEY],
   //     skipTime: oldData,
   //   }),
   // }),
-  // subKey: createMigration({
+  // subKey: _createMigration({
   //   newKey: SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY,
   //   transform: (oldData) => ({
   //     ...DEFAULT_CONFIG[SETTINGS.SUB_VIDEO_SKIP.STORAGE_KEY],

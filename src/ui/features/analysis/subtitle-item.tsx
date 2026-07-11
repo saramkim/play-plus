@@ -1,8 +1,8 @@
-import { memo } from 'react';
 
 import { formatTime, cn } from '@utils/helper';
 import { SubtitleData } from '@utils/parse';
 import { StarIcon, StarOffIcon } from 'lucide-react';
+import { memo } from 'react';
 
 import { Button } from '@/ui/components/button';
 

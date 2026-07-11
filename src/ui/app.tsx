@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
 
 import { setStorageAll } from '@storage/index';
 import { LEARNING_CONFIG } from '@storage/preset';
 import { PAGE_NAME } from '@utils/constants';
+import { useEffect } from 'react';
 
 import { modal } from './components/modal';
-import { Footer } from './layout/footer';
 import { ConnectionStatus } from './layout/connection-status';
+import { Footer } from './layout/footer';
 import { Header } from './layout/header';
 import { OnboardingContent } from './layout/onboarding-content';
 import { ReviewPage } from './pages/review-page';

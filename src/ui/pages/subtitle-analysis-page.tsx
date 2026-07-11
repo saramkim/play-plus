@@ -1,10 +1,10 @@
-import { useRef } from 'react';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { formatTime, cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { SubtitleData } from '@utils/parse';
 import { GalleryVertical } from 'lucide-react';
+import { useRef } from 'react';
 
 import { Button } from '@/ui/components/button';
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';

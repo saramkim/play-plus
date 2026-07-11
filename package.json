@@ -3,6 +3,9 @@
   "version": "1.10.1",
   "description": "Enhance your Coupang Play experience with custom features.",
   "packageManager": "yarn@4.9.1",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "build": "webpack --config webpack.config.js --mode production",
     "build:dev": "webpack --config webpack.config.js --mode development",
@@ -11,7 +14,10 @@
     "clean": "rm -rf dist",
     "dev": "npm run clean && npm run build:dev && npm run watch",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "build:analyze": "ANALYZE=true yarn build"
   },
   "license": "ISC",
   "devDependencies": {
@@ -36,6 +42,7 @@
     "eslint-plugin-unicorn": "^59.0.0",
     "globals": "^16.0.0",
     "html-webpack-plugin": "^5.6.3",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.3",
     "postcss-loader": "^8.1.1",
     "style-loader": "^4.0.0",
@@ -44,6 +51,7 @@
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.1",
+    "vitest": "^4.1.10",
     "webpack": "^5.99.7",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1"

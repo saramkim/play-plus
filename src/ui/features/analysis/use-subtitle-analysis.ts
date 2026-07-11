@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import { DefaultSubtitleLanguage, LANGUAGES , COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
@@ -6,6 +5,7 @@ import { findSubtitleIndex, stripTags } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { SubtitleData } from '@utils/parse';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useSavedSubtitle } from '@/ui/features/subtitle/use-saved-subtitle';

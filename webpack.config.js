@@ -5,6 +5,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const isProd = process.argv.at(-1) === 'production';
+const shouldAnalyze = process.env.ANALYZE === 'true';
 
 module.exports = {
   mode: 'production',
@@ -62,7 +63,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [{ from: 'public', to: '.' }],
     }),
-    ...(isProd ? [new BundleAnalyzerPlugin()] : []),
+    ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   optimization: {
     splitChunks: {
