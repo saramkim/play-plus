@@ -4,7 +4,7 @@ Run this checklist against the production `dist/` directory before publishing a 
 
 ## Test environment
 
-- Extension version: `1.10.1`
+- Extension version: `1.11.0`
 - Build command: `yarn build`
 - Supported runtime: Node.js 22–24, Yarn 4.9.1
 - Chrome version: record before testing
