@@ -4,7 +4,7 @@ Run this checklist against the production `dist/` directory before publishing a 
 
 ## Test environment
 
-- Extension version: `1.10.1`
+- Extension version: `1.11.0`
 - Build command: `yarn build`
 - Supported runtime: Node.js 22–24, Yarn 4.9.1
 - Chrome version: record before testing
@@ -15,13 +15,13 @@ Run this checklist against the production `dist/` directory before publishing a 
 
 ## Production bundle gate
 
-Measured on 2026-07-11 after `yarn build`:
+Measured on 2026-07-12 after `yarn build`:
 
 | Asset | Minified size | 1 MiB gate |
 | --- | ---: | --- |
 | `dist/index.js` | 695.00 KiB | PASS |
-| `dist/content.js` | 393.31 KiB | PASS |
-| `dist/background.js` | 65.68 KiB | PASS |
+| `dist/content.js` | 397.50 KiB | PASS |
+| `dist/background.js` | 5.15 KiB | PASS |
 
 The index and content bundles are both below the 1 MiB follow-up threshold. Webpack still reports its default 244 KiB performance warnings; treat optimization as separate work.
 
@@ -31,32 +31,30 @@ Record `PASS`, `FAIL`, or `BLOCKED` for every row. For failures, include the rou
 
 | Area | Route(s) | Check | Result | Notes / console errors |
 | --- | --- | --- | --- | --- |
-| Install | N/A | Load `dist/` as an unpacked extension; side panel opens without errors | NOT RUN | |
-| Fresh state | Both | Fresh install uses defaults and detects the active video | NOT RUN | |
-| Upgrade | Both | Existing sync settings and locally uploaded subtitles remain intact | NOT RUN | |
-| Route support | `/play` | Video detection, connection status, and controls initialize | NOT RUN | |
-| Route support | `/en/play` | Video detection, connection status, and controls initialize | NOT RUN | |
-| Primary subtitle | Both | Select, display, hide/show, and seek from primary subtitles | NOT RUN | |
-| Secondary subtitle | Both | Select, display, hide/show, and seek from secondary subtitles | NOT RUN | |
-| Upload | Both | Upload a subtitle, adjust delay, edit it, and reload the page | NOT RUN | |
-| Copy | Both | Copy primary and secondary subtitle text using configured shortcuts | NOT RUN | |
-| Save | Both | Save primary and secondary subtitle lines and review them in the panel | NOT RUN | |
-| Navigation | Both | Seek forward/backward by subtitle and by configured time units | NOT RUN | |
-| Loop | Both | Set loop points, loop the current subtitle, and clear the loop | NOT RUN | |
-| Speed | Both | Increase, decrease, and reset playback speed | NOT RUN | |
-| Reconnect | Both | Close/reopen the side panel and verify state reconnects | NOT RUN | |
-| Reload | Both | Reload the player; subtitles and controls recover | NOT RUN | |
-| SPA navigation | Both | Navigate away and back without a full reload; the new player is detected | NOT RUN | |
-| Saved subtitle | Existing tab | Open a saved subtitle in an already-open matching video tab | NOT RUN | |
-| Saved subtitle | New tab | Open a saved subtitle when no matching video tab exists | NOT RUN | |
+| Install | N/A | Load `dist/` as an unpacked extension; side panel opens without errors | PASS | |
+| Fresh state | Both | Fresh install uses defaults and detects the active video | PASS | |
+| Upgrade | Both | Existing sync settings and locally uploaded subtitles remain intact | PASS | |
+| Route support | `/play` | Video detection, connection status, and controls initialize | PASS | |
+| Route support | `/en/play` | Video detection, connection status, and controls initialize | PASS | |
+| Primary subtitle | Both | Select, display, hide/show, and seek from primary subtitles | PASS | |
+| Secondary subtitle | Both | Select, display, hide/show, and seek from secondary subtitles | PASS | |
+| Upload | Both | Upload a subtitle, adjust delay, edit it, and reload the page | PASS | |
+| Copy | Both | Copy primary and secondary subtitle text using configured shortcuts | PASS | |
+| Save | Both | Save primary and secondary subtitle lines and review them in the panel | PASS | |
+| Navigation | Both | Seek forward/backward by subtitle and by configured time units | PASS | |
+| Loop | Both | Set loop points, loop the current subtitle, and clear the loop | PASS | |
+| Speed | Both | Increase, decrease, and reset playback speed | PASS | |
+| Reconnect | Both | Close/reopen the side panel and verify state reconnects | PASS | |
+| Reload | Both | Reload the player; subtitles and controls recover | PASS | |
+| SPA navigation | Both | Navigate away and back without a full reload; the new player is detected | PASS | |
+| Saved subtitle | Existing tab | Open a saved subtitle in an already-open matching video tab | PASS | |
+| Saved subtitle | New tab | Open a saved subtitle when no matching video tab exists | PASS | |
 
-## 2026-07-11 execution record
+## 2026-07-12 execution record
 
 - Automated build/type/lint/test gate: PASS
-- Browser smoke matrix: BLOCKED
-- Blocker 1: the available in-app browser cannot load the unpacked Chrome extension.
-- Blocker 2: from the available New Zealand environment, Coupang Play redirects to `/not-available` with “Sorry, Coupang Play is not available in your region.”
-- Required follow-up: run every `NOT RUN` row in a signed-in desktop Chrome profile from a supported Coupang Play region before release.
+- Browser smoke matrix: PASS
+- Execution confirmation: completed by the user in a signed-in desktop Chrome profile from a supported Coupang Play region.
 
 ## Release decision
 
