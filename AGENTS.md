@@ -41,6 +41,67 @@ MV3 경계:
 - 새 추상화보다 기존 패턴을 재사용하고 변경 범위를 최소화한다. 동작 변경에는 가까운 `*.test.ts(x)`를 추가하거나 갱신한다.
 - 완료 보고는 변경 파일, 핵심 동작, 수행한 검증과 남은 수동 검증만 간결하게 적는다.
 
+# ChatGPT Collaboration
+
+ChatGPT에서는 `Play Plus` 프로젝트를 사용한다. Codex와 ChatGPT는 다음 역할로 협업한다.
+
+- Codex: 로컬 저장소 조사, 구현, 실행, 테스트, 최신 작업 트리와 전체 diff 확인.
+- ChatGPT: 제품 방향, 사용자 경험, 기술 설계, 작업 범위와 트레이드오프, 구현 완료 여부 검토.
+- 사용자: 제품 우선순위, 범위 변경, 개인정보·권한 정책, 배포와 되돌리기 어려운 결정의 최종 승인.
+
+다음 작업은 구현 전에 ChatGPT와 논의한다.
+
+- 사용자 경험이나 제품 방향을 변경하는 작업.
+- 기존 기능의 범위를 확대하거나 축소하는 작업.
+- 공개 동작이나 외부 계약을 변경하는 작업.
+- 아키텍처 경계나 공유 컴포넌트 구조를 변경하는 작업.
+- 유지보수 비용이나 되돌리기 어려움에 실질적인 트레이드오프가 있는 작업.
+- 요구사항이 모호하거나 현재 제품 원칙과 충돌하는 작업.
+
+다음 작업은 ChatGPT 논의를 생략할 수 있다.
+
+- 범위가 명확한 단순 버그 수정이나 명확한 문구 수정.
+- 동작을 바꾸지 않는 기계적인 리팩터링.
+- 현재 이슈나 해당 주제의 canonical documentation에 이미 결정된 방향의 반복 구현.
+- 사용자가 현재 작업에서 직접 승인한 명확한 방향.
+
+ChatGPT에 전달하는 Context Packet은 다음 형식을 사용한다.
+
+```text
+GOAL
+The outcome the user wants
+
+CURRENT STATE
+Relevant files, components, and current behavior
+
+CONSTRAINTS
+Technical constraints and existing decisions
+
+OPTIONS
+Reasonable implementation alternatives
+
+CODEX RECOMMENDATION
+Codex's recommendation and supporting code evidence
+
+QUESTIONS
+Decisions ChatGPT needs to make
+```
+
+협업 절차:
+
+1. Codex가 먼저 저장소와 최신 작업 트리를 조사한다.
+2. 위 기준에 해당하면 Context Packet을 ChatGPT에 전달한다.
+3. 논의는 원칙적으로 두 차례 왕복 안에 끝낸다.
+4. 결론이 나면 선택한 방향, 제약과 제외 범위를 구현 전에 짧게 정리한다.
+5. 합의한 방향이 현재 이슈의 범위나 acceptance criteria를 변경하면 구현 전에 이슈를 갱신한다.
+6. 구현 후 전체 작업 diff와 실제 검증 결과를 ChatGPT에 전달해 완료 여부를 다시 검토받는다.
+7. 현재 합의 범위 내 결함은 수정한다.
+8. 새로운 제품 결정이나 범위 확대가 필요하면 자동으로 구현하지 않고 사용자에게 결정을 요청한다.
+9. 실행하지 않은 테스트를 통과했다고 간주하지 않는다.
+10. 중요한 장기 결정만 해당 주제의 기존 canonical documentation에 기록한다.
+
+브랜치, commit, 검증과 릴리스에는 아래 기존 규칙을 그대로 적용한다. worktree와 배포는 현재 저장소에 문서화된 범위만 따르며, 다른 저장소의 명명법, 명령 또는 lifecycle 도구를 가져오지 않는다.
+
 # Commands
 
 ```bash
