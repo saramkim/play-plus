@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { LANGUAGES, Language, REGISTRATION } from '@utils/constants';
 import { SubtitleData } from '@utils/parse';
 
-import { savedSubtitleSchema, storageSchema, subtitleMetadataSchema } from './schema';
+import { getSavedSubtitleCards } from './saved-subtitle';
+import { storageSchema, storedSavedSubtitleSchema, subtitleMetadataSchema } from './schema';
 import { SubtitleId } from './subtitle';
 
 import { getLocalStorage, getStorageAll } from './index';
@@ -42,7 +43,7 @@ const subtitleDataSchema = z
 const backupDataSchema = z
   .object({
     settings: z.object(storageSchema).strict(),
-    savedSubtitles: z.array(savedSubtitleSchema.strict()),
+    savedSubtitles: z.array(storedSavedSubtitleSchema),
     registeredSubtitles: z.array(backupSubtitleMetadataSchema),
     subtitleBodies: z.record(subtitleIdSchema, z.array(subtitleDataSchema)),
   })
@@ -111,7 +112,7 @@ export const serializeBackup = (backup: BackupDocument) => JSON.stringify(parseB
 export const createBackupDocument = async (exportedAt = new Date().toISOString()): Promise<BackupDocument> => {
   const [settings, savedSubtitles = [], registeredSubtitles = []] = await Promise.all([
     getStorageAll(),
-    getLocalStorage('savedSubtitles'),
+    getSavedSubtitleCards(),
     getLocalStorage('registeredSubtitles'),
   ]);
   const subtitleBodies = await getSubtitleBodies(registeredSubtitles.map(({ id }) => id));

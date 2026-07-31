@@ -86,7 +86,9 @@ class ElementStore {
     for (const [key, config] of Object.entries(subtitleSettings)) {
       const subtitleElement = this.subtitleElementMap[key];
       applySubtitleStyles(subtitleElement, config);
-      setupSubtitleSaveHandler(subtitleElement);
+      setupSubtitleSaveHandler(key as SubtitleSettingStorageKey, subtitleElement, (role) =>
+        this.getSubtitleElement(role)
+      );
       fragment.appendChild(subtitleElement);
     }
 
