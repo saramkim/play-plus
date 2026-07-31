@@ -49,6 +49,9 @@ Record `PASS`, `FAIL`, or `BLOCKED` for every row. For failures, include the rou
 | SPA navigation | Both | Navigate away and back without a full reload; the new player is detected | PASS | |
 | Saved subtitle | Existing tab | Open a saved subtitle in an already-open matching video tab | PASS | |
 | Saved subtitle | New tab | Open a saved subtitle when no matching video tab exists | PASS | |
+| Backup | N/A | Export settings, saved lines, uploaded-subtitle metadata, and uploaded-subtitle bodies to JSON | NOT RUN | |
+| Restore | Both | Replace current data from a valid backup and verify settings, Review, source seek, analysis, and uploaded-subtitle display | NOT RUN | |
+| Restore validation | N/A | Reject malformed or unsupported backups and cancellation without changing existing data | NOT RUN | |
 
 ## 2026-07-12 execution record
 

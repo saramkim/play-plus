@@ -64,6 +64,10 @@
   "edit": { "message": "편집" },
   "end_point_key": { "message": "종료 시점 지정 키" },
   "error": { "message": "실패" },
+  "export_backup": { "message": "백업 내보내기" },
+  "export_backup_confirm": {
+    "message": "백업 파일에는 저장한 자막 문장과 영상 주소가 포함됩니다. 파일을 안전하게 보관하시겠습니까?"
+  },
   "fallback_unit": { "message": "대체 단위" },
   "fixed": { "message": "고정형" },
   "font_weight": { "message": "글씨 굵기" },
@@ -87,6 +91,10 @@
   "uploaded_subtitles": { "message": "업로드한 자막" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
+  "restore_backup": { "message": "백업 복원" },
+  "restore_backup_confirm": {
+    "message": "현재 설정과 학습 데이터를 선택한 백업으로 교체합니다. 이 작업은 완전히 되돌릴 수 없을 수 있습니다. 계속하시겠습니까?"
+  },
   "responsive": { "message": "반응형" },
   "save_primary_subtitle": { "message": "메인 자막 저장" },
   "save_secondary_subtitle": { "message": "서브 자막 저장" },
@@ -152,6 +160,14 @@
   "success_save_subtitle": { "message": "자막 저장 완료" },
   "success_copy_subtitle": { "message": "자막 복사 완료" },
   "success_delete_subtitle": { "message": "자막 삭제 완료" },
+  "success_export_backup": { "message": "백업을 내보냈습니다." },
+  "success_restore_backup": { "message": "백업을 복원했습니다." },
+  "error_export_backup": { "message": "백업을 내보내지 못했습니다." },
+  "error_invalid_backup": { "message": "유효한 Play Plus 백업 파일이 아닙니다. 기존 데이터는 변경되지 않았습니다." },
+  "error_restore_backup": { "message": "백업 복원에 실패했습니다. 기존 데이터 복구를 시도했습니다." },
+  "error_restore_backup_rollback": {
+    "message": "백업 복원과 기존 데이터 복구에 실패했습니다. 저장 데이터를 확인해주세요."
+  },
   "error_save_subtitle": { "message": "자막 저장 실패" },
   "error_copy_subtitle": { "message": "자막 복사 실패" },
   "error_loop": { "message": "구간 반복 실패" },
