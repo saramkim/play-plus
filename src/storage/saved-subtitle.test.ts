@@ -9,6 +9,8 @@ import {
   migrateSavedSubtitles,
   removeSavedSubtitleById,
   restoreSavedSubtitleAt,
+  setSavedSubtitleReviewStatus,
+  updateSavedSubtitleReviewStatus,
 } from './saved-subtitle';
 
 const URL = 'https://www.coupangplay.com/play/example';
@@ -68,9 +70,52 @@ describe('saved subtitle migration', () => {
 
     expect(result.migrated).toBe(true);
     expect(result.cards).toEqual([
-      { id: 'saved-legacy-1', primary: { text: 'Same' }, url: URL, startTime: 1, savedAt: SAVED_AT },
-      { id: 'saved-legacy-2', primary: { text: 'Same' }, url: URL, startTime: 1, savedAt: SAVED_AT },
+      {
+        id: 'saved-legacy-1',
+        primary: { text: 'Same' },
+        reviewStatus: 'new',
+        url: URL,
+        startTime: 1,
+        savedAt: SAVED_AT,
+      },
+      {
+        id: 'saved-legacy-2',
+        primary: { text: 'Same' },
+        reviewStatus: 'new',
+        url: URL,
+        startTime: 1,
+        savedAt: SAVED_AT,
+      },
     ]);
+  });
+
+  it('adds new to a stable-id card without changing its id or content', () => {
+    const previous = {
+      id: 'saved-existing',
+      primary: { text: 'Existing', language: 'en' as const },
+      secondary: { text: '기존', language: 'ko' as const },
+      url: URL,
+      startTime: 2,
+      savedAt: SAVED_AT,
+    };
+
+    expect(migrateSavedSubtitles([previous])).toEqual({
+      cards: [{ ...previous, reviewStatus: 'new' }],
+      migrated: true,
+    });
+  });
+
+  it('persists the default status once for a stable-id card from the previous schema', async () => {
+    localStorage.savedSubtitles = [
+      { id: 'saved-existing', primary: { text: 'Existing' }, url: URL, startTime: 2, savedAt: SAVED_AT },
+    ];
+
+    const first = await getSavedSubtitleCards();
+    const second = await getSavedSubtitleCards();
+
+    expect(first).toEqual(second);
+    expect(second[0]).toMatchObject({ id: 'saved-existing', reviewStatus: 'new' });
+    expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
   });
 
   it('persists generated ids once and reuses them on the next read', async () => {
@@ -99,6 +144,23 @@ describe('saved subtitle migration', () => {
 
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
+
+  it('rejects an invalid persisted review status without rewriting it', async () => {
+    localStorage.savedSubtitles = [
+      {
+        id: 'saved-invalid-status',
+        primary: { text: 'Invalid' },
+        reviewStatus: 'scheduled',
+        url: URL,
+        startTime: 1,
+        savedAt: SAVED_AT,
+      },
+    ];
+
+    await expect(getSavedSubtitleCards()).rejects.toThrow();
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
 });
 
 describe('saved subtitle identity and list operations', () => {
@@ -109,6 +171,10 @@ describe('saved subtitle identity and list operations', () => {
     startTime: 1,
   });
   const card = createSavedSubtitleCard(draft, 'saved-card-1', SAVED_AT);
+
+  it('defaults a newly created card to new', () => {
+    expect(card.reviewStatus).toBe('new');
+  });
 
   it('matches exact source, cue, role text, and language only', () => {
     expect(findSavedSubtitleCard([card], draft)?.id).toBe(card.id);
@@ -129,5 +195,33 @@ describe('saved subtitle identity and list operations', () => {
 
     expect(removed.cards).toEqual([other]);
     expect(restoreSavedSubtitleAt(removed.cards, removed.removed!, removed.index)).toEqual([card, other]);
+  });
+
+  it('moves one stable-id card through every review state without changing other fields', () => {
+    const other = createSavedSubtitleCard(draft, 'saved-card-2', SAVED_AT);
+    const learning = setSavedSubtitleReviewStatus([card, other], card.id, 'learning');
+    const mastered = setSavedSubtitleReviewStatus(learning, card.id, 'mastered');
+    const reset = setSavedSubtitleReviewStatus(mastered, card.id, 'new');
+
+    expect(learning[0]).toEqual({ ...card, reviewStatus: 'learning' });
+    expect(mastered[0]).toEqual({ ...card, reviewStatus: 'mastered' });
+    expect(reset).toEqual([card, other]);
+    expect(learning[1]).toBe(other);
+  });
+
+  it('updates status from the latest stored cards and preserves equal-text siblings', async () => {
+    const other = createSavedSubtitleCard(draft, 'saved-card-2', SAVED_AT);
+    localStorage.savedSubtitles = [card, other];
+
+    await updateSavedSubtitleReviewStatus(other.id, 'learning');
+
+    expect(localStorage.savedSubtitles).toEqual([card, { ...other, reviewStatus: 'learning' }]);
+  });
+
+  it('restores the deleted card with its previous review status', () => {
+    const learning = setSavedSubtitleReviewStatus([card], card.id, 'learning')[0];
+    const removed = removeSavedSubtitleById([learning], learning.id);
+
+    expect(restoreSavedSubtitleAt(removed.cards, removed.removed!, removed.index)).toEqual([learning]);
   });
 });

@@ -84,6 +84,25 @@ describe('backup document', () => {
     expect(parseBackupDocument(backup).data.savedSubtitles).toEqual(backup.data.savedSubtitles);
   });
 
+  it('accepts a stable-id card without review status for backward-compatible restore', () => {
+    const { reviewStatus: _reviewStatus, ...previousCard } = savedSubtitle('Previous');
+    const backup = validBackup({ savedSubtitles: [previousCard] });
+
+    expect(parseBackupDocument(backup).data.savedSubtitles).toEqual([previousCard]);
+  });
+
+  it('round trips review status without changing the card', async () => {
+    const mastered = savedSubtitle('Mastered', 'mastered');
+    localStorage.savedSubtitles = [mastered];
+
+    const backup = await createBackupDocument(EXPORTED_AT);
+    localStorage.savedSubtitles = [];
+    await restoreBackup(backup);
+
+    expect(backup.data.savedSubtitles).toEqual([mastered]);
+    expect(localStorage.savedSubtitles).toEqual([mastered]);
+  });
+
   it('rejects malformed JSON and unsupported versions', async () => {
     expect(() => parseBackupJson('{')).toThrow();
     expect(() => parseBackupDocument({ ...validBackup(), version: 2 })).toThrow();
@@ -96,6 +115,16 @@ describe('backup document', () => {
       (backup: ReturnType<typeof validBackup>) => ({
         ...backup,
         data: { ...backup.data, savedSubtitles: [{ content: 'Hello' }] },
+      }),
+    ],
+    [
+      'invalid saved subtitle review status',
+      (backup: ReturnType<typeof validBackup>) => ({
+        ...backup,
+        data: {
+          ...backup.data,
+          savedSubtitles: [{ ...savedSubtitle('Hello'), reviewStatus: 'scheduled' }],
+        },
       }),
     ],
     [
@@ -250,10 +279,11 @@ const selectKeys = (storage: Record<string, unknown>, keys: string | string[]) =
 
 const subtitleCue = (text: string) => ({ start: 1, end: 2, text });
 
-const savedSubtitle = (content: string) => ({
+const savedSubtitle = (content: string, reviewStatus: 'new' | 'learning' | 'mastered' = 'new') => ({
   id: `saved-${content.toLowerCase()}`,
   primary: { text: content, language: 'en' as const },
   secondary: { text: `${content} secondary`, language: 'ko' as const },
+  reviewStatus,
   url: 'https://www.coupangplay.com/play/example',
   startTime: 1,
   savedAt: EXPORTED_AT,
@@ -271,6 +301,7 @@ const validBackup = (
   overrides: Partial<{
     savedSubtitles: Array<
       | ReturnType<typeof savedSubtitle>
+      | Omit<ReturnType<typeof savedSubtitle>, 'reviewStatus'>
       | { content: string; url: string; startTime: number; savedAt: string }
     >;
     registeredSubtitles: ReturnType<typeof subtitleMetadata>[];

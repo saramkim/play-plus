@@ -8,8 +8,9 @@ import {
   restoreSavedSubtitleAt,
   SavedSubtitleDraft,
   setSavedSubtitleCards,
+  updateSavedSubtitleReviewStatus,
 } from '@storage/saved-subtitle';
-import { SavedSubtitle } from '@storage/type';
+import { SavedSubtitle, SavedSubtitleReviewStatus } from '@storage/type';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { toast } from 'sonner';
@@ -66,5 +67,9 @@ export function useSavedSubtitle() {
     });
   };
 
-  return { subtitles, saveSubtitle, deleteSubtitle, loading };
+  const updateReviewStatus = (id: string, reviewStatus: SavedSubtitleReviewStatus) => {
+    return updateSavedSubtitleReviewStatus(id, reviewStatus);
+  };
+
+  return { subtitles, saveSubtitle, deleteSubtitle, updateReviewStatus, loading };
 }

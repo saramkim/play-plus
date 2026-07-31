@@ -2,13 +2,20 @@ import { z } from 'zod';
 
 import type { PendingSubtitleRequest, PendingViewAction } from '@/background/pending-actions';
 
-import { legacySavedSubtitleSchema, savedSubtitleSchema, storageSchema, subtitleMetadataSchema } from './schema';
+import {
+  legacySavedSubtitleSchema,
+  savedSubtitleReviewStatusSchema,
+  savedSubtitleSchema,
+  storageSchema,
+  subtitleMetadataSchema,
+} from './schema';
 
 // common type
 export type StorageChange<T> = { oldValue?: T; newValue?: T };
 
 export type SavedSubtitle = z.infer<typeof savedSubtitleSchema>;
 export type LegacySavedSubtitle = z.infer<typeof legacySavedSubtitleSchema>;
+export type SavedSubtitleReviewStatus = z.infer<typeof savedSubtitleReviewStatusSchema>;
 export type SubtitleMetadata = z.infer<typeof subtitleMetadataSchema>;
 
 // chrome.storage.sync
