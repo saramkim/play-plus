@@ -168,13 +168,9 @@ ISC
 
 ## 기여하기
 
-기여를 환영합니다! 이슈를 등록하거나 Pull Request를 제출해주세요.
+기여를 환영합니다. Play Plus는 `develop`을 통합 브랜치로 사용합니다. 제품·UX·아키텍처·공개 동작처럼 결정이 필요한 작업은 먼저 Issue로 범위를 확정하고, `develop`에서 작업 브랜치를 만든 뒤 `develop` 대상 Pull Request를 제출해주세요. 명확한 단순 수정은 Issue 없이 Pull Request를 제출할 수 있습니다.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat(scope): add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+자세한 Issue, ChatGPT 협업과 Pull Request 절차는 [`docs/development-workflow.md`](docs/development-workflow.md), 개발·Git·검증 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 버전
 

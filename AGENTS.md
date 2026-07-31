@@ -100,7 +100,7 @@ Decisions ChatGPT needs to make
 9. 실행하지 않은 테스트를 통과했다고 간주하지 않는다.
 10. 중요한 장기 결정만 해당 주제의 기존 canonical documentation에 기록한다.
 
-브랜치, commit, 검증과 릴리스에는 아래 기존 규칙을 그대로 적용한다. worktree와 배포는 현재 저장소에 문서화된 범위만 따르며, 다른 저장소의 명명법, 명령 또는 lifecycle 도구를 가져오지 않는다.
+세부 Issue-to-PR 절차는 [`docs/development-workflow.md`](docs/development-workflow.md)를 따른다. 브랜치, commit, 검증과 릴리스에는 아래 기존 규칙을 그대로 적용한다. worktree와 배포는 현재 저장소에 문서화된 범위만 따르며, 다른 저장소의 명명법, 명령 또는 lifecycle 도구를 가져오지 않는다.
 
 # Commands
 

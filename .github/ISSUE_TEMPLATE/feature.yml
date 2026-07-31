@@ -1,0 +1,74 @@
+name: Feature or improvement
+description: Propose a product, UX, or technical improvement that needs a decision before implementation.
+title: "feat: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for work that changes product direction, UX, scope, public behavior, architecture, privacy, or permissions.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and user problem
+      description: Describe the outcome and the user problem it solves.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state
+      description: Describe the current behavior and relevant files, components, or decisions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List what this work includes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Out of scope
+      description: List explicit exclusions that prevent accidental scope growth.
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and existing decisions
+      description: Include technical boundaries, product principles, privacy, permissions, or compatibility constraints.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Provide observable, verifiable completion criteria as a checklist.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: List the automated and manual checks that should prove the change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives-risks
+    attributes:
+      label: Alternatives, risks, and approvals
+      description: Record meaningful alternatives, trade-offs, rollback concerns, and decisions that require user approval.
+    validations:
+      required: true

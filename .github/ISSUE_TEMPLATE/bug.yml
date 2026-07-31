@@ -1,0 +1,78 @@
+name: Bug report
+description: Report reproducible behavior that differs from the current product contract.
+title: "fix: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Clearly scoped trivial bugs may be fixed without an issue. Use this form when the cause, scope, acceptance criteria, or product impact needs review.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary and impact
+      description: Describe the failure and who or what it affects.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reliable sequence that reproduces the problem.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior and evidence
+      description: Include the visible result, relevant errors, screenshots, logs, route, or extension state without secrets.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Describe the existing product contract or desired observable result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Play Plus version, Chrome version, operating system, route type, locale, and other relevant conditions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and exclusions
+      description: Define the intended fix boundary and what must not change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Provide observable regression criteria as a checklist.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation-risks
+    attributes:
+      label: Validation and risks
+      description: List focused tests, manual checks, regression risks, privacy or permission impact, and required approvals.
+    validations:
+      required: true
