@@ -76,6 +76,14 @@ describe('backup document', () => {
     expect(parseBackupDocument(backup)).toEqual(backup);
   });
 
+  it('accepts a legacy v1 saved line for backward-compatible restore', () => {
+    const backup = validBackup({
+      savedSubtitles: [{ content: 'Legacy', url: 'https://example.com', startTime: 3, savedAt: EXPORTED_AT }],
+    });
+
+    expect(parseBackupDocument(backup).data.savedSubtitles).toEqual(backup.data.savedSubtitles);
+  });
+
   it('rejects malformed JSON and unsupported versions', async () => {
     expect(() => parseBackupJson('{')).toThrow();
     expect(() => parseBackupDocument({ ...validBackup(), version: 2 })).toThrow();
@@ -243,7 +251,9 @@ const selectKeys = (storage: Record<string, unknown>, keys: string | string[]) =
 const subtitleCue = (text: string) => ({ start: 1, end: 2, text });
 
 const savedSubtitle = (content: string) => ({
-  content,
+  id: `saved-${content.toLowerCase()}`,
+  primary: { text: content, language: 'en' as const },
+  secondary: { text: `${content} secondary`, language: 'ko' as const },
   url: 'https://www.coupangplay.com/play/example',
   startTime: 1,
   savedAt: EXPORTED_AT,
@@ -259,7 +269,10 @@ const subtitleMetadata = (id: SubtitleId, title: string) => ({
 
 const validBackup = (
   overrides: Partial<{
-    savedSubtitles: ReturnType<typeof savedSubtitle>[];
+    savedSubtitles: Array<
+      | ReturnType<typeof savedSubtitle>
+      | { content: string; url: string; startTime: number; savedAt: string }
+    >;
     registeredSubtitles: ReturnType<typeof subtitleMetadata>[];
     subtitleBodies: Record<string, ReturnType<typeof subtitleCue>[]>;
   }> = {}

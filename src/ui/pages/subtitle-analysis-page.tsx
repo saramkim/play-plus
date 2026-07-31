@@ -77,7 +77,7 @@ interface SubtitleAnalysisProps {
   subtitles: SubtitleData[];
   activeIndex: number;
   handleToggleSubtitle: (subtitle: SubtitleData) => void;
-  isSubtitleSaved: (content: string) => boolean;
+  isSubtitleSaved: (subtitle: SubtitleData) => boolean;
   handlePlayVideo: (start: number) => void;
 }
 
@@ -126,7 +126,7 @@ function SubtitleAnalysis({
                   <SubtitleItem
                     subtitle={subtitle}
                     isActive={index === activeIndex}
-                    isSaved={isSubtitleSaved(subtitle.text)}
+                    isSaved={isSubtitleSaved(subtitle)}
                     onClick={() => handlePlayVideo(subtitle.start)}
                     onToggleSave={handleToggleSubtitle}
                     style={{ marginBottom: `${GAP_HEIGHT}px` }}
