@@ -1,10 +1,4 @@
 import { SubtitleId } from '@storage/subtitle';
-import {
-  OpenSubtitlesDownloadedSubtitle,
-  OpenSubtitlesErrorCode,
-  OpenSubtitlesSearchQuery,
-  OpenSubtitlesSearchResult,
-} from '@utils/opensubtitles/type';
 import { SubtitleData } from '@utils/parse';
 
 export type MessageSchema = {
@@ -42,15 +36,5 @@ export type MessageSchema = {
   };
   getVideoTime: {
     response: number;
-  };
-  searchOpenSubtitles: {
-    params: OpenSubtitlesSearchQuery;
-    response: OpenSubtitlesSearchResult;
-    error: OpenSubtitlesErrorCode;
-  };
-  downloadOpenSubtitle: {
-    params: { fileId: number; language: OpenSubtitlesSearchQuery['language'] };
-    response: OpenSubtitlesDownloadedSubtitle;
-    error: OpenSubtitlesErrorCode;
   };
 };

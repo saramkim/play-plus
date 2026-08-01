@@ -10,10 +10,6 @@
   },
   "permissions": ["storage", "tabs", "webRequest", "sidePanel", "unlimitedStorage"],
   "host_permissions": ["https://www.coupangplay.com/*"],
-  "optional_host_permissions": [
-    "https://api.opensubtitles.com/*",
-    "https://www.opensubtitles.com/*"
-  ],
   "background": {
     "service_worker": "background.js"
   },

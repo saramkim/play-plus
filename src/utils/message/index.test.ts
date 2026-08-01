@@ -24,20 +24,6 @@ describe('message transport', () => {
     expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'resetElement' });
   });
 
-  it('sends typed OpenSubtitles runtime messages', async () => {
-    await sendMessage('searchOpenSubtitles', { query: 'Example', language: 'en' });
-    await sendMessage('downloadOpenSubtitle', { fileId: 11, language: 'en' });
-
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      message: 'searchOpenSubtitles',
-      params: { query: 'Example', language: 'en' },
-    });
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      message: 'downloadOpenSubtitle',
-      params: { fileId: 11, language: 'en' },
-    });
-  });
-
   it('forwards the keepalive return and removes the registered listener', () => {
     const callback = vi.fn(() => true as const);
     const registration = onMessage(callback);

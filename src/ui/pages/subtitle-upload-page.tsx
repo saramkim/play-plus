@@ -12,9 +12,9 @@ import { BookOpenTextIcon, CaptionsIcon, CaptionsOffIcon, Settings2Icon, Trash2I
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
-import { SubtitleAdder } from '@/ui/features/subtitle-upload/subtitle-adder';
 import { SubtitleDelayForm } from '@/ui/features/subtitle-upload/subtitle-delay-form';
 import { SubtitleEditForm } from '@/ui/features/subtitle-upload/subtitle-edit-form';
+import { SubtitleUploader } from '@/ui/features/subtitle-upload/subtitle-uploader';
 import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
 import { usePageStore } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
@@ -29,9 +29,9 @@ export function SubtitleUploadPage() {
   if (subtitles.length === 0) return <EmptyState />;
 
   return (
-    <div className='flex h-full min-h-0 flex-col p-4'>
+    <div className='h-full flex flex-col p-4'>
       <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
-      <ul className='flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto px-1 py-2'>
+      <ul className='h-full flex flex-col gap-2 overflow-auto py-2 px-1'>
         {filteredSubtitles.map((item) => (
           <SubtitleItem
             key={item.id}
@@ -44,8 +44,8 @@ export function SubtitleUploadPage() {
           />
         ))}
       </ul>
-      <footer className='max-h-[65%] shrink-0 overflow-y-auto border-t pt-4'>
-        <SubtitleAdder />
+      <footer className='border-t pt-4'>
+        <SubtitleUploader />
       </footer>
     </div>
   );
@@ -53,11 +53,9 @@ export function SubtitleUploadPage() {
 
 function EmptyState() {
   return (
-    <div className='h-full overflow-y-auto p-4'>
-      <div className='flex min-h-full flex-col justify-center gap-3'>
-        <p className='text-wrap text-center text-gray-500'>{t('subtitle_registration_description')}</p>
-        <SubtitleAdder />
-      </div>
+    <div className='h-full flex flex-col justify-center gap-3 p-4'>
+      <p className='text-center text-gray-500'>{t('subtitle_registration_description')}</p>
+      <SubtitleUploader />
     </div>
   );
 }
@@ -83,11 +81,11 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
   return (
     <li
       className={cn(
-        'min-w-0 max-w-full overflow-hidden rounded-lg border shadow-sm transition-colors duration-150',
+        'rounded-lg border shadow-sm transition-colors duration-150',
         isPrimarySubtitle || isSecondarySubtitle ? 'bg-primary/20' : 'bg-background'
       )}
     >
-      <div className='flex min-w-0 flex-col gap-3 p-3'>
+      <div className='flex flex-col gap-3 p-3'>
         {isEditing ? (
           <SubtitleEditForm
             id={data.id}
@@ -99,7 +97,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
         ) : (
           <div
             className={cn(
-              'flex min-h-6 min-w-0 max-w-full cursor-pointer flex-wrap items-center gap-1 rounded transition-colors duration-150',
+              'flex items-center gap-1 w-fit flex-wrap min-h-6  rounded cursor-pointer transition-colors duration-150',
               isPrimarySubtitle || isSecondarySubtitle ? 'hover:bg-primary/10' : 'hover:bg-gray-50'
             )}
             onClick={() => setIsEditing(true)}
@@ -107,9 +105,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
             <span className='text-[13px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full'>
               {t(LANGUAGES[data.language])}
             </span>
-            <p className='min-w-0 max-w-full text-wrap text-[15px] font-medium [overflow-wrap:anywhere]'>
-              {data.title}
-            </p>
+            <p className='text-[15px] font-medium text-wrap'>{data.title}</p>
           </div>
         )}
 

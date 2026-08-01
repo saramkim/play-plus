@@ -2,7 +2,7 @@
   "app_name": { "message": "Play Plus" },
   "extension_name": { "message": "Play Plus - 쿠팡플레이 기능 확장" },
   "extension_description": {
-    "message": "이중 자막, 파일·온라인 자막 추가, 반복 재생 등 언어 학습을 위한 기능을 쿠팡플레이에서 사용할 수 있게 해줍니다."
+    "message": "이중 자막, 자막 업로드, 반복 재생 등 언어 학습을 위한 기능을 쿠팡플레이에서 사용할 수 있게 해줍니다."
   },
   "action_default_title": { "message": "Play Plus 열기" },
 
@@ -20,10 +20,10 @@
 
   "review_description": { "message": "자막을 클릭하거나 단축키를 사용해 자막을 저장해보세요!" },
   "subtitle_analysis_description": {
-    "message": "시청중인 영상의 자막이나,\n추가한 자막을 선택해 자막을 분석해보세요!"
+    "message": "시청중인 영상의 자막이나,\n등록한 자막을 선택해 자막을 분석해보세요!"
   },
   "subtitle_registration_description": {
-    "message": "파일에서 추가하거나 온라인에서 찾아 쿠팡플레이에서 사용할 자막을 추가해보세요!"
+    "message": "자막을 업로드하여 쿠팡플레이에서 자막을 사용해보세요!"
   },
 
   "subtitle_count": { "message": "$1개의 자막", "placeholders": { "count": { "content": "$1" } } },
@@ -42,7 +42,7 @@
   },
   "review_status_empty": { "message": "현재 검색 및 상태 조건에 맞는 저장 자막이 없습니다." },
   "subtitle_analysis": { "message": "자막 분석" },
-  "subtitle_upload": { "message": "자막 추가" },
+  "subtitle_upload": { "message": "자막 업로드" },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
@@ -57,14 +57,6 @@
   "arabic": { "message": "아랍어" },
 
   "all_list": { "message": "전체 목록" },
-  "add": { "message": "추가" },
-  "add_from_file": { "message": "파일에서 추가" },
-  "add_online_subtitle": {
-    "message": "$fileName$ 자막 추가",
-    "placeholders": { "fileName": { "content": "$1" } }
-  },
-  "add_this_subtitle": { "message": "이 자막 추가" },
-  "adding": { "message": "추가 중" },
   "allow_line_break": { "message": "줄바꿈 허용" },
   "auto_scroll": { "message": "자동 스크롤" },
   "available_on_coupang_play": { "message": "쿠팡플레이에서 사용 가능" },
@@ -77,10 +69,6 @@
   "confirm": { "message": "확인" },
   "copied": { "message": "복사됨" },
   "copy": { "message": "복사" },
-  "content_type": { "message": "유형" },
-  "content_type_all": { "message": "전체" },
-  "content_type_episode": { "message": "에피소드" },
-  "content_type_movie": { "message": "영화" },
   "dark": { "message": "어둡게" },
   "delete": { "message": "삭제" },
   "edit": { "message": "편집" },
@@ -91,7 +79,6 @@
     "message": "백업 파일에는 저장한 자막 문장과 영상 주소가 포함됩니다. 파일을 안전하게 보관하시겠습니까?"
   },
   "fallback_unit": { "message": "대체 단위" },
-  "find_online": { "message": "온라인에서 찾기" },
   "fixed": { "message": "고정형" },
   "font_weight": { "message": "글씨 굵기" },
   "forward_key": { "message": "앞으로 이동 키" },
@@ -102,9 +89,6 @@
   "loop_current_subtitle": { "message": "현재 자막 반복" },
   "loop": { "message": "구간 반복" },
   "minutes": { "message": "분" },
-  "no_search_results": { "message": "검색 결과가 없습니다." },
-  "online_subtitle_search": { "message": "OpenSubtitles 자막 검색" },
-  "opensubtitles_attribution": { "message": "온라인 자막 제공:" },
   "oldest": { "message": "오래된 순" },
   "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
   "optimize_for_learning": { "message": "학습 최적화" },
@@ -114,7 +98,7 @@
   "press_any_key": { "message": "키를 눌러 입력하세요" },
   "primary_subtitle": { "message": "메인 자막" },
   "upload": { "message": "업로드" },
-  "uploaded_subtitles": { "message": "추가한 자막" },
+  "uploaded_subtitles": { "message": "업로드한 자막" },
   "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
   "reset_settings": { "message": "설정 초기화" },
   "restore_backup": { "message": "백업 복원" },
@@ -129,45 +113,6 @@
   "save": { "message": "저장" },
   "search_term": { "message": "검색어" },
   "search": { "message": "검색" },
-  "search_result_summary": {
-    "message": "$total$개의 자막 결과에서 파일 $visible$개 표시",
-    "placeholders": {
-      "visible": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_characteristics": { "message": "자막 특성" },
-  "result_auto_translated": { "message": "자동 번역" },
-  "result_hearing_impaired": { "message": "청각장애인용" },
-  "result_foreign_parts_only": { "message": "외국어 구간만" },
-  "result_trusted_source": { "message": "신뢰 출처" },
-  "result_trusted_source_description": {
-    "message": "OpenSubtitles에서 제공한 표시이며 안전을 보증하지 않습니다."
-  },
-  "result_rating": {
-    "message": "평점 $rating$ · 투표 $votes$",
-    "placeholders": {
-      "rating": { "content": "$1" },
-      "votes": { "content": "$2" }
-    }
-  },
-  "result_downloads": {
-    "message": "다운로드 $count$회",
-    "placeholders": { "count": { "content": "$1" } }
-  },
-  "result_disc": {
-    "message": "CD $current$/$total$",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_details": { "message": "상세 정보" },
-  "result_file_name": { "message": "파일명" },
-  "result_uploader_rank": { "message": "업로더 등급" },
-  "result_upload_date": { "message": "업로드일" },
-  "search_title": { "message": "제목" },
-  "searching": { "message": "검색 중" },
   "secondary_subtitle": { "message": "서브 자막" },
   "seconds": { "message": "초" },
   "select": { "message": "선택" },
@@ -177,8 +122,6 @@
   "start_point_key": { "message": "시작 시점 지정 키" },
   "sub_video_skip": { "message": "영상 이동(2)" },
   "subtitle_color": { "message": "자막 색상" },
-  "subtitle_add_source": { "message": "자막 추가 방법" },
-  "subtitle_title": { "message": "자막 제목" },
   "subtitle_size": { "message": "자막 크기" },
   "subtitles": { "message": "자막" },
   "success": { "message": "성공" },
@@ -189,12 +132,7 @@
   "toggle_secondary_subtitle": { "message": "서브 자막 켜기/끄기" },
   "top": { "message": "상단" },
   "undo": { "message": "취소" },
-  "upload_subtitle_file": { "message": "자막 파일 선택" },
-  "year": { "message": "연도" },
-  "season": { "message": "시즌" },
-  "episode": { "message": "회차" },
-  "show_more": { "message": "더 보기" },
-  "loading_more": { "message": "더 불러오는 중" },
+  "upload_subtitle_file": { "message": "자막 파일 업로드" },
   "video_skip": { "message": "영상 이동(1)" },
   "view_video": { "message": "영상 보기" },
 
@@ -234,19 +172,6 @@
   "success_delete_subtitle": { "message": "자막 삭제 완료" },
   "success_export_backup": { "message": "백업을 내보냈습니다." },
   "success_restore_backup": { "message": "백업을 복원했습니다." },
-  "success_add_subtitle": {
-    "message": "자막을 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_online_subtitle": {
-    "message": "OpenSubtitles 자막을 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_subtitle_cached": {
-    "message": "OpenSubtitles 자막을 세션 캐시에서 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_subtitle_remaining": {
-    "message": "OpenSubtitles 자막을 추가했습니다. OpenSubtitles가 보고한 남은 다운로드 수는 $remaining$회입니다. 목록에서 메인/서브 자막으로 선택해 사용하세요.",
-    "placeholders": { "remaining": { "content": "$1" } }
-  },
   "error_export_backup": { "message": "백업을 내보내지 못했습니다." },
   "error_invalid_backup": { "message": "유효한 Play Plus 백업 파일이 아닙니다. 기존 데이터는 변경되지 않았습니다." },
   "error_restore_backup": { "message": "백업 복원에 실패했습니다. 기존 데이터 복구를 시도했습니다." },
@@ -277,24 +202,9 @@
     "message": "최소값 $minValue$보다 작습니다.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
-  "error_file_size": { "message": "파일 크기가 너무 큽니다.\n1 MiB 이하의 파일만 추가해주세요." },
-  "error_empty_subtitle": { "message": "사용 가능한 자막 큐를 찾지 못했습니다." },
-  "error_online_access": { "message": "OpenSubtitles가 요청을 허용하지 않았습니다. 제공자 설정을 확인해주세요." },
-  "error_online_configuration": { "message": "OpenSubtitles 연결 설정이 완료되지 않았습니다." },
-  "error_online_download": { "message": "선택한 온라인 자막을 다운로드하지 못했습니다. 결과에서 다시 시도해주세요." },
-  "error_online_expired": { "message": "OpenSubtitles 다운로드 링크가 만료되었습니다. 결과에서 다시 시도해주세요." },
-  "error_online_invalid_query": { "message": "검색 조건을 확인해주세요." },
-  "error_online_network": { "message": "OpenSubtitles에 연결하지 못했습니다. 네트워크를 확인해주세요." },
-  "error_online_permission_denied": {
-    "message": "온라인 자막 검색 권한을 허용하지 않았습니다. 파일에서 추가는 계속 사용할 수 있습니다."
-  },
-  "error_online_search": { "message": "온라인 자막을 검색하지 못했습니다. 잠시 후 다시 시도해주세요." },
-  "error_online_rate_limit": { "message": "OpenSubtitles 다운로드 또는 요청 한도에 도달했습니다. 나중에 다시 시도해주세요." },
-  "error_online_response": { "message": "OpenSubtitles가 읽을 수 없는 응답을 보냈습니다. 나중에 다시 시도해주세요." },
-  "error_online_unavailable": { "message": "OpenSubtitles를 일시적으로 사용할 수 없습니다." },
-  "error_subtitle_decode": { "message": "자막 파일의 문자 인코딩을 읽지 못했습니다." },
+  "error_file_size": { "message": "파일 크기가 너무 큽니다.\n1MB 이하의 파일만 업로드해주세요." },
   "error_unsupported_file_type": {
-    "message": "지원하지 않는 파일 형식입니다.\n$fileType$ 파일만 추가해주세요.",
+    "message": "지원하지 않는 파일 형식입니다.\n$fileType$ 파일만 업로드해주세요.",
     "placeholders": { "fileType": { "content": "$1" } }
   },
   "error_reserved_shortcuts": { "message": "시스템에서 사용 중입니다" },

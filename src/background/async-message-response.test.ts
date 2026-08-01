@@ -31,34 +31,4 @@ describe('respondToAsyncMessage', () => {
       expect(sendResponse).toHaveBeenCalledWith({ success: false, message: 'storage failed' })
     );
   });
-
-  it('returns task data for typed response messages', async () => {
-    const sendResponse = vi.fn();
-
-    respondToAsyncMessage(sendResponse, async () => ({ candidates: [] }));
-
-    await vi.waitFor(() =>
-      expect(sendResponse).toHaveBeenCalledWith({ success: true, data: { candidates: [] } })
-    );
-  });
-
-  it('uses a typed error normalizer when one is provided', async () => {
-    const sendResponse = vi.fn();
-
-    respondToAsyncMessage(
-      sendResponse,
-      async () => {
-        throw new Error('provider detail');
-      },
-      () => ({ code: 'SERVER' as const, message: 'Provider request failed' })
-    );
-
-    await vi.waitFor(() =>
-      expect(sendResponse).toHaveBeenCalledWith({
-        success: false,
-        code: 'SERVER',
-        message: 'Provider request failed',
-      })
-    );
-  });
 });
