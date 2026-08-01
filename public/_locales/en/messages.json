@@ -2,7 +2,7 @@
   "app_name": { "message": "Play Plus" },
   "extension_name": { "message": "Play Plus - Enhance Coupang Play's features" },
   "extension_description": {
-    "message": "Enables language learning features such as dual subtitles, subtitle upload, and repeat playback on Coupang Play."
+    "message": "Enables language learning features such as dual subtitles, adding file or online subtitles, and repeat playback on Coupang Play."
   },
   "action_default_title": { "message": "Open Play Plus" },
 
@@ -21,9 +21,11 @@
   "no_saved_subtitles": { "message": "No saved subtitles." },
   "review_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
   "subtitle_analysis_description": {
-    "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have uploaded!"
+    "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have added!"
   },
-  "subtitle_registration_description": { "message": "Upload subtitles to use subtitles in Coupang Play!" },
+  "subtitle_registration_description": {
+    "message": "Add a subtitle from a file or find one online to use on Coupang Play."
+  },
 
   "subtitle_count": { "message": "$1 subtitles", "placeholders": { "count": { "content": "$1" } } },
 
@@ -41,7 +43,7 @@
   },
   "review_status_empty": { "message": "No saved subtitles match the current filters." },
   "subtitle_analysis": { "message": "Analysis" },
-  "subtitle_upload": { "message": "Upload" },
+  "subtitle_upload": { "message": "Add Subtitles" },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
@@ -56,6 +58,14 @@
   "arabic": { "message": "Arabic" },
 
   "all_list": { "message": "All List" },
+  "add": { "message": "Add" },
+  "add_from_file": { "message": "Add from File" },
+  "add_online_subtitle": {
+    "message": "Add $fileName$ subtitle",
+    "placeholders": { "fileName": { "content": "$1" } }
+  },
+  "add_this_subtitle": { "message": "Add This Subtitle" },
+  "adding": { "message": "Adding" },
   "allow_line_break": { "message": "Allow Line Break" },
   "auto_scroll": { "message": "Auto Scroll" },
   "available_on_coupang_play": { "message": "Available on Coupang Play" },
@@ -68,6 +78,10 @@
   "confirm": { "message": "Confirm" },
   "copied": { "message": "Copied" },
   "copy": { "message": "Copy" },
+  "content_type": { "message": "Type" },
+  "content_type_all": { "message": "All" },
+  "content_type_episode": { "message": "Episode" },
+  "content_type_movie": { "message": "Movie" },
   "dark": { "message": "Dark" },
   "delete": { "message": "Delete" },
   "edit": { "message": "Edit" },
@@ -78,6 +92,7 @@
     "message": "The backup contains saved subtitle text and video URLs. Do you want to save it somewhere secure?"
   },
   "fallback_unit": { "message": "Fallback Unit" },
+  "find_online": { "message": "Find Online" },
   "fixed": { "message": "Fixed" },
   "font_weight": { "message": "Font Weight" },
   "forward_key": { "message": "Forward Key" },
@@ -88,6 +103,9 @@
   "loop_current_subtitle": { "message": "Loop Current Subtitle" },
   "loop": { "message": "Loop" },
   "minutes": { "message": "Minutes" },
+  "no_search_results": { "message": "No search results." },
+  "online_subtitle_search": { "message": "Search OpenSubtitles" },
+  "opensubtitles_attribution": { "message": "Online subtitles provided by:" },
   "oldest": { "message": "Oldest" },
   "optimize_for_learning_confirm": { "message": "Are you sure you want to apply the learning optimized settings?" },
   "optimize_for_learning": { "message": "Optimize for Learning" },
@@ -97,7 +115,7 @@
   "press_any_key": { "message": "Press Any Key" },
   "primary_subtitle": { "message": "Primary Subtitle" },
   "upload": { "message": "Upload" },
-  "uploaded_subtitles": { "message": "Uploaded Subtitles" },
+  "uploaded_subtitles": { "message": "Added Subtitles" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
   "restore_backup": { "message": "Restore Backup" },
@@ -112,6 +130,45 @@
   "save": { "message": "Save" },
   "search_term": { "message": "Search Term" },
   "search": { "message": "Search" },
+  "search_result_summary": {
+    "message": "Showing $visible$ files from $total$ subtitle results",
+    "placeholders": {
+      "visible": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "result_characteristics": { "message": "Subtitle characteristics" },
+  "result_auto_translated": { "message": "Auto-translated" },
+  "result_hearing_impaired": { "message": "SDH" },
+  "result_foreign_parts_only": { "message": "Foreign parts only" },
+  "result_trusted_source": { "message": "Trusted source" },
+  "result_trusted_source_description": {
+    "message": "Label provided by OpenSubtitles; it is not a safety guarantee."
+  },
+  "result_rating": {
+    "message": "Rating $rating$ · Votes $votes$",
+    "placeholders": {
+      "rating": { "content": "$1" },
+      "votes": { "content": "$2" }
+    }
+  },
+  "result_downloads": {
+    "message": "Downloads $count$",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "result_disc": {
+    "message": "CD $current$/$total$",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "result_details": { "message": "Details" },
+  "result_file_name": { "message": "File name" },
+  "result_uploader_rank": { "message": "Uploader rank" },
+  "result_upload_date": { "message": "Uploaded" },
+  "search_title": { "message": "Title" },
+  "searching": { "message": "Searching" },
   "secondary_subtitle": { "message": "Secondary Subtitle" },
   "seconds": { "message": "Seconds" },
   "select": { "message": "Select" },
@@ -121,6 +178,8 @@
   "start_point_key": { "message": "Start Point Key" },
   "sub_video_skip": { "message": "Video Skip(2)" },
   "subtitle_color": { "message": "Subtitle Color" },
+  "subtitle_add_source": { "message": "Subtitle Source" },
+  "subtitle_title": { "message": "Subtitle Title" },
   "subtitle_size": { "message": "Subtitle Size" },
   "subtitles": { "message": "Subtitles" },
   "success": { "message": "Success" },
@@ -131,7 +190,12 @@
   "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },
   "top": { "message": "Top" },
   "undo": { "message": "Undo" },
-  "upload_subtitle_file": { "message": "Upload Subtitle File" },
+  "upload_subtitle_file": { "message": "Choose Subtitle File" },
+  "year": { "message": "Year" },
+  "season": { "message": "Season" },
+  "episode": { "message": "Episode" },
+  "show_more": { "message": "Show More" },
+  "loading_more": { "message": "Loading More" },
   "video_skip": { "message": "Video Skip(1)" },
   "view_video": { "message": "View Video" },
 
@@ -171,6 +235,19 @@
   "success_delete_subtitle": { "message": "Subtitle deleted" },
   "success_export_backup": { "message": "Backup exported." },
   "success_restore_backup": { "message": "Backup restored." },
+  "success_add_subtitle": {
+    "message": "Subtitle added. Select it as the primary or secondary subtitle from the list to use it."
+  },
+  "success_add_online_subtitle": {
+    "message": "OpenSubtitles subtitle added. Select it as the primary or secondary subtitle from the list to use it."
+  },
+  "success_add_subtitle_cached": {
+    "message": "OpenSubtitles subtitle added from the session cache. Select it as the primary or secondary subtitle from the list to use it."
+  },
+  "success_add_subtitle_remaining": {
+    "message": "OpenSubtitles subtitle added. OpenSubtitles reported $remaining$ downloads remaining. Select it as the primary or secondary subtitle from the list to use it.",
+    "placeholders": { "remaining": { "content": "$1" } }
+  },
   "error_export_backup": { "message": "Failed to export the backup." },
   "error_invalid_backup": { "message": "This is not a valid Play Plus backup. Existing data was not changed." },
   "error_restore_backup": { "message": "Backup restore failed. Play Plus attempted to recover the existing data." },
@@ -201,9 +278,24 @@
     "message": "Smaller than the minimum value of $minValue$.",
     "placeholders": { "minValue": { "content": "$1" } }
   },
-  "error_file_size": { "message": "File size is too large.\nPlease upload a file less than 1MB." },
+  "error_file_size": { "message": "File size is too large.\nPlease add a file no larger than 1 MiB." },
+  "error_empty_subtitle": { "message": "No usable subtitle cues were found." },
+  "error_online_access": { "message": "OpenSubtitles did not allow the request. Check the provider configuration." },
+  "error_online_configuration": { "message": "The OpenSubtitles connection is not configured." },
+  "error_online_download": { "message": "The selected online subtitle could not be downloaded. Try it again from the results." },
+  "error_online_expired": { "message": "The OpenSubtitles download link expired. Try it again from the results." },
+  "error_online_invalid_query": { "message": "Check the search conditions." },
+  "error_online_network": { "message": "Could not connect to OpenSubtitles. Check your network connection." },
+  "error_online_permission_denied": {
+    "message": "Online subtitle access was not allowed. You can continue adding subtitles from files."
+  },
+  "error_online_search": { "message": "Online subtitles could not be searched. Please try again later." },
+  "error_online_rate_limit": { "message": "The OpenSubtitles download or request limit was reached. Please try again later." },
+  "error_online_response": { "message": "OpenSubtitles returned unreadable data. Please try again later." },
+  "error_online_unavailable": { "message": "OpenSubtitles is temporarily unavailable." },
+  "error_subtitle_decode": { "message": "The subtitle file's text encoding could not be read." },
   "error_unsupported_file_type": {
-    "message": "Unsupported file type.\n Please upload $fileType$ files.",
+    "message": "Unsupported file type.\nPlease add $fileType$ files.",
     "placeholders": { "fileType": { "content": "$1" } }
   },
   "error_reserved_shortcuts": { "message": "Reserved for the system" },
