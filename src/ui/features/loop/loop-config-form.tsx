@@ -1,21 +1,38 @@
-import { cn } from '@utils/helper';
+import { useId, useState } from 'react';
+
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormField, FormHeader, FormTitle } from '@/ui/components/form/form';
+import { Form, FormContent, FormField, FormHeader, FormTitle } from '@/ui/components/form/form';
 import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 
-export function LoopConfigForm() {
+interface LoopConfigFormProps {
+  defaultExpanded?: boolean;
+}
+
+export function LoopConfigForm({ defaultExpanded = false }: LoopConfigFormProps) {
   const { form, onSubmit } = useConfigForm('loop');
   const { isDirty, isValid } = form.formState;
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const id = useId();
+  const contentId = `${id}-content`;
+  const titleId = `${id}-title`;
+  const enabled = form.watch('enabled');
+  const title = t('loop');
 
   return (
     <Form form={form} onSubmit={onSubmit}>
-      <FormHeader>
-        <FormTitle>{t('loop')}</FormTitle>
-        <div className='flex items-center gap-1'>
+      <FormHeader
+        controlsId={contentId}
+        disclosureHidden={isDirty}
+        disclosureLabel={t(expanded ? 'collapse_setting' : 'expand_setting', title)}
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+      >
+        <FormTitle id={titleId}>{title}</FormTitle>
+        <div className='flex shrink-0 items-center gap-1'>
           {isDirty ? (
             <>
               <Button variant='outline' size='sm' type='button' onClick={() => form.reset()}>
@@ -30,13 +47,23 @@ export function LoopConfigForm() {
               control={form.control}
               name='enabled'
               render={({ field }) => (
-                <Switch checked={field.value} onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })} />
+                <Switch
+                  aria-label={title}
+                  checked={field.value}
+                  onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })}
+                />
               )}
             />
           )}
         </div>
       </FormHeader>
-      <div className={cn('flex flex-col gap-1', form.watch('enabled') ? '' : 'opacity-50 pointer-events-none')}>
+      <FormContent
+        id={contentId}
+        aria-labelledby={titleId}
+        className='flex flex-col gap-1'
+        disabled={!enabled}
+        expanded={expanded}
+      >
         <FormField
           control={form.control}
           name='toggleLoop'
@@ -62,7 +89,7 @@ export function LoopConfigForm() {
           name='playCurrentSubtitleOnce'
           render={({ field }) => <ShortcutField label={t('play_current_subtitle_once')} field={field} />}
         />
-      </div>
+      </FormContent>
     </Form>
   );
 }

@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@utils/helper';
+import { ChevronDownIcon } from 'lucide-react';
 import {
   Controller,
   FormProvider,
@@ -15,6 +16,7 @@ import {
   UseFormReturn,
 } from 'react-hook-form';
 
+import { Button } from '@/ui/components/button';
 import { Label } from '@/ui/components/label';
 
 export function Form<TFieldValues extends FieldValues>({
@@ -156,12 +158,69 @@ export function FormMessage({ className, ...props }: React.ComponentProps<'p'>) 
   );
 }
 
-export function FormHeader({ className, ...props }: React.ComponentProps<'div'>) {
+interface FormHeaderProps extends React.ComponentProps<'div'> {
+  controlsId?: string;
+  disclosureHidden?: boolean;
+  disclosureLabel?: string;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+}
+
+export function FormHeader({
+  children,
+  className,
+  controlsId,
+  disclosureHidden,
+  disclosureLabel,
+  expanded,
+  onExpandedChange,
+  ...props
+}: FormHeaderProps) {
+  const isCollapsible = typeof expanded === 'boolean';
+
   return (
-    <div data-slot='form-header' className={cn('flex justify-between items-center min-h-8', className)} {...props} />
+    <div
+      data-slot='form-header'
+      className={cn('flex min-h-8 min-w-0 items-center gap-2', className)}
+      {...props}
+    >
+      {children}
+      {isCollapsible && !disclosureHidden && (
+        <Button
+          aria-controls={controlsId}
+          aria-expanded={expanded}
+          aria-label={disclosureLabel}
+          className='shrink-0 text-muted-foreground'
+          size='xxs'
+          type='button'
+          variant='ghost'
+          onClick={() => onExpandedChange?.(!expanded)}
+        >
+          <ChevronDownIcon className={cn('transition-transform', expanded && 'rotate-180')} />
+        </Button>
+      )}
+    </div>
   );
 }
 
 export function FormTitle({ className, ...props }: React.ComponentProps<'h2'>) {
-  return <h2 data-slot='form-title' className={cn('text-[15px] font-bold', className)} {...props} />;
+  return <h2 data-slot='form-title' className={cn('min-w-0 flex-1 truncate text-[15px] font-bold', className)} {...props} />;
+}
+
+interface FormContentProps extends React.ComponentProps<'div'> {
+  disabled?: boolean;
+  expanded: boolean;
+}
+
+export function FormContent({ className, disabled, expanded, ...props }: FormContentProps) {
+  return (
+    <div
+      data-slot='form-content'
+      aria-disabled={disabled || undefined}
+      className={cn(disabled && 'pointer-events-none opacity-50', className)}
+      hidden={!expanded}
+      role='region'
+      {...props}
+    />
+  );
 }

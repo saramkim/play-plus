@@ -1,11 +1,21 @@
+import { useId, useState } from 'react';
+
 import { SETTINGS } from '@utils/constants';
-import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { WrapTextIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ColorPicker } from '@/ui/components/color-picker';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form/form';
+import {
+  Form,
+  FormContent,
+  FormControl,
+  FormField,
+  FormHeader,
+  FormItem,
+  FormLabel,
+  FormTitle,
+} from '@/ui/components/form/form';
 import { SliderField } from '@/ui/components/form/slider-field';
 import { ToggleGroupField } from '@/ui/components/form/toggle-group-field';
 import { NumberInput } from '@/ui/components/number-input';
@@ -13,17 +23,31 @@ import { Switch } from '@/ui/components/switch';
 import { Toggle } from '@/ui/components/toggle';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 
-type SubtitleConfigFormProps = typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY;
+type SubtitleConfigFormProps = (typeof SETTINGS.SUBTITLES.PRIMARY | typeof SETTINGS.SUBTITLES.SECONDARY) & {
+  defaultExpanded?: boolean;
+};
 
-export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFormProps) {
+export function SubtitleConfigForm({ defaultExpanded = false, STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleConfigFormProps) {
   const { form, onSubmit } = useConfigForm(STORAGE_KEY);
   const { isDirty, isValid } = form.formState;
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const id = useId();
+  const contentId = `${id}-content`;
+  const titleId = `${id}-title`;
+  const enabled = form.watch('enabled');
+  const title = t(TITLE_MESSAGE_KEY);
 
   return (
     <Form form={form} onSubmit={onSubmit}>
-      <FormHeader>
-        <FormTitle>{t(TITLE_MESSAGE_KEY)}</FormTitle>
-        <div className='flex items-center gap-1'>
+      <FormHeader
+        controlsId={contentId}
+        disclosureHidden={isDirty}
+        disclosureLabel={t(expanded ? 'collapse_setting' : 'expand_setting', title)}
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+      >
+        <FormTitle id={titleId}>{title}</FormTitle>
+        <div className='flex shrink-0 items-center gap-1'>
           {isDirty ? (
             <>
               <Button variant='outline' size='sm' type='button' onClick={() => form.reset()}>
@@ -38,13 +62,23 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
               control={form.control}
               name='enabled'
               render={({ field }) => (
-                <Switch checked={field.value} onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })} />
+                <Switch
+                  aria-label={title}
+                  checked={field.value}
+                  onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })}
+                />
               )}
             />
           )}
         </div>
       </FormHeader>
-      <div className={cn('flex flex-col gap-1', form.watch('enabled') ? '' : 'opacity-50 pointer-events-none')}>
+      <FormContent
+        id={contentId}
+        aria-labelledby={titleId}
+        className='flex flex-col gap-1'
+        disabled={!enabled}
+        expanded={expanded}
+      >
         <FormField
           control={form.control}
           name='language'
@@ -135,7 +169,7 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
             </FormItem>
           )}
         />
-      </div>
+      </FormContent>
     </Form>
   );
 }

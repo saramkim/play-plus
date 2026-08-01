@@ -78,6 +78,10 @@
   "backward_key": { "message": "뒤로 이동 키" },
   "bottom": { "message": "하단" },
   "cancel": { "message": "취소" },
+  "collapse_setting": {
+    "message": "$1 설정 접기",
+    "placeholders": { "setting": { "content": "$1" } }
+  },
   "center": { "message": "중앙" },
   "click_to_save": { "message": "클릭하여 저장" },
   "confirm": { "message": "확인" },
@@ -184,7 +188,7 @@
   "shortcuts": { "message": "단축키" },
   "skip_unit": { "message": "이동 단위" },
   "start_point_key": { "message": "시작 시점 지정 키" },
-  "sub_video_skip": { "message": "영상 이동(2)" },
+  "sub_video_skip": { "message": "보조 이동" },
   "subtitle_color": { "message": "자막 색상" },
   "subtitle_add_source": { "message": "자막 추가 방법" },
   "subtitle_title": { "message": "자막 제목" },
@@ -204,7 +208,11 @@
   "episode": { "message": "회차" },
   "show_more": { "message": "더 보기" },
   "loading_more": { "message": "더 불러오는 중" },
-  "video_skip": { "message": "영상 이동(1)" },
+  "video_skip": { "message": "기본 이동" },
+  "expand_setting": {
+    "message": "$1 설정 펼치기",
+    "placeholders": { "setting": { "content": "$1" } }
+  },
   "view_video": { "message": "영상 보기" },
 
   "connection_content_connecting": { "message": "쿠팡플레이 연결 중" },
