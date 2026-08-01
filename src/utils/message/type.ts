@@ -8,6 +8,7 @@ import {
 import { SubtitleData } from '@utils/parse';
 
 export type MessageSchema = {
+  contentInitialized: void;
   resetElement: void;
   detectVideo: void;
   fetchVideoMetadata: {

@@ -28,6 +28,25 @@ beforeEach(() => {
 });
 
 describe('background message handler', () => {
+  it('clears stale custom roles when content initializes', async () => {
+    const dependencies = createDependencies();
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(listener?.(
+      { message: 'contentInitialized' },
+      { tab: { id: 7 } as chrome.tabs.Tab },
+      sendResponse
+    )).toBe(true);
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ success: true }));
+    expect(dependencies.updateTabInfo).toHaveBeenCalledWith(7, {
+      primarySubtitle: null,
+      secondarySubtitle: null,
+    });
+  });
+
   it('awaits view-video work before responding', async () => {
     let completeTask: (() => void) | undefined;
     const dependencies = createDependencies();

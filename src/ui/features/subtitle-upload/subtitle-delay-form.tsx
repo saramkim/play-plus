@@ -1,12 +1,12 @@
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { round } from '@utils/helper';
-import { CheckIcon, MinusIcon, PlusIcon } from 'lucide-react';
+import { t } from '@utils/i18n';
+import { CheckIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { NumberInput } from '@/ui/components/number-input';
-import { useClickOutside } from '@/ui/hooks/use-click-outside';
 
 interface SubtitleDelayFormProps {
   initialDelay?: number;
@@ -16,11 +16,8 @@ interface SubtitleDelayFormProps {
 
 export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }: SubtitleDelayFormProps) {
   const [delay, setDelay] = useState(initialDelay ?? 0);
-  const formRef = useRef<HTMLFormElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const delayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useClickOutside([formRef], closeEditMode);
 
   const startStepping = (step: number) => {
     setDelay((prev) => round(prev + step));
@@ -44,6 +41,8 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
     }
   };
 
+  useEffect(() => stopStepping, []);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -54,33 +53,57 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className='flex items-center gap-2'>
-      <Button
-        variant='outline'
-        size='sm'
-        type='button'
-        onMouseDown={() => startStepping(-0.1)}
-        onMouseUp={stopStepping}
-        onMouseLeave={stopStepping}
-      >
-        <MinusIcon />
-      </Button>
-
-      <NumberInput value={delay} onChange={setDelay} step={0.1} />
-
-      <Button
-        variant='outline'
-        size='sm'
-        type='button'
-        onMouseDown={() => startStepping(0.1)}
-        onMouseUp={stopStepping}
-        onMouseLeave={stopStepping}
-      >
-        <PlusIcon />
-      </Button>
-      <Button variant='outline' size='sm' type='submit'>
-        <CheckIcon />
-      </Button>
+    <form onSubmit={handleSubmit} className='flex min-w-0 flex-col gap-2'>
+      <div className='grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2'>
+        <StepButton step={-0.1} label={t('decrease_sync')} startStepping={startStepping} stopStepping={stopStepping}>
+          <MinusIcon />
+        </StepButton>
+        <NumberInput aria-label={t('sync_adjustment')} value={delay} onChange={setDelay} step={0.1} />
+        <StepButton step={0.1} label={t('increase_sync')} startStepping={startStepping} stopStepping={stopStepping}>
+          <PlusIcon />
+        </StepButton>
+      </div>
+      <div className='grid grid-cols-2 gap-2'>
+        <Button variant='outline' size='sm' type='button' onClick={closeEditMode}>
+          <XIcon />
+          {t('cancel')}
+        </Button>
+        <Button size='sm' type='submit'>
+          <CheckIcon />
+          {t('save')}
+        </Button>
+      </div>
     </form>
+  );
+}
+
+interface StepButtonProps {
+  step: number;
+  label: string;
+  startStepping: (step: number) => void;
+  stopStepping: () => void;
+  children: React.ReactNode;
+}
+
+function StepButton({ step, label, startStepping, stopStepping, children }: StepButtonProps) {
+  return (
+    <Button
+      variant='outline'
+      size='icon'
+      type='button'
+      aria-label={label}
+      onPointerDown={() => startStepping(step)}
+      onPointerUp={stopStepping}
+      onPointerLeave={stopStepping}
+      onPointerCancel={stopStepping}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        startStepping(step);
+        stopStepping();
+      }}
+    >
+      {children}
+    </Button>
   );
 }

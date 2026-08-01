@@ -43,6 +43,39 @@
   "review_status_empty": { "message": "현재 검색 및 상태 조건에 맞는 저장 자막이 없습니다." },
   "subtitle_analysis": { "message": "자막 분석" },
   "subtitle_upload": { "message": "자막 추가" },
+  "current_tab_subtitles": { "message": "현재 탭의 자막" },
+  "default_subtitle": { "message": "기본 자막" },
+  "display_off": { "message": "표시 꺼짐" },
+  "subtitle_role_unavailable": {
+    "message": "Coupang Play 영상 탭을 연 뒤 선택할 수 있습니다."
+  },
+  "selected_subtitle_missing": { "message": "선택한 자막을 찾을 수 없음" },
+  "default_short": { "message": "기본으로" },
+  "primary_short": { "message": "메인" },
+  "secondary_short": { "message": "서브" },
+  "use_as_primary": { "message": "메인으로 선택" },
+  "use_as_secondary": { "message": "서브로 선택" },
+  "primary_selected": { "message": "메인 선택됨" },
+  "secondary_selected": { "message": "서브 선택됨" },
+  "press_to_use_default": { "message": "누르면 기본 자막으로" },
+  "return_primary_to_default": { "message": "메인 자막을 기본 자막으로 되돌리기" },
+  "return_secondary_to_default": { "message": "서브 자막을 기본 자막으로 되돌리기" },
+  "current_tab_use": { "message": "현재 탭에서 사용" },
+  "applying": { "message": "적용 중" },
+  "analyze": { "message": "분석" },
+  "sync": { "message": "싱크" },
+  "edit_short": { "message": "수정" },
+  "edit_subtitle_details": { "message": "자막 정보 수정" },
+  "decrease_sync": { "message": "싱크 지연 줄이기" },
+  "increase_sync": { "message": "싱크 지연 늘리기" },
+  "sync_value": {
+    "message": "싱크 $value$초",
+    "placeholders": { "value": { "content": "$1" } }
+  },
+  "added_date": {
+    "message": "$date$ 추가",
+    "placeholders": { "date": { "content": "$1" } }
+  },
 
   "english": { "message": "영어" },
   "korean": { "message": "한국어" },
@@ -263,6 +296,7 @@
     "message": "백업 복원과 기존 데이터 복구에 실패했습니다. 저장 데이터를 확인해주세요."
   },
   "error_save_subtitle": { "message": "자막 저장 실패" },
+  "error_subtitle_role_update": { "message": "자막 선택을 변경하지 못했습니다. 다시 시도해주세요." },
   "error_copy_subtitle": { "message": "자막 복사 실패" },
   "error_loop": { "message": "구간 반복 실패" },
   "info_loop_stop": { "message": "구간 반복 해제" },

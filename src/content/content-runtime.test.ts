@@ -11,6 +11,7 @@ const createDependencies = () => {
     initializeStorageChange: vi.fn(() => cleanup('storage')),
     initializeSubtitleSync: vi.fn(async () => cleanup('subtitle')),
     removeContainers: cleanup('containers'),
+    reportContentInitialized: vi.fn(async () => {}),
     renderApp: vi.fn(() => cleanup('app')),
     setupSystemContainer: vi.fn(),
     startLoopController: vi.fn(),
@@ -38,6 +39,7 @@ describe('ContentRuntime', () => {
     expect(dependencies.startVideoController).toHaveBeenCalledOnce();
     expect(dependencies.initializeMessageListener).toHaveBeenCalledOnce();
     expect(dependencies.initializeStorageChange).toHaveBeenCalledOnce();
+    expect(dependencies.reportContentInitialized).toHaveBeenCalledOnce();
     expect(dependencies.initializeSubtitleSync).toHaveBeenCalledOnce();
     expect(dependencies.renderApp).toHaveBeenCalledOnce();
 
@@ -47,11 +49,11 @@ describe('ContentRuntime', () => {
     expect(cleanupOrder).toEqual([
       'app',
       'subtitle',
-      'storage',
-      'message',
       'video-controller',
       'playback-speed',
       'loop',
+      'storage',
+      'message',
       'video-state',
       'containers',
     ]);
@@ -114,5 +116,29 @@ describe('ContentRuntime', () => {
 
     expect(lateCleanup).toHaveBeenCalledOnce();
     expect(dependencies.renderApp).not.toHaveBeenCalled();
+  });
+
+  it('does not start video or subtitle work before session roles are reset', async () => {
+    const { dependencies } = createDependencies();
+    let finishInitialization: (() => void) | undefined;
+    vi.mocked(dependencies.reportContentInitialized).mockReturnValue(
+      new Promise((resolve) => {
+        finishInitialization = resolve;
+      })
+    );
+    const runtime = new ContentRuntime(dependencies);
+
+    const start = runtime.start();
+    await Promise.resolve();
+
+    expect(dependencies.startVideoController).not.toHaveBeenCalled();
+    expect(dependencies.initializeSubtitleSync).not.toHaveBeenCalled();
+
+    finishInitialization?.();
+    await start;
+
+    expect(dependencies.startVideoController).toHaveBeenCalledOnce();
+    expect(dependencies.initializeSubtitleSync).toHaveBeenCalledOnce();
+    runtime.stop();
   });
 });

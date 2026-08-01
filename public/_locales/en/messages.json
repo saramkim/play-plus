@@ -44,6 +44,39 @@
   "review_status_empty": { "message": "No saved subtitles match the current filters." },
   "subtitle_analysis": { "message": "Analysis" },
   "subtitle_upload": { "message": "Add Subtitles" },
+  "current_tab_subtitles": { "message": "Subtitles for this tab" },
+  "default_subtitle": { "message": "Default subtitle" },
+  "display_off": { "message": "Display off" },
+  "subtitle_role_unavailable": {
+    "message": "Open a Coupang Play video tab to choose subtitles."
+  },
+  "selected_subtitle_missing": { "message": "Selected subtitle not found" },
+  "default_short": { "message": "Default" },
+  "primary_short": { "message": "Primary" },
+  "secondary_short": { "message": "Secondary" },
+  "use_as_primary": { "message": "Select as primary" },
+  "use_as_secondary": { "message": "Select as secondary" },
+  "primary_selected": { "message": "Selected as primary" },
+  "secondary_selected": { "message": "Selected as secondary" },
+  "press_to_use_default": { "message": "Press to use default" },
+  "return_primary_to_default": { "message": "Return primary subtitles to the default track" },
+  "return_secondary_to_default": { "message": "Return secondary subtitles to the default track" },
+  "current_tab_use": { "message": "Use for current tab" },
+  "applying": { "message": "Applying" },
+  "analyze": { "message": "Analyze" },
+  "sync": { "message": "Sync" },
+  "edit_short": { "message": "Edit" },
+  "edit_subtitle_details": { "message": "Edit subtitle details" },
+  "decrease_sync": { "message": "Decrease sync delay" },
+  "increase_sync": { "message": "Increase sync delay" },
+  "sync_value": {
+    "message": "Sync $value$s",
+    "placeholders": { "value": { "content": "$1" } }
+  },
+  "added_date": {
+    "message": "Added $date$",
+    "placeholders": { "date": { "content": "$1" } }
+  },
 
   "english": { "message": "English" },
   "korean": { "message": "Korean" },
@@ -264,6 +297,7 @@
     "message": "Backup restore and existing data recovery failed. Check your saved data."
   },
   "error_save_subtitle": { "message": "Failed to save subtitle" },
+  "error_subtitle_role_update": { "message": "Could not change the subtitle selection. Please try again." },
   "error_copy_subtitle": { "message": "Failed to copy subtitle" },
   "error_loop": { "message": "Failed to loop" },
   "info_loop_stop": { "message": "Loop is stopped" },
