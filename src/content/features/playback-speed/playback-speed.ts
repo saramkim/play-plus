@@ -4,16 +4,23 @@ import { SETTINGS } from '@utils/constants';
 import { videoManager } from '@/content/core/video/video-manager';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 
-
 const { STORAGE_KEY } = SETTINGS.PLAYBACK_SPEED;
 export class PlaybackSpeedController {
-  constructor() {
-    usePlaybackSpeedStore.subscribe((state) => {
+  private unsubscribeState: (() => void) | null = null;
+
+  start() {
+    if (this.unsubscribeState) return;
+    this.unsubscribeState = usePlaybackSpeedStore.subscribe((state) => {
       const video = videoManager.get();
       if (!video) return;
 
       video.playbackRate = state.currentSpeed;
     });
+  }
+
+  stop() {
+    this.unsubscribeState?.();
+    this.unsubscribeState = null;
   }
 
   onStorageChange(changes: StorageChanges) {

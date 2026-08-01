@@ -31,7 +31,7 @@ export async function initializeSubtitleSync() {
     const data = await getStorage(STORAGE_KEY);
     useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, data);
   }
-  setupSubtitleSync();
+  return setupSubtitleSync();
 }
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
@@ -53,7 +53,7 @@ function setupSubtitleSync() {
   const { currentTime } = useVideoStore.getState();
   syncSubtitles(currentTime, true);
 
-  useVideoStore.subscribe(({ currentTime }) => {
+  return useVideoStore.subscribe(({ currentTime }) => {
     syncSubtitles(currentTime);
     sendMessage('updateCurrentTime', currentTime);
   });

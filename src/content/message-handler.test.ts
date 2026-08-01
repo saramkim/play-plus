@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createVideoLifecycleHandler } from './message-handler';
+import { createVideoLifecycleHandler, initializeMessageListener } from './message-handler';
 import { VideoLifecycleEvent } from './video-lifecycle/video-lifecycle-monitor';
 
 const contentEvent = (video: HTMLVideoElement): VideoLifecycleEvent => ({
@@ -94,5 +94,29 @@ describe('createVideoLifecycleHandler', () => {
 
     expect(dependencies.clearVideo).not.toHaveBeenCalled();
     expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('failed');
+  });
+});
+
+describe('message listener lifecycle', () => {
+  it('removes the runtime listener and stops its monitor once', () => {
+    const remove = vi.fn();
+    const monitor = {
+      refresh: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const registerMessageListener = vi.fn(() => ({ remove }));
+
+    const dispose = initializeMessageListener({
+      createVideoLifecycleMonitor: () => monitor as never,
+      registerMessageListener: registerMessageListener as never,
+    });
+    expect(monitor.start).toHaveBeenCalledOnce();
+
+    dispose();
+    dispose();
+
+    expect(remove).toHaveBeenCalledOnce();
+    expect(monitor.stop).toHaveBeenCalledOnce();
   });
 });

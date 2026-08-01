@@ -1,29 +1,4 @@
-import { onStorageChange } from '@storage/index';
-
 import './content.css';
-import { renderApp } from './app';
-import { elementStore } from './core/store/element-store';
-import { loopController } from './features/loop';
-import { playbackSpeedController } from './features/playback-speed/playback-speed';
-import { initializeSubtitleSync, onSubtitleStorageChange } from './features/subtitle/subtitle';
-import { videoController } from './features/video/video-controller';
-import { initializeMessageListener } from './message-handler';
+import { contentRuntime } from './content-runtime';
 
-async function init() {
-  initializeMessageListener();
-  initializeStorageChange();
-  await initializeSubtitleSync();
-  elementStore.setupSystemContainer();
-  renderApp(elementStore.getSystemRoot(), elementStore.getVideoRoot());
-}
-
-function initializeStorageChange() {
-  onStorageChange((changes) => {
-    onSubtitleStorageChange(changes);
-    videoController.onVideoControlStorageChange(changes);
-    loopController.onLoopStorageChange(changes);
-    playbackSpeedController.onStorageChange(changes);
-  });
-}
-
-init();
+void contentRuntime.start().catch((error) => console.error('Content runtime failed to start:', error));

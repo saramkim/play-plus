@@ -54,6 +54,12 @@ class ElementStore {
     }
   }
 
+  removeContainers() {
+    this.systemRoot.remove();
+    this.videoRoot.remove();
+    this.loopMarkerContainer.remove();
+  }
+
   getVideoRoot() {
     return this.videoRoot;
   }
