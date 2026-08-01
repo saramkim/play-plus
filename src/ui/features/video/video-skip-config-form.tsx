@@ -1,26 +1,50 @@
+import { useId, useState } from 'react';
+
 import { SETTINGS } from '@utils/constants';
-import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
-import { Form, FormControl, FormField, FormHeader, FormItem, FormLabel, FormTitle } from '@/ui/components/form/form';
+import {
+  Form,
+  FormContent,
+  FormControl,
+  FormField,
+  FormHeader,
+  FormItem,
+  FormLabel,
+  FormTitle,
+} from '@/ui/components/form/form';
 import { ShortcutField } from '@/ui/components/form/shortcut-field';
 import { NumberInput } from '@/ui/components/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
 import { Switch } from '@/ui/components/switch';
 import { useConfigForm } from '@/ui/hooks/use-config-form';
 
-type VideoSkipConfigFormProps = typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP;
+type VideoSkipConfigFormProps = (typeof SETTINGS.VIDEO_SKIP | typeof SETTINGS.SUB_VIDEO_SKIP) & {
+  defaultExpanded?: boolean;
+};
 
-export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
+export function VideoSkipConfigForm({ defaultExpanded = false, STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSkipConfigFormProps) {
   const { form, onSubmit } = useConfigForm(STORAGE_KEY);
   const { isDirty, isValid } = form.formState;
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const id = useId();
+  const contentId = `${id}-content`;
+  const titleId = `${id}-title`;
+  const enabled = form.watch('enabled');
+  const title = t(TITLE_MESSAGE_KEY);
 
   return (
     <Form form={form} onSubmit={onSubmit}>
-      <FormHeader>
-        <FormTitle>{t(TITLE_MESSAGE_KEY)}</FormTitle>
-        <div className='flex items-center gap-1'>
+      <FormHeader
+        controlsId={contentId}
+        disclosureHidden={isDirty}
+        disclosureLabel={t(expanded ? 'collapse_setting' : 'expand_setting', title)}
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+      >
+        <FormTitle id={titleId}>{title}</FormTitle>
+        <div className='flex shrink-0 items-center gap-1'>
           {isDirty ? (
             <>
               <Button variant='outline' size='sm' type='button' onClick={() => form.reset()}>
@@ -35,13 +59,23 @@ export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSki
               control={form.control}
               name='enabled'
               render={({ field }) => (
-                <Switch checked={field.value} onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })} />
+                <Switch
+                  aria-label={title}
+                  checked={field.value}
+                  onCheckedChange={(v) => onSubmit({ ...form.getValues(), enabled: v })}
+                />
               )}
             />
           )}
         </div>
       </FormHeader>
-      <div className={cn('flex flex-col gap-1', form.watch('enabled') ? '' : 'opacity-50 pointer-events-none')}>
+      <FormContent
+        id={contentId}
+        aria-labelledby={titleId}
+        className='flex flex-col gap-1'
+        disabled={!enabled}
+        expanded={expanded}
+      >
         <FormField
           control={form.control}
           name='backward'
@@ -133,7 +167,7 @@ export function VideoSkipConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: VideoSki
             />
           </div>
         )}
-      </div>
+      </FormContent>
     </Form>
   );
 }

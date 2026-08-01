@@ -112,6 +112,10 @@
   "backward_key": { "message": "Backward Key" },
   "bottom": { "message": "Bottom" },
   "cancel": { "message": "Cancel" },
+  "collapse_setting": {
+    "message": "Collapse $1 settings",
+    "placeholders": { "setting": { "content": "$1" } }
+  },
   "center": { "message": "Center" },
   "click_to_save": { "message": "Click to save" },
   "confirm": { "message": "Confirm" },
@@ -218,7 +222,7 @@
   "shortcuts": { "message": "Shortcuts" },
   "skip_unit": { "message": "Skip Unit" },
   "start_point_key": { "message": "Start Point Key" },
-  "sub_video_skip": { "message": "Video Skip(2)" },
+  "sub_video_skip": { "message": "Secondary Skip" },
   "subtitle_color": { "message": "Subtitle Color" },
   "subtitle_add_source": { "message": "Subtitle Source" },
   "subtitle_title": { "message": "Subtitle Title" },
@@ -238,7 +242,11 @@
   "episode": { "message": "Episode" },
   "show_more": { "message": "Show More" },
   "loading_more": { "message": "Loading More" },
-  "video_skip": { "message": "Video Skip(1)" },
+  "video_skip": { "message": "Primary Skip" },
+  "expand_setting": {
+    "message": "Expand $1 settings",
+    "placeholders": { "setting": { "content": "$1" } }
+  },
   "view_video": { "message": "View Video" },
 
   "connection_content_connecting": { "message": "Connecting Coupang Play" },
