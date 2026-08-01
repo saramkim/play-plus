@@ -22,7 +22,7 @@
 - 요구사항, acceptance criteria 또는 완료 조건을 검토해야 하는 비자명한 버그나 작업이다.
 - 유지보수 비용이나 되돌리기 어려움에 실질적인 트레이드오프가 있다.
 
-다음 작업은 Issue 없이 `develop`에서 직접 진행할 수 있다.
+다음 작업은 Issue 없이 짧은 작업 브랜치와 Pull Request로 진행할 수 있다.
 
 - 범위가 명확한 단순 버그 수정.
 - 제품이나 개발 workflow 계약을 바꾸지 않는 명확한 문구나 문서 수정.
@@ -51,15 +51,26 @@ Issue-required 작업은 다음 순서를 따른다.
 
 1. Codex가 로컬 저장소와 최신 작업 트리를 조사한다.
 2. 필요한 ChatGPT 검토와 사용자 결정을 거쳐 Issue 계약을 확정한다.
-3. 최신 `develop`에서 작업 종류에 맞는 짧은 kebab-case 브랜치를 만든다. 브랜치 종류는 `AGENTS.md`의 기존 전략을 따른다.
+3. 최신 `main`에서 작업 종류에 맞는 짧은 kebab-case 브랜치를 만든다. 브랜치 종류는 `AGENTS.md`의 기존 전략을 따른다.
 4. Issue 범위 안에서 최소 변경을 구현하고 변경 유형에 맞는 검증을 실제로 실행한다.
-5. Pull Request를 `develop` 대상으로 만들고 Issue를 `Closes #<issue-number>`로 연결한다.
+5. Pull Request를 `main` 대상으로 만들고 Issue를 `Closes #<issue-number>`로 연결한다.
 6. 작업이 아직 진행 중이거나 조기 피드백이 필요하면 Draft로 만들고, 합의 범위와 검증이 완료되면 review-ready 상태로 전환한다.
 7. Codex가 전체 diff와 실제 검증 결과를 ChatGPT에 전달해 완료 여부를 검토받는다.
 8. 합의 범위 안의 결함은 수정한다. 새로운 제품 결정이나 범위 확대가 필요하면 구현을 멈추고 사용자 결정을 받은 뒤 Issue를 갱신한다.
 9. PR에는 최종 범위, 검증 증거, 남은 수동 확인, 문서 영향과 위험을 기록한다.
 
-Issue가 필요 없는 작업은 기존 `develop` 직접 작업 흐름과 `AGENTS.md`의 commit·push 승인 규칙을 따른다.
+Issue가 필요 없는 작업도 원칙적으로 짧은 작업 브랜치와 `main` 대상 Pull Request를 사용하며, `AGENTS.md`의 commit·push 승인 규칙을 따른다.
+
+## Branch and Release Model
+
+- `main`은 다음 릴리스에 포함할 검증된 변경을 계속 통합하는 원격 기본 브랜치다.
+- 작업 브랜치는 최신 `main`에서 시작하고 Pull Request로 `main`에 합친 뒤 오래 유지하지 않는다.
+- `main`의 최신 커밋이 항상 배포된 버전을 뜻하지는 않는다. 실제 릴리스는 `chore(release): v<version>` 커밋과 해당 커밋의 lightweight `v<version>` 태그로 식별한다.
+- 장기 `develop` 또는 상시 release 브랜치는 기본 workflow에 포함하지 않는다.
+
+기존 `develop`에서 `main`으로 전환할 때는 누적 변경과 이 workflow 변경을 하나의 전환 Pull Request로 검증해 `main`에 합친다. 전환 PR이 병합되기 전까지는 `develop`을 유일한 통합 기준으로 유지하고 새 `main` 기반 작업을 시작하지 않으며, 위의 `main` 중심 규칙은 전환 PR이 병합된 뒤 적용한다. 브랜치 대상 필터가 없는 CI의 `pull_request` 트리거는 전환 PR에서도 전체 검증을 실행해야 한다.
+
+전환 PR 병합 후에는 활성 브랜치와 worktree가 더 이상 `develop`을 기준으로 사용하지 않는지 확인한다. 로컬·원격 `develop` 삭제는 모든 참조 확인과 사용자 승인 후 별도 단계로 수행한다.
 
 ## Pull Request Evidence
 
@@ -85,4 +96,4 @@ Pull Request는 최소한 다음 정보를 포함한다.
 
 ## Out of Scope
 
-이 workflow는 CI 정책, `develop`/`main` 브랜치 전략, 기존 검증 명령, 릴리스 절차를 변경하지 않는다. Chrome Web Store 또는 다른 배포 메커니즘이 저장소에 정의되기 전까지 배포 절차도 만들지 않는다. label automation, workflow enforcement Action, worktree 또는 lifecycle 도구는 별도 승인된 작업으로 다룬다.
+이 workflow는 기존 검증 명령과 릴리스 절차를 변경하지 않는다. `main` 중심 workflow로의 전환은 릴리스나 배포를 의미하지 않으며, Chrome Web Store 또는 다른 배포 메커니즘이 저장소에 정의되기 전까지 배포 절차도 만들지 않는다. branch protection·ruleset, label automation, workflow enforcement Action, worktree 또는 lifecycle 도구는 별도 승인된 작업으로 다룬다.

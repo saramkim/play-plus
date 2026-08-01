@@ -168,7 +168,7 @@ ISC
 
 ## 기여하기
 
-기여를 환영합니다. Play Plus는 `develop`을 통합 브랜치로 사용합니다. 제품·UX·아키텍처·공개 동작처럼 결정이 필요한 작업은 먼저 Issue로 범위를 확정하고, `develop`에서 작업 브랜치를 만든 뒤 `develop` 대상 Pull Request를 제출해주세요. 명확한 단순 수정은 Issue 없이 Pull Request를 제출할 수 있습니다.
+기여를 환영합니다. Play Plus는 `main`을 통합 브랜치로 사용합니다. 제품·UX·아키텍처·공개 동작처럼 결정이 필요한 작업은 먼저 Issue로 범위를 확정하고, 최신 `main`에서 작업 브랜치를 만든 뒤 `main` 대상 Pull Request를 제출해주세요. 명확한 단순 수정은 Issue 없이 Pull Request를 제출할 수 있습니다. 실제 릴리스는 릴리스 커밋과 `v<version>` 태그로 구분합니다.
 
 자세한 Issue, ChatGPT 협업과 Pull Request 절차는 [`docs/development-workflow.md`](docs/development-workflow.md), 개발·Git·검증 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
