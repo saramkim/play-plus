@@ -33,6 +33,7 @@ export class LoopController {
   private endMarker = new LoopMarker(END_MARKER_ID, 'B', this.markerContainer, useLoopStore.getState().setEndTime);
   private isMarkerShowing = false;
   private unsubscribeLoop: (() => void) | null = null;
+  private unsubscribePlayOnce: (() => void) | null = null;
 
   constructor() {
     useLoopStore.subscribe((state) => {
@@ -46,9 +47,8 @@ export class LoopController {
     if (loopChanges) {
       const { enabled } = loopChanges.newValue || DEFAULT_CONFIG[STORAGE_KEY];
       if (!enabled) {
-        this.loop(false);
+        this.resetLoop();
         elementStore.resetLoopStatus();
-        this.isMarkerShowing = false;
       }
     }
   };
@@ -99,6 +99,10 @@ export class LoopController {
   };
 
   resetLoop = () => {
+    this.stopLoop();
+    this.stopPlayOnce();
+    this.startMarker.cancelDrag();
+    this.endMarker.cancelDrag();
     this.isMarkerShowing = false;
     useLoopStore.getState().setLooping(false);
   };
@@ -110,11 +114,12 @@ export class LoopController {
 
       const { startTime, endTime } = this.getCurrentSubtitleInfo();
 
-      const unsubscribe = useVideoStore.subscribe(({ currentTime }) => {
+      this.stopPlayOnce();
+      this.unsubscribePlayOnce = useVideoStore.subscribe(({ currentTime }) => {
         if (currentTime >= endTime) {
           video.pause();
           video.currentTime = endTime;
-          unsubscribe();
+          this.stopPlayOnce();
         }
       });
 
@@ -180,6 +185,13 @@ export class LoopController {
     if (this.unsubscribeLoop) {
       this.unsubscribeLoop();
       this.unsubscribeLoop = null;
+    }
+  };
+
+  private stopPlayOnce = () => {
+    if (this.unsubscribePlayOnce) {
+      this.unsubscribePlayOnce();
+      this.unsubscribePlayOnce = null;
     }
   };
 
