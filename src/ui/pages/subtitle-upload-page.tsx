@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
@@ -7,12 +7,12 @@ import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES, SET_SUBTITLE_ACTION } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { BookOpenTextIcon, CaptionsIcon, CaptionsOffIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
+import { ArrowLeftIcon, BookOpenTextIcon, CaptionsIcon, CaptionsOffIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { ListHeader } from '@/ui/features/subtitle/list-header';
 import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-settings';
-import { SubtitleAdder } from '@/ui/features/subtitle-upload/subtitle-adder';
+import { SubtitleAdder, SubtitleAddSource } from '@/ui/features/subtitle-upload/subtitle-adder';
 import { SubtitleDelayForm } from '@/ui/features/subtitle-upload/subtitle-delay-form';
 import { SubtitleEditForm } from '@/ui/features/subtitle-upload/subtitle-edit-form';
 import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
@@ -23,18 +23,144 @@ export function SubtitleUploadPage() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [filteredSubtitles, setFilteredSubtitles] = useState<SubtitleMetadata[]>([]);
+  const [mode, setMode] = useState<SubtitleUploadMode>({ name: 'list' });
+  const [isAddBusy, setIsAddBusy] = useState(false);
+  const [pendingFocusId, setPendingFocusId] = useState<SubtitleId | null>(null);
+  const addHeadingRef = useRef<HTMLHeadingElement>(null);
+  const emptyFileButtonRef = useRef<HTMLButtonElement>(null);
+  const emptyOnlineButtonRef = useRef<HTMLButtonElement>(null);
+  const listAddButtonRef = useRef<HTMLButtonElement>(null);
+  const listModeRef = useRef<HTMLDivElement>(null);
+  const subtitleItemRefs = useRef(new Map<SubtitleId, HTMLLIElement>());
+  const restoreFocusOriginRef = useRef<AddModeOrigin | null>(null);
+  const setNavigationLocked = usePageStore((state) => state.setNavigationLocked);
   const { subtitles, editSubtitle, updateDelay, deleteSubtitle, loading } = useUploadedSubtitles(activeTab);
 
+  useEffect(() => {
+    return () => setNavigationLocked(false);
+  }, [setNavigationLocked]);
+
+  useEffect(() => {
+    if (mode.name === 'add' && !mode.focusFirstControl) addHeadingRef.current?.focus();
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode.name !== 'list' || restoreFocusOriginRef.current === null) return;
+
+    const origin = restoreFocusOriginRef.current;
+    const originTarget =
+      origin === 'list'
+        ? listAddButtonRef.current
+        : origin === 'empty-file'
+          ? emptyFileButtonRef.current
+          : emptyOnlineButtonRef.current;
+
+    (originTarget ?? listAddButtonRef.current ?? emptyFileButtonRef.current ?? listModeRef.current)?.focus();
+    restoreFocusOriginRef.current = null;
+  }, [mode.name, subtitles.length]);
+
+  useEffect(() => {
+    if (mode.name !== 'list' || pendingFocusId === null) return;
+
+    const target = subtitleItemRefs.current.get(pendingFocusId);
+    if (!target) return;
+
+    target.scrollIntoView({ block: 'nearest' });
+    target.focus();
+    setPendingFocusId(null);
+  }, [filteredSubtitles, mode.name, pendingFocusId]);
+
+  useEffect(() => {
+    if (mode.name !== 'list' || pendingFocusId === null) return;
+
+    const fallbackTimer = window.setTimeout(() => {
+      (listAddButtonRef.current ?? emptyFileButtonRef.current ?? listModeRef.current)?.focus();
+      setPendingFocusId(null);
+    }, 1500);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [mode.name, pendingFocusId]);
+
+  const openAddMode = (initialSource: SubtitleAddSource, origin: AddModeOrigin, focusFirstControl: boolean) => {
+    restoreFocusOriginRef.current = origin;
+    setIsAddBusy(false);
+    setNavigationLocked(false);
+    setMode({ name: 'add', initialSource, focusFirstControl });
+  };
+
+  const closeAddMode = () => {
+    setIsAddBusy(false);
+    setNavigationLocked(false);
+    setMode({ name: 'list' });
+  };
+
+  const handleAdded = useCallback((subtitle: SubtitleMetadata) => {
+    restoreFocusOriginRef.current = null;
+    setIsAddBusy(false);
+    setNavigationLocked(false);
+    setPendingFocusId(subtitle.id);
+    setMode({ name: 'list' });
+  }, [setNavigationLocked]);
+
+  const handleAddBusyChange = useCallback((busy: boolean) => {
+    setIsAddBusy(busy);
+    setNavigationLocked(busy);
+  }, [setNavigationLocked]);
+
   if (loading) return null;
-  if (subtitles.length === 0) return <EmptyState />;
+
+  if (mode.name === 'add') {
+    return (
+      <div className='flex h-full min-h-0 flex-col'>
+        <header className='flex shrink-0 items-center gap-2 border-b p-4'>
+          <Button
+            variant='ghost'
+            size='icon'
+            aria-label={t('back_to_subtitles')}
+            disabled={isAddBusy}
+            onClick={closeAddMode}
+          >
+            <ArrowLeftIcon />
+          </Button>
+          <h2 ref={addHeadingRef} tabIndex={-1} className='text-[15px] font-semibold outline-none'>
+            {t('subtitle_upload')}
+          </h2>
+        </header>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4'>
+          <SubtitleAdder
+            initialSource={mode.initialSource}
+            focusFirstControl={mode.focusFirstControl}
+            onAdded={handleAdded}
+            onBusyChange={handleAddBusyChange}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (subtitles.length === 0) {
+    return (
+      <EmptyState
+        containerRef={listModeRef}
+        fileButtonRef={emptyFileButtonRef}
+        onlineButtonRef={emptyOnlineButtonRef}
+        onAddFromFile={() => openAddMode('file', 'empty-file', true)}
+        onFindOnline={() => openAddMode('online', 'empty-online', true)}
+      />
+    );
+  }
 
   return (
-    <div className='flex h-full min-h-0 flex-col p-4'>
+    <div ref={listModeRef} tabIndex={-1} className='flex h-full min-h-0 flex-col p-4 outline-none'>
       <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
       <ul className='flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto px-1 py-2'>
         {filteredSubtitles.map((item) => (
           <SubtitleItem
             key={item.id}
+            itemRef={(node) => {
+              if (node) subtitleItemRefs.current.set(item.id, node);
+              else subtitleItemRefs.current.delete(item.id);
+            }}
             data={item}
             activeTab={activeTab}
             tabInfo={tabInfo}
@@ -44,19 +170,50 @@ export function SubtitleUploadPage() {
           />
         ))}
       </ul>
-      <footer className='max-h-[65%] shrink-0 overflow-y-auto border-t pt-4'>
-        <SubtitleAdder />
+      <footer className='shrink-0 border-t pt-3'>
+        <Button
+          ref={listAddButtonRef}
+          className='w-full'
+          onClick={() => openAddMode('file', 'list', false)}
+        >
+          {t('subtitle_upload')}
+        </Button>
       </footer>
     </div>
   );
 }
 
-function EmptyState() {
+type SubtitleUploadMode =
+  | { name: 'list' }
+  | { name: 'add'; initialSource: SubtitleAddSource; focusFirstControl: boolean };
+
+type AddModeOrigin = 'list' | 'empty-file' | 'empty-online';
+
+interface EmptyStateProps {
+  containerRef: React.Ref<HTMLDivElement>;
+  fileButtonRef: React.Ref<HTMLButtonElement>;
+  onlineButtonRef: React.Ref<HTMLButtonElement>;
+  onAddFromFile: () => void;
+  onFindOnline: () => void;
+}
+
+function EmptyState({
+  containerRef,
+  fileButtonRef,
+  onlineButtonRef,
+  onAddFromFile,
+  onFindOnline,
+}: EmptyStateProps) {
   return (
-    <div className='h-full overflow-y-auto p-4'>
-      <div className='flex min-h-full flex-col justify-center gap-3'>
+    <div ref={containerRef} tabIndex={-1} className='flex h-full min-h-0 flex-col justify-center p-4 outline-none'>
+      <div className='flex flex-col gap-3'>
         <p className='text-wrap text-center text-gray-500'>{t('subtitle_registration_description')}</p>
-        <SubtitleAdder />
+        <Button ref={fileButtonRef} onClick={onAddFromFile}>
+          {t('add_from_file')}
+        </Button>
+        <Button ref={onlineButtonRef} variant='outline' onClick={onFindOnline}>
+          {t('find_online')}
+        </Button>
       </div>
     </div>
   );
@@ -64,6 +221,7 @@ function EmptyState() {
 
 interface SubtitleItemProps {
   data: SubtitleMetadata;
+  itemRef: (node: HTMLLIElement | null) => void;
   activeTab: chrome.tabs.Tab | null;
   tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
@@ -71,7 +229,7 @@ interface SubtitleItemProps {
   onUpdateDelay: (id: SubtitleId, delay: number) => Promise<void>;
 }
 
-function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDelay }: SubtitleItemProps) {
+function SubtitleItem({ data, itemRef, activeTab, tabInfo, onDelete, onEdit, onUpdateDelay }: SubtitleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDelayEditing, setIsDelayEditing] = useState(false);
   const { useAsSubtitle, isAvailable } = useSubtitleSettings(activeTab);
@@ -82,8 +240,10 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
 
   return (
     <li
+      ref={itemRef}
+      tabIndex={-1}
       className={cn(
-        'min-w-0 max-w-full shrink-0 rounded-lg border shadow-sm transition-colors duration-150',
+        'min-w-0 max-w-full shrink-0 rounded-lg border shadow-sm outline-none transition-colors duration-150 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1px]',
         isPrimarySubtitle || isSecondarySubtitle ? 'bg-primary/20' : 'bg-background'
       )}
     >

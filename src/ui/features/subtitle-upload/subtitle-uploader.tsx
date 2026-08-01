@@ -1,6 +1,7 @@
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { SubtitleMetadata } from '@storage/type';
 import { Language, LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 import {
@@ -52,13 +53,32 @@ const registrationErrorMessage = (error: unknown) => {
   return t('error_try_later');
 };
 
-export function SubtitleUploader() {
+interface SubtitleUploaderProps {
+  onAdded: (subtitle: SubtitleMetadata) => void;
+  onBusyChange: (busy: boolean) => void;
+  focusOnMount?: boolean;
+}
+
+export function SubtitleUploader({ onAdded, onBusyChange, focusOnMount = false }: SubtitleUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>('');
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (focusOnMount) uploadButtonRef.current?.focus();
+  }, [focusOnMount]);
+
+  useEffect(() => {
+    onBusyChange(isUploading);
+
+    return () => {
+      if (isUploading) onBusyChange(false);
+    };
+  }, [isUploading, onBusyChange]);
 
   const handleFileUpload = (file: File) => {
     const { isValid, message } = validateFile(file);
@@ -83,14 +103,17 @@ export function SubtitleUploader() {
   };
 
   return (
-    <div className='flex flex-col gap-2'>
+    <div className='flex flex-col gap-2' aria-busy={isUploading}>
       <button
+        ref={uploadButtonRef}
         type='button'
         aria-label={t('upload_subtitle_file')}
-        className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border p-4 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+        className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border p-4 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+        disabled={isUploading}
         onClick={() => fileInputRef.current?.click()}
         onDrop={(e) => {
           e.preventDefault();
+          if (isUploading) return;
           const file = e.dataTransfer.files?.[0];
           if (file) handleFileUpload(file);
         }}
@@ -115,6 +138,7 @@ export function SubtitleUploader() {
         ref={fileInputRef}
         type='file'
         accept={SUPPORTED_SUBTITLE_EXTENSIONS.join(',')}
+        disabled={isUploading}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleFileUpload(file);
@@ -146,9 +170,10 @@ export function SubtitleUploader() {
                 );
                 return;
               }
-              await registerSubtitleText({ fileName: file.name, title, language, text });
+              const subtitle = await registerSubtitleText({ fileName: file.name, title, language, text });
               toast.success(t('success_add_subtitle'));
               reset();
+              onAdded(subtitle);
             } catch (error) {
               setError(registrationErrorMessage(error));
             } finally {
@@ -158,7 +183,11 @@ export function SubtitleUploader() {
           className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}
         >
           <div className='flex justify-between items-center gap-1'>
-            <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+            <Select
+              value={language}
+              onValueChange={(value) => setLanguage(value as Language)}
+              disabled={isUploading}
+            >
               <SelectTrigger className='w-fit' aria-label={t('language')}>
                 <SelectValue placeholder={t('select')} />
               </SelectTrigger>

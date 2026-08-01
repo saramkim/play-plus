@@ -18,11 +18,15 @@ export const usePageStore = create(
     combine(
       {
         currentPage: Object.values(PAGE_NAME)[0],
+        navigationLocked: false,
         params: {} as Partial<PageParams>,
       },
       (set, get) => ({
-        setPage: <T extends PageName>(page: T, params?: PageParams[T]) =>
-          set({ currentPage: page, params: { [page]: params } }),
+        setNavigationLocked: (navigationLocked: boolean) => set({ navigationLocked }),
+        setPage: <T extends PageName>(page: T, params?: PageParams[T]) => {
+          if (get().navigationLocked) return;
+          set({ currentPage: page, params: { [page]: params } });
+        },
         getParams: (page: PageName) => get().params[page],
       })
     ),

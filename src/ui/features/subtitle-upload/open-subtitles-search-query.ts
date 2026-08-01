@@ -18,6 +18,15 @@ const optionalPositiveInteger = (value: string) => {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 };
 
+export const countAppliedOpenSubtitlesFilters = (fields: OpenSubtitlesSearchFields) => {
+  const numericFilters = [fields.year, fields.seasonNumber, fields.episodeNumber];
+
+  return (
+    (fields.contentType === 'all' ? 0 : 1) +
+    numericFilters.filter((value) => optionalPositiveInteger(value) !== undefined).length
+  );
+};
+
 export const buildOpenSubtitlesSearchQuery = (
   fields: OpenSubtitlesSearchFields,
   page = 1
