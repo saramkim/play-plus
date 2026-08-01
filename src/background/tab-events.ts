@@ -1,8 +1,8 @@
 import { setSessionStorage } from '@storage/session';
 import { updateTabInfo } from '@storage/tab';
+import type { PendingSubtitleRequest } from '@storage/type';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 
-import { PendingSubtitleRequest } from './pending-actions';
 import { createTabLifecycleDependencies, handleTabCompleted } from './tab-lifecycle';
 
 type TabEventDependencies = {

@@ -1,15 +1,5 @@
 import { getSessionStorage, setSessionStorage } from '@storage/session';
-
-export type PendingViewAction = {
-  url: string;
-  startTime: number;
-  videoId: string | null;
-};
-
-export type PendingSubtitleRequest = {
-  url: string;
-  headers: chrome.webRequest.HttpHeader[];
-};
+import type { PendingSubtitleRequest, PendingViewAction } from '@storage/type';
 
 export const enqueueViewAction = async (action: PendingViewAction) => {
   const actions = (await getSessionStorage('pendingViewActions')) ?? [];
