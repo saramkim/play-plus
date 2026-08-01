@@ -19,6 +19,11 @@ export interface SavedSubtitleDraft {
   startTime: number;
 }
 
+export interface SavedSubtitleDeletion {
+  card: SavedSubtitle;
+  index: number;
+}
+
 interface BuildSavedSubtitleDraftInput {
   primary?: SavedSubtitleLineInput;
   secondary?: SavedSubtitleLineInput;
@@ -134,7 +139,7 @@ export const getSavedSubtitleCards = async (
   return result.cards;
 };
 
-export const setSavedSubtitleCards = (cards: SavedSubtitle[]) => {
+const setSavedSubtitleCards = (cards: SavedSubtitle[]) => {
   return setLocalStorage(REVIEW.STORAGE_KEY, cards);
 };
 
@@ -144,6 +149,25 @@ export const addSavedSubtitleCard = async (draft: SavedSubtitleDraft) => {
 
   const card = createSavedSubtitleCard(draft);
   await setSavedSubtitleCards([card, ...cards]);
+  return card;
+};
+
+// Fresh reads avoid stale UI snapshots, but Chrome Storage offers no cross-context CAS transaction.
+export const deleteSavedSubtitleCard = async (id: string): Promise<SavedSubtitleDeletion | undefined> => {
+  const cards = await getSavedSubtitleCards();
+  const { cards: remainingCards, removed, index } = removeSavedSubtitleById(cards, id);
+  if (!removed) return undefined;
+
+  await setSavedSubtitleCards(remainingCards);
+  return { card: removed, index };
+};
+
+export const restoreSavedSubtitleCard = async ({ card, index }: SavedSubtitleDeletion) => {
+  const cards = await getSavedSubtitleCards();
+  const restoredCards = restoreSavedSubtitleAt(cards, card, index);
+  if (restoredCards === cards) return undefined;
+
+  await setSavedSubtitleCards(restoredCards);
   return card;
 };
 
