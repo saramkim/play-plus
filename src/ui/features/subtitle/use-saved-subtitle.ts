@@ -3,11 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { onLocalStorageChange } from '@storage/index';
 import {
   addSavedSubtitleCard,
+  deleteSavedSubtitleCard,
   getSavedSubtitleCards,
-  removeSavedSubtitleById,
-  restoreSavedSubtitleAt,
+  restoreSavedSubtitleCard,
   SavedSubtitleDraft,
-  setSavedSubtitleCards,
   updateSavedSubtitleReviewStatus,
 } from '@storage/saved-subtitle';
 import { SavedSubtitle, SavedSubtitleReviewStatus } from '@storage/type';
@@ -48,10 +47,9 @@ export function useSavedSubtitle() {
   };
 
   const deleteSubtitle = async (id: string) => {
-    const { cards, removed, index } = removeSavedSubtitleById(subtitles, id);
-    if (!removed) return;
-
-    await setSavedSubtitleCards(cards);
+    const deletion = await deleteSavedSubtitleCard(id);
+    if (!deletion) return;
+    const { card: removed } = deletion;
 
     toast(t('delete'), {
       description: removed.primary.text,
@@ -59,9 +57,7 @@ export function useSavedSubtitle() {
         label: t('undo'),
         onClick: () => {
           toast.dismiss();
-          void getSavedSubtitleCards().then((current) =>
-            setSavedSubtitleCards(restoreSavedSubtitleAt(current, removed, index))
-          );
+          void restoreSavedSubtitleCard(deletion);
         },
       },
     });

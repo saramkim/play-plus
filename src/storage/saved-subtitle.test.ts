@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  addSavedSubtitleCard,
   buildSavedSubtitleDraft,
   createSavedSubtitleCard,
+  deleteSavedSubtitleCard,
   findSavedSubtitleCard,
   getSavedSubtitleCards,
   getSavedSubtitleSearchText,
   migrateSavedSubtitles,
   removeSavedSubtitleById,
+  restoreSavedSubtitleCard,
   restoreSavedSubtitleAt,
   setSavedSubtitleReviewStatus,
   updateSavedSubtitleReviewStatus,
@@ -223,5 +226,76 @@ describe('saved subtitle identity and list operations', () => {
     const removed = removeSavedSubtitleById([learning], learning.id);
 
     expect(restoreSavedSubtitleAt(removed.cards, removed.removed!, removed.index)).toEqual([learning]);
+  });
+});
+
+describe('saved subtitle persisted mutations', () => {
+  const draft = buildSavedSubtitleDraft({
+    primary: { text: 'Hello', language: 'en' },
+    secondary: { text: '안녕하세요', language: 'ko' },
+    url: URL,
+    startTime: 1,
+  });
+  const first = createSavedSubtitleCard(draft, 'saved-card-1', SAVED_AT);
+  const second = createSavedSubtitleCard({ ...draft, startTime: 2 }, 'saved-card-2', SAVED_AT);
+
+  it('adds a card without dropping the latest persisted cards', async () => {
+    localStorage.savedSubtitles = [second];
+
+    const added = await addSavedSubtitleCard(draft);
+
+    expect(added).toBeDefined();
+    expect(localStorage.savedSubtitles).toEqual([added, second]);
+  });
+
+  it('does not write an exact duplicate draft', async () => {
+    localStorage.savedSubtitles = [first];
+
+    await expect(addSavedSubtitleCard(draft)).resolves.toBeUndefined();
+
+    expect(localStorage.savedSubtitles).toEqual([first]);
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it('deletes by stable id from the latest persisted cards', async () => {
+    localStorage.savedSubtitles = [first, second];
+
+    await expect(deleteSavedSubtitleCard(first.id)).resolves.toEqual({ card: first, index: 0 });
+
+    expect(localStorage.savedSubtitles).toEqual([second]);
+  });
+
+  it('does not write when the card to delete is missing', async () => {
+    localStorage.savedSubtitles = [second];
+
+    await expect(deleteSavedSubtitleCard(first.id)).resolves.toBeUndefined();
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it('restores into the latest persisted cards without dropping a later write', async () => {
+    const learning = setSavedSubtitleReviewStatus([first], first.id, 'learning')[0];
+    const after = createSavedSubtitleCard({ ...draft, startTime: 3 }, 'saved-card-3', SAVED_AT);
+    localStorage.savedSubtitles = [second, learning, after];
+    const deletion = await deleteSavedSubtitleCard(learning.id);
+    const later = createSavedSubtitleCard({ ...draft, startTime: 4 }, 'saved-card-4', SAVED_AT);
+    localStorage.savedSubtitles = [second, after, later];
+    vi.mocked(chrome.storage.local.set).mockClear();
+
+    await expect(restoreSavedSubtitleCard(deletion!)).resolves.toEqual(learning);
+
+    expect(deletion).toEqual({ card: learning, index: 1 });
+    expect(localStorage.savedSubtitles).toEqual([second, learning, after, later]);
+    expect(chrome.storage.local.set).toHaveBeenCalledOnce();
+  });
+
+  it('does not overwrite a newer card when the deleted card id already exists', async () => {
+    const mastered = setSavedSubtitleReviewStatus([first], first.id, 'mastered')[0];
+    localStorage.savedSubtitles = [mastered, second];
+
+    await expect(restoreSavedSubtitleCard({ card: first, index: 0 })).resolves.toBeUndefined();
+
+    expect(localStorage.savedSubtitles).toEqual([mastered, second]);
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
 });
