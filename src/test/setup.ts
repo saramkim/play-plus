@@ -3,7 +3,10 @@ import { vi } from 'vitest';
 Object.defineProperty(globalThis, 'chrome', {
   configurable: true,
   value: {
-    runtime: { sendMessage: vi.fn() },
+    runtime: {
+      onMessage: { addListener: vi.fn(), removeListener: vi.fn() },
+      sendMessage: vi.fn(),
+    },
     i18n: { getMessage: vi.fn((key: string) => key) },
     storage: {
       sync: {

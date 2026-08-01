@@ -12,7 +12,7 @@ export function sendMessage<M extends Message>(
   ...args: Params<M> extends never ? [] : [params: Params<M>]
 ): Promise<MessageResponse<M>> {
   const params = args[0];
-  return chrome.runtime.sendMessage(params ? { message, params } : { message });
+  return chrome.runtime.sendMessage(args.length > 0 ? { message, params } : { message });
 }
 
 export const sendMessageToTab = <M extends Message>(
@@ -21,7 +21,7 @@ export const sendMessageToTab = <M extends Message>(
   ...args: Params<M> extends never ? [] : [params: Params<M>]
 ): Promise<MessageResponse<M>> => {
   const params = args[0];
-  return chrome.tabs.sendMessage(tabId, params ? { message, params } : { message });
+  return chrome.tabs.sendMessage(tabId, args.length > 0 ? { message, params } : { message });
 };
 
 type MessageCallback = <M extends Message>({
@@ -36,7 +36,7 @@ type MessageCallback = <M extends Message>({
       sender: chrome.runtime.MessageSender;
       sendResponse: (response: MessageResponse<M>) => void;
     }
-  : never) => void;
+  : never) => true | void;
 
 export const onMessage = (callback: MessageCallback) => {
   const { onMessage } = chrome.runtime;
