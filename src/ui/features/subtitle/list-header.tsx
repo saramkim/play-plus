@@ -11,13 +11,15 @@ import { Input } from '@/ui/components/input';
 interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
   originalList: T[];
   onFilteredListChange: (filteredList: T[]) => void;
-  filterKey: keyof T extends string ? keyof T : never;
+  filterKey?: keyof T extends string ? keyof T : never;
+  getFilterText?: (item: T) => string;
 }
 
 export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
   originalList,
   onFilteredListChange,
   filterKey,
+  getFilterText,
 }: ListHeaderProps<T>) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchText, setSearchText] = useState('');
@@ -25,7 +27,10 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
 
   useEffect(() => {
     const filtered = searchText
-      ? originalList.filter((item) => String(item[filterKey]).toLowerCase().includes(searchText.toLowerCase()))
+      ? originalList.filter((item) => {
+          const value = getFilterText ? getFilterText(item) : String(item[filterKey!]);
+          return value.toLowerCase().includes(searchText.toLowerCase());
+        })
       : originalList;
 
     onFilteredListChange(
@@ -35,7 +40,7 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
         return sort === 'latest' ? timeB - timeA : timeA - timeB;
       })
     );
-  }, [originalList, searchText, sort]);
+  }, [filterKey, getFilterText, onFilteredListChange, originalList, searchText, sort]);
 
   const search = (e: React.FormEvent) => {
     e.preventDefault();

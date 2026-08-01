@@ -1,8 +1,16 @@
+import { useCallback, useEffect, useState } from 'react';
 
-import { useEffect, useState } from 'react';
-
-import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
-import { SavedSubtitle } from '@storage/type';
+import { onLocalStorageChange } from '@storage/index';
+import {
+  addSavedSubtitleCard,
+  getSavedSubtitleCards,
+  removeSavedSubtitleById,
+  restoreSavedSubtitleAt,
+  SavedSubtitleDraft,
+  setSavedSubtitleCards,
+  updateSavedSubtitleReviewStatus,
+} from '@storage/saved-subtitle';
+import { SavedSubtitle, SavedSubtitleReviewStatus } from '@storage/type';
 import { REVIEW } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { toast } from 'sonner';
@@ -13,51 +21,55 @@ export function useSavedSubtitle() {
   const [subtitles, setSubtitles] = useState<SavedSubtitle[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const refresh = useCallback(async () => {
+    const cards = await getSavedSubtitleCards();
+    setSubtitles(cards);
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await getLocalStorage(STORAGE_KEY);
-      if (data) setSubtitles(data);
+      await refresh();
       setLoading(false);
     })();
 
     const { remove } = onLocalStorageChange((changes) => {
-      const change = changes[STORAGE_KEY];
-      if (change?.newValue) setSubtitles(change.newValue);
+      if (changes[STORAGE_KEY]) void refresh();
     });
     return remove;
-  }, []);
+  }, [refresh]);
 
-  const saveSubtitle = async (content: string, url: string, startTime: number) => {
-    const data = {
-      content,
-      url,
-      startTime,
-      savedAt: new Date().toISOString(),
-    };
-    const newSubtitles = [...subtitles, data];
-    await setLocalStorage(STORAGE_KEY, newSubtitles);
+  const saveSubtitle = async (draft: SavedSubtitleDraft) => {
+    const card = await addSavedSubtitleCard(draft);
+    if (!card) return undefined;
+
     toast.success(t('success_save_subtitle'));
+    return card;
   };
 
-  const deleteSubtitle = async (content: string) => {
-    const filtered = subtitles.filter((v) => v.content !== content);
-    await setLocalStorage(STORAGE_KEY, filtered);
+  const deleteSubtitle = async (id: string) => {
+    const { cards, removed, index } = removeSavedSubtitleById(subtitles, id);
+    if (!removed) return;
+
+    await setSavedSubtitleCards(cards);
 
     toast(t('delete'), {
-      description: content,
+      description: removed.primary.text,
       action: {
         label: t('undo'),
         onClick: () => {
           toast.dismiss();
-          const deletedItem = subtitles.find((v) => v.content === content);
-          if (deletedItem) {
-            setLocalStorage(STORAGE_KEY, [...filtered, deletedItem]);
-          }
+          void getSavedSubtitleCards().then((current) =>
+            setSavedSubtitleCards(restoreSavedSubtitleAt(current, removed, index))
+          );
         },
       },
     });
   };
 
-  return { subtitles, saveSubtitle, deleteSubtitle, loading };
+  const updateReviewStatus = (id: string, reviewStatus: SavedSubtitleReviewStatus) => {
+    return updateSavedSubtitleReviewStatus(id, reviewStatus);
+  };
+
+  return { subtitles, saveSubtitle, deleteSubtitle, updateReviewStatus, loading };
 }

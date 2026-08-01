@@ -30,6 +30,16 @@
   "subtitle_setting": { "message": "Subtitle" },
   "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
+  "review_status_filter": { "message": "Filter by review status" },
+  "review_status_all": { "message": "All" },
+  "review_status_new": { "message": "New" },
+  "review_status_learning": { "message": "Learning" },
+  "review_status_mastered": { "message": "Mastered" },
+  "review_status_change": {
+    "message": "Change review status: $1",
+    "placeholders": { "status": { "content": "$1" } }
+  },
+  "review_status_empty": { "message": "No saved subtitles match the current filters." },
   "subtitle_analysis": { "message": "Analysis" },
   "subtitle_upload": { "message": "Upload" },
 
@@ -63,6 +73,10 @@
   "edit": { "message": "Edit" },
   "end_point_key": { "message": "End Point Key" },
   "error": { "message": "Error" },
+  "export_backup": { "message": "Export Backup" },
+  "export_backup_confirm": {
+    "message": "The backup contains saved subtitle text and video URLs. Do you want to save it somewhere secure?"
+  },
   "fallback_unit": { "message": "Fallback Unit" },
   "fixed": { "message": "Fixed" },
   "font_weight": { "message": "Font Weight" },
@@ -86,6 +100,10 @@
   "uploaded_subtitles": { "message": "Uploaded Subtitles" },
   "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
   "reset_settings": { "message": "Reset Settings" },
+  "restore_backup": { "message": "Restore Backup" },
+  "restore_backup_confirm": {
+    "message": "This replaces your current settings and learning data with the selected backup and may not be fully reversible. Continue?"
+  },
   "responsive": { "message": "Responsive" },
   "save_primary_subtitle": { "message": "Save Primary Subtitle" },
   "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
@@ -151,6 +169,14 @@
   "success_save_subtitle": { "message": "Subtitle saved" },
   "success_copy_subtitle": { "message": "Subtitle copied" },
   "success_delete_subtitle": { "message": "Subtitle deleted" },
+  "success_export_backup": { "message": "Backup exported." },
+  "success_restore_backup": { "message": "Backup restored." },
+  "error_export_backup": { "message": "Failed to export the backup." },
+  "error_invalid_backup": { "message": "This is not a valid Play Plus backup. Existing data was not changed." },
+  "error_restore_backup": { "message": "Backup restore failed. Play Plus attempted to recover the existing data." },
+  "error_restore_backup_rollback": {
+    "message": "Backup restore and existing data recovery failed. Check your saved data."
+  },
   "error_save_subtitle": { "message": "Failed to save subtitle" },
   "error_copy_subtitle": { "message": "Failed to copy subtitle" },
   "error_loop": { "message": "Failed to loop" },

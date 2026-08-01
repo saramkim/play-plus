@@ -1,7 +1,7 @@
 
 import { z } from 'zod';
 
-import { DEFAULT_SUBTITLE_LANGUAGES, Language } from '@utils/constants';
+import { DEFAULT_SUBTITLE_LANGUAGES, LANGUAGES, Language } from '@utils/constants';
 import { t } from '@utils/i18n';
 
 import { SubtitleId } from './subtitle';
@@ -66,12 +66,50 @@ export const storageSchema = {
   playbackSpeed: playbackSpeedConfigSchema,
 };
 
-export const savedSubtitleSchema = z.object({
-  content: z.string(),
-  url: z.string(),
-  startTime: z.number(),
-  savedAt: z.string(),
-});
+const savedSubtitleLanguageSchema = z.custom<Language>(
+  (value) => typeof value === 'string' && Object.prototype.hasOwnProperty.call(LANGUAGES, value)
+);
+
+export const savedSubtitleLineSchema = z
+  .object({
+    text: z.string().min(1),
+    language: savedSubtitleLanguageSchema.optional(),
+  })
+  .strict();
+
+export const legacySavedSubtitleSchema = z
+  .object({
+    content: z.string(),
+    url: z.string(),
+    startTime: z.number(),
+    savedAt: z.string(),
+  })
+  .strict();
+
+export const previousSavedSubtitleSchema = z
+  .object({
+    id: z.string().regex(/^saved-.+/),
+    primary: savedSubtitleLineSchema,
+    secondary: savedSubtitleLineSchema.optional(),
+    url: z.string(),
+    startTime: z.number(),
+    savedAt: z.string(),
+  })
+  .strict();
+
+export const savedSubtitleReviewStatusSchema = z.enum(['new', 'learning', 'mastered']);
+
+export const savedSubtitleSchema = previousSavedSubtitleSchema
+  .extend({
+    reviewStatus: savedSubtitleReviewStatusSchema,
+  })
+  .strict();
+
+export const storedSavedSubtitleSchema = z.union([
+  savedSubtitleSchema,
+  previousSavedSubtitleSchema,
+  legacySavedSubtitleSchema,
+]);
 export const subtitleMetadataSchema = z.object({
   id: z.custom<SubtitleId>(),
   title: z.string(),

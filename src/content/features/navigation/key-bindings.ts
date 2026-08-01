@@ -57,9 +57,10 @@ export class KeyBindingManager {
       const { PRIMARY, SECONDARY } = SETTINGS.SUBTITLES;
       const { savePrimary, saveSecondary, copyPrimary, copySecondary, togglePrimary, toggleSecondary } = shortcuts;
 
-      this.keyBindings[savePrimary] = () => saveSubtitleWithToast(elementStore.getSubtitleElement(PRIMARY.STORAGE_KEY));
+      this.keyBindings[savePrimary] = () =>
+        saveSubtitleWithToast(PRIMARY.STORAGE_KEY, (role) => elementStore.getSubtitleElement(role));
       this.keyBindings[saveSecondary] = () =>
-        saveSubtitleWithToast(elementStore.getSubtitleElement(SECONDARY.STORAGE_KEY));
+        saveSubtitleWithToast(SECONDARY.STORAGE_KEY, (role) => elementStore.getSubtitleElement(role));
       this.keyBindings[copyPrimary] = () => copySubtitleWithToast(elementStore.getSubtitleElement(PRIMARY.STORAGE_KEY));
       this.keyBindings[copySecondary] = () =>
         copySubtitleWithToast(elementStore.getSubtitleElement(SECONDARY.STORAGE_KEY));

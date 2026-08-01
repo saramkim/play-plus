@@ -112,6 +112,8 @@ export const REVIEW = {
 } as const;
 
 export const MORE_MENU_OPTIONS = {
+  EXPORT_BACKUP: 'exportBackup',
+  RESTORE_BACKUP: 'restoreBackup',
   RESET_SETTINGS: 'resetSettings',
   SET_LEARNING_CONFIG: 'setLearningConfig',
 } as const;
