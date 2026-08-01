@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { Language, REVIEW } from '@utils/constants';
 
 import { savedSubtitleSchema, storedSavedSubtitleSchema } from './schema';
-import { LegacySavedSubtitle, SavedSubtitle } from './type';
+import { LegacySavedSubtitle, SavedSubtitle, SavedSubtitleReviewStatus } from './type';
 
 import { getLocalStorage, setLocalStorage } from './index';
 
@@ -57,7 +57,7 @@ export const createSavedSubtitleCard = (
   draft: SavedSubtitleDraft,
   id = createSavedSubtitleId(),
   savedAt = new Date().toISOString()
-): SavedSubtitle => savedSubtitleSchema.parse({ id, ...draft, savedAt });
+): SavedSubtitle => savedSubtitleSchema.parse({ id, ...draft, reviewStatus: 'new', savedAt });
 
 export const isSameSavedSubtitleCard = (card: SavedSubtitle, draft: SavedSubtitleDraft) => {
   return (
@@ -95,6 +95,19 @@ export const restoreSavedSubtitleAt = (cards: SavedSubtitle[], card: SavedSubtit
   return restored;
 };
 
+export const setSavedSubtitleReviewStatus = (
+  cards: SavedSubtitle[],
+  id: string,
+  reviewStatus: SavedSubtitleReviewStatus
+) => {
+  const index = cards.findIndex((card) => card.id === id);
+  if (index < 0) return cards;
+
+  const updated = [...cards];
+  updated[index] = savedSubtitleSchema.parse({ ...cards[index], reviewStatus });
+  return updated;
+};
+
 export const migrateSavedSubtitles = (
   value: unknown,
   createId: (legacy: LegacySavedSubtitle, index: number) => string = createLegacySavedSubtitleId
@@ -102,9 +115,10 @@ export const migrateSavedSubtitles = (
   const stored = storedSavedSubtitlesSchema.parse(value ?? []);
   let migrated = false;
   const cards = stored.map((entry, index) => {
-    if ('id' in entry) return entry;
+    if ('reviewStatus' in entry) return entry;
 
     migrated = true;
+    if ('id' in entry) return savedSubtitleSchema.parse({ ...entry, reviewStatus: 'new' });
     return migrateLegacySavedSubtitle(entry, createId(entry, index));
   });
 
@@ -133,10 +147,23 @@ export const addSavedSubtitleCard = async (draft: SavedSubtitleDraft) => {
   return card;
 };
 
+export const updateSavedSubtitleReviewStatus = async (
+  id: string,
+  reviewStatus: SavedSubtitleReviewStatus
+) => {
+  const cards = await getSavedSubtitleCards();
+  const updated = setSavedSubtitleReviewStatus(cards, id, reviewStatus);
+  if (updated === cards) return undefined;
+
+  await setSavedSubtitleCards(updated);
+  return updated.find((card) => card.id === id);
+};
+
 const migrateLegacySavedSubtitle = (legacy: LegacySavedSubtitle, id: string): SavedSubtitle =>
   savedSubtitleSchema.parse({
     id,
     primary: { text: legacy.content },
+    reviewStatus: 'new',
     url: legacy.url,
     startTime: legacy.startTime,
     savedAt: legacy.savedAt,

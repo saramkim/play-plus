@@ -31,6 +31,16 @@
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
   "review": { "message": "복습" },
+  "review_status_filter": { "message": "복습 상태 필터" },
+  "review_status_all": { "message": "전체" },
+  "review_status_new": { "message": "새 항목" },
+  "review_status_learning": { "message": "학습 중" },
+  "review_status_mastered": { "message": "완료" },
+  "review_status_change": {
+    "message": "복습 상태 변경: $1",
+    "placeholders": { "status": { "content": "$1" } }
+  },
+  "review_status_empty": { "message": "현재 검색 및 상태 조건에 맞는 저장 자막이 없습니다." },
   "subtitle_analysis": { "message": "자막 분석" },
   "subtitle_upload": { "message": "자막 업로드" },
 

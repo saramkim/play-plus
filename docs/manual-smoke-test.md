@@ -42,6 +42,7 @@ Record `PASS`, `FAIL`, or `BLOCKED` for every row. For failures, include the rou
 | Copy | Both | Copy primary and secondary subtitle text using configured shortcuts | PASS | |
 | Save | Both | Save primary and secondary subtitle lines and review them in the panel | PASS | |
 | Saved card v2 | Both | Migrate legacy lines once; save paired and single-line cards; allow same text at another source/time; reject exact duplicates; search either line; delete/undo by card ID without horizontal overflow | NOT RUN | |
+| Review status | Both | Default migrated/new cards to New; move stable-ID cards among New/Learning/Mastered; combine status filter with both-line search and date sort; preserve status through reopen, delete/undo, source/copy, and backup/restore; verify keyboard access and no horizontal overflow | NOT RUN | |
 | Navigation | Both | Seek forward/backward by subtitle and by configured time units | PASS | |
 | Loop | Both | Set loop points, loop the current subtitle, and clear the loop | PASS | |
 | Speed | Both | Increase, decrease, and reset playback speed | PASS | |

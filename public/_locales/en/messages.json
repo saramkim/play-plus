@@ -30,6 +30,16 @@
   "subtitle_setting": { "message": "Subtitle" },
   "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
+  "review_status_filter": { "message": "Filter by review status" },
+  "review_status_all": { "message": "All" },
+  "review_status_new": { "message": "New" },
+  "review_status_learning": { "message": "Learning" },
+  "review_status_mastered": { "message": "Mastered" },
+  "review_status_change": {
+    "message": "Change review status: $1",
+    "placeholders": { "status": { "content": "$1" } }
+  },
+  "review_status_empty": { "message": "No saved subtitles match the current filters." },
   "subtitle_analysis": { "message": "Analysis" },
   "subtitle_upload": { "message": "Upload" },
 

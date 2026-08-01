@@ -86,7 +86,7 @@ export const legacySavedSubtitleSchema = z
   })
   .strict();
 
-export const savedSubtitleSchema = z
+export const previousSavedSubtitleSchema = z
   .object({
     id: z.string().regex(/^saved-.+/),
     primary: savedSubtitleLineSchema,
@@ -97,7 +97,19 @@ export const savedSubtitleSchema = z
   })
   .strict();
 
-export const storedSavedSubtitleSchema = z.union([savedSubtitleSchema, legacySavedSubtitleSchema]);
+export const savedSubtitleReviewStatusSchema = z.enum(['new', 'learning', 'mastered']);
+
+export const savedSubtitleSchema = previousSavedSubtitleSchema
+  .extend({
+    reviewStatus: savedSubtitleReviewStatusSchema,
+  })
+  .strict();
+
+export const storedSavedSubtitleSchema = z.union([
+  savedSubtitleSchema,
+  previousSavedSubtitleSchema,
+  legacySavedSubtitleSchema,
+]);
 export const subtitleMetadataSchema = z.object({
   id: z.custom<SubtitleId>(),
   title: z.string(),
