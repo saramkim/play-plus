@@ -10,6 +10,7 @@ import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
+import { respondToAsyncMessage } from './async-message-response';
 import {
   enqueueViewAction,
   PendingSubtitleRequest,
@@ -17,15 +18,15 @@ import {
 } from './pending-actions';
 import { createTabLifecycleDependencies, handleTabCompleted } from './tab-lifecycle';
 
-const updateConnectedStatus = (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
-  updateTabInfo(tabId, {
+const updateConnectedStatus = async (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
+  await updateTabInfo(tabId, {
     connectionStatus: 'connected',
     videoStatus: isVideoUrl ? (hasVideo ? 'detected' : 'not_detected') : 'idle',
   });
 };
 
-const updateDisconnectedStatus = (tabId: number, isVideoUrl: boolean) => {
-  updateTabInfo(tabId, {
+const updateDisconnectedStatus = async (tabId: number, isVideoUrl: boolean) => {
+  await updateTabInfo(tabId, {
     connectionStatus: 'disconnected',
     videoStatus: isVideoUrl ? 'not_detected' : 'idle',
   });
@@ -35,12 +36,12 @@ const checkContentConnection = async (tabId: number, isVideoUrl: boolean) => {
   try {
     const response = await sendMessageToTab(tabId, 'pingContent');
     if (response.success) {
-      updateConnectedStatus(tabId, isVideoUrl, response.data.hasVideo);
+      await updateConnectedStatus(tabId, isVideoUrl, response.data.hasVideo);
     } else {
-      updateDisconnectedStatus(tabId, isVideoUrl);
+      await updateDisconnectedStatus(tabId, isVideoUrl);
     }
   } catch {
-    updateDisconnectedStatus(tabId, isVideoUrl);
+    await updateDisconnectedStatus(tabId, isVideoUrl);
   }
 };
 
@@ -57,25 +58,26 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-onMessage(({ message, params, sender }) => {
-  switch (message) {
+onMessage((request) => {
+  switch (request.message) {
     case 'viewVideo': {
-      handleViewVideo(params);
-      break;
+      return respondToAsyncMessage(request.sendResponse, () => handleViewVideo(request.params));
     }
     case 'updateSubtitles': {
-      const tabId = sender.tab?.id;
-      if (!tabId) break;
-      const { lang, subtitleData } = params;
-      updateTabInfo(tabId, { [lang]: subtitleData });
-      break;
+      return respondToAsyncMessage(request.sendResponse, async () => {
+        const tabId = request.sender.tab?.id;
+        if (tabId === undefined) throw new Error('Missing sender tab id');
+        const { lang, subtitleData } = request.params;
+        await updateTabInfo(tabId, { [lang]: subtitleData });
+      });
     }
     case 'contentStatus': {
-      const tabId = sender.tab?.id;
-      if (!tabId) break;
-      const { hasVideo, isVideoUrl } = params;
-      updateConnectedStatus(tabId, isVideoUrl, hasVideo);
-      break;
+      return respondToAsyncMessage(request.sendResponse, async () => {
+        const tabId = request.sender.tab?.id;
+        if (tabId === undefined) throw new Error('Missing sender tab id');
+        const { hasVideo, isVideoUrl } = request.params;
+        await updateConnectedStatus(tabId, isVideoUrl, hasVideo);
+      });
     }
   }
 });
@@ -123,10 +125,10 @@ const handleViewVideo = async ({ url, startTime }: MessageSchema['viewVideo']['p
   );
   const matchingTab = matchingTabs.find((tab) => tab.active) ?? matchingTabs[0];
 
-  if (matchingTab?.id) {
+  if (matchingTab?.id !== undefined) {
     await chrome.tabs.update(matchingTab.id, { active: true });
     if (matchingTab.status === 'complete') {
-      sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
+      await sendMessageToTab(matchingTab.id, 'playVideo', { startTime });
     } else {
       await enqueueViewAction({ url, startTime, videoId });
     }
