@@ -83,7 +83,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
   return (
     <li
       className={cn(
-        'min-w-0 max-w-full overflow-hidden rounded-lg border shadow-sm transition-colors duration-150',
+        'min-w-0 max-w-full shrink-0 rounded-lg border shadow-sm transition-colors duration-150',
         isPrimarySubtitle || isSecondarySubtitle ? 'bg-primary/20' : 'bg-background'
       )}
     >
