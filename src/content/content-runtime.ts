@@ -1,4 +1,5 @@
 import { onStorageChange } from '@storage/index';
+import { sendMessage } from '@utils/message';
 
 import { renderApp } from './app';
 import { elementStore } from './core/store/element-store';
@@ -17,6 +18,7 @@ export type ContentRuntimeDependencies = {
   initializeStorageChange: () => Disposer;
   initializeSubtitleSync: () => Promise<Disposer>;
   removeContainers: Disposer;
+  reportContentInitialized: () => Promise<void>;
   renderApp: () => Disposer;
   setupSystemContainer: () => void;
   startLoopController: () => void;
@@ -49,6 +51,10 @@ const defaultDependencies: ContentRuntimeDependencies = {
   initializeStorageChange,
   initializeSubtitleSync,
   removeContainers: () => elementStore.removeContainers(),
+  reportContentInitialized: async () => {
+    const response = await sendMessage('contentInitialized');
+    if (!response.success) throw new Error(response.message);
+  },
   renderApp: () => renderApp(elementStore.getSystemRoot(), elementStore.getVideoRoot()),
   setupSystemContainer: () => elementStore.setupSystemContainer(),
   startLoopController: () => loopController.start(),
@@ -96,6 +102,12 @@ export class ContentRuntime {
     this.addDisposer(run, this.dependencies.removeContainers);
     this.addDisposer(run, this.dependencies.clearVideo);
 
+    this.addDisposer(run, this.dependencies.initializeMessageListener());
+    this.addDisposer(run, this.dependencies.initializeStorageChange());
+
+    await this.dependencies.reportContentInitialized();
+    if (run.cancelled) return;
+
     this.dependencies.startLoopController();
     this.addDisposer(run, this.dependencies.stopLoopController);
 
@@ -104,9 +116,6 @@ export class ContentRuntime {
 
     const videoStart = this.dependencies.startVideoController();
     this.addDisposer(run, this.dependencies.stopVideoController);
-
-    this.addDisposer(run, this.dependencies.initializeMessageListener());
-    this.addDisposer(run, this.dependencies.initializeStorageChange());
 
     const subtitleStart = this.dependencies
       .initializeSubtitleSync()

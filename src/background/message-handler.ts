@@ -22,6 +22,16 @@ export const registerBackgroundMessageHandler = (
 ) =>
   onMessage((request) => {
     switch (request.message) {
+      case 'contentInitialized': {
+        return respondToAsyncMessage(request.sendResponse, async () => {
+          const tabId = request.sender.tab?.id;
+          if (tabId === undefined) throw new Error('Missing sender tab id');
+          await dependencies.updateTabInfo(tabId, {
+            primarySubtitle: null,
+            secondarySubtitle: null,
+          });
+        });
+      }
       case 'viewVideo': {
         return respondToAsyncMessage(request.sendResponse, () =>
           dependencies.handleViewVideo(request.params)

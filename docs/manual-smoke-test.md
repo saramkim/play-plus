@@ -40,6 +40,9 @@ Record `PASS`, `FAIL`, or `BLOCKED` for every row. For failures, include the rou
 | Primary subtitle | Both | Select, display, hide/show, and seek from primary subtitles | PASS | |
 | Secondary subtitle | Both | Select, display, hide/show, and seek from secondary subtitles | PASS | |
 | Subtitle modes | N/A | In the Subtitles tab, verify list/empty mode never renders the add workflow; enter Add Subtitles from the list CTA and both empty-state actions; use Back to restore focus to the originating action; verify list and add modes each have one vertical scroll owner at 320/360/390px | NOT RUN | |
+| Subtitle cards | Both | Verify the muted current-tab tray appears above Search without a visible duplicate heading or settings icon, remains visible while filtering, and uses divided static role rows without looking like a subtitle card; return a custom role to Default and confirm focus moves to that role row; each actual card shows a two-line title, language, sync, added date, and explicit Primary/Secondary selection | NOT RUN | |
+| Subtitle card actions | Both | Verify cards use compact Analyze/Sync and Edit/Delete rows; selected cards hide Delete and expand Edit; Edit mode shows only its form, while Sync mode retains language, title, and current sync but hides role badges, added date, role controls, and all other actions; both modes stay open on outside click, use Save/Cancel, and return focus to their originating button | NOT RUN | |
+| Subtitle card accessibility | Both | At 320/360/390px, verify no horizontal overflow; role controls expose committed `aria-pressed` state and action names; pending applies only to its role; Default and all card actions are keyboard reachable with visible focus | NOT RUN | |
 | Subtitle source | N/A | Switch File/Online with mouse and keyboard; preserve each source draft within the current add-mode session; keep the inactive flow out of layout, the accessibility tree, and keyboard focus; leave and re-enter add mode to verify both drafts reset | NOT RUN | |
 | Add from file | Both | Add supported SRT/VTT/SMI files, reject unsupported/over-1-MiB/undecodable/empty files, verify Back/source/form controls are disabled while registering, then confirm success returns to and focuses the new list item before adjusting delay, editing, and reloading | NOT RUN | |
 | Online permission | N/A | First Search requests only the OpenSubtitles API and temporary-download origins; denial sends no search and leaves File available; granting does not reprompt | NOT RUN | |
@@ -57,6 +60,7 @@ Record `PASS`, `FAIL`, or `BLOCKED` for every row. For failures, include the rou
 | Speed | Both | Increase, decrease, and reset playback speed | PASS | |
 | Reconnect | Both | Close/reopen the side panel and verify state reconnects | PASS | |
 | Reload | Both | Reload the player; subtitles and controls recover | PASS | |
+| Custom role reload | Both | Select added subtitles for one or both roles, hard-reload the player, and verify both roles return to their configured default tracks without stale selected-card state | NOT RUN | |
 | SPA navigation | Both | Navigate away and back without a full reload; the new player is detected | PASS | |
 | Saved subtitle | Existing tab | Open a saved subtitle in an already-open matching video tab | PASS | |
 | Saved subtitle | New tab | Open a saved subtitle when no matching video tab exists | PASS | |
