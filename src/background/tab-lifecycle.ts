@@ -1,14 +1,11 @@
 import { setSessionStorage } from '@storage/session';
 import { updateTabInfo } from '@storage/tab';
+import type { PendingSubtitleRequest } from '@storage/type';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { sendMessageToTab } from '@utils/message';
 
-import {
-  PendingSubtitleRequest,
-  takePendingSubtitleRequest,
-  takeViewAction,
-} from './pending-actions';
+import { takePendingSubtitleRequest, takeViewAction } from './pending-actions';
 
 type MessageResult = { success: boolean; message?: string };
 

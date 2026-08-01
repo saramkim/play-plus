@@ -1,10 +1,8 @@
+import type { PendingSubtitleRequest } from '@storage/type';
 import { COUPANG_PLAY_SUBTITLE_API_URL } from '@utils/constants';
 import { sendMessageToTab } from '@utils/message';
 
-import {
-  PendingSubtitleRequest,
-  savePendingSubtitleRequest,
-} from './pending-actions';
+import { savePendingSubtitleRequest } from './pending-actions';
 
 type SubtitleRequestDependencies = {
   deliver: (tabId: number, payload: PendingSubtitleRequest) => Promise<void>;

@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import type { PendingSubtitleRequest, PendingViewAction } from '@/background/pending-actions';
-
 import {
   legacySavedSubtitleSchema,
   savedSubtitleReviewStatusSchema,
@@ -17,6 +15,17 @@ export type SavedSubtitle = z.infer<typeof savedSubtitleSchema>;
 export type LegacySavedSubtitle = z.infer<typeof legacySavedSubtitleSchema>;
 export type SavedSubtitleReviewStatus = z.infer<typeof savedSubtitleReviewStatusSchema>;
 export type SubtitleMetadata = z.infer<typeof subtitleMetadataSchema>;
+
+export type PendingViewAction = {
+  url: string;
+  startTime: number;
+  videoId: string | null;
+};
+
+export type PendingSubtitleRequest = {
+  url: string;
+  headers: chrome.webRequest.HttpHeader[];
+};
 
 // chrome.storage.sync
 export type StorageSchema = {
