@@ -1,12 +1,12 @@
 # Play Plus
 
-**Play Plus**는 Coupang Play 경험을 향상시키는 Chrome 확장 프로그램입니다. 이중 자막, 자막 업로드, 반복 재생 등 언어 학습을 위한 다양한 기능을 제공합니다.
+**Play Plus**는 Coupang Play 경험을 향상시키는 Chrome 확장 프로그램입니다. 이중 자막, 파일·온라인 자막 추가, 반복 재생 등 언어 학습을 위한 다양한 기능을 제공합니다.
 
 ## 주요 기능
 
 ### 자막 기능
 - **이중 자막 지원**: 원본 자막과 번역 자막을 동시에 표시
-- **자막 업로드**: 자막 파일을 업로드하여 사용
+- **자막 추가**: 로컬 SRT, VTT, SMI 파일을 추가하거나 OpenSubtitles에서 검색·다운로드하여 사용
 - **자막 분석**: 전체 자막을 시간 순으로 표시
 - **자막 커스터마이징**: 자막 스타일, 위치, 크기, 색상 등 세부 조정
 - **자막 저장**: 다시 보고 싶은 자막을 저장
@@ -58,6 +58,18 @@
 ### 필수 요구사항
 - **Node.js**: 22–24
 - **Yarn**: 패키지 매니저 (v4.9.1)
+
+### OpenSubtitles 개발 설정
+
+온라인 자막 검색을 개발할 때는 `.env.example`을 Git에서 제외되는 `.env.local`로 복사한 뒤 다음 값을 설정합니다.
+
+```dotenv
+OPENSUBTITLES_API_KEY=your-dedicated-play-plus-consumer-key
+```
+
+`OPENSUBTITLES_API_KEY`는 Play Plus 전용 consumer key를 사용합니다. 이 값은 배포 번들에 포함되어 사용자가 추출할 수 있는 공개 credential이며 비밀 정보로 간주할 수 없지만, 실제 키를 저장소에 커밋하지는 않습니다. `OPENSUBTITLES_USER_AGENT`는 선택 사항이며 설정하지 않으면 현재 패키지 버전에서 기본값을 생성합니다. 공유 consumer 배포에 대한 OpenSubtitles 승인과 로그인/JWT 없이 동작하는 실제 검색·다운로드 및 허용 호스트 확인은 릴리스 전 필수 검증 항목입니다.
+
+온라인 검색은 사용자가 **검색**을 실행한 뒤에만 입력한 제목, 언어와 선택 필터를 OpenSubtitles로 전송합니다. 결과 카드에는 영상 적합성을 판단할 release·작품·FPS·CD 정보와 OpenSubtitles가 제공한 번역 특성·평점·다운로드·신뢰 출처 신호가 조건부로 표시됩니다. 이 신호는 안전이나 품질을 보증하지 않습니다. 선택한 자막은 Play Plus의 로컬 저장소에 추가되며 자동으로 메인 또는 서브 자막을 덮어쓰지 않습니다. OpenSubtitles 접근은 선택적 Chrome 권한이고, 거부해도 로컬 파일 추가는 계속 사용할 수 있습니다. 온라인 자막은 [OpenSubtitles](https://www.opensubtitles.com/)에서 제공합니다.
 
 ### 개발 서버 실행
 ```bash

@@ -3,7 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerBackgroundMessageHandler } from './message-handler';
 
 const createDependencies = () => ({
+  downloadOpenSubtitle: vi.fn(async () => ({
+    fileId: 11,
+    fileName: 'example.srt',
+    text: 'subtitle',
+    fromCache: false,
+  })),
   handleViewVideo: vi.fn(async () => {}),
+  searchOpenSubtitles: vi.fn(async () => ({
+    totalCount: 0,
+    totalPages: 0,
+    page: 1,
+    candidates: [],
+  })),
   updateConnectedStatus: vi.fn(async () => {}),
   updateTabInfo: vi.fn(async () => {}),
 });
@@ -77,5 +89,48 @@ describe('background message handler', () => {
       })
     );
     expect(dependencies.updateConnectedStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns typed OpenSubtitles search data', async () => {
+    const dependencies = createDependencies();
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(listener?.(
+      { message: 'searchOpenSubtitles', params: { query: 'Example', language: 'en' } },
+      {},
+      sendResponse
+    )).toBe(true);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: true,
+        data: { totalCount: 0, totalPages: 0, page: 1, candidates: [] },
+      })
+    );
+    expect(dependencies.searchOpenSubtitles).toHaveBeenCalledWith({ query: 'Example', language: 'en' });
+  });
+
+  it('returns a typed provider failure without exposing unknown error data', async () => {
+    const dependencies = createDependencies();
+    dependencies.downloadOpenSubtitle.mockRejectedValueOnce(new Error('raw provider detail'));
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(listener?.(
+      { message: 'downloadOpenSubtitle', params: { fileId: 11, language: 'en' } },
+      {},
+      sendResponse
+    )).toBe(true);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        code: 'SERVER',
+        message: 'The OpenSubtitles request failed.',
+      })
+    );
   });
 });

@@ -1,8 +1,15 @@
 const path = require('path');
+const dotenv = require('dotenv');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const webpack = require('webpack');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+
+dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
+dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true, quiet: true });
+
+const packageJson = require('./package.json');
 
 const isProd = process.argv.at(-1) === 'production';
 const shouldAnalyze = process.env.ANALYZE === 'true';
@@ -63,6 +70,12 @@ module.exports = {
     }),
     new CopyWebpackPlugin({
       patterns: [{ from: 'public', to: '.' }],
+    }),
+    new webpack.DefinePlugin({
+      __OPENSUBTITLES_API_KEY__: JSON.stringify(process.env.OPENSUBTITLES_API_KEY ?? ''),
+      __OPENSUBTITLES_USER_AGENT__: JSON.stringify(
+        process.env.OPENSUBTITLES_USER_AGENT?.trim() || `Play Plus v${packageJson.version}`
+      ),
     }),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],

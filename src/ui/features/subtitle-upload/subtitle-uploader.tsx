@@ -1,73 +1,55 @@
 
 import { useRef, useState } from 'react';
 
-import { addRegisteredSubtitle } from '@storage/registered-subtitle';
-import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES } from '@utils/constants';
+import { Language, LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
+import {
+  decodeSubtitleBytes,
+  MAX_SUBTITLE_FILE_SIZE,
+  SubtitleDecodeError,
+} from '@utils/subtitle-decode';
 import { FileTextIcon, FileUpIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
-import { modal } from '@/ui/components/modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select';
+
+import {
+  isSupportedSubtitleFileName,
+  registerSubtitleText,
+  SubtitleRegistrationError,
+  SUPPORTED_SUBTITLE_EXTENSIONS,
+  subtitleTitleFromFileName,
+} from './subtitle-registration';
 
 export const LANGUAGE_OPTIONS = Object.entries(LANGUAGES).map(([key, value]) => ({
   value: key,
   label: t(value),
 }));
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const DEFAULT_LANGUAGE: Language = 'en';
 
-const allowedExtensions = ['.vtt', '.srt', '.smi'];
-const allowedExtensionsString = allowedExtensions.map((ext) => ext.replace('.', '').toUpperCase()).join(', ');
+const allowedExtensionsString = SUPPORTED_SUBTITLE_EXTENSIONS.map((extension) =>
+  extension.replace('.', '').toUpperCase()
+).join(', ');
 
 const validateFile = (file: File) => {
-  const fileExtension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-  if (!allowedExtensions.includes(fileExtension)) {
+  if (!isSupportedSubtitleFileName(file.name)) {
     return { isValid: false, message: t('error_unsupported_file_type', allowedExtensionsString) };
   }
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > MAX_SUBTITLE_FILE_SIZE) {
     return { isValid: false, message: t('error_file_size') };
   }
   return { isValid: true, message: '' };
 };
 
-const uploadSubtitle = async (file: File, title: string, language: Language) => {
-  const content = getContent(await file.arrayBuffer(), language);
-  const body = getSubtitle(file, content);
-  await addRegisteredSubtitle({ title, language, body });
-};
-
-const getContent = (arrayBuffer: ArrayBuffer, language: Language) => {
-  const encodings = Object.values(ENCODING_MAP).sort((a, b) => {
-    if (a === ENCODING_MAP.UTF_8) return -1;
-    if (b === ENCODING_MAP.UTF_8) return 1;
-
-    const languageEncoding = LANGUAGE_ENCODING_MAP[language];
-    if (a === languageEncoding) return -1;
-    if (b === languageEncoding) return 1;
-
-    return 0;
-  });
-
-  for (const encoding of encodings) {
-    try {
-      const decoder = new TextDecoder(encoding, { fatal: true });
-      const content = decoder.decode(arrayBuffer);
-      return content;
-    } catch {
-      continue;
-    }
+const registrationErrorMessage = (error: unknown) => {
+  if (error instanceof SubtitleRegistrationError) {
+    return error.code === 'unsupported-file-type'
+      ? t('error_unsupported_file_type', allowedExtensionsString)
+      : t('error_empty_subtitle');
   }
-
-  throw new Error('Failed to decode subtitle file');
-};
-
-const getSubtitle = (file: File, content: string) => {
-  const fileExtension = getSubtitleFormat(file);
-  if (!fileExtension) return [];
-  return parseSubtitle[fileExtension](content);
+  return t('error_try_later');
 };
 
 export function SubtitleUploader() {
@@ -75,15 +57,20 @@ export function SubtitleUploader() {
   const [title, setTitle] = useState<string>('');
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileUpload = (file: File) => {
     const { isValid, message } = validateFile(file);
     if (isValid) {
+      setError(null);
       setFile(file);
-      setTitle(file.name.replace(/\.[^.]+$/, ''));
+      setTitle(subtitleTitleFromFileName(file.name));
     } else {
-      modal.alert({ title: t('error'), message });
+      setFile(null);
+      setTitle('');
+      setError(message);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -91,13 +78,16 @@ export function SubtitleUploader() {
     setFile(null);
     setTitle('');
     setLanguage(DEFAULT_LANGUAGE);
+    setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className='flex flex-col gap-2'>
-      <div
-        className='flex justify-center items-center gap-2 border rounded-md p-4 hover:bg-gray-100 cursor-pointer'
+      <button
+        type='button'
+        aria-label={t('upload_subtitle_file')}
+        className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border p-4 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         onClick={() => fileInputRef.current?.click()}
         onDrop={(e) => {
           e.preventDefault();
@@ -119,28 +109,48 @@ export function SubtitleUploader() {
           </>
         )}
 
-        <input
-          ref={fileInputRef}
-          type='file'
-          accept={allowedExtensions.join(',')}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFileUpload(file);
-          }}
-          className='hidden'
-        />
-      </div>
+      </button>
+
+      <input
+        ref={fileInputRef}
+        type='file'
+        accept={SUPPORTED_SUBTITLE_EXTENSIONS.join(',')}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(file);
+        }}
+        className='hidden'
+      />
+
+      {error && (
+        <p role='alert' className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-wrap text-[13px] text-destructive'>
+          {error}
+        </p>
+      )}
 
       {file && (
         <form
           onSubmit={async (e) => {
             e.preventDefault();
             setIsUploading(true);
+            setError(null);
             try {
-              await uploadSubtitle(file, title, language);
+              let text: string;
+              try {
+                text = decodeSubtitleBytes(await file.arrayBuffer(), language);
+              } catch (decodeError) {
+                setError(
+                  decodeError instanceof SubtitleDecodeError && decodeError.code === 'FILE_TOO_LARGE'
+                    ? t('error_file_size')
+                    : t('error_subtitle_decode')
+                );
+                return;
+              }
+              await registerSubtitleText({ fileName: file.name, title, language, text });
+              toast.success(t('success_add_subtitle'));
               reset();
             } catch (error) {
-              console.error('Failed to process subtitle file:', error);
+              setError(registrationErrorMessage(error));
             } finally {
               setIsUploading(false);
             }
@@ -149,7 +159,7 @@ export function SubtitleUploader() {
         >
           <div className='flex justify-between items-center gap-1'>
             <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
-              <SelectTrigger className='w-fit'>
+              <SelectTrigger className='w-fit' aria-label={t('language')}>
                 <SelectValue placeholder={t('select')} />
               </SelectTrigger>
               <SelectContent>
@@ -160,14 +170,20 @@ export function SubtitleUploader() {
                 ))}
               </SelectContent>
             </Select>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={isUploading} />
+            <Input
+              aria-label={t('subtitle_title')}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isUploading}
+              required
+            />
           </div>
           <div className='flex gap-2'>
             <Button type='button' variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
               {t('cancel')}
             </Button>
-            <Button type='submit' className='w-full' disabled={isUploading}>
-              {t('upload')}
+            <Button type='submit' className='w-full' disabled={isUploading || !title.trim()}>
+              {t('add')}
             </Button>
           </div>
         </form>
