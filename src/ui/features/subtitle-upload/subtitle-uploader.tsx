@@ -1,9 +1,8 @@
 
 import { useRef, useState } from 'react';
 
-import { getLocalStorage, setLocalStorage } from '@storage/index';
-import { setLocalSubtitle } from '@storage/subtitle';
-import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
+import { addRegisteredSubtitle } from '@storage/registered-subtitle';
+import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { FileTextIcon, FileUpIcon } from 'lucide-react';
@@ -34,29 +33,10 @@ const validateFile = (file: File) => {
   return { isValid: true, message: '' };
 };
 
-const uploadSubtitle = (file: File, title: string, language: Language) => {
-  return new Promise<void>((resolve) => {
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      try {
-        const content = getContent(reader.result as ArrayBuffer, language);
-        const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
-        const subtitle = getSubtitle(file, content);
-
-        const newData = { id, title, language, savedAt: new Date().toISOString() };
-        await Promise.all([
-          setLocalSubtitle(id, subtitle),
-          setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
-        ]);
-      } catch (error) {
-        console.error('Failed to process subtitle file:', error);
-      }
-      resolve();
-    };
-
-    reader.readAsArrayBuffer(file);
-  });
+const uploadSubtitle = async (file: File, title: string, language: Language) => {
+  const content = getContent(await file.arrayBuffer(), language);
+  const body = getSubtitle(file, content);
+  await addRegisteredSubtitle({ title, language, body });
 };
 
 const getContent = (arrayBuffer: ArrayBuffer, language: Language) => {
@@ -156,9 +136,14 @@ export function SubtitleUploader() {
           onSubmit={async (e) => {
             e.preventDefault();
             setIsUploading(true);
-            await uploadSubtitle(file, title, language);
-            setIsUploading(false);
-            reset();
+            try {
+              await uploadSubtitle(file, title, language);
+              reset();
+            } catch (error) {
+              console.error('Failed to process subtitle file:', error);
+            } finally {
+              setIsUploading(false);
+            }
           }}
           className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}
         >

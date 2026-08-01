@@ -1,46 +1,64 @@
 
 import { useEffect, useState } from 'react';
 
-import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
-import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
+import {
+  deleteRegisteredSubtitle,
+  getRegisteredSubtitles,
+  onRegisteredSubtitlesChange,
+  updateRegisteredSubtitle,
+} from '@storage/registered-subtitle';
+import { SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
-import { Language, REGISTRATION } from '@utils/constants';
+import { Language } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessageToTab } from '@utils/message';
 
 import { modal } from '@/ui/components/modal';
-
-const { STORAGE_KEY } = REGISTRATION;
 
 export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
   const [subtitles, setSubtitles] = useState<SubtitleMetadata[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const data = await getLocalStorage(STORAGE_KEY);
-      if (data) setSubtitles(data);
-      setLoading(false);
-    })();
-
-    const { remove } = onLocalStorageChange((changes) => {
-      const change = changes[STORAGE_KEY];
-      if (change?.newValue) setSubtitles(change.newValue);
+    let cancelled = false;
+    let changedWhileLoading = false;
+    const { remove } = onRegisteredSubtitlesChange((registeredSubtitles) => {
+      changedWhileLoading = true;
+      if (!cancelled) setSubtitles(registeredSubtitles);
     });
-    return remove;
+
+    const loadSubtitles = async () => {
+      setLoading(true);
+      try {
+        const registeredSubtitles = await getRegisteredSubtitles();
+        if (!cancelled && !changedWhileLoading) setSubtitles(registeredSubtitles);
+      } catch (error) {
+        console.error('Failed to load registered subtitles:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void loadSubtitles();
+
+    return () => {
+      cancelled = true;
+      remove();
+    };
   }, []);
 
-  const editSubtitle = (id: string, title: string, language: Language) => {
-    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, title, language } : v));
-    setLocalStorage(STORAGE_KEY, newSubtitles);
+  const editSubtitle = async (id: SubtitleId, title: string, language: Language) => {
+    await updateRegisteredSubtitle(id, { title, language });
   };
 
-  const updateDelay = (id: SubtitleId, delay: number) => {
-    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, delay } : v));
-    setLocalStorage(STORAGE_KEY, newSubtitles);
-    if (activeTab?.id) {
-      sendMessageToTab(activeTab.id, 'updateSubtitleDelay', { subtitleId: id, delay });
+  const updateDelay = async (id: SubtitleId, delay: number) => {
+    const tabId = activeTab?.id;
+    const updated = await updateRegisteredSubtitle(id, { delay });
+    if (!updated || tabId === undefined) return;
+
+    try {
+      await sendMessageToTab(tabId, 'updateSubtitleDelay', { subtitleId: id, delay });
+    } catch (error) {
+      console.error('Failed to notify subtitle delay update:', error);
     }
   };
 
@@ -48,10 +66,12 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
     modal.confirm({
       title: t('delete'),
       message: t('confirm_delete'),
-      onConfirm: () => {
-        const filtered = subtitles.filter((v) => v.id !== id);
-        setLocalStorage(STORAGE_KEY, filtered);
-        removeLocalSubtitle(id);
+      onConfirm: async () => {
+        try {
+          await deleteRegisteredSubtitle(id);
+        } catch (error) {
+          console.error('Failed to delete registered subtitle:', error);
+        }
       },
     });
   };

@@ -10,7 +10,7 @@ import { useClickOutside } from '@/ui/hooks/use-click-outside';
 
 interface SubtitleDelayFormProps {
   initialDelay?: number;
-  onUpdateDelay: (delay: number) => void;
+  onUpdateDelay: (delay: number) => Promise<void>;
   closeEditMode: () => void;
 }
 
@@ -44,9 +44,13 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onUpdateDelay(delay);
+    try {
+      await onUpdateDelay(delay);
+    } catch (error) {
+      console.error('Failed to update registered subtitle delay:', error);
+    }
   };
 
   return (

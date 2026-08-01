@@ -65,8 +65,8 @@ interface SubtitleItemProps {
   activeTab: chrome.tabs.Tab | null;
   tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
-  onEdit: (id: SubtitleId, title: string, language: Language) => void;
-  onUpdateDelay: (id: SubtitleId, delay: number) => void;
+  onEdit: (id: SubtitleId, title: string, language: Language) => Promise<void>;
+  onUpdateDelay: (id: SubtitleId, delay: number) => Promise<void>;
 }
 
 function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDelay }: SubtitleItemProps) {
@@ -112,8 +112,8 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
         {isDelayEditing ? (
           <SubtitleDelayForm
             initialDelay={data.delay}
-            onUpdateDelay={(delay) => {
-              onUpdateDelay(data.id, delay);
+            onUpdateDelay={async (delay) => {
+              await onUpdateDelay(data.id, delay);
               setIsDelayEditing(false);
             }}
             closeEditMode={() => setIsDelayEditing(false)}

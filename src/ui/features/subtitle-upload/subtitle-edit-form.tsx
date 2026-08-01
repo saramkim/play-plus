@@ -17,7 +17,7 @@ interface SubtitleEditFormProps {
   id: SubtitleId;
   initialTitle: string;
   initialLanguage: Language;
-  onEdit: (id: SubtitleId, title: string, language: Language) => void;
+  onEdit: (id: SubtitleId, title: string, language: Language) => Promise<void>;
   closeEditMode: () => void;
 }
 
@@ -29,10 +29,14 @@ export function SubtitleEditForm({ id, initialTitle, initialLanguage, onEdit, cl
 
   useClickOutside([formRef, selectContentRef], () => closeEditMode());
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onEdit(id, editedTitle, editedLanguage);
-    closeEditMode();
+    try {
+      await onEdit(id, editedTitle, editedLanguage);
+      closeEditMode();
+    } catch (error) {
+      console.error('Failed to edit registered subtitle:', error);
+    }
   };
 
   return (
