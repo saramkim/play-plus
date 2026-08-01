@@ -13,12 +13,13 @@ const pageTitleMap = {
   [PAGE_NAME.SUBTITLE_SETTING]: t('subtitle_setting'),
   [PAGE_NAME.VIDEO_SETTING]: t('video_setting'),
   [PAGE_NAME.REVIEW]: t('review'),
-  [PAGE_NAME.SUBTITLE_UPLOAD]: t('subtitle_upload'),
+  [PAGE_NAME.SUBTITLE_UPLOAD]: t('subtitles'),
   [PAGE_NAME.SUBTITLE_ANALYSIS]: t('subtitle_analysis'),
 };
 
 export function Header() {
   const currentPage = usePageStore((state) => state.currentPage);
+  const navigationLocked = usePageStore((state) => state.navigationLocked);
   const setPage = usePageStore((state) => state.setPage);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const { scrollRef, eventHandlers, allowClick } = useDragScroll();
@@ -37,9 +38,10 @@ export function Header() {
             tabRefs.current[index] = el;
           }}
           key={page}
+          disabled={navigationLocked}
           onClick={() => handleTabClick(index)}
           className={cn(
-            'flex-1 p-2 text-[15px] hover:bg-gray-100 font-medium',
+            'flex-1 p-2 text-[15px] hover:bg-gray-100 font-medium disabled:cursor-not-allowed disabled:opacity-50',
             currentPage === page ? 'border-b-2 border-b-primary text-primary pt-2.5' : 'text-gray-500'
           )}
         >

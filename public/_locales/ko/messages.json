@@ -59,6 +59,11 @@
   "all_list": { "message": "전체 목록" },
   "add": { "message": "추가" },
   "add_from_file": { "message": "파일에서 추가" },
+  "advanced_search": { "message": "상세 검색" },
+  "advanced_search_applied": {
+    "message": "상세 검색 · $count$개 적용",
+    "placeholders": { "count": { "content": "$1" } }
+  },
   "add_online_subtitle": {
     "message": "$fileName$ 자막 추가",
     "placeholders": { "fileName": { "content": "$1" } }
@@ -69,6 +74,7 @@
   "auto_scroll": { "message": "자동 스크롤" },
   "available_on_coupang_play": { "message": "쿠팡플레이에서 사용 가능" },
   "background_opacity": { "message": "배경 불투명도" },
+  "back_to_subtitles": { "message": "자막 목록으로" },
   "backward_key": { "message": "뒤로 이동 키" },
   "bottom": { "message": "하단" },
   "cancel": { "message": "취소" },
@@ -105,6 +111,9 @@
   "no_search_results": { "message": "검색 결과가 없습니다." },
   "online_subtitle_search": { "message": "OpenSubtitles 자막 검색" },
   "opensubtitles_attribution": { "message": "온라인 자막 제공:" },
+  "opensubtitles_search_privacy": {
+    "message": "검색하면 제목과 선택한 조건이 OpenSubtitles로 전송됩니다."
+  },
   "oldest": { "message": "오래된 순" },
   "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
   "optimize_for_learning": { "message": "학습 최적화" },

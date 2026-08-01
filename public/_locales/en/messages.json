@@ -60,6 +60,11 @@
   "all_list": { "message": "All List" },
   "add": { "message": "Add" },
   "add_from_file": { "message": "Add from File" },
+  "advanced_search": { "message": "Advanced Search" },
+  "advanced_search_applied": {
+    "message": "Advanced Search · $count$ applied",
+    "placeholders": { "count": { "content": "$1" } }
+  },
   "add_online_subtitle": {
     "message": "Add $fileName$ subtitle",
     "placeholders": { "fileName": { "content": "$1" } }
@@ -70,6 +75,7 @@
   "auto_scroll": { "message": "Auto Scroll" },
   "available_on_coupang_play": { "message": "Available on Coupang Play" },
   "background_opacity": { "message": "Background Opacity" },
+  "back_to_subtitles": { "message": "Back to Subtitles" },
   "backward_key": { "message": "Backward Key" },
   "bottom": { "message": "Bottom" },
   "cancel": { "message": "Cancel" },
@@ -106,6 +112,9 @@
   "no_search_results": { "message": "No search results." },
   "online_subtitle_search": { "message": "Search OpenSubtitles" },
   "opensubtitles_attribution": { "message": "Online subtitles provided by:" },
+  "opensubtitles_search_privacy": {
+    "message": "Searching sends the title and selected filters to OpenSubtitles."
+  },
   "oldest": { "message": "Oldest" },
   "optimize_for_learning_confirm": { "message": "Are you sure you want to apply the learning optimized settings?" },
   "optimize_for_learning": { "message": "Optimize for Learning" },

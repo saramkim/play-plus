@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { SubtitleMetadata } from '@storage/type';
 import { Language } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
@@ -21,6 +22,7 @@ import { requestOpenSubtitlesPermission } from './open-subtitles-permission';
 import { OpenSubtitlesResultCard } from './open-subtitles-result-card';
 import {
   buildOpenSubtitlesSearchQuery,
+  countAppliedOpenSubtitlesFilters,
   OpenSubtitlesContentTypeFilter,
   OpenSubtitlesSearchFields,
 } from './open-subtitles-search-query';
@@ -93,26 +95,53 @@ const openSubtitlesErrorMessage = (code: OpenSubtitlesErrorCode, operation: 'sea
   }
 };
 
-export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
+export function OpenSubtitlesSearch({
+  focusOnMount = false,
+  onAdded,
+  onBusyChange,
+}: {
+  focusOnMount?: boolean;
+  onAdded: (subtitle: SubtitleMetadata) => void;
+  onBusyChange: (busy: boolean) => void;
+}) {
   const [fields, setFields] = useState(DEFAULT_FIELDS);
   const [result, setResult] = useState<OpenSubtitlesSearchResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [selectingFileId, setSelectingFileId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const queryInputRef = useRef<HTMLInputElement>(null);
   const requestSequence = useRef(0);
   const lastSearchQuery = useRef<OpenSubtitlesSearchQuery | null>(null);
+  const busy = searching || selectingFileId !== null;
+  const appliedFilterCount = countAppliedOpenSubtitlesFilters(fields);
+
+  useEffect(() => {
+    onBusyChange(busy);
+  }, [busy, onBusyChange]);
+
+  useEffect(() => {
+    return () => onBusyChange(false);
+  }, [onBusyChange]);
+
+  useEffect(() => {
+    if (focusOnMount) queryInputRef.current?.focus();
+  }, [focusOnMount]);
 
   const updateField = <Key extends keyof OpenSubtitlesSearchFields>(
     key: Key,
     value: OpenSubtitlesSearchFields[Key]
-  ) => setFields((current) => ({ ...current, [key]: value }));
+  ) => {
+    requestSequence.current += 1;
+    lastSearchQuery.current = null;
+    setResult(null);
+    setError(null);
+    setFields((current) => ({ ...current, [key]: value }));
+  };
 
   const runSearch = async (page: number, append: boolean) => {
+    if (append && !lastSearchQuery.current) return;
+
     const requestId = ++requestSequence.current;
-    if (!append) {
-      lastSearchQuery.current = null;
-      setResult(null);
-    }
     setSearching(true);
     setError(null);
 
@@ -167,14 +196,14 @@ export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
       }
 
       const downloaded = response.data;
-      await registerSubtitleText({
+      const subtitle = await registerSubtitleText({
         fileName: downloaded.fileName,
         title: subtitleTitleFromFileName(downloaded.fileName || candidate.fileName),
         language: candidate.language,
         text: downloaded.text,
       });
       toast.success(successMessage(downloaded));
-      onAdded();
+      onAdded(subtitle);
     } catch (downloadError) {
       setError(
         downloadError instanceof SubtitleRegistrationError
@@ -187,10 +216,12 @@ export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
   };
 
   return (
-    <div className='flex min-w-0 max-w-full flex-col gap-3 overflow-hidden rounded-md border p-3'>
+    <div
+      aria-busy={busy}
+      className='flex min-w-0 max-w-full flex-col gap-3 overflow-hidden rounded-md border p-3'
+    >
       <form
         aria-label={t('online_subtitle_search')}
-        aria-busy={searching}
         className='flex flex-col gap-2'
         onSubmit={(event) => {
           event.preventDefault();
@@ -200,69 +231,99 @@ export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
         <label className='flex flex-col gap-1 text-[12px] font-medium'>
           {t('search_title')}
           <Input
+            ref={queryInputRef}
             aria-label={t('search_title')}
+            disabled={busy}
             value={fields.query}
             onChange={(event) => updateField('query', event.currentTarget.value)}
             required
           />
         </label>
 
-        <div className='grid grid-cols-2 gap-2'>
-          <label className='flex min-w-0 flex-col gap-1 text-[12px] font-medium'>
-            {t('language')}
-            <Select value={fields.language} onValueChange={(value) => updateField('language', value as Language)}>
-              <SelectTrigger aria-label={t('language')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className='flex min-w-0 flex-col gap-1 text-[12px] font-medium'>
-            {t('content_type')}
-            <Select
-              value={fields.contentType}
-              onValueChange={(value) => updateField('contentType', value as OpenSubtitlesContentTypeFilter)}
-            >
-              <SelectTrigger aria-label={t('content_type')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>{t('content_type_all')}</SelectItem>
-                <SelectItem value='movie'>{t('content_type_movie')}</SelectItem>
-                <SelectItem value='episode'>{t('content_type_episode')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-        </div>
+        <label className='flex min-w-0 flex-col gap-1 text-[12px] font-medium'>
+          {t('language')}
+          <Select
+            disabled={busy}
+            value={fields.language}
+            onValueChange={(value) => updateField('language', value as Language)}
+          >
+            <SelectTrigger aria-label={t('language')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGUAGE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
 
-        <div className='grid grid-cols-3 gap-2'>
-          <NumberFilter
-            label={t('year')}
-            min={1888}
-            value={fields.year}
-            onChange={(value) => updateField('year', value)}
-          />
-          <NumberFilter
-            label={t('season')}
-            min={1}
-            value={fields.seasonNumber}
-            onChange={(value) => updateField('seasonNumber', value)}
-          />
-          <NumberFilter
-            label={t('episode')}
-            min={1}
-            value={fields.episodeNumber}
-            onChange={(value) => updateField('episodeNumber', value)}
-          />
-        </div>
+        <details className='rounded-md border px-3 py-2'>
+          <summary
+            aria-disabled={busy}
+            className='cursor-pointer text-[12px] font-medium marker:text-gray-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
+            onClick={(event) => {
+              if (busy) event.preventDefault();
+            }}
+            onKeyDown={(event) => {
+              if (busy && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+            }}
+          >
+            {appliedFilterCount === 0
+              ? t('advanced_search')
+              : t('advanced_search_applied', String(appliedFilterCount))}
+          </summary>
 
-        <Button type='submit' size='sm' disabled={searching || !fields.query.trim()}>
+          <div className='mt-2 flex flex-col gap-2'>
+            <label className='flex min-w-0 flex-col gap-1 text-[12px] font-medium'>
+              {t('content_type')}
+              <Select
+                disabled={busy}
+                value={fields.contentType}
+                onValueChange={(value) => updateField('contentType', value as OpenSubtitlesContentTypeFilter)}
+              >
+                <SelectTrigger aria-label={t('content_type')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>{t('content_type_all')}</SelectItem>
+                  <SelectItem value='movie'>{t('content_type_movie')}</SelectItem>
+                  <SelectItem value='episode'>{t('content_type_episode')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+
+            <div className='grid grid-cols-3 gap-2'>
+              <NumberFilter
+                disabled={busy}
+                label={t('year')}
+                min={1888}
+                value={fields.year}
+                onChange={(value) => updateField('year', value)}
+              />
+              <NumberFilter
+                disabled={busy}
+                label={t('season')}
+                min={1}
+                value={fields.seasonNumber}
+                onChange={(value) => updateField('seasonNumber', value)}
+              />
+              <NumberFilter
+                disabled={busy}
+                label={t('episode')}
+                min={1}
+                value={fields.episodeNumber}
+                onChange={(value) => updateField('episodeNumber', value)}
+              />
+            </div>
+          </div>
+        </details>
+
+        <p className='text-wrap text-[11px] text-gray-500'>{t('opensubtitles_search_privacy')}</p>
+
+        <Button type='submit' size='sm' disabled={busy || !fields.query.trim()}>
           {searching ? <LoaderCircleIcon className='animate-spin' /> : <SearchIcon />}
           {t(searching ? 'searching' : 'search')}
         </Button>
@@ -292,13 +353,13 @@ export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
             <OpenSubtitlesResultCard
               key={candidate.fileId}
               candidate={candidate}
-              disabled={selectingFileId !== null}
+              disabled={busy}
               adding={selectingFileId === candidate.fileId}
               onAdd={() => void addCandidate(candidate)}
             />
           ))}
           {result.page < result.totalPages && (
-            <Button variant='outline' size='sm' type='button' disabled={searching} onClick={() => void runSearch(result.page + 1, true)}>
+            <Button variant='outline' size='sm' type='button' disabled={busy} onClick={() => void runSearch(result.page + 1, true)}>
               {searching && <LoaderCircleIcon className='animate-spin' />}
               {t(searching ? 'loading_more' : 'show_more')}
             </Button>
@@ -317,11 +378,13 @@ export function OpenSubtitlesSearch({ onAdded }: { onAdded: () => void }) {
 }
 
 function NumberFilter({
+  disabled,
   label,
   min,
   value,
   onChange,
 }: {
+  disabled: boolean;
   label: string;
   min: number;
   value: string;
@@ -333,6 +396,7 @@ function NumberFilter({
       <Input
         aria-label={label}
         className='px-2'
+        disabled={disabled}
         type='number'
         min={min}
         step={1}

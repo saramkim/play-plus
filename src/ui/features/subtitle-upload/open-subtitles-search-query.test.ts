@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildOpenSubtitlesSearchQuery, OpenSubtitlesSearchFields } from './open-subtitles-search-query';
+import {
+  buildOpenSubtitlesSearchQuery,
+  countAppliedOpenSubtitlesFilters,
+  OpenSubtitlesSearchFields,
+} from './open-subtitles-search-query';
 
 const fields: OpenSubtitlesSearchFields = {
   query: ' The Matrix ',
@@ -38,5 +42,18 @@ describe('OpenSubtitles search query', () => {
     expect(() => buildOpenSubtitlesSearchQuery({ ...fields, query: '  ' })).toThrow(
       'OpenSubtitles search title is required'
     );
+  });
+
+  it('counts only effective advanced filters', () => {
+    expect(countAppliedOpenSubtitlesFilters(fields)).toBe(2);
+    expect(
+      countAppliedOpenSubtitlesFilters({
+        ...fields,
+        contentType: 'all',
+        year: 'not-a-year',
+        seasonNumber: '0',
+        episodeNumber: '3',
+      })
+    ).toBe(1);
   });
 });
