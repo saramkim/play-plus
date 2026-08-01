@@ -41,4 +41,5 @@ function App({ videoRoot }: { videoRoot: HTMLElement }) {
 export const renderApp = (systemRoot: HTMLElement, videoRoot: HTMLElement) => {
   const root = ReactDOM.createRoot(systemRoot);
   root.render(<App videoRoot={videoRoot} />);
+  return () => root.unmount();
 };

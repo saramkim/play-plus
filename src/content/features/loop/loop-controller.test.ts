@@ -29,6 +29,22 @@ afterEach(() => {
 });
 
 describe('loop interaction cleanup', () => {
+  it('keeps construction inert and owns one loop state subscription', () => {
+    const unsubscribe = vi.fn();
+    const subscribe = vi.spyOn(useLoopStore, 'subscribe').mockReturnValue(unsubscribe);
+
+    const controller = new LoopController();
+    expect(subscribe).not.toHaveBeenCalled();
+
+    controller.start();
+    controller.start();
+    expect(subscribe).toHaveBeenCalledOnce();
+
+    controller.stop();
+    controller.stop();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
   it('releases the active loop subscription during reset', () => {
     const video = createVideo();
     const unsubscribe = vi.fn();

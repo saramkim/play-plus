@@ -34,12 +34,20 @@ export class LoopController {
   private isMarkerShowing = false;
   private unsubscribeLoop: (() => void) | null = null;
   private unsubscribePlayOnce: (() => void) | null = null;
+  private unsubscribeState: (() => void) | null = null;
 
-  constructor() {
-    useLoopStore.subscribe((state) => {
+  start() {
+    if (this.unsubscribeState) return;
+    this.unsubscribeState = useLoopStore.subscribe((state) => {
       this.startMarker.updateState(state.isLooping);
       this.endMarker.updateState(state.isLooping);
     });
+  }
+
+  stop() {
+    this.resetLoop();
+    this.unsubscribeState?.();
+    this.unsubscribeState = null;
   }
 
   onLoopStorageChange = (changes: StorageChanges) => {

@@ -53,10 +53,23 @@ export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependen
   };
 };
 
-const videoLifecycleMonitor = new VideoLifecycleMonitor();
+type MessageListenerDependencies = {
+  createVideoLifecycleMonitor: () => VideoLifecycleMonitor;
+  registerMessageListener: typeof onMessage;
+};
 
-export function initializeMessageListener() {
-  onMessage(({ message, params, sendResponse }) => {
+const defaultMessageListenerDependencies: MessageListenerDependencies = {
+  createVideoLifecycleMonitor: () => new VideoLifecycleMonitor(),
+  registerMessageListener: onMessage,
+};
+
+let activeVideoLifecycleMonitor: VideoLifecycleMonitor | null = null;
+
+export function initializeMessageListener(
+  dependencies = defaultMessageListenerDependencies
+) {
+  const videoLifecycleMonitor = dependencies.createVideoLifecycleMonitor();
+  const registration = dependencies.registerMessageListener(({ message, params, sendResponse }) => {
     switch (message) {
       case 'resetElement': {
         handleResetElement();
@@ -93,10 +106,32 @@ export function initializeMessageListener() {
       }
     }
   });
-  videoLifecycleMonitor.start(handleVideoLifecycle);
+
+  try {
+    videoLifecycleMonitor.start(handleVideoLifecycle);
+    activeVideoLifecycleMonitor = videoLifecycleMonitor;
+  } catch (error) {
+    registration.remove();
+    videoLifecycleMonitor.stop();
+    throw error;
+  }
+
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    registration.remove();
+    videoLifecycleMonitor.stop();
+    if (activeVideoLifecycleMonitor === videoLifecycleMonitor) activeVideoLifecycleMonitor = null;
+  };
 }
 
-export const retryVideoDetection = () => Promise.resolve(toDetectionResponse(videoLifecycleMonitor.refresh()));
+export const retryVideoDetection = () => {
+  const event = activeVideoLifecycleMonitor?.refresh();
+  return Promise.resolve(
+    event ? toDetectionResponse(event) : { success: false as const, message: t('error_video_not_found') }
+  );
+};
 
 const handleResetElement = () => {
   elementStore.reset();
