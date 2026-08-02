@@ -35,6 +35,9 @@ MV3 경계:
 
 # Working Guidelines for AI Agents
 
+- Play Plus 2.0 관련 조사, Issue 작성, 설계와 구현을 시작하기 전에 반드시 [`docs/play-plus-2.0.md`](docs/play-plus-2.0.md)를 완전히 읽는다. 이 문서가 2.0의 제품·데이터·마이그레이션·기능 범위에 대한 canonical contract다.
+- 2.0 하위 Issue와 Pull Request는 canonical contract의 관련 절을 링크하고 그 범위를 좁혀 구현한다. `제거` 또는 `연기`된 기능을 임의로 되살리거나 미래용 schema·권한·호환 분기를 미리 추가하지 않는다.
+- 2.0 계약을 바꾸는 새 제품 결정이 필요하면 구현을 멈추고 ChatGPT 검토와 사용자 승인을 받은 뒤 canonical 문서와 Issue를 먼저 갱신한다.
 - 시작 시 작업과 직접 관련된 파일만 읽는다. 기본 확인 순서는 `package.json`, `tsconfig.json`, `webpack.config.js`, `public/manifest.json`, 관련 진입점과 인접 테스트다.
 - 구조가 필요할 때는 먼저 `rg --files <관련 경로>`와 `rg <심볼>`을 사용한다. 전체 저장소나 생성물을 무작정 출력하지 않는다.
 - 관련 없는 사용자 변경을 보존하고, 요청 밖 파일을 수정하거나 큰 리팩터링을 하지 않는다.
@@ -44,6 +47,8 @@ MV3 경계:
 # ChatGPT Collaboration
 
 ChatGPT에서는 `Play Plus` 프로젝트를 사용한다. Codex와 ChatGPT는 다음 역할로 협업한다.
+
+Play Plus 2.0 작업에서는 이 절과 함께 [`docs/play-plus-2.0.md`](docs/play-plus-2.0.md)를 적용한다. 이미 승인된 2.0 계약을 반복 논의할 필요는 없지만, 계약을 확대·축소하거나 바꾸는 판단은 아래 절차를 다시 거친다.
 
 - Codex: 로컬 저장소 조사, 구현, 실행, 테스트, 최신 작업 트리와 전체 diff 확인.
 - ChatGPT: 제품 방향, 사용자 경험, 기술 설계, 작업 범위와 트레이드오프, 구현 완료 여부 검토.
