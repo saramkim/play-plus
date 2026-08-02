@@ -88,6 +88,7 @@ Pull Request는 최소한 다음 정보를 포함한다.
 ## Canonical Documentation
 
 - `AGENTS.md`: 아키텍처 경계, 개발 규칙, Git, 검증과 릴리스 guardrail.
+- `docs/play-plus-2.0.md`: Play Plus 2.0의 승인된 제품 방향, 데이터 모델, v1.11 마이그레이션, 기능 범위와 완료 기준.
 - `docs/development-workflow.md`: Issue, ChatGPT 협업과 Pull Request lifecycle.
 - `docs/manual-smoke-test.md`: 릴리스 전 실제 Chrome 검증 기록.
 - `README.md`: 제품·설치·개발 진입점과 canonical 문서 링크.

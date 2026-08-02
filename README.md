@@ -2,6 +2,8 @@
 
 **Play Plus**는 Coupang Play 경험을 향상시키는 Chrome 확장 프로그램입니다. 이중 자막, 파일·온라인 자막 추가, 반복 재생 등 언어 학습을 위한 다양한 기능을 제공합니다.
 
+> 현재 배포 버전은 v1.11.0입니다. 언어 학습 중심으로 재구성하는 Play Plus 2.0 작업은 반드시 [`docs/play-plus-2.0.md`](docs/play-plus-2.0.md)의 승인된 제품·데이터·마이그레이션 계약을 기준으로 진행합니다. 이 문서는 현재 배포 기능 설명이 아니라 이후 2.0 구현의 canonical contract입니다.
+
 ## 주요 기능
 
 ### 자막 기능
@@ -182,7 +184,7 @@ ISC
 
 기여를 환영합니다. Play Plus는 `main`을 통합 브랜치로 사용합니다. 제품·UX·아키텍처·공개 동작처럼 결정이 필요한 작업은 먼저 Issue로 범위를 확정하고, 최신 `main`에서 작업 브랜치를 만든 뒤 `main` 대상 Pull Request를 제출해주세요. 명확한 단순 수정은 Issue 없이 Pull Request를 제출할 수 있습니다. 실제 릴리스는 릴리스 커밋과 `v<version>` 태그로 구분합니다.
 
-자세한 Issue, ChatGPT 협업과 Pull Request 절차는 [`docs/development-workflow.md`](docs/development-workflow.md), 개발·Git·검증 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
+Play Plus 2.0의 승인된 제품·마이그레이션 범위는 [`docs/play-plus-2.0.md`](docs/play-plus-2.0.md), 자세한 Issue, ChatGPT 협업과 Pull Request 절차는 [`docs/development-workflow.md`](docs/development-workflow.md), 개발·Git·검증 규칙은 [`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ## 버전
 
