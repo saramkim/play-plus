@@ -34,6 +34,20 @@
   "subtitle_count": { "message": "$1 subtitles", "placeholders": { "count": { "content": "$1" } } },
 
   "subtitle_setting": { "message": "Subtitle" },
+  "learning_languages": { "message": "Learning languages" },
+  "learning_language": { "message": "Learning language" },
+  "support_language": { "message": "Support language (optional)" },
+  "no_support_language": { "message": "Do not use support sentences" },
+  "learning_profile_confirmation_title": { "message": "Confirm your learning languages" },
+  "learning_profile_confirmation_description": {
+    "message": "Choose the language you are learning and an optional language for help."
+  },
+  "confirm_languages": { "message": "Confirm languages" },
+  "subtitle_display": { "message": "Subtitle display" },
+  "learning_subtitle": { "message": "Learning subtitle" },
+  "support_subtitle": { "message": "Support subtitle" },
+  "show_learning_subtitle": { "message": "Show learning subtitle" },
+  "show_support_subtitle": { "message": "Show support subtitle" },
   "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
   "review_mode": { "message": "Choose a review view" },
