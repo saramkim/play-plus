@@ -56,7 +56,7 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
     <header className='flex flex-col gap-2 pb-2 border-b'>
       <div className='flex justify-between items-center gap-2'>
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
-          <Input ref={searchInputRef} />
+          <Input ref={searchInputRef} aria-label={t('search')} />
           <Button size='sm' type='submit'>
             {t('search')}
           </Button>
@@ -65,7 +65,7 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
       <div className='flex justify-between items-center gap-2 h-5'>
         {searchText ? (
           <div className='flex items-center gap-1 w-full overflow-hidden'>
-            <button onClick={clearSearch}>
+            <button type='button' aria-label={t('clear_search')} onClick={clearSearch}>
               <XIcon className='size-4 text-destructive hover:text-destructive/80' />
             </button>
             <span className='text-gray-800'>{t('search_term')}:</span>
@@ -79,11 +79,19 @@ export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
         )}
 
         <div className='flex items-center gap-1'>
-          <button className={sort === 'latest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('latest')}>
+          <button
+            aria-pressed={sort === 'latest'}
+            className={sort === 'latest' ? 'font-bold' : 'text-gray-500'}
+            onClick={() => setSort('latest')}
+          >
             {t('latest')}
           </button>
           <span className='text-gray-300'>|</span>
-          <button className={sort === 'oldest' ? 'font-bold' : 'text-gray-500'} onClick={() => setSort('oldest')}>
+          <button
+            aria-pressed={sort === 'oldest'}
+            className={sort === 'oldest' ? 'font-bold' : 'text-gray-500'}
+            onClick={() => setSort('oldest')}
+          >
             {t('oldest')}
           </button>
         </div>

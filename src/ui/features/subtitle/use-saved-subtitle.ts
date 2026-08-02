@@ -18,7 +18,7 @@ const { STORAGE_KEY } = REVIEW;
 
 export function useSavedSubtitle() {
   const [subtitles, setSubtitles] = useState<SavedSubtitle[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     const cards = await getSavedSubtitleCards();
@@ -27,9 +27,11 @@ export function useSavedSubtitle() {
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      await refresh();
-      setLoading(false);
+      try {
+        await refresh();
+      } finally {
+        setLoading(false);
+      }
     })();
 
     const { remove } = onLocalStorageChange((changes) => {
@@ -63,8 +65,12 @@ export function useSavedSubtitle() {
     });
   };
 
-  const updateReviewStatus = (id: string, reviewStatus: SavedSubtitleReviewStatus) => {
-    return updateSavedSubtitleReviewStatus(id, reviewStatus);
+  const updateReviewStatus = async (id: string, reviewStatus: SavedSubtitleReviewStatus) => {
+    const updated = await updateSavedSubtitleReviewStatus(id, reviewStatus);
+    if (updated) {
+      setSubtitles((current) => current.map((card) => (card.id === id ? updated : card)));
+    }
+    return updated;
   };
 
   return { subtitles, saveSubtitle, deleteSubtitle, updateReviewStatus, loading };
