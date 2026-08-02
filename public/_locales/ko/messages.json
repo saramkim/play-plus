@@ -18,7 +18,11 @@
     "message": "학습 최적화 설정은 하단 더보기 메뉴에서 언제든 다시 적용할 수 있습니다."
   },
 
-  "review_description": { "message": "자막을 클릭하거나 단축키를 사용해 자막을 저장해보세요!" },
+  "review_empty_title": { "message": "아직 저장한 문장이 없어요" },
+  "review_description": {
+    "message": "영상 자막을 클릭하거나 단축키를 사용해 복습할 문장을 저장해보세요."
+  },
+  "review_loading": { "message": "저장한 문장을 불러오는 중..." },
   "subtitle_analysis_description": {
     "message": "시청중인 영상의 자막이나,\n추가한 자막을 선택해 자막을 분석해보세요!"
   },
@@ -31,6 +35,44 @@
   "subtitle_setting": { "message": "자막 설정" },
   "video_setting": { "message": "영상 설정" },
   "review": { "message": "복습" },
+  "review_mode": { "message": "복습 보기 선택" },
+  "review_mode_session": { "message": "복습하기" },
+  "review_mode_library": { "message": "저장 목록" },
+  "review_progress": {
+    "message": "$1 / $2번째 문장",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "review_show_second_subtitle": { "message": "두 번째 자막 보기" },
+  "review_hide_second_subtitle": { "message": "두 번째 자막 숨기기" },
+  "review_judgment_prompt": { "message": "이 문장은 어땠나요?" },
+  "review_queue_summary": {
+    "message": "학습 중 $1 · 새 항목 $2",
+    "placeholders": {
+      "learning": { "content": "$1" },
+      "new": { "content": "$2" }
+    }
+  },
+  "review_status_new_description": { "message": "아직 학습 상태를 선택하지 않았어요." },
+  "review_status_learning_description": { "message": "다시 볼 문장으로 표시했어요." },
+  "review_status_mastered_description": { "message": "기억한 문장으로 표시했어요." },
+  "review_start_learning": { "message": "학습 시작" },
+  "review_already_know": { "message": "이미 알고 있어요" },
+  "review_keep_learning": { "message": "계속 학습" },
+  "review_remember": { "message": "기억했어요" },
+  "review_learn_again": { "message": "다시 학습" },
+  "review_still_remember": { "message": "아직 기억해요" },
+  "review_skip": { "message": "건너뛰기" },
+  "review_complete_title": { "message": "복습이 끝났어요" },
+  "review_complete_description": { "message": "이번 복습 목록을 모두 확인했습니다." },
+  "review_queue_empty_title": { "message": "복습할 문장이 없어요" },
+  "review_queue_empty_description": { "message": "새 항목이나 학습 중인 문장이 없습니다." },
+  "review_go_to_library": { "message": "저장 목록 보기" },
+  "review_completed_session": { "message": "완료 문장 복습" },
+  "review_review_completed": { "message": "완료 문장 복습하기" },
+  "review_status_update_failed": { "message": "복습 상태를 저장하지 못했습니다." },
   "review_status_filter": { "message": "복습 상태 필터" },
   "review_status_all": { "message": "전체" },
   "review_status_new": { "message": "새 항목" },
@@ -41,6 +83,10 @@
     "placeholders": { "status": { "content": "$1" } }
   },
   "review_status_empty": { "message": "현재 검색 및 상태 조건에 맞는 저장 자막이 없습니다." },
+  "clear_filters": { "message": "필터 초기화" },
+  "clear_search": { "message": "검색어 지우기" },
+  "previous": { "message": "이전" },
+  "next": { "message": "다음" },
   "subtitle_analysis": { "message": "자막 분석" },
   "subtitle_upload": { "message": "자막 추가" },
   "current_tab_subtitles": { "message": "현재 탭의 자막" },
@@ -246,7 +292,7 @@
     "message": "$1 설정 펼치기",
     "placeholders": { "setting": { "content": "$1" } }
   },
-  "view_video": { "message": "영상 보기" },
+  "view_video": { "message": "영상에서 보기" },
 
   "connection_content_connecting": { "message": "쿠팡플레이 연결 중" },
   "connection_content_connected": { "message": "쿠팡플레이 연결됨" },

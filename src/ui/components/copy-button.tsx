@@ -21,6 +21,7 @@ export function CopyButton({ content }: { content: string }) {
       variant='ghost'
       size='xxs'
       tooltip={t('copy')}
+      aria-label={t('copy')}
       onClick={async () => {
         await navigator.clipboard.writeText(content);
         setIsCopied(true);

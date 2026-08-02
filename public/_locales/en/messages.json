@@ -19,7 +19,11 @@
   },
 
   "no_saved_subtitles": { "message": "No saved subtitles." },
-  "review_description": { "message": "Click on the subtitle or use the shortcut to save it!" },
+  "review_empty_title": { "message": "No saved sentences yet" },
+  "review_description": {
+    "message": "Click a video subtitle or use a shortcut to save a sentence for review."
+  },
+  "review_loading": { "message": "Loading saved sentences..." },
   "subtitle_analysis_description": {
     "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have added!"
   },
@@ -32,6 +36,44 @@
   "subtitle_setting": { "message": "Subtitle" },
   "video_setting": { "message": "Video" },
   "review": { "message": "Review" },
+  "review_mode": { "message": "Choose a review view" },
+  "review_mode_session": { "message": "Review" },
+  "review_mode_library": { "message": "Library" },
+  "review_progress": {
+    "message": "Sentence $1 of $2",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "review_show_second_subtitle": { "message": "Show second subtitle" },
+  "review_hide_second_subtitle": { "message": "Hide second subtitle" },
+  "review_judgment_prompt": { "message": "How did this sentence feel?" },
+  "review_queue_summary": {
+    "message": "Learning $1 · New $2",
+    "placeholders": {
+      "learning": { "content": "$1" },
+      "new": { "content": "$2" }
+    }
+  },
+  "review_status_new_description": { "message": "You haven't chosen a learning status yet." },
+  "review_status_learning_description": { "message": "You marked this to review again." },
+  "review_status_mastered_description": { "message": "You marked this as remembered." },
+  "review_start_learning": { "message": "Start learning" },
+  "review_already_know": { "message": "I know this already" },
+  "review_keep_learning": { "message": "Keep learning" },
+  "review_remember": { "message": "I remember this" },
+  "review_learn_again": { "message": "Learn again" },
+  "review_still_remember": { "message": "I still remember" },
+  "review_skip": { "message": "Skip" },
+  "review_complete_title": { "message": "Review complete" },
+  "review_complete_description": { "message": "You have seen every sentence in this review." },
+  "review_queue_empty_title": { "message": "Nothing to review" },
+  "review_queue_empty_description": { "message": "There are no New or Learning sentences." },
+  "review_go_to_library": { "message": "Go to library" },
+  "review_completed_session": { "message": "Mastered review" },
+  "review_review_completed": { "message": "Review mastered sentences" },
+  "review_status_update_failed": { "message": "Could not save the review status." },
   "review_status_filter": { "message": "Filter by review status" },
   "review_status_all": { "message": "All" },
   "review_status_new": { "message": "New" },
@@ -42,6 +84,10 @@
     "placeholders": { "status": { "content": "$1" } }
   },
   "review_status_empty": { "message": "No saved subtitles match the current filters." },
+  "clear_filters": { "message": "Clear filters" },
+  "clear_search": { "message": "Clear search" },
+  "previous": { "message": "Previous" },
+  "next": { "message": "Next" },
   "subtitle_analysis": { "message": "Analysis" },
   "subtitle_upload": { "message": "Add Subtitles" },
   "current_tab_subtitles": { "message": "Subtitles for this tab" },
@@ -247,7 +293,7 @@
     "message": "Expand $1 settings",
     "placeholders": { "setting": { "content": "$1" } }
   },
-  "view_video": { "message": "View Video" },
+  "view_video": { "message": "Open in video" },
 
   "connection_content_connecting": { "message": "Connecting Coupang Play" },
   "connection_content_connected": { "message": "Coupang Play connected" },
