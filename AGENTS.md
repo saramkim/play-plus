@@ -107,6 +107,30 @@ Decisions ChatGPT needs to make
 
 세부 Issue-to-PR 절차는 [`docs/development-workflow.md`](docs/development-workflow.md)를 따른다. 브랜치, commit, 검증과 릴리스에는 아래 기존 규칙을 그대로 적용한다. worktree와 배포는 현재 저장소에 문서화된 범위만 따르며, 다른 저장소의 명명법, 명령 또는 lifecycle 도구를 가져오지 않는다.
 
+## Optional Batch Relay mode
+
+`Batch Relay`는 사용자가 승인된 여러 Issue를 Codex 구현, ChatGPT 독립 검토·병합, 다음 Issue 인계 순서로 실행하도록 명시적으로 활성화할 때만 사용하는 선택적 workflow다. 기본 작업에는 적용하지 않는다.
+
+사람이 Codex에 보내는 정확한 진입·재개 트리거는 다음과 같다.
+
+```text
+BATCH RELAY RUN #<parent-batch-issue-number>
+```
+
+숫자는 개별 구현 Issue가 아니라 `.github/ISSUE_TEMPLATE/batch-relay.yml` 계약을 따르는 부모 배치 Issue다. 미래 배치의 하위 Issue, 최종 통합 검증 Issue와 부모 Issue는 휴먼과 기획을 마친 ChatGPT가 미리 생성한다. Codex는 트리거 이후 기존 Issue를 실행할 뿐, 누락된 Issue를 만들거나 계약·순서·권한을 보완하지 않는다. 트리거를 받으면 [`docs/batch-relay.md`](docs/batch-relay.md)를 완전히 읽고 부모 Issue의 authorization, 순서, merge method, 검증, exclusions와 control state를 확인한 뒤 그 문서를 따른다.
+
+유효한 트리거는 부모 Issue에 나열된 범위 안에서 하위 Issue별 branch 생성, commit, task-branch push, Pull Request 생성·수정, required fix 반복과 부모 Issue 상태 갱신을 한 번에 명시적으로 승인한 것으로 취급한다. 따라서 이 작업에는 `AI Agent Git Rules`의 commit·push별 추가 요청을 반복해서 요구하지 않는다.
+
+이 승인은 `main` 직접 push, history rewrite, force-push, branch 삭제, Issue 목록·순서·계약 변경, release, tag, store submission, deployment 또는 승인 범위 밖 외부 쓰기를 허용하지 않는다. Codex는 Batch Relay Pull Request를 직접 merge하지 않는다.
+
+다음 명령을 받으면 새 외부 쓰기와 다음 Issue 진행을 중지하고 [`docs/batch-relay.md`](docs/batch-relay.md)에 따라 상태를 기록한다.
+
+```text
+BATCH RELAY STOP #<parent-batch-issue-number>
+```
+
+정확한 트리거가 없으면 일반 [`docs/development-workflow.md`](docs/development-workflow.md)와 기존 commit·push 승인 규칙을 적용한다. 여러 Issue, 이전 Batch Relay 사용 또는 Codex 자신의 판단만으로 이 모드를 추정하지 않는다.
+
 # Commands
 
 ```bash

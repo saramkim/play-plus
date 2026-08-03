@@ -1,0 +1,126 @@
+name: Batch Relay
+description: Authorize an ordered group of issues for Codex implementation and ChatGPT review and merge.
+title: "batch: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Batch Relay is optional. After planning with the human, ChatGPT normally creates every child issue, the final integration verification issue, and this parent issue last. This form defines the required parent contract and is also a manual fallback. Codex must not create or repair the issue queue during execution. The human activates or resumes the finished batch with `BATCH RELAY RUN #<this-issue-number>`.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Batch goal
+      description: Describe the single product or engineering outcome this complete batch must deliver.
+    validations:
+      required: true
+
+  - type: textarea
+    id: canonical-references
+    attributes:
+      label: Canonical references and shared contract
+      description: Link AGENTS.md, relevant canonical documentation, approved decisions, and any shared constants or exclusions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: authorized-order
+    attributes:
+      label: Authorized execution order
+      description: List every existing child issue as a task list in exact order. The final item must be the integration verification issue. Do not add or reorder items while the batch is active.
+      placeholder: |
+        - [ ] #123 — First implementation issue
+        - [ ] #124 — Second implementation issue
+        - [ ] #125 — Final integration verification
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and sequencing
+      description: State why the order matters and any condition that must be true before each issue begins.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: merge-method
+    attributes:
+      label: Merge method
+      description: ChatGPT must use this method for every code-changing pull request in the batch.
+      options:
+        - squash
+        - merge
+        - rebase
+    validations:
+      required: true
+
+  - type: textarea
+    id: pull-request-validation
+    attributes:
+      label: Per-pull-request validation
+      description: List issue-specific checks in addition to the repository requirements in AGENTS.md and CI.
+      placeholder: |
+        - `yarn type-check`
+        - `yarn lint`
+        - focused tests
+        - GitHub CI
+    validations:
+      required: true
+
+  - type: textarea
+    id: final-integration-validation
+    attributes:
+      label: Final integration validation
+      description: Define the complete latest-main checks and any Chrome smoke or E2E required by the final issue.
+      placeholder: |
+        - `yarn type-check`
+        - `yarn lint`
+        - `yarn test:run`
+        - `yarn build`
+        - required manual smoke
+    validations:
+      required: true
+
+  - type: textarea
+    id: human-decision-boundaries
+    attributes:
+      label: Human-decision boundaries
+      description: List batch-specific decisions that must pause implementation or merge. The protected boundaries in docs/batch-relay.md always apply.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Batch exclusions
+      description: List functionality, cleanup, release, deployment, and follow-up work that this authority does not include.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: human-authorization
+    attributes:
+      label: Human authorization
+      description: These confirmations define the authority that the later human trigger activates.
+      options:
+        - label: I authorize Codex to commit, push task branches, create or update pull requests, apply in-scope required fixes, and update this batch's control state for only the issues listed above.
+          required: true
+        - label: I authorize ChatGPT to merge a listed pull request without another confirmation only when the current issue contract, required validation, review state, mergeability, and reviewed head SHA all pass.
+          required: true
+        - label: I understand that issue-list changes, product-scope changes, permissions, privacy or external transmission, destructive migrations, releases, tags, store submissions, deployments, force-pushes, and branch deletion are not authorized unless separately approved.
+          required: true
+
+  - type: textarea
+    id: control-state
+    attributes:
+      label: Control state
+      description: Codex may update only this state and completion marks while active. Use the values defined in docs/batch-relay.md.
+      value: |
+        Status: AUTHORIZED
+        Current issue: First unchecked issue
+        Last merged PR: None
+        Last merge SHA: None
+        Human decision pending: No
+    validations:
+      required: true
