@@ -32,14 +32,20 @@ export function LearningCardContent({ card, showSupport = true }: LearningCardCo
         text={card.content.learning.text}
         emphasized
       />
-      {showSupport && card.content.support && (
-        <CardLine
-          label={t('v2_library_support')}
-          language={t(LANGUAGES[card.content.support.language])}
-          text={card.content.support.text}
-        />
-      )}
+      {showSupport && <LearningCardSupportContent card={card} />}
     </div>
+  );
+}
+
+export function LearningCardSupportContent({ card }: { card: LearningCard }) {
+  if ('unassigned' in card.content || !card.content.support) return null;
+
+  return (
+    <CardLine
+      label={t('v2_library_support')}
+      language={t(LANGUAGES[card.content.support.language])}
+      text={card.content.support.text}
+    />
   );
 }
 
