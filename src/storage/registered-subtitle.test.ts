@@ -1,3 +1,4 @@
+import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { REGISTRATION } from '@utils/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,21 +9,20 @@ import {
   onRegisteredSubtitlesChange,
   updateRegisteredSubtitle,
 } from './registered-subtitle';
-import { SubtitleId } from './subtitle';
-import { SubtitleMetadata } from './type';
+import { getLocalSubtitle, removeLocalSubtitle, setLocalSubtitle, SubtitleId } from './subtitle';
 
 const UUID = '00000000-0000-4000-8000-000000000001';
 const ID = `${REGISTRATION.ID_PREFIX}-${UUID}` as SubtitleId;
 const OTHER_ID = `${REGISTRATION.ID_PREFIX}-00000000-0000-4000-8000-000000000002` as SubtitleId;
 const SAVED_AT = '2026-08-01T00:00:00.000Z';
 const BODY = [{ start: 1, end: 2, text: 'Hello' }];
-const metadata: SubtitleMetadata = {
+const metadata: V2RegisteredSubtitleMetadata = {
   id: ID,
   title: 'English',
   language: 'en',
   savedAt: SAVED_AT,
 };
-const otherMetadata: SubtitleMetadata = {
+const otherMetadata: V2RegisteredSubtitleMetadata = {
   id: OTHER_ID,
   title: 'Korean',
   language: 'ko',
@@ -70,6 +70,17 @@ describe('registered subtitle storage', () => {
     expect(localStorage[ID]).toEqual(BODY);
   });
 
+  it('rejects an invalid body before writing metadata or the physical body key', async () => {
+    localStorage.registeredSubtitles = [otherMetadata];
+
+    await expect(
+      addRegisteredSubtitle({ title: 'English', language: 'en', body: [{ start: 2, end: 1, text: 'Invalid' }] })
+    ).rejects.toThrow();
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    expect(localStorage[ID]).toBeUndefined();
+  });
+
   it('rejects a duplicate generated id without writing', async () => {
     localStorage.registeredSubtitles = [metadata];
 
@@ -78,6 +89,18 @@ describe('registered subtitle storage', () => {
     );
 
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it('does not overwrite an orphan body at a generated id', async () => {
+    localStorage.registeredSubtitles = [otherMetadata];
+    localStorage[ID] = BODY;
+
+    await expect(addRegisteredSubtitle({ title: 'Duplicate', language: 'en', body: BODY })).rejects.toThrow(
+      `Registered subtitle already exists: ${ID}`
+    );
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    expect(localStorage[ID]).toEqual(BODY);
   });
 
   it('serializes fresh-read updates and preserves sibling metadata and unrelated fields', async () => {
@@ -94,10 +117,12 @@ describe('registered subtitle storage', () => {
     expect(chrome.storage.local.set).toHaveBeenCalledTimes(2);
   });
 
-  it('does not write when an update target is missing', async () => {
+  it('rejects without writing when an update target is missing', async () => {
     localStorage.registeredSubtitles = [otherMetadata];
 
-    await expect(updateRegisteredSubtitle(ID, { title: 'Missing' })).resolves.toBeUndefined();
+    await expect(updateRegisteredSubtitle(ID, { title: 'Missing' })).rejects.toThrow(
+      `Registered subtitle not found: ${ID}`
+    );
 
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
@@ -145,26 +170,62 @@ describe('registered subtitle storage', () => {
     expect(localStorage[ID]).toEqual(BODY);
   });
 
-  it('does not write or remove when a delete target is missing', async () => {
+  it('rejects without writing or removing when a delete target is missing', async () => {
     localStorage.registeredSubtitles = [otherMetadata];
 
-    await expect(deleteRegisteredSubtitle(ID)).resolves.toBeUndefined();
+    await expect(deleteRegisteredSubtitle(ID)).rejects.toThrow(`Registered subtitle not found: ${ID}`);
 
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
     expect(chrome.storage.local.remove).not.toHaveBeenCalled();
   });
 
-  it('reports storage-key removal as an empty registered subtitle list', () => {
-    let listener: ((changes: { registeredSubtitles?: { newValue?: SubtitleMetadata[] } }) => void) | undefined;
+  it('rejects a missing physical body before deleting its metadata', async () => {
+    localStorage.registeredSubtitles = [metadata, otherMetadata];
+
+    await expect(deleteRegisteredSubtitle(ID)).rejects.toThrow();
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    expect(chrome.storage.local.remove).not.toHaveBeenCalled();
+    expect(localStorage.registeredSubtitles).toEqual([metadata, otherMetadata]);
+  });
+
+  it('strictly validates missing and invalid metadata collections', async () => {
+    await expect(getRegisteredSubtitles()).rejects.toThrow();
+
+    localStorage.registeredSubtitles = [{ ...metadata, unexpected: true }];
+    await expect(getRegisteredSubtitles()).rejects.toThrow();
+  });
+
+  it('strictly validates physical body reads and writes', async () => {
+    await expect(getLocalSubtitle(ID)).rejects.toThrow();
+
+    localStorage[ID] = [{ start: 2, end: 1, text: 'Invalid' }];
+    await expect(getLocalSubtitle(ID)).rejects.toThrow();
+
+    expect(() => setLocalSubtitle(ID, [{ start: 2, end: 1, text: 'Invalid' }])).toThrow();
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+
+    await expect(setLocalSubtitle(ID, BODY)).resolves.toBeUndefined();
+    await expect(getLocalSubtitle(ID)).resolves.toEqual(BODY);
+
+    await expect(removeLocalSubtitle(ID)).resolves.toBeUndefined();
+    expect(localStorage[ID]).toBeUndefined();
+    await expect(removeLocalSubtitle(ID)).rejects.toThrow();
+  });
+
+  it('strictly validates registered subtitle change events', () => {
+    let listener: ((changes: Record<string, chrome.storage.StorageChange>) => void) | undefined;
     vi.mocked(chrome.storage.local.onChanged.addListener).mockImplementation((callback) => {
       listener = callback;
     });
     const callback = vi.fn();
 
     const subscription = onRegisteredSubtitlesChange(callback);
-    listener?.({ registeredSubtitles: { newValue: undefined } });
+    listener?.({ registeredSubtitles: { newValue: [metadata] } });
 
-    expect(callback).toHaveBeenCalledWith([]);
+    expect(callback).toHaveBeenCalledWith([metadata]);
+    expect(() => listener?.({ registeredSubtitles: { newValue: undefined } })).toThrow();
+    expect(() => listener?.({ registeredSubtitles: { newValue: [{ ...metadata, extra: true }] } })).toThrow();
     subscription.remove();
     expect(chrome.storage.local.onChanged.removeListener).toHaveBeenCalledWith(listener);
   });

@@ -1,6 +1,3 @@
-export const DEFAULT_SUBTITLE_LANGUAGES = ['en', 'ko'] as const;
-export type DefaultSubtitleLanguage = (typeof DEFAULT_SUBTITLE_LANGUAGES)[number];
-
 export const COUPANG_PLAY_BASE_URL = 'https://www.coupangplay.com';
 export const COUPANG_PLAY_VIDEO_URL_LIST = [
   `${COUPANG_PLAY_BASE_URL}/play`,
@@ -51,71 +48,6 @@ export const LANGUAGE_ENCODING_MAP: Record<Language, string> = {
   pt: ENCODING_MAP.UTF_8,
   ru: ENCODING_MAP.WINDOWS_1251,
   ar: ENCODING_MAP.WINDOWS_1256,
-} as const;
-
-export const PAGE_NAME = {
-  SUBTITLE_SETTING: 'subtitle-setting',
-  VIDEO_SETTING: 'video-setting',
-  REVIEW: 'review',
-  SUBTITLE_ANALYSIS: 'subtitle-analysis',
-  SUBTITLE_UPLOAD: 'subtitle-upload',
-} as const;
-export type PageName = (typeof PAGE_NAME)[keyof typeof PAGE_NAME];
-
-export const SETTINGS = {
-  SUBTITLES: {
-    PRIMARY: {
-      STORAGE_KEY: 'primarySubtitle',
-      TITLE_MESSAGE_KEY: 'primary_subtitle',
-    },
-    SECONDARY: {
-      STORAGE_KEY: 'secondarySubtitle',
-      TITLE_MESSAGE_KEY: 'secondary_subtitle',
-    },
-  },
-  VIDEO_SKIP: {
-    STORAGE_KEY: 'videoSkip',
-    TITLE_MESSAGE_KEY: 'video_skip',
-  },
-  SUB_VIDEO_SKIP: {
-    STORAGE_KEY: 'subVideoSkip',
-    TITLE_MESSAGE_KEY: 'sub_video_skip',
-  },
-  SHORTCUTS: {
-    STORAGE_KEY: 'shortcuts',
-  },
-  LOOP: {
-    STORAGE_KEY: 'loop',
-  },
-  PLAYBACK_SPEED: {
-    STORAGE_KEY: 'playbackSpeed',
-  },
-} as const;
-export type SubtitleSettingStorageKey = (typeof SETTINGS.SUBTITLES)[keyof typeof SETTINGS.SUBTITLES]['STORAGE_KEY'];
-
-export const SET_SUBTITLE_ACTION = {
-  SET_PRIMARY: 'setPrimarySubtitle',
-  SET_SECONDARY: 'setSecondarySubtitle',
-} as const;
-export type SetSubtitleAction = (typeof SET_SUBTITLE_ACTION)[keyof typeof SET_SUBTITLE_ACTION];
-
-export const SET_SUBTITLE_STORAGE_KEY_MAP = {
-  [SET_SUBTITLE_ACTION.SET_PRIMARY]: SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY,
-  [SET_SUBTITLE_ACTION.SET_SECONDARY]: SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY,
-} as const;
-
-export const REVIEW = {
-  STORAGE_KEY: 'savedSubtitles',
-  DATA_ATTRIBUTE: {
-    START_TIME: 'startTime',
-  },
-} as const;
-
-export const MORE_MENU_OPTIONS = {
-  EXPORT_BACKUP: 'exportBackup',
-  RESTORE_BACKUP: 'restoreBackup',
-  RESET_SETTINGS: 'resetSettings',
-  SET_LEARNING_CONFIG: 'setLearningConfig',
 } as const;
 
 export const REGISTRATION = {

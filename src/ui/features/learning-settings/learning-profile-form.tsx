@@ -14,6 +14,7 @@ import { LanguageSelectField } from './language-select-field';
 export type LearningProfile = V2SyncStorage['learningProfile'];
 
 interface LearningProfileFormProps {
+  submitDisabled?: boolean;
   description?: string;
   onSubmit: (value: LearningProfile) => void | Promise<void>;
   submitLabel?: string;
@@ -26,6 +27,7 @@ export function LearningProfileForm({
   onSubmit,
   submitLabel = t('save'),
   title = t('learning_languages'),
+  submitDisabled = false,
   value,
 }: LearningProfileFormProps) {
   const form = useForm<LearningProfile>({
@@ -35,6 +37,10 @@ export function LearningProfileForm({
   });
 
   useEffect(() => form.reset(value), [form, value]);
+
+  useEffect(() => {
+    if (!submitDisabled) void form.trigger();
+  }, [form, submitDisabled]);
 
   return (
     <Form form={form} onSubmit={onSubmit}>
@@ -54,7 +60,7 @@ export function LearningProfileForm({
         name='supportLanguage'
         render={({ field }) => <LanguageSelectField field={field} label={t('support_language')} optional />}
       />
-      <Button type='submit' disabled={!form.formState.isValid || form.formState.isSubmitting}>
+      <Button type='submit' disabled={submitDisabled || !form.formState.isValid || form.formState.isSubmitting}>
         {submitLabel}
       </Button>
     </Form>

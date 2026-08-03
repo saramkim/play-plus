@@ -1,14 +1,8 @@
-import { SubtitleData } from '@utils/parse';
-
-import { SubtitleId } from './subtitle';
-
 const KEY_PREFIX = 'tab_';
 
 export type TabInfo = {
-  primarySubtitle?: SubtitleId | null;
-  secondarySubtitle?: SubtitleId | null;
-  en?: SubtitleData[] | null;
-  ko?: SubtitleData[] | null;
+  learningSubtitleId?: string | null;
+  supportSubtitleId?: string | null;
   connectionStatus?: ConnectionStatus;
   videoStatus?: VideoStatus;
 };

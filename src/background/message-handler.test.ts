@@ -1,34 +1,66 @@
+
+import { LearningCard } from '@storage/v2/type';
+import type { V2ReadinessStatus } from '@utils/message/type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { registerBackgroundMessageHandler } from './message-handler';
 
+const card: LearningCard = {
+  id: 'card-one',
+  content: { learning: { language: 'en', text: 'Learning' } },
+  createdAt: '2026-08-03T00:00:00.000Z',
+  source: { startTime: 1, url: 'https://www.coupangplay.com/play/example' },
+  studyState: 'active',
+};
+
 const createDependencies = () => ({
-  downloadOpenSubtitle: vi.fn(async () => ({
-    fileId: 11,
-    fileName: 'example.srt',
-    text: 'subtitle',
-    fromCache: false,
+  awaitReady: vi.fn(async () => {}),
+  getReadiness: vi.fn<() => Promise<V2ReadinessStatus>>(async () => ({ status: 'ready' })),
+  retryReadiness: vi.fn<() => Promise<V2ReadinessStatus>>(async () => ({ status: 'ready' })),
+  getContentBootstrap: vi.fn(async () => ({
+    learningSubtitleId: 'subtitle-00000000-0000-0000-0000-000000000001',
+    supportSubtitleId: null,
   })),
   handleViewVideo: vi.fn(async () => {}),
-  searchOpenSubtitles: vi.fn(async () => ({
-    totalCount: 0,
-    totalPages: 0,
-    page: 1,
-    candidates: [],
-  })),
+  learningCards: {
+    get: vi.fn(async () => [card]),
+    add: vi.fn(async () => card),
+    update: vi.fn(async () => card),
+    delete: vi.fn(async () => ({ card, index: 0 })),
+    restore: vi.fn(async () => card),
+  },
   updateConnectedStatus: vi.fn(async () => {}),
-  updateTabInfo: vi.fn(async () => {}),
 });
 
 const getRegisteredListener = () =>
   vi.mocked(chrome.runtime.onMessage.addListener).mock.calls[0]?.[0];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+beforeEach(() => vi.clearAllMocks());
 
 describe('background message handler', () => {
-  it('clears stale custom roles when content initializes', async () => {
+  it('returns sanitized readiness and retries through the shared controller', async () => {
+    const dependencies = createDependencies();
+    dependencies.getReadiness.mockResolvedValueOnce({ status: 'error', code: 'migration-failed' });
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(listener?.({ message: 'getV2Readiness' }, {}, sendResponse)).toBe(true);
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: true,
+        data: { status: 'error', code: 'migration-failed' },
+      })
+    );
+
+    const retryResponse = vi.fn();
+    expect(listener?.({ message: 'retryV2Readiness' }, {}, retryResponse)).toBe(true);
+    await vi.waitFor(() =>
+      expect(retryResponse).toHaveBeenCalledWith({ success: true, data: { status: 'ready' } })
+    );
+  });
+
+  it('awaits readiness and returns the current canonical role selection to content', async () => {
     const dependencies = createDependencies();
     const sendResponse = vi.fn();
 
@@ -36,119 +68,87 @@ describe('background message handler', () => {
     const listener = getRegisteredListener();
     expect(listener?.(
       { message: 'contentInitialized' },
-      { tab: { id: 7 } as chrome.tabs.Tab },
-      sendResponse
-    )).toBe(true);
-
-    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ success: true }));
-    expect(dependencies.updateTabInfo).toHaveBeenCalledWith(7, {
-      primarySubtitle: null,
-      secondarySubtitle: null,
-    });
-  });
-
-  it('awaits view-video work before responding', async () => {
-    let completeTask: (() => void) | undefined;
-    const dependencies = createDependencies();
-    dependencies.handleViewVideo.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          completeTask = resolve;
-        })
-    );
-    const sendResponse = vi.fn();
-
-    registerBackgroundMessageHandler(dependencies);
-    const listener = getRegisteredListener();
-
-    expect(listener?.(
-      { message: 'viewVideo', params: { url: 'https://example.com', startTime: 10 } },
-      {},
-      sendResponse
-    )).toBe(true);
-    await Promise.resolve();
-    expect(sendResponse).not.toHaveBeenCalled();
-
-    completeTask?.();
-    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ success: true }));
-  });
-
-  it('accepts tab id zero and waits for subtitle persistence', async () => {
-    const dependencies = createDependencies();
-    const sendResponse = vi.fn();
-
-    registerBackgroundMessageHandler(dependencies);
-    const listener = getRegisteredListener();
-    expect(listener?.(
-      { message: 'updateSubtitles', params: { lang: 'ko', subtitleData: null } },
       { tab: { id: 0 } as chrome.tabs.Tab },
-      sendResponse
-    )).toBe(true);
-
-    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ success: true }));
-    expect(dependencies.updateTabInfo).toHaveBeenCalledWith(0, { ko: null });
-  });
-
-  it('responds with failure when a sender tab is missing', async () => {
-    const dependencies = createDependencies();
-    const sendResponse = vi.fn();
-
-    registerBackgroundMessageHandler(dependencies);
-    const listener = getRegisteredListener();
-    expect(listener?.(
-      { message: 'contentStatus', params: { hasVideo: true, isVideoUrl: true } },
-      {},
-      sendResponse
-    )).toBe(true);
-
-    await vi.waitFor(() =>
-      expect(sendResponse).toHaveBeenCalledWith({
-        success: false,
-        message: 'Missing sender tab id',
-      })
-    );
-    expect(dependencies.updateConnectedStatus).not.toHaveBeenCalled();
-  });
-
-  it('returns typed OpenSubtitles search data', async () => {
-    const dependencies = createDependencies();
-    const sendResponse = vi.fn();
-
-    registerBackgroundMessageHandler(dependencies);
-    const listener = getRegisteredListener();
-    expect(listener?.(
-      { message: 'searchOpenSubtitles', params: { query: 'Example', language: 'en' } },
-      {},
       sendResponse
     )).toBe(true);
 
     await vi.waitFor(() =>
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
-        data: { totalCount: 0, totalPages: 0, page: 1, candidates: [] },
+        data: {
+          learningSubtitleId: 'subtitle-00000000-0000-0000-0000-000000000001',
+          supportSubtitleId: null,
+        },
       })
     );
-    expect(dependencies.searchOpenSubtitles).toHaveBeenCalledWith({ query: 'Example', language: 'en' });
+    expect(dependencies.awaitReady).toHaveBeenCalledOnce();
+    expect(dependencies.getContentBootstrap).toHaveBeenCalledWith(0);
   });
 
-  it('returns a typed provider failure without exposing unknown error data', async () => {
+  it('gates view, status, and learning-card work', async () => {
     const dependencies = createDependencies();
-    dependencies.downloadOpenSubtitle.mockRejectedValueOnce(new Error('raw provider detail'));
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+
+    const viewResponse = vi.fn();
+    listener?.(
+      { message: 'viewVideo', params: { url: 'https://example.com', startTime: 10 } },
+      {},
+      viewResponse
+    );
+    const statusResponse = vi.fn();
+    listener?.(
+      { message: 'contentStatus', params: { hasVideo: true, isVideoUrl: true } },
+      { tab: { id: 7 } as chrome.tabs.Tab },
+      statusResponse
+    );
+    const cardsResponse = vi.fn();
+    listener?.({ message: 'getLearningCards' }, {}, cardsResponse);
+
+    await vi.waitFor(() => expect(cardsResponse).toHaveBeenCalledWith({ success: true, data: [card] }));
+    expect(dependencies.awaitReady).toHaveBeenCalledTimes(3);
+    expect(dependencies.updateConnectedStatus).toHaveBeenCalledWith(7, true, true);
+    expect(dependencies.handleViewVideo).toHaveBeenCalledWith({ url: 'https://example.com', startTime: 10 });
+  });
+
+  it('does not expose raw learning-card storage failures', async () => {
+    const dependencies = createDependencies();
+    dependencies.learningCards.add.mockRejectedValueOnce(new Error('private raw storage detail'));
     const sendResponse = vi.fn();
 
     registerBackgroundMessageHandler(dependencies);
     const listener = getRegisteredListener();
-    expect(listener?.(
-      { message: 'downloadOpenSubtitle', params: { fileId: 11, language: 'en' } },
-      {},
-      sendResponse
-    )).toBe(true);
+    expect(listener?.({ message: 'addLearningCard', params: { card } }, {}, sendResponse)).toBe(true);
 
     await vi.waitFor(() =>
       expect(sendResponse).toHaveBeenCalledWith({
         success: false,
-        code: 'SERVER',
-        message: 'The OpenSubtitles request failed.',
+        message: 'Unable to access the learning library',
+      })
+    );
+  });
+
+  it('does not expose raw tab or readiness failures', async () => {
+    const dependencies = createDependencies();
+    dependencies.handleViewVideo.mockRejectedValueOnce(
+      new Error('private URL https://www.coupangplay.com/play/private')
+    );
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(
+      listener?.(
+        { message: 'viewVideo', params: { url: 'https://example.com', startTime: 10 } },
+        {},
+        sendResponse
+      )
+    ).toBe(true);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        message: 'Unable to complete the Play Plus action',
       })
     );
   });

@@ -1,5 +1,5 @@
 import { getSessionStorage, setSessionStorage } from '@storage/session';
-import type { PendingSubtitleRequest, PendingViewAction } from '@storage/type';
+import type { PendingSubtitleRequest, PendingViewAction } from '@storage/session-type';
 
 export const enqueueViewAction = async (action: PendingViewAction) => {
   const actions = (await getSessionStorage('pendingViewActions')) ?? [];

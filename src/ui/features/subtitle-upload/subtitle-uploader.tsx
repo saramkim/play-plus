@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { SubtitleMetadata } from '@storage/type';
+import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { Language, LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 import {
@@ -50,11 +50,11 @@ const registrationErrorMessage = (error: unknown) => {
       ? t('error_unsupported_file_type', allowedExtensionsString)
       : t('error_empty_subtitle');
   }
-  return t('error_try_later');
+  return t('v2_local_subtitles_add_error');
 };
 
 interface SubtitleUploaderProps {
-  onAdded: (subtitle: SubtitleMetadata) => void;
+  onAdded: (subtitle: V2RegisteredSubtitleMetadata) => void;
   onBusyChange: (busy: boolean) => void;
   focusOnMount?: boolean;
 }
@@ -107,7 +107,7 @@ export function SubtitleUploader({ onAdded, onBusyChange, focusOnMount = false }
       <button
         ref={uploadButtonRef}
         type='button'
-        aria-label={t('upload_subtitle_file')}
+        aria-label={t('v2_local_subtitles_choose_file')}
         className='flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border p-4 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
         disabled={isUploading}
         onClick={() => fileInputRef.current?.click()}
@@ -127,7 +127,7 @@ export function SubtitleUploader({ onAdded, onBusyChange, focusOnMount = false }
         ) : (
           <>
             <FileUpIcon className='size-5' />
-            <span className='text-[15px] font-bold'>{t('upload_subtitle_file')}</span>
+            <span className='text-[15px] font-bold'>{t('v2_local_subtitles_choose_file')}</span>
             <span className='text-[12px] text-gray-500'>{allowedExtensionsString}</span>
           </>
         )}
@@ -171,7 +171,7 @@ export function SubtitleUploader({ onAdded, onBusyChange, focusOnMount = false }
                 return;
               }
               const subtitle = await registerSubtitleText({ fileName: file.name, title, language, text });
-              toast.success(t('success_add_subtitle'));
+              toast.success(t('v2_local_subtitles_added'));
               reset();
               onAdded(subtitle);
             } catch (error) {

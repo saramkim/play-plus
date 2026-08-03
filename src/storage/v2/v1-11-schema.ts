@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-import { DEFAULT_SUBTITLE_LANGUAGES, LANGUAGES, Language } from '@utils/constants';
+import { LANGUAGES, Language } from '@utils/constants';
+
+const V1_11_SUBTITLE_LANGUAGES = ['en', 'ko'] as const;
 
 const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
 const shortcutSchema = z
@@ -10,7 +12,7 @@ const shortcutSchema = z
 const subtitleConfigSchema = z
   .object({
     enabled: z.boolean(),
-    language: z.enum(DEFAULT_SUBTITLE_LANGUAGES),
+    language: z.enum(V1_11_SUBTITLE_LANGUAGES),
     positionReference: z.enum(['top', 'center', 'bottom']),
     positionOffset: z.number(),
     color: z.string(),

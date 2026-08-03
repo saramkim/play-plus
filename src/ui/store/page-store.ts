@@ -1,43 +1,24 @@
-import { SubtitleId } from '@storage/subtitle';
-import { PAGE_NAME, PageName } from '@utils/constants';
 import { create } from 'zustand';
-import { combine, persist } from 'zustand/middleware';
 
-type PageParams = {
-  [PAGE_NAME.SUBTITLE_SETTING]: never;
-  [PAGE_NAME.VIDEO_SETTING]: never;
-  [PAGE_NAME.REVIEW]: never;
-  [PAGE_NAME.SUBTITLE_ANALYSIS]: { id: SubtitleId };
-  [PAGE_NAME.SUBTITLE_UPLOAD]: never;
-};
+export const PAGE_NAMES = ['learning', 'subtitles', 'library', 'review'] as const;
+
+export type PageName = (typeof PAGE_NAMES)[number];
+
+interface PageState {
+  currentPage: PageName;
+  navigationLocked: boolean;
+  setNavigationLocked: (navigationLocked: boolean) => void;
+  setPage: (page: PageName) => void;
+}
 
 export type PageStore = ReturnType<typeof usePageStore.getState>;
 
-export const usePageStore = create(
-  persist(
-    combine(
-      {
-        currentPage: Object.values(PAGE_NAME)[0],
-        navigationLocked: false,
-        params: {} as Partial<PageParams>,
-      },
-      (set, get) => ({
-        setNavigationLocked: (navigationLocked: boolean) => set({ navigationLocked }),
-        setPage: <T extends PageName>(page: T, params?: PageParams[T]) => {
-          if (get().navigationLocked) return;
-          set({ currentPage: page, params: { [page]: params } });
-        },
-        getParams: (page: PageName) => get().params[page],
-      })
-    ),
-    {
-      name: 'page-store',
-      partialize: (state) => ({ currentPage: state.currentPage }),
-      version: 1,
-    }
-  )
-);
-
-export const usePageParams = (page: PageName) => {
-  return usePageStore.getState().getParams(page);
-};
+export const usePageStore = create<PageState>((set, get) => ({
+  currentPage: 'learning',
+  navigationLocked: false,
+  setNavigationLocked: (navigationLocked) => set({ navigationLocked }),
+  setPage: (currentPage) => {
+    if (get().navigationLocked) return;
+    set({ currentPage });
+  },
+}));

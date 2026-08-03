@@ -399,9 +399,39 @@ describe('v2 Focused Review component', () => {
     expect(harness.storage.update).not.toHaveBeenCalled();
   });
 
-  function render(storage: FocusedReviewStorage) {
+  it('refreshes the current session without remounting the focused card', async () => {
+    const first = assignedCard('refresh-first');
+    const second = assignedCard('refresh-second');
+    const third = assignedCard('refresh-third');
+    const storage: FocusedReviewStorage = {
+      get: vi
+        .fn<() => Promise<LearningCard[]>>()
+        .mockResolvedValueOnce([first, second])
+        .mockResolvedValueOnce([first, second, third]),
+      update: vi.fn(),
+    };
+    await renderReview(storage, 0);
+    act(() => getButton(container, 'v2_review_skip').click());
+    act(() => getButton(container, 'v2_review_show_support').click());
+    const article = getFocusedCard(container);
+    expect(article.textContent).toContain('Support refresh-second');
+
+    await act(async () => {
+      render(storage, 1);
+      await Promise.resolve();
+    });
+
+    expect(getFocusedCard(container)).toBe(article);
+    expect(article.textContent).toContain('Learning refresh-second');
+    expect(article.textContent).toContain('Support refresh-second');
+    expect(getProgressbar(container).getAttribute('aria-valuemax')).toBe('3');
+    expect(getProgressbar(container).getAttribute('aria-valuenow')).toBe('2');
+  });
+
+  function render(storage: FocusedReviewStorage, refreshRevision = 0) {
     root.render(
       <FocusedReview
+        refreshRevision={refreshRevision}
         storage={storage}
         onOpenLibrary={onOpenLibrary}
         onOpenOriginalVideo={onOpenOriginalVideo}
@@ -409,9 +439,9 @@ describe('v2 Focused Review component', () => {
     );
   }
 
-  async function renderReview(storage: FocusedReviewStorage) {
+  async function renderReview(storage: FocusedReviewStorage, refreshRevision = 0) {
     await act(async () => {
-      render(storage);
+      render(storage, refreshRevision);
       await Promise.resolve();
     });
   }

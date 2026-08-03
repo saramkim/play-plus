@@ -4,14 +4,16 @@ import { LearningProfile, LearningProfileForm } from './learning-profile-form';
 
 interface LearningProfileConfirmationProps {
   onConfirm: (value: LearningProfile) => void | Promise<void>;
+  submitDisabled?: boolean;
   value: LearningProfile;
 }
 
-export function LearningProfileConfirmation({ onConfirm, value }: LearningProfileConfirmationProps) {
+export function LearningProfileConfirmation({ onConfirm, submitDisabled, value }: LearningProfileConfirmationProps) {
   return (
     <LearningProfileForm
       description={t('learning_profile_confirmation_description')}
       onSubmit={onConfirm}
+      submitDisabled={submitDisabled}
       submitLabel={t('confirm_languages')}
       title={t('learning_profile_confirmation_title')}
       value={value}

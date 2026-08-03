@@ -1,45 +1,49 @@
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo, updateTabInfo } from '@storage/tab';
-import { SetSubtitleAction } from '@utils/constants';
 import { describe, expect, it, vi } from 'vitest';
 
-import { applySubtitleRoleSelection, SubtitleRoleSelection } from './use-subtitle-settings';
+import {
+  applySubtitleRoleSelection,
+  isSubtitleRoleLanguage,
+  SubtitleRoleSelection,
+} from './use-subtitle-settings';
 
 const currentId = 'subtitle-00000000-0000-0000-0000-000000000001' as SubtitleId;
 const nextId = 'subtitle-00000000-0000-0000-0000-000000000002' as SubtitleId;
 
 const createDependencies = () => ({
   sendMessageToTab: vi.fn<
-    (tabId: number, action: SetSubtitleAction, params: { subtitleId: SubtitleId | null; delay: number }) =>
-      Promise<{ success: true } | { success: false; message: string }>
+    (
+      tabId: number,
+      action: 'setSubtitleRole',
+      params: { role: 'learning' | 'support'; subtitleId: SubtitleId | null }
+    ) => Promise<{ success: true } | { success: false; message: string }>
   >(),
   updateTabInfo: vi.fn<typeof updateTabInfo>(),
 });
 
 const selection: SubtitleRoleSelection = {
-  role: 'primary',
+  role: 'learning',
   subtitleId: nextId,
-  delay: 0.5,
   previousSubtitleId: currentId,
-  previousDelay: -0.2,
 };
 
 describe('applySubtitleRoleSelection', () => {
-  it('commits a role only after the content action succeeds', async () => {
+  it('commits the canonical session role only after the content action succeeds', async () => {
     const dependencies = createDependencies();
     dependencies.sendMessageToTab.mockResolvedValue({ success: true });
     dependencies.updateTabInfo.mockResolvedValue();
 
     await expect(applySubtitleRoleSelection(7, selection, dependencies)).resolves.toEqual({ success: true });
 
-    expect(dependencies.sendMessageToTab).toHaveBeenCalledWith(7, 'setPrimarySubtitle', {
+    expect(dependencies.sendMessageToTab).toHaveBeenCalledWith(7, 'setSubtitleRole', {
+      role: 'learning',
       subtitleId: nextId,
-      delay: 0.5,
     });
-    expect(dependencies.updateTabInfo).toHaveBeenCalledWith(7, { primarySubtitle: nextId });
+    expect(dependencies.updateTabInfo).toHaveBeenCalledWith(7, { learningSubtitleId: nextId });
   });
 
-  it('does not change session state when the content action fails', async () => {
+  it('retains session state when content rejects the role', async () => {
     const dependencies = createDependencies();
     dependencies.sendMessageToTab.mockResolvedValue({ success: false, message: 'content failed' });
 
@@ -47,7 +51,6 @@ describe('applySubtitleRoleSelection', () => {
       success: false,
       message: 'content failed',
     });
-
     expect(dependencies.updateTabInfo).not.toHaveBeenCalled();
   });
 
@@ -57,19 +60,21 @@ describe('applySubtitleRoleSelection', () => {
     dependencies.updateTabInfo.mockRejectedValue(new Error('storage failed'));
 
     await expect(applySubtitleRoleSelection(7, selection, dependencies)).rejects.toThrow('storage failed');
-
-    expect(dependencies.sendMessageToTab).toHaveBeenNthCalledWith(2, 7, 'setPrimarySubtitle', {
+    expect(dependencies.sendMessageToTab).toHaveBeenNthCalledWith(2, 7, 'setSubtitleRole', {
+      role: 'learning',
       subtitleId: currentId,
-      delay: -0.2,
     });
   });
 
-  it('serializes session writes when primary and secondary roles change together', async () => {
+  it('serializes session writes when both canonical roles change together', async () => {
     const dependencies = createDependencies();
     dependencies.sendMessageToTab.mockResolvedValue({ success: true });
     let activeUpdates = 0;
     let maxActiveUpdates = 0;
-    let sessionState: TabInfo = { primarySubtitle: currentId, secondarySubtitle: currentId };
+    let sessionState: TabInfo = {
+      learningSubtitleId: currentId,
+      supportSubtitleId: currentId,
+    };
     dependencies.updateTabInfo.mockImplementation(async (_tabId, info) => {
       const currentState = { ...sessionState };
       activeUpdates += 1;
@@ -81,10 +86,32 @@ describe('applySubtitleRoleSelection', () => {
 
     await Promise.all([
       applySubtitleRoleSelection(7, selection, dependencies),
-      applySubtitleRoleSelection(7, { ...selection, role: 'secondary' }, dependencies),
+      applySubtitleRoleSelection(7, { ...selection, role: 'support' }, dependencies),
     ]);
 
     expect(maxActiveUpdates).toBe(1);
-    expect(sessionState).toEqual({ primarySubtitle: nextId, secondarySubtitle: nextId });
+    expect(sessionState).toEqual({
+      learningSubtitleId: nextId,
+      supportSubtitleId: nextId,
+    });
+  });
+});
+
+describe('isSubtitleRoleLanguage', () => {
+  const profile = { learningLanguage: 'en', supportLanguage: 'ko' } as const;
+
+  it('requires the subtitle language to match its canonical role', () => {
+    expect(isSubtitleRoleLanguage('learning', 'en', profile)).toBe(true);
+    expect(isSubtitleRoleLanguage('learning', 'ko', profile)).toBe(false);
+    expect(isSubtitleRoleLanguage('support', 'ko', profile)).toBe(true);
+  });
+
+  it('keeps the support role unavailable when no support language is configured', () => {
+    expect(
+      isSubtitleRoleLanguage('support', 'ko', {
+        learningLanguage: 'en',
+        supportLanguage: null,
+      })
+    ).toBe(false);
   });
 });

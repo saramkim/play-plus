@@ -1,53 +1,42 @@
-
-import { useRef } from 'react';
-
-import { PAGE_NAME } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 
-import { useDragScroll } from '@/ui/hooks/use-drag-scroll';
-import { usePageStore } from '@/ui/store/page-store';
+import { PAGE_NAMES, PageName, usePageStore } from '@/ui/store/page-store';
 
-const pageList = Object.values(PAGE_NAME);
 const pageTitleMap = {
-  [PAGE_NAME.SUBTITLE_SETTING]: t('subtitle_setting'),
-  [PAGE_NAME.VIDEO_SETTING]: t('video_setting'),
-  [PAGE_NAME.REVIEW]: t('review'),
-  [PAGE_NAME.SUBTITLE_UPLOAD]: t('subtitles'),
-  [PAGE_NAME.SUBTITLE_ANALYSIS]: t('subtitle_analysis'),
-};
+  learning: t('v2_nav_learning'),
+  subtitles: t('v2_nav_subtitles'),
+  library: t('v2_nav_library'),
+  review: t('v2_nav_review'),
+} satisfies Record<PageName, string>;
 
 export function Header() {
   const currentPage = usePageStore((state) => state.currentPage);
   const navigationLocked = usePageStore((state) => state.navigationLocked);
   const setPage = usePageStore((state) => state.setPage);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const { scrollRef, eventHandlers, allowClick } = useDragScroll();
-
-  const handleTabClick = (index: number) => {
-    if (!allowClick) return;
-    setPage(pageList[index]);
-    tabRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  };
 
   return (
-    <header ref={scrollRef} {...eventHandlers} className='flex overflow-x-auto border-b scrollbar-hidden px-1'>
-      {pageList.map((page, index) => (
-        <button
-          ref={(el) => {
-            tabRefs.current[index] = el;
-          }}
-          key={page}
-          disabled={navigationLocked}
-          onClick={() => handleTabClick(index)}
-          className={cn(
-            'flex-1 p-2 text-[15px] hover:bg-gray-100 font-medium disabled:cursor-not-allowed disabled:opacity-50',
-            currentPage === page ? 'border-b-2 border-b-primary text-primary pt-2.5' : 'text-gray-500'
-          )}
-        >
-          {pageTitleMap[page]}
-        </button>
-      ))}
+    <header className='shrink-0 border-b px-1'>
+      <nav className='grid grid-cols-4' aria-label={t('v2_navigation_label')}>
+        {PAGE_NAMES.map((page) => (
+          <button
+            key={page}
+            type='button'
+            disabled={navigationLocked}
+            aria-current={currentPage === page ? 'page' : undefined}
+            className={cn(
+              'min-w-0 border-b-2 border-transparent px-1 py-2 text-xs leading-tight font-medium whitespace-normal break-words hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 min-[360px]:text-[13px]',
+              currentPage === page && 'border-b-primary text-primary'
+            )}
+            onClick={() => {
+              setPage(page);
+              requestAnimationFrame(() => document.getElementById('main-content')?.focus());
+            }}
+          >
+            {pageTitleMap[page]}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }

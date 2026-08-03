@@ -29,8 +29,8 @@ export function SubtitleEditForm({ id, initialTitle, initialLanguage, onEdit, cl
     try {
       await onEdit(id, editedTitle, editedLanguage);
       closeEditMode();
-    } catch (error) {
-      console.error('Failed to edit registered subtitle:', error);
+    } catch {
+      console.error('Failed to edit the registered subtitle');
     }
   };
 

@@ -357,6 +357,34 @@ describe('v2 learning card Library component', () => {
     expect(container.textContent).toContain('v2_library_deleted');
     expect(container.textContent).not.toContain('Learning delete-failure');
   });
+
+  it('refreshes canonical cards without remounting query, focus, or undo state', async () => {
+    const first = assignedCard('refresh-first');
+    const deleted = assignedCard('refresh-deleted');
+    const harness = createStorageHarness([first, deleted]);
+    await act(async () => {
+      root.render(<LearningCardLibrary refreshRevision={0} storage={harness.storage} />);
+      await Promise.resolve();
+    });
+    const search = getInput(container, 'v2_library_search_label');
+    changeInput(search, 'Learning');
+    search.focus();
+
+    await act(async () =>
+      getButton(getCard(container, 'Learning refresh-deleted'), 'delete').click()
+    );
+    const undo = getButton(container, 'v2_library_restore');
+
+    await act(async () => {
+      root.render(<LearningCardLibrary refreshRevision={1} storage={harness.storage} />);
+      await Promise.resolve();
+    });
+
+    expect(getInput(container, 'v2_library_search_label')).toBe(search);
+    expect(search.value).toBe('Learning');
+    expect(getButton(container, 'v2_library_restore')).toBe(undo);
+    expect(harness.storage.get).toHaveBeenCalledTimes(2);
+  });
 });
 
 const DEFAULT_QUERY: LearningCardLibraryQuery = {

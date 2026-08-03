@@ -25,6 +25,7 @@ export interface LearningCardLibraryQuery {
 }
 
 interface LearningCardLibraryProps {
+  refreshRevision?: number;
   storage: V2LearningCardStorageApi;
 }
 
@@ -47,7 +48,7 @@ const DEFAULT_QUERY: LearningCardLibraryQuery = {
   studyState: 'all',
 };
 
-export function LearningCardLibrary({ storage }: LearningCardLibraryProps) {
+export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCardLibraryProps) {
   const [cards, setCards] = useState<LearningCard[]>();
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState(DEFAULT_QUERY);
@@ -64,6 +65,7 @@ export function LearningCardLibrary({ storage }: LearningCardLibraryProps) {
     }
   );
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const handledRefreshRevisionRef = useRef(refreshRevision);
   const undoRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
@@ -80,6 +82,21 @@ export function LearningCardLibrary({ storage }: LearningCardLibraryProps) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (handledRefreshRevisionRef.current === refreshRevision) return;
+    handledRefreshRevisionRef.current = refreshRevision;
+    void storage.get().then(
+      (nextCards) => {
+        setCards(nextCards);
+        setLoadError(false);
+      },
+      () => {
+        setCards(undefined);
+        setLoadError(true);
+      }
+    );
+  }, [refreshRevision, storage]);
 
   useEffect(() => {
     if (!focusRequest) return;

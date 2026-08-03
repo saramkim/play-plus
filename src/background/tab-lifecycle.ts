@@ -1,6 +1,6 @@
 import { setSessionStorage } from '@storage/session';
+import type { PendingSubtitleRequest } from '@storage/session-type';
 import { updateTabInfo } from '@storage/tab';
-import type { PendingSubtitleRequest } from '@storage/type';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { sendMessageToTab } from '@utils/message';
@@ -10,6 +10,7 @@ import { takePendingSubtitleRequest, takeViewAction } from './pending-actions';
 type MessageResult = { success: boolean; message?: string };
 
 export const createTabLifecycleDependencies = {
+  awaitReady: async () => {},
   setActiveTab: (tab: chrome.tabs.Tab) => setSessionStorage('activeTab', tab),
   updateTabInfo,
   checkContentConnection: async (_tabId: number, _isVideoUrl: boolean) => {},
@@ -33,6 +34,7 @@ export const handleTabCompleted = async (
   tab: chrome.tabs.Tab,
   dependencies: TabLifecycleDependencies = createTabLifecycleDependencies
 ) => {
+  await dependencies.awaitReady();
   if (tab.active) await dependencies.setActiveTab(tab);
 
   const isPlatformUrl = Boolean(tab.url?.startsWith(COUPANG_PLAY_BASE_URL));

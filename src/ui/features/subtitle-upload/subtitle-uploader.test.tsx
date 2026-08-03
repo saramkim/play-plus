@@ -1,8 +1,9 @@
 import { act } from 'react';
 
-import { SubtitleMetadata } from '@storage/type';
+import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { createRoot, Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 
 import { SubtitleUploader } from './subtitle-uploader';
 
@@ -26,7 +27,7 @@ const metadata = {
   title: 'Lesson',
   language: 'en',
   savedAt: '2026-08-01T00:00:00.000Z',
-} as SubtitleMetadata;
+} as V2RegisteredSubtitleMetadata;
 
 const flushAsyncUpdates = () =>
   act(async () => {
@@ -38,6 +39,8 @@ const flushAsyncUpdates = () =>
 describe('SubtitleUploader', () => {
   let container: HTMLDivElement;
   let root: Root;
+
+  beforeAll(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,13 +54,15 @@ describe('SubtitleUploader', () => {
     container.remove();
   });
 
+  afterAll(() => vi.unstubAllGlobals());
+
   const renderUploader = ({
     focusOnMount = false,
     onAdded = vi.fn(),
     onBusyChange = vi.fn(),
   }: {
     focusOnMount?: boolean;
-    onAdded?: (subtitle: SubtitleMetadata) => void;
+    onAdded?: (subtitle: V2RegisteredSubtitleMetadata) => void;
     onBusyChange?: (busy: boolean) => void;
   } = {}) => {
     act(() => {
@@ -89,13 +94,13 @@ describe('SubtitleUploader', () => {
     renderUploader({ focusOnMount: true });
 
     expect(document.activeElement).toBe(
-      container.querySelector<HTMLButtonElement>("button[aria-label='upload_subtitle_file']")
+      container.querySelector<HTMLButtonElement>("button[aria-label='v2_local_subtitles_choose_file']")
     );
   });
 
   it('locks every input while registering and returns the added metadata', async () => {
-    let resolveRegistration: (subtitle: SubtitleMetadata) => void = () => undefined;
-    const registration = new Promise<SubtitleMetadata>((resolve) => {
+    let resolveRegistration: (subtitle: V2RegisteredSubtitleMetadata) => void = () => undefined;
+    const registration = new Promise<V2RegisteredSubtitleMetadata>((resolve) => {
       resolveRegistration = resolve;
     });
     registerSubtitleTextMock.mockReturnValue(registration);
@@ -111,7 +116,7 @@ describe('SubtitleUploader', () => {
     await flushAsyncUpdates();
 
     expect(container.firstElementChild?.getAttribute('aria-busy')).toBe('true');
-    expect(container.querySelector<HTMLButtonElement>("button[aria-label='upload_subtitle_file']")?.disabled).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>("button[aria-label='v2_local_subtitles_choose_file']")?.disabled).toBe(true);
     expect(container.querySelector<HTMLInputElement>("input[type='file']")?.disabled).toBe(true);
     expect(container.querySelector<HTMLButtonElement>("button[role='combobox']")?.disabled).toBe(true);
     expect(container.querySelector<HTMLInputElement>("input[aria-label='subtitle_title']")?.disabled).toBe(true);
@@ -123,7 +128,7 @@ describe('SubtitleUploader', () => {
     await flushAsyncUpdates();
 
     expect(onAdded).toHaveBeenCalledWith(metadata);
-    expect(toastSuccessMock).toHaveBeenCalledWith('success_add_subtitle');
+    expect(toastSuccessMock).toHaveBeenCalledWith('v2_local_subtitles_added');
     expect(onBusyChange).toHaveBeenLastCalledWith(false);
     expect(container.querySelector('form')).toBeNull();
   });
@@ -140,7 +145,7 @@ describe('SubtitleUploader', () => {
     act(() => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
     await flushAsyncUpdates();
 
-    expect(container.querySelector("[role='alert']")?.textContent).toBe('error_try_later');
+    expect(container.querySelector("[role='alert']")?.textContent).toBe('v2_local_subtitles_add_error');
     expect(container.textContent).toContain('lesson.srt');
     expect(container.querySelector<HTMLInputElement>("input[aria-label='subtitle_title']")?.value).toBe('lesson');
     expect(container.querySelector<HTMLInputElement>("input[aria-label='subtitle_title']")?.disabled).toBe(false);

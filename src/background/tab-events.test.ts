@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ActivatedTabDependencies, handleTabActivated } from './tab-events';
 
 const createDependencies = (tab: chrome.tabs.Tab): ActivatedTabDependencies => ({
+  awaitReady: vi.fn(async () => {}),
   checkContentConnection: vi.fn(async () => {}),
   getTab: vi.fn(async () => tab),
   setActiveTab: vi.fn(async () => {}),
@@ -26,6 +27,7 @@ describe('activated tab handling', () => {
 
     await handleTabActivated(0, dependencies);
 
+    expect(dependencies.awaitReady).toHaveBeenCalledOnce();
     expect(dependencies.setActiveTab).toHaveBeenCalledWith(tab);
     expect(dependencies.updateTabInfo).toHaveBeenCalledWith(0, {
       connectionStatus: 'connecting',

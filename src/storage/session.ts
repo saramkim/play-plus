@@ -2,7 +2,7 @@ import {
   SessionStorageChanges,
   SessionStorageKey,
   SessionStorageSchema,
-} from './type';
+} from './session-type';
 
 export const setSessionStorage = <K extends SessionStorageKey>(key: K, value: SessionStorageSchema[K]) => {
   return chrome.storage.session.set({ [key]: value });

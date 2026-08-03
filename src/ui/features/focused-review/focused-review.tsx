@@ -25,6 +25,7 @@ export type OpenOriginalVideoTarget = Pick<LearningCard['source'], 'startTime' |
 
 interface FocusedReviewProps {
   storage: FocusedReviewStorage;
+  refreshRevision?: number;
   onOpenLibrary: () => void;
   onOpenOriginalVideo: (target: OpenOriginalVideoTarget) => void;
 }
@@ -46,6 +47,7 @@ export const getFocusedReviewQueue = (
 
 export function FocusedReview({
   storage,
+  refreshRevision = 0,
   onOpenLibrary,
   onOpenOriginalVideo,
 }: FocusedReviewProps) {
@@ -55,6 +57,7 @@ export function FocusedReview({
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string>();
   const generationRef = useRef(0);
+  const handledRefreshRevisionRef = useRef(refreshRevision);
   const operationRef = useRef(0);
   const pendingRef = useRef(false);
   const sessionRef = useRef<FocusedReviewSession | undefined>(undefined);
@@ -94,6 +97,36 @@ export function FocusedReview({
     [storage]
   );
 
+  const refreshSession = useCallback(async () => {
+    const current = sessionRef.current;
+    if (!current) return;
+
+    try {
+      const cards = getFocusedReviewQueue(await storage.get(), current.kind);
+      if (sessionRef.current !== current) return;
+      const currentCardId = current.cards[current.currentIndex]?.id;
+      const matchingIndex = currentCardId
+        ? cards.findIndex((card) => card.id === currentCardId)
+        : -1;
+      const nextSession = {
+        ...current,
+        cards,
+        currentIndex:
+          matchingIndex >= 0
+            ? matchingIndex
+            : Math.min(current.currentIndex, cards.length),
+      };
+      sessionRef.current = nextSession;
+      setSession(nextSession);
+      setLoadStatus('ready');
+    } catch {
+      if (sessionRef.current !== current) return;
+      sessionRef.current = undefined;
+      setSession(undefined);
+      setLoadStatus('error');
+    }
+  }, [storage]);
+
   useEffect(() => {
     void loadSession('active');
     return () => {
@@ -103,6 +136,12 @@ export function FocusedReview({
       sessionRef.current = undefined;
     };
   }, [loadSession]);
+
+  useEffect(() => {
+    if (pending || handledRefreshRevisionRef.current === refreshRevision) return;
+    handledRefreshRevisionRef.current = refreshRevision;
+    void refreshSession();
+  }, [pending, refreshRevision, refreshSession]);
 
   useEffect(() => {
     if (pending || !actionError || !failureFocusRef.current) return;

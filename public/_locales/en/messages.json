@@ -1,495 +1,715 @@
 {
-  "app_name": { "message": "Play Plus" },
-  "extension_name": { "message": "Play Plus - Enhance Coupang Play's features" },
-  "extension_description": {
-    "message": "Enables language learning features such as dual subtitles, adding file or online subtitles, and repeat playback on Coupang Play."
-  },
-  "action_default_title": { "message": "Open Play Plus" },
-
-  "onboarding_title": { "message": "Welcome to Play Plus!" },
-  "onboarding_description_1": {
-    "message": "Play Plus provides a feature to finely adjust the subtitles and video settings of Coupang Play."
-  },
-  "onboarding_description_2": {
-    "message": "You can apply the learning optimized settings or customize them from the beginning."
-  },
-  "onboarding_description_3": { "message": "Which method would you like to choose?" },
-  "onboarding_description_4": {
-    "message": "The learning optimized settings can be applied again at any time in the bottom more menu."
-  },
-
-  "no_saved_subtitles": { "message": "No saved subtitles." },
-  "review_empty_title": { "message": "No saved sentences yet" },
-  "review_description": {
-    "message": "Click a video subtitle or use a shortcut to save a sentence for review."
-  },
-  "review_loading": { "message": "Loading saved sentences..." },
-  "subtitle_analysis_description": {
-    "message": "Analyze the subtitles of the video you are watching\nor the subtitles you have added!"
-  },
-  "subtitle_registration_description": {
-    "message": "Add a subtitle from a file or find one online to use on Coupang Play."
-  },
-
-  "subtitle_count": { "message": "$1 subtitles", "placeholders": { "count": { "content": "$1" } } },
-
-  "subtitle_setting": { "message": "Subtitle" },
-  "learning_languages": { "message": "Learning languages" },
-  "learning_language": { "message": "Learning language" },
-  "support_language": { "message": "Support language (optional)" },
-  "no_support_language": { "message": "Do not use support sentences" },
-  "learning_profile_confirmation_title": { "message": "Confirm your learning languages" },
-  "learning_profile_confirmation_description": {
-    "message": "Choose the language you are learning and an optional language for help."
-  },
-  "confirm_languages": { "message": "Confirm languages" },
-  "subtitle_display": { "message": "Subtitle display" },
-  "learning_subtitle": { "message": "Learning subtitle" },
-  "support_subtitle": { "message": "Support subtitle" },
-  "show_learning_subtitle": { "message": "Show learning subtitle" },
-  "show_support_subtitle": { "message": "Show support subtitle" },
-  "video_setting": { "message": "Video" },
-  "review": { "message": "Review" },
-  "review_mode": { "message": "Choose a review view" },
-  "review_mode_session": { "message": "Review" },
-  "review_mode_library": { "message": "Library" },
-  "review_progress": {
-    "message": "Sentence $1 of $2",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "review_show_second_subtitle": { "message": "Show second subtitle" },
-  "review_hide_second_subtitle": { "message": "Hide second subtitle" },
-  "review_judgment_prompt": { "message": "How did this sentence feel?" },
-  "review_queue_summary": {
-    "message": "Learning $1 · New $2",
-    "placeholders": {
-      "learning": { "content": "$1" },
-      "new": { "content": "$2" }
-    }
-  },
-  "review_status_new_description": { "message": "You haven't chosen a learning status yet." },
-  "review_status_learning_description": { "message": "You marked this to review again." },
-  "review_status_mastered_description": { "message": "You marked this as remembered." },
-  "review_start_learning": { "message": "Start learning" },
-  "review_already_know": { "message": "I know this already" },
-  "review_keep_learning": { "message": "Keep learning" },
-  "review_remember": { "message": "I remember this" },
-  "review_learn_again": { "message": "Learn again" },
-  "review_still_remember": { "message": "I still remember" },
-  "review_skip": { "message": "Skip" },
-  "review_complete_title": { "message": "Review complete" },
-  "review_complete_description": { "message": "You have seen every sentence in this review." },
-  "review_queue_empty_title": { "message": "Nothing to review" },
-  "review_queue_empty_description": { "message": "There are no New or Learning sentences." },
-  "review_go_to_library": { "message": "Go to library" },
-  "review_completed_session": { "message": "Mastered review" },
-  "review_review_completed": { "message": "Review mastered sentences" },
-  "review_status_update_failed": { "message": "Could not save the review status." },
-  "review_status_filter": { "message": "Filter by review status" },
-  "review_status_all": { "message": "All" },
-  "review_status_new": { "message": "New" },
-  "review_status_learning": { "message": "Learning" },
-  "review_status_mastered": { "message": "Mastered" },
-  "review_status_change": {
-    "message": "Change review status: $1",
-    "placeholders": { "status": { "content": "$1" } }
-  },
-  "review_status_empty": { "message": "No saved subtitles match the current filters." },
-  "v2_library_title": { "message": "Learning Library" },
-  "v2_library_loading": { "message": "Loading learning cards..." },
-  "v2_library_load_error": { "message": "Could not load your learning cards. Your saved data was not changed." },
-  "v2_library_retry": { "message": "Try again" },
-  "v2_library_empty_title": { "message": "No learning cards yet" },
-  "v2_library_empty_description": { "message": "Cards you save while watching will appear here." },
-  "v2_library_filtered_empty": { "message": "No cards match the current search and filters." },
-  "v2_library_search_label": { "message": "Search learning cards" },
-  "v2_library_sort_label": { "message": "Sort learning cards" },
-  "v2_library_state_filter": { "message": "Filter by learning state" },
-  "v2_library_role_filter": { "message": "Filter by sentence role" },
-  "v2_library_all": { "message": "All" },
-  "v2_library_active": { "message": "Active" },
-  "v2_library_completed": { "message": "Completed" },
-  "v2_library_learning": { "message": "Learning" },
-  "v2_library_support": { "message": "Support" },
-  "v2_library_unassigned": { "message": "Needs language and role" },
-  "v2_library_language_unassigned": { "message": "Language not assigned" },
-  "v2_library_contains_support": { "message": "Has support sentence" },
-  "v2_library_state_change": { "message": "Change learning state" },
-  "v2_library_save_pending": { "message": "Saving changes..." },
-  "v2_library_update_error": { "message": "Could not save this card. Your draft and saved card are unchanged." },
-  "v2_library_delete_error": { "message": "Could not delete this card." },
-  "v2_library_deleted": { "message": "Learning card deleted." },
-  "v2_library_restore": { "message": "Undo card deletion" },
-  "v2_library_dismiss_undo": { "message": "Dismiss deletion notice" },
-  "v2_library_restore_error": { "message": "Could not restore the deleted card." },
-  "v2_library_source": { "message": "Source" },
-  "v2_library_created": { "message": "Saved at" },
-  "v2_library_time": { "message": "Video time" },
-  "v2_library_editor_title": { "message": "Edit learning card" },
-  "v2_library_editor_assign_title": { "message": "Assign language and role" },
-  "v2_library_learning_text": { "message": "Learning sentence" },
-  "v2_library_learning_language": { "message": "Learning language" },
-  "v2_library_support_text": { "message": "Support sentence" },
-  "v2_library_support_language": { "message": "Support language" },
-  "v2_library_add_support": { "message": "Add support sentence" },
-  "v2_library_remove_support": { "message": "Remove support sentence" },
-  "v2_library_swap_roles": { "message": "Swap learning and support roles" },
-  "v2_library_choose_language": { "message": "Choose a language" },
-  "v2_library_editor_invalid": { "message": "Every sentence needs non-empty text and a language." },
-  "v2_review_title": { "message": "Focused Review" },
-  "v2_review_session_label": { "message": "Choose review cards" },
-  "v2_review_active_session": { "message": "Active" },
-  "v2_review_completed_session": { "message": "Completed" },
-  "v2_review_progress": {
-    "message": "Card $1 of $2",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "v2_review_show_support": { "message": "Show support sentence" },
-  "v2_review_hide_support": { "message": "Hide support sentence" },
-  "v2_review_open_video": { "message": "Open original video" },
-  "v2_review_navigation_label": { "message": "Review navigation" },
-  "v2_review_previous": { "message": "Previous" },
-  "v2_review_skip": { "message": "Skip" },
-  "v2_review_judgment_label": { "message": "Choose a learning state" },
-  "v2_review_keep_learning": { "message": "Keep learning" },
-  "v2_review_complete": { "message": "Complete" },
-  "v2_review_save_pending": { "message": "Saving learning state..." },
-  "v2_review_update_error": { "message": "Could not save this card. Its learning state was not changed." },
-  "v2_review_active_empty_title": { "message": "No active cards to review" },
-  "v2_review_active_empty_description": { "message": "Cards with a learning sentence and Active state appear here." },
-  "v2_review_completed_empty_title": { "message": "No completed cards to review" },
-  "v2_review_completed_empty_description": { "message": "Cards you complete appear here." },
-  "v2_review_finished_title": { "message": "Review complete" },
-  "v2_review_finished_description": { "message": "You reviewed every card in this session." },
-  "v2_review_open_library": { "message": "Open Library" },
-  "v2_review_loading": { "message": "Loading review cards..." },
-  "v2_review_load_error": { "message": "Could not load review cards. Your saved cards were not changed." },
-  "v2_review_retry": { "message": "Try again" },
-  "clear_filters": { "message": "Clear filters" },
-  "clear_search": { "message": "Clear search" },
-  "previous": { "message": "Previous" },
-  "next": { "message": "Next" },
-  "subtitle_analysis": { "message": "Analysis" },
-  "subtitle_upload": { "message": "Add Subtitles" },
-  "current_tab_subtitles": { "message": "Subtitles for this tab" },
-  "default_subtitle": { "message": "Default subtitle" },
-  "display_off": { "message": "Display off" },
-  "subtitle_role_unavailable": {
-    "message": "Open a Coupang Play video tab to choose subtitles."
-  },
-  "selected_subtitle_missing": { "message": "Selected subtitle not found" },
-  "default_short": { "message": "Default" },
-  "primary_short": { "message": "Primary" },
-  "secondary_short": { "message": "Secondary" },
-  "use_as_primary": { "message": "Select as primary" },
-  "use_as_secondary": { "message": "Select as secondary" },
-  "primary_selected": { "message": "Selected as primary" },
-  "secondary_selected": { "message": "Selected as secondary" },
-  "press_to_use_default": { "message": "Press to use default" },
-  "return_primary_to_default": { "message": "Return primary subtitles to the default track" },
-  "return_secondary_to_default": { "message": "Return secondary subtitles to the default track" },
-  "current_tab_use": { "message": "Use for current tab" },
-  "applying": { "message": "Applying" },
-  "analyze": { "message": "Analyze" },
-  "sync": { "message": "Sync" },
-  "edit_short": { "message": "Edit" },
-  "edit_subtitle_details": { "message": "Edit subtitle details" },
-  "decrease_sync": { "message": "Decrease sync delay" },
-  "increase_sync": { "message": "Increase sync delay" },
-  "sync_value": {
-    "message": "Sync $value$s",
-    "placeholders": { "value": { "content": "$1" } }
-  },
-  "added_date": {
-    "message": "Added $date$",
-    "placeholders": { "date": { "content": "$1" } }
-  },
-
-  "english": { "message": "English" },
-  "korean": { "message": "Korean" },
-  "japanese": { "message": "Japanese" },
-  "chinese_simplified": { "message": "Chinese (Simplified)" },
-  "chinese_traditional": { "message": "Chinese (Traditional)" },
-  "spanish": { "message": "Spanish" },
-  "french": { "message": "French" },
-  "german": { "message": "German" },
-  "portuguese": { "message": "Portuguese" },
-  "russian": { "message": "Russian" },
-  "arabic": { "message": "Arabic" },
-
-  "all_list": { "message": "All List" },
-  "add": { "message": "Add" },
-  "add_from_file": { "message": "Add from File" },
-  "advanced_search": { "message": "Advanced Search" },
-  "advanced_search_applied": {
-    "message": "Advanced Search · $count$ applied",
-    "placeholders": { "count": { "content": "$1" } }
-  },
-  "add_online_subtitle": {
-    "message": "Add $fileName$ subtitle",
-    "placeholders": { "fileName": { "content": "$1" } }
-  },
-  "add_this_subtitle": { "message": "Add This Subtitle" },
-  "adding": { "message": "Adding" },
-  "allow_line_break": { "message": "Allow Line Break" },
-  "auto_scroll": { "message": "Auto Scroll" },
-  "available_on_coupang_play": { "message": "Available on Coupang Play" },
-  "background_opacity": { "message": "Background Opacity" },
-  "back_to_subtitles": { "message": "Back to Subtitles" },
-  "backward_key": { "message": "Backward Key" },
-  "bottom": { "message": "Bottom" },
-  "cancel": { "message": "Cancel" },
-  "collapse_setting": {
-    "message": "Collapse $1 settings",
-    "placeholders": { "setting": { "content": "$1" } }
-  },
-  "center": { "message": "Center" },
-  "click_to_save": { "message": "Click to save" },
-  "confirm": { "message": "Confirm" },
-  "copied": { "message": "Copied" },
-  "copy": { "message": "Copy" },
-  "content_type": { "message": "Type" },
-  "content_type_all": { "message": "All" },
-  "content_type_episode": { "message": "Episode" },
-  "content_type_movie": { "message": "Movie" },
-  "dark": { "message": "Dark" },
-  "delete": { "message": "Delete" },
-  "edit": { "message": "Edit" },
-  "end_point_key": { "message": "End Point Key" },
-  "error": { "message": "Error" },
-  "export_backup": { "message": "Export Backup" },
-  "export_backup_confirm": {
-    "message": "The backup contains saved subtitle text and video URLs. Do you want to save it somewhere secure?"
-  },
-  "fallback_unit": { "message": "Fallback Unit" },
-  "find_online": { "message": "Find Online" },
-  "fixed": { "message": "Fixed" },
-  "font_weight": { "message": "Font Weight" },
-  "forward_key": { "message": "Forward Key" },
-  "info": { "message": "Info" },
-  "language": { "message": "Language" },
-  "latest": { "message": "Latest" },
-  "light": { "message": "Light" },
-  "loop_current_subtitle": { "message": "Loop Current Subtitle" },
-  "loop": { "message": "Loop" },
-  "minutes": { "message": "Minutes" },
-  "no_search_results": { "message": "No search results." },
-  "online_subtitle_search": { "message": "Search OpenSubtitles" },
-  "opensubtitles_attribution": { "message": "Online subtitles provided by:" },
-  "opensubtitles_search_privacy": {
-    "message": "Searching sends the title and selected filters to OpenSubtitles."
-  },
-  "oldest": { "message": "Oldest" },
-  "optimize_for_learning_confirm": { "message": "Are you sure you want to apply the learning optimized settings?" },
-  "optimize_for_learning": { "message": "Optimize for Learning" },
-  "play_current_subtitle_once": { "message": "Play Current Subtitle Once" },
-  "position_offset": { "message": "Position Offset" },
-  "position_reference": { "message": "Position Reference" },
-  "press_any_key": { "message": "Press Any Key" },
-  "primary_subtitle": { "message": "Primary Subtitle" },
-  "upload": { "message": "Upload" },
-  "uploaded_subtitles": { "message": "Added Subtitles" },
-  "reset_settings_confirm": { "message": "Are you sure you want to reset all settings?" },
-  "reset_settings": { "message": "Reset Settings" },
-  "restore_backup": { "message": "Restore Backup" },
-  "restore_backup_confirm": {
-    "message": "This replaces your current settings and learning data with the selected backup and may not be fully reversible. Continue?"
-  },
-  "responsive": { "message": "Responsive" },
-  "save_primary_subtitle": { "message": "Save Primary Subtitle" },
-  "save_secondary_subtitle": { "message": "Save Secondary Subtitle" },
-  "copy_primary_subtitle": { "message": "Copy Primary Subtitle" },
-  "copy_secondary_subtitle": { "message": "Copy Secondary Subtitle" },
-  "save": { "message": "Save" },
-  "search_term": { "message": "Search Term" },
-  "search": { "message": "Search" },
-  "search_result_summary": {
-    "message": "Showing $visible$ files from $total$ subtitle results",
-    "placeholders": {
-      "visible": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_characteristics": { "message": "Subtitle characteristics" },
-  "result_auto_translated": { "message": "Auto-translated" },
-  "result_hearing_impaired": { "message": "SDH" },
-  "result_foreign_parts_only": { "message": "Foreign parts only" },
-  "result_trusted_source": { "message": "Trusted source" },
-  "result_trusted_source_description": {
-    "message": "Label provided by OpenSubtitles; it is not a safety guarantee."
-  },
-  "result_rating": {
-    "message": "Rating $rating$ · Votes $votes$",
-    "placeholders": {
-      "rating": { "content": "$1" },
-      "votes": { "content": "$2" }
-    }
-  },
-  "result_downloads": {
-    "message": "Downloads $count$",
-    "placeholders": { "count": { "content": "$1" } }
-  },
-  "result_disc": {
-    "message": "CD $current$/$total$",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_details": { "message": "Details" },
-  "result_file_name": { "message": "File name" },
-  "result_uploader_rank": { "message": "Uploader rank" },
-  "result_upload_date": { "message": "Uploaded" },
-  "search_title": { "message": "Title" },
-  "searching": { "message": "Searching" },
-  "secondary_subtitle": { "message": "Secondary Subtitle" },
-  "seconds": { "message": "Seconds" },
-  "select": { "message": "Select" },
-  "set_up_manually": { "message": "Set Up Manually" },
-  "shortcuts": { "message": "Shortcuts" },
-  "skip_unit": { "message": "Skip Unit" },
-  "start_point_key": { "message": "Start Point Key" },
-  "sub_video_skip": { "message": "Secondary Skip" },
-  "subtitle_color": { "message": "Subtitle Color" },
-  "subtitle_add_source": { "message": "Subtitle Source" },
-  "subtitle_title": { "message": "Subtitle Title" },
-  "subtitle_size": { "message": "Subtitle Size" },
-  "subtitles": { "message": "Subtitles" },
-  "success": { "message": "Success" },
-  "sync_adjustment": { "message": "Sync Adjustment" },
-  "system": { "message": "System" },
-  "toggle_loop_key": { "message": "Loop On/Off" },
-  "toggle_primary_subtitle": { "message": "Primary Subtitle On/Off" },
-  "toggle_secondary_subtitle": { "message": "Secondary Subtitle On/Off" },
-  "top": { "message": "Top" },
-  "undo": { "message": "Undo" },
-  "upload_subtitle_file": { "message": "Choose Subtitle File" },
-  "year": { "message": "Year" },
-  "season": { "message": "Season" },
-  "episode": { "message": "Episode" },
-  "show_more": { "message": "Show More" },
-  "loading_more": { "message": "Loading More" },
-  "video_skip": { "message": "Primary Skip" },
-  "expand_setting": {
-    "message": "Expand $1 settings",
-    "placeholders": { "setting": { "content": "$1" } }
-  },
-  "view_video": { "message": "Open in video" },
-
-  "connection_content_connecting": { "message": "Connecting Coupang Play" },
-  "connection_content_connected": { "message": "Coupang Play connected" },
-  "connection_content_disconnected": { "message": "Coupang Play disconnected" },
-  "connection_video_detecting": { "message": "Detecting video" },
-  "connection_video_detected": { "message": "Video detected" },
-  "connection_video_not_detected": { "message": "Video not detected" },
-  "connection_video_idle": { "message": "Waiting for video" },
-  "connection_sync_detect": { "message": "Detect video" },
-  "connection_not_coupang_tab": { "message": "Not a Coupang Play tab" },
-  "connection_label_connected": { "message": "Connected" },
-  "connection_label_connecting": { "message": "Connecting" },
-  "connection_label_disconnected": { "message": "Disconnected" },
-  "connection_label_not_coupang": { "message": "Not Coupang Play" },
-  "connection_label_video_detected": { "message": "Detected" },
-  "connection_label_video_detecting": { "message": "Detecting" },
-  "connection_label_video_not_detected": { "message": "Not detected" },
-  "connection_label_video_idle": { "message": "Waiting" },
-
-  "playback_speed": { "message": "Playback Speed" },
-  "increase_speed": { "message": "Increase Speed" },
-  "decrease_speed": { "message": "Decrease Speed" },
-  "reset_speed": { "message": "Reset Speed" },
-
-  "previous_subtitle": { "message": "Previous Subtitle" },
-  "next_subtitle": { "message": "Next Subtitle" },
-  "loop_playback": { "message": "Loop Playback" },
-  "focus_mode": { "message": "Focus Mode" },
-  "skip_subtitle_gap": { "message": "Skip Subtitle Gap" },
-
-  "confirm_delete": { "message": "Are you sure you want to delete?" },
-
-  "success_save_subtitle": { "message": "Subtitle saved" },
-  "success_copy_subtitle": { "message": "Subtitle copied" },
-  "success_delete_subtitle": { "message": "Subtitle deleted" },
-  "success_export_backup": { "message": "Backup exported." },
-  "success_restore_backup": { "message": "Backup restored." },
-  "success_add_subtitle": {
-    "message": "Subtitle added. Select it as the primary or secondary subtitle from the list to use it."
-  },
-  "success_add_online_subtitle": {
-    "message": "OpenSubtitles subtitle added. Select it as the primary or secondary subtitle from the list to use it."
-  },
-  "success_add_subtitle_cached": {
-    "message": "OpenSubtitles subtitle added from the session cache. Select it as the primary or secondary subtitle from the list to use it."
-  },
-  "success_add_subtitle_remaining": {
-    "message": "OpenSubtitles subtitle added. OpenSubtitles reported $remaining$ downloads remaining. Select it as the primary or secondary subtitle from the list to use it.",
-    "placeholders": { "remaining": { "content": "$1" } }
-  },
-  "error_export_backup": { "message": "Failed to export the backup." },
-  "error_invalid_backup": { "message": "This is not a valid Play Plus backup. Existing data was not changed." },
-  "error_restore_backup": { "message": "Backup restore failed. Play Plus attempted to recover the existing data." },
-  "error_restore_backup_rollback": {
-    "message": "Backup restore and existing data recovery failed. Check your saved data."
-  },
-  "error_save_subtitle": { "message": "Failed to save subtitle" },
-  "error_subtitle_role_update": { "message": "Could not change the subtitle selection. Please try again." },
-  "error_copy_subtitle": { "message": "Failed to copy subtitle" },
-  "error_loop": { "message": "Failed to loop" },
-  "info_loop_stop": { "message": "Loop is stopped" },
-
-  "error_text_type": { "message": "Only text is allowed." },
-  "error_number_type": { "message": "Only numbers are allowed." },
-  "error_type_mismatch": { "message": "Type is not correct." },
-  "error_max_length": {
-    "message": "Exceeds the maximum length of $maxLength$.",
-    "placeholders": { "maxLength": { "content": "$1" } }
-  },
-  "error_min_length": {
-    "message": "Shorter than the minimum length of $minLength$.",
-    "placeholders": { "minLength": { "content": "$1" } }
-  },
-  "error_max_value": {
-    "message": "Exceeds the maximum value of $maxValue$.",
-    "placeholders": { "maxValue": { "content": "$1" } }
-  },
-  "error_min_value": {
-    "message": "Smaller than the minimum value of $minValue$.",
-    "placeholders": { "minValue": { "content": "$1" } }
-  },
-  "error_file_size": { "message": "File size is too large.\nPlease add a file no larger than 1 MiB." },
-  "error_empty_subtitle": { "message": "No usable subtitle cues were found." },
-  "error_online_access": { "message": "OpenSubtitles did not allow the request. Check the provider configuration." },
-  "error_online_configuration": { "message": "The OpenSubtitles connection is not configured." },
-  "error_online_download": { "message": "The selected online subtitle could not be downloaded. Try it again from the results." },
-  "error_online_expired": { "message": "The OpenSubtitles download link expired. Try it again from the results." },
-  "error_online_invalid_query": { "message": "Check the search conditions." },
-  "error_online_network": { "message": "Could not connect to OpenSubtitles. Check your network connection." },
-  "error_online_permission_denied": {
-    "message": "Online subtitle access was not allowed. You can continue adding subtitles from files."
-  },
-  "error_online_search": { "message": "Online subtitles could not be searched. Please try again later." },
-  "error_online_rate_limit": { "message": "The OpenSubtitles download or request limit was reached. Please try again later." },
-  "error_online_response": { "message": "OpenSubtitles returned unreadable data. Please try again later." },
-  "error_online_unavailable": { "message": "OpenSubtitles is temporarily unavailable." },
-  "error_subtitle_decode": { "message": "The subtitle file's text encoding could not be read." },
-  "error_unsupported_file_type": {
-    "message": "Unsupported file type.\nPlease add $fileType$ files.",
-    "placeholders": { "fileType": { "content": "$1" } }
-  },
-  "error_reserved_shortcuts": { "message": "Reserved for the system" },
-  "error_video_not_found": { "message": "Video not found." },
-  "error_try_later": { "message": "Please try again later." },
-  "error_duplicate_subtitle": { "message": "Already saved subtitle." },
-  "error_no_subtitle": { "message": "No subtitle." },
-  "error_no_current_subtitle": { "message": "No current subtitle." },
-  "error_duplicate_shortcuts": { "message": "Shortcuts are duplicated." },
-  "error_unknown": { "message": "Unknown error" },
-  "error_loop_time_message": { "message": "Start time is greater than end time." },
-  "info_loop_stop_message": { "message": "Loop is stopped because it is out of range." }
+    "app_name":  {
+                     "message":  "Play Plus"
+                 },
+    "extension_name":  {
+                           "message":  "Play Plus - Enhance Coupang Play\u0027s features"
+                       },
+    "extension_description":  {
+                                  "message":  "Adds learning and support subtitles, learning controls, and saved-card review to Coupang Play."
+                              },
+    "action_default_title":  {
+                                 "message":  "Open Play Plus"
+                             },
+    "learning_languages":  {
+                               "message":  "Learning languages"
+                           },
+    "learning_language":  {
+                              "message":  "Learning language"
+                          },
+    "support_language":  {
+                             "message":  "Support language (optional)"
+                         },
+    "no_support_language":  {
+                                "message":  "Do not use support sentences"
+                            },
+    "learning_profile_confirmation_title":  {
+                                                "message":  "Confirm your learning languages"
+                                            },
+    "learning_profile_confirmation_description":  {
+                                                      "message":  "Choose the language you are learning and an optional language for help."
+                                                  },
+    "confirm_languages":  {
+                              "message":  "Confirm languages"
+                          },
+    "subtitle_display":  {
+                             "message":  "Subtitle display"
+                         },
+    "learning_subtitle":  {
+                              "message":  "Learning subtitle"
+                          },
+    "support_subtitle":  {
+                             "message":  "Support subtitle"
+                         },
+    "show_learning_subtitle":  {
+                                   "message":  "Show learning subtitle"
+                               },
+    "show_support_subtitle":  {
+                                  "message":  "Show support subtitle"
+                              },
+    "v2_library_title":  {
+                             "message":  "Learning Library"
+                         },
+    "v2_library_loading":  {
+                               "message":  "Loading learning cards..."
+                           },
+    "v2_library_load_error":  {
+                                  "message":  "Could not load your learning cards. Your saved data was not changed."
+                              },
+    "v2_library_retry":  {
+                             "message":  "Try again"
+                         },
+    "v2_library_empty_title":  {
+                                   "message":  "No learning cards yet"
+                               },
+    "v2_library_empty_description":  {
+                                         "message":  "Cards you save while watching will appear here."
+                                     },
+    "v2_library_filtered_empty":  {
+                                      "message":  "No cards match the current search and filters."
+                                  },
+    "v2_library_search_label":  {
+                                    "message":  "Search learning cards"
+                                },
+    "v2_library_sort_label":  {
+                                  "message":  "Sort learning cards"
+                              },
+    "v2_library_state_filter":  {
+                                    "message":  "Filter by learning state"
+                                },
+    "v2_library_role_filter":  {
+                                   "message":  "Filter by sentence role"
+                               },
+    "v2_library_all":  {
+                           "message":  "All"
+                       },
+    "v2_library_active":  {
+                              "message":  "Active"
+                          },
+    "v2_library_completed":  {
+                                 "message":  "Completed"
+                             },
+    "v2_library_learning":  {
+                                "message":  "Learning"
+                            },
+    "v2_library_support":  {
+                               "message":  "Support"
+                           },
+    "v2_library_unassigned":  {
+                                  "message":  "Needs language and role"
+                              },
+    "v2_library_language_unassigned":  {
+                                           "message":  "Language not assigned"
+                                       },
+    "v2_library_contains_support":  {
+                                        "message":  "Has support sentence"
+                                    },
+    "v2_library_state_change":  {
+                                    "message":  "Change learning state"
+                                },
+    "v2_library_save_pending":  {
+                                    "message":  "Saving changes..."
+                                },
+    "v2_library_update_error":  {
+                                    "message":  "Could not save this card. Your draft and saved card are unchanged."
+                                },
+    "v2_library_delete_error":  {
+                                    "message":  "Could not delete this card."
+                                },
+    "v2_library_deleted":  {
+                               "message":  "Learning card deleted."
+                           },
+    "v2_library_restore":  {
+                               "message":  "Undo card deletion"
+                           },
+    "v2_library_dismiss_undo":  {
+                                    "message":  "Dismiss deletion notice"
+                                },
+    "v2_library_restore_error":  {
+                                     "message":  "Could not restore the deleted card."
+                                 },
+    "v2_library_source":  {
+                              "message":  "Source"
+                          },
+    "v2_library_created":  {
+                               "message":  "Saved at"
+                           },
+    "v2_library_time":  {
+                            "message":  "Video time"
+                        },
+    "v2_library_editor_title":  {
+                                    "message":  "Edit learning card"
+                                },
+    "v2_library_editor_assign_title":  {
+                                           "message":  "Assign language and role"
+                                       },
+    "v2_library_learning_text":  {
+                                     "message":  "Learning sentence"
+                                 },
+    "v2_library_learning_language":  {
+                                         "message":  "Learning language"
+                                     },
+    "v2_library_support_text":  {
+                                    "message":  "Support sentence"
+                                },
+    "v2_library_support_language":  {
+                                        "message":  "Support language"
+                                    },
+    "v2_library_add_support":  {
+                                   "message":  "Add support sentence"
+                               },
+    "v2_library_remove_support":  {
+                                      "message":  "Remove support sentence"
+                                  },
+    "v2_library_swap_roles":  {
+                                  "message":  "Swap learning and support roles"
+                              },
+    "v2_library_choose_language":  {
+                                       "message":  "Choose a language"
+                                   },
+    "v2_library_editor_invalid":  {
+                                      "message":  "Every sentence needs non-empty text and a language."
+                                  },
+    "v2_review_title":  {
+                            "message":  "Focused Review"
+                        },
+    "v2_review_session_label":  {
+                                    "message":  "Choose review cards"
+                                },
+    "v2_review_active_session":  {
+                                     "message":  "Active"
+                                 },
+    "v2_review_completed_session":  {
+                                        "message":  "Completed"
+                                    },
+    "v2_review_progress":  {
+                               "message":  "Card $1 of $2",
+                               "placeholders":  {
+                                                    "current":  {
+                                                                    "content":  "$1"
+                                                                },
+                                                    "total":  {
+                                                                  "content":  "$2"
+                                                              }
+                                                }
+                           },
+    "v2_review_show_support":  {
+                                   "message":  "Show support sentence"
+                               },
+    "v2_review_hide_support":  {
+                                   "message":  "Hide support sentence"
+                               },
+    "v2_review_open_video":  {
+                                 "message":  "Open original video"
+                             },
+    "v2_review_navigation_label":  {
+                                       "message":  "Review navigation"
+                                   },
+    "v2_review_previous":  {
+                               "message":  "Previous"
+                           },
+    "v2_review_skip":  {
+                           "message":  "Skip"
+                       },
+    "v2_review_judgment_label":  {
+                                     "message":  "Choose a learning state"
+                                 },
+    "v2_review_keep_learning":  {
+                                    "message":  "Keep learning"
+                                },
+    "v2_review_complete":  {
+                               "message":  "Complete"
+                           },
+    "v2_review_save_pending":  {
+                                   "message":  "Saving learning state..."
+                               },
+    "v2_review_update_error":  {
+                                   "message":  "Could not save this card. Its learning state was not changed."
+                               },
+    "v2_review_active_empty_title":  {
+                                         "message":  "No active cards to review"
+                                     },
+    "v2_review_active_empty_description":  {
+                                               "message":  "Cards with a learning sentence and Active state appear here."
+                                           },
+    "v2_review_completed_empty_title":  {
+                                            "message":  "No completed cards to review"
+                                        },
+    "v2_review_completed_empty_description":  {
+                                                  "message":  "Cards you complete appear here."
+                                              },
+    "v2_review_finished_title":  {
+                                     "message":  "Review complete"
+                                 },
+    "v2_review_finished_description":  {
+                                           "message":  "You reviewed every card in this session."
+                                       },
+    "v2_review_open_library":  {
+                                   "message":  "Open Library"
+                               },
+    "v2_review_loading":  {
+                              "message":  "Loading review cards..."
+                          },
+    "v2_review_load_error":  {
+                                 "message":  "Could not load review cards. Your saved cards were not changed."
+                             },
+    "v2_review_retry":  {
+                            "message":  "Try again"
+                        },
+    "clear_filters":  {
+                          "message":  "Clear filters"
+                      },
+    "clear_search":  {
+                         "message":  "Clear search"
+                     },
+    "english":  {
+                    "message":  "English"
+                },
+    "korean":  {
+                   "message":  "Korean"
+               },
+    "japanese":  {
+                     "message":  "Japanese"
+                 },
+    "chinese_simplified":  {
+                               "message":  "Chinese (Simplified)"
+                           },
+    "chinese_traditional":  {
+                                "message":  "Chinese (Traditional)"
+                            },
+    "spanish":  {
+                    "message":  "Spanish"
+                },
+    "french":  {
+                   "message":  "French"
+               },
+    "german":  {
+                   "message":  "German"
+               },
+    "portuguese":  {
+                       "message":  "Portuguese"
+                   },
+    "russian":  {
+                    "message":  "Russian"
+                },
+    "arabic":  {
+                   "message":  "Arabic"
+               },
+    "all_list":  {
+                     "message":  "All List"
+                 },
+    "add":  {
+                "message":  "Add"
+            },
+    "allow_line_break":  {
+                             "message":  "Allow Line Break"
+                         },
+    "background_opacity":  {
+                               "message":  "Background Opacity"
+                           },
+    "bottom":  {
+                   "message":  "Bottom"
+               },
+    "cancel":  {
+                   "message":  "Cancel"
+               },
+    "collapse_setting":  {
+                             "message":  "Collapse $1 settings",
+                             "placeholders":  {
+                                                  "setting":  {
+                                                                  "content":  "$1"
+                                                              }
+                                              }
+                         },
+    "center":  {
+                   "message":  "Center"
+               },
+    "confirm":  {
+                    "message":  "Confirm"
+                },
+    "dark":  {
+                 "message":  "Dark"
+             },
+    "delete":  {
+                   "message":  "Delete"
+               },
+    "edit":  {
+                 "message":  "Edit"
+             },
+    "error":  {
+                  "message":  "Error"
+              },
+    "font_weight":  {
+                        "message":  "Font Weight"
+                    },
+    "language":  {
+                     "message":  "Language"
+                 },
+    "latest":  {
+                   "message":  "Latest"
+               },
+    "light":  {
+                  "message":  "Light"
+              },
+    "oldest":  {
+                   "message":  "Oldest"
+               },
+    "position_offset":  {
+                            "message":  "Position Offset"
+                        },
+    "position_reference":  {
+                               "message":  "Position Reference"
+                           },
+    "save":  {
+                 "message":  "Save"
+             },
+    "search_term":  {
+                        "message":  "Search Term"
+                    },
+    "search":  {
+                   "message":  "Search"
+               },
+    "select":  {
+                   "message":  "Select"
+               },
+    "shortcuts":  {
+                      "message":  "Shortcuts"
+                  },
+    "subtitle_color":  {
+                           "message":  "Subtitle Color"
+                       },
+    "subtitle_title":  {
+                           "message":  "Subtitle Title"
+                       },
+    "subtitle_size":  {
+                          "message":  "Subtitle Size"
+                      },
+    "system":  {
+                   "message":  "System"
+               },
+    "top":  {
+                "message":  "Top"
+            },
+    "undo":  {
+                 "message":  "Undo"
+             },
+    "expand_setting":  {
+                           "message":  "Expand $1 settings",
+                           "placeholders":  {
+                                                "setting":  {
+                                                                "content":  "$1"
+                                                            }
+                                            }
+                       },
+    "connection_content_connecting":  {
+                                          "message":  "Connecting Coupang Play"
+                                      },
+    "connection_content_connected":  {
+                                         "message":  "Coupang Play connected"
+                                     },
+    "connection_content_disconnected":  {
+                                            "message":  "Coupang Play disconnected"
+                                        },
+    "connection_video_detecting":  {
+                                       "message":  "Detecting video"
+                                   },
+    "connection_video_detected":  {
+                                      "message":  "Video detected"
+                                  },
+    "connection_video_not_detected":  {
+                                          "message":  "Video not detected"
+                                      },
+    "connection_video_idle":  {
+                                  "message":  "Waiting for video"
+                              },
+    "connection_sync_detect":  {
+                                   "message":  "Detect video"
+                               },
+    "connection_not_coupang_tab":  {
+                                       "message":  "Not a Coupang Play tab"
+                                   },
+    "connection_label_connected":  {
+                                       "message":  "Connected"
+                                   },
+    "connection_label_connecting":  {
+                                        "message":  "Connecting"
+                                    },
+    "connection_label_disconnected":  {
+                                          "message":  "Disconnected"
+                                      },
+    "connection_label_not_coupang":  {
+                                         "message":  "Not Coupang Play"
+                                     },
+    "connection_label_video_detected":  {
+                                            "message":  "Detected"
+                                        },
+    "connection_label_video_detecting":  {
+                                             "message":  "Detecting"
+                                         },
+    "connection_label_video_not_detected":  {
+                                                "message":  "Not detected"
+                                            },
+    "connection_label_video_idle":  {
+                                        "message":  "Waiting"
+                                    },
+    "playback_speed":  {
+                           "message":  "Playback Speed"
+                       },
+    "increase_speed":  {
+                           "message":  "Increase Speed"
+                       },
+    "decrease_speed":  {
+                           "message":  "Decrease Speed"
+                       },
+    "reset_speed":  {
+                        "message":  "Reset Speed"
+                    },
+    "error_file_size":  {
+                            "message":  "File size is too large.\nPlease add a file no larger than 1 MiB."
+                        },
+    "error_empty_subtitle":  {
+                                 "message":  "No usable subtitle cues were found."
+                             },
+    "error_subtitle_decode":  {
+                                  "message":  "The subtitle file\u0027s text encoding could not be read."
+                              },
+    "error_unsupported_file_type":  {
+                                        "message":  "Unsupported file type.\nPlease add $fileType$ files.",
+                                        "placeholders":  {
+                                                             "fileType":  {
+                                                                              "content":  "$1"
+                                                                          }
+                                                         }
+                                    },
+    "error_video_not_found":  {
+                                  "message":  "Video not found."
+                              },
+    "error_try_later":  {
+                            "message":  "Please try again later."
+                        },
+    "v2_navigation_label":  {
+                                "message":  "Play Plus navigation"
+                            },
+    "v2_nav_learning":  {
+                            "message":  "Learning"
+                        },
+    "v2_nav_subtitles":  {
+                             "message":  "Subtitles"
+                         },
+    "v2_nav_library":  {
+                           "message":  "Library"
+                       },
+    "v2_nav_review":  {
+                          "message":  "Review"
+                      },
+    "v2_retry":  {
+                     "message":  "Try again"
+                 },
+    "v2_readiness_loading":  {
+                                 "message":  "Loading Play Plus…"
+                             },
+    "v2_readiness_unavailable_title":  {
+                                           "message":  "Play Plus data is unavailable"
+                                       },
+    "v2_readiness_unavailable_description":  {
+                                                 "message":  "Your existing data was not replaced. Retry the migration to continue."
+                                             },
+    "v2_review_open_video_error":  {
+                                       "message":  "Could not open the original video."
+                                   },
+    "v2_first_entry_title":  {
+                                 "message":  "Set up Play Plus 2.0"
+                             },
+    "v2_first_entry_description":  {
+                                       "message":  "Choose the language you are learning and an optional language for help."
+                                   },
+    "v2_first_entry_loading":  {
+                                   "message":  "Loading your setup…"
+                               },
+    "v2_first_entry_load_error":  {
+                                      "message":  "Could not load your setup. Your existing data was not changed."
+                                  },
+    "v2_first_entry_shortcuts_title":  {
+                                           "message":  "Confirm shortcuts"
+                                       },
+    "v2_first_entry_disable_shortcut":  {
+                                            "message":  "Leave disabled"
+                                        },
+    "v2_first_entry_reason_multiple_candidates":  {
+                                                      "message":  "Choose the previous shortcut you want to keep."
+                                                  },
+    "v2_first_entry_reason_ambiguous_semantics":  {
+                                                      "message":  "Confirm that this shortcut still matches the learning action."
+                                                  },
+    "v2_first_entry_reason_conflict":  {
+                                           "message":  "Choose which learning action should use this shortcut."
+                                       },
+    "v2_save_learning_card":  {
+                                  "message":  "Save learning card"
+                              },
+    "v2_local_subtitles_loading":  {
+                                       "message":  "Loading local subtitles…"
+                                   },
+    "v2_local_subtitles_back":  {
+                                    "message":  "Back to subtitles"
+                                },
+    "v2_local_subtitles_add":  {
+                                   "message":  "Add subtitle"
+                               },
+    "v2_local_subtitles_empty_description":  {
+                                                 "message":  "Add a subtitle file to use while watching Coupang Play."
+                                             },
+    "v2_local_subtitles_add_file":  {
+                                        "message":  "Add subtitle file"
+                                    },
+    "v2_local_subtitles_load_error":  {
+                                          "message":  "Could not load local subtitles. Your stored subtitles were not changed."
+                                      },
+    "v2_local_subtitles_unavailable_title":  {
+                                                 "message":  "Unavailable migrated subtitles ($count$)",
+                                                 "placeholders":  {
+                                                                      "count":  {
+                                                                                    "content":  "$1"
+                                                                                }
+                                                                  }
+                                             },
+    "v2_local_subtitles_unavailable_description":  {
+                                                       "message":  "These entries were kept as-is. Play Plus did not repair or delete them."
+                                                   },
+    "v2_local_subtitles_unavailable_invalid_metadata":  {
+                                                            "message":  "Invalid subtitle metadata"
+                                                        },
+    "v2_local_subtitles_unavailable_missing_body":  {
+                                                        "message":  "Subtitle file data is missing"
+                                                    },
+    "v2_local_subtitles_unavailable_invalid_body":  {
+                                                        "message":  "Subtitle file data is invalid"
+                                                    },
+    "v2_local_subtitles_unavailable_orphan_body":  {
+                                                       "message":  "Unlinked subtitle file data"
+                                                   },
+    "v2_local_subtitles_refresh_error":  {
+                                             "message":  "The subtitle was saved, but the active video could not refresh it."
+                                         },
+    "v2_local_subtitles_confirm_delete":  {
+                                              "message":  "Delete this subtitle?"
+                                          },
+    "v2_local_subtitles_delete_error":  {
+                                            "message":  "The subtitle could not be fully removed from the active video. Try again."
+                                        },
+    "v2_local_subtitles_role_update_error":  {
+                                                 "message":  "Could not change the subtitle used for the active video. Try again."
+                                             },
+    "v2_local_subtitles_current_tab_title":  {
+                                                 "message":  "Subtitles for this video"
+                                             },
+    "v2_local_subtitles_role_unavailable":  {
+                                                "message":  "Open a Coupang Play video tab to choose subtitles."
+                                            },
+    "v2_local_subtitles_selected_missing":  {
+                                                "message":  "Selected subtitle not found"
+                                            },
+    "v2_local_subtitles_not_configured":  {
+                                              "message":  "Not configured"
+                                          },
+    "v2_local_subtitles_default":  {
+                                       "message":  "Default subtitle"
+                                   },
+    "v2_local_subtitles_default_short":  {
+                                             "message":  "Default"
+                                         },
+    "v2_local_subtitles_applying":  {
+                                        "message":  "Applying…"
+                                    },
+    "v2_local_subtitles_edit_details":  {
+                                            "message":  "Edit subtitle details"
+                                        },
+    "v2_local_subtitles_sync_adjustment":  {
+                                               "message":  "Sync adjustment"
+                                           },
+    "v2_local_subtitles_current_tab_use":  {
+                                               "message":  "Use for this video"
+                                           },
+    "v2_local_subtitles_sync":  {
+                                    "message":  "Sync"
+                                },
+    "v2_local_subtitles_edit":  {
+                                    "message":  "Edit"
+                                },
+    "v2_local_subtitles_sync_value":  {
+                                          "message":  "Sync $value$s",
+                                          "placeholders":  {
+                                                               "value":  {
+                                                                             "content":  "$1"
+                                                                         }
+                                                           }
+                                      },
+    "v2_local_subtitles_added_date":  {
+                                          "message":  "Added $date$",
+                                          "placeholders":  {
+                                                               "date":  {
+                                                                            "content":  "$1"
+                                                                        }
+                                                           }
+                                      },
+    "v2_local_subtitles_decrease_sync":  {
+                                             "message":  "Decrease sync delay"
+                                         },
+    "v2_local_subtitles_increase_sync":  {
+                                             "message":  "Increase sync delay"
+                                         },
+    "v2_local_subtitles_choose_file":  {
+                                           "message":  "Choose subtitle file"
+                                       },
+    "v2_local_subtitles_add_error":  {
+                                         "message":  "Could not add the subtitle. Try again."
+                                     },
+    "v2_local_subtitles_added":  {
+                                     "message":  "Subtitle added."
+                                 },
+    "v2_hide_support_subtitle":  {
+                                     "message":  "Hide support subtitle"
+                                 },
+    "v2_support_subtitle_toggle_error":  {
+                                             "message":  "Could not change support subtitle visibility."
+                                         },
+    "v2_previous_learning_cue":  {
+                                     "message":  "Previous learning cue"
+                                 },
+    "v2_next_learning_cue":  {
+                                 "message":  "Next learning cue"
+                             },
+    "v2_repeat_current_learning_cue":  {
+                                           "message":  "Repeat current learning cue"
+                                       },
+    "v2_show_learning_controls":  {
+                                      "message":  "Show learning controls"
+                                  },
+    "v2_hide_learning_controls":  {
+                                      "message":  "Hide learning controls"
+                                  },
+    "v2_no_video_available":  {
+                                  "message":  "No video is available."
+                              },
+    "v2_no_current_learning_cue_to_save":  {
+                                               "message":  "There is no current learning cue to save."
+                                           },
+    "v2_learning_card_saved":  {
+                                   "message":  "Learning card saved."
+                               },
+    "v2_learning_card_saved_without_support":  {
+                                                   "message":  "Learning card saved without a support sentence."
+                                               },
+    "v2_learning_card_save_error":  {
+                                        "message":  "The learning card could not be saved."
+                                    },
+    "v2_no_current_learning_cue":  {
+                                       "message":  "There is no current learning cue."
+                                   },
+    "v2_no_learning_cue_in_direction":  {
+                                            "message":  "There is no learning cue in that direction."
+                                        },
+    "v2_content_action_failed":  {
+                                     "message":  "Content action failed."
+                                 }
 }
