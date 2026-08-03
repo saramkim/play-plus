@@ -61,6 +61,12 @@ Issue-required 작업은 다음 순서를 따른다.
 
 Issue가 필요 없는 작업도 원칙적으로 짧은 작업 브랜치와 `main` 대상 Pull Request를 사용하며, `AGENTS.md`의 commit·push 승인 규칙을 따른다.
 
+## Optional Batch Relay Mode
+
+일반 Issue-to-PR lifecycle이 기본 workflow다. 사용자가 여러 승인된 Issue의 순차 구현, ChatGPT 검토·병합과 다음 Issue 인계를 한 번에 위임하려면 정확한 `BATCH RELAY RUN #<parent-batch-issue-number>` 트리거로 선택적 Batch Relay를 활성화할 수 있다.
+
+Batch Relay의 부모 계약, 권한, 순차 실행, PR 검토·병합 gate, 중단과 최종 통합 검증은 [`docs/batch-relay.md`](batch-relay.md)를 따른다. 정확한 트리거가 없으면 Batch Relay를 추정하지 않는다. 이 모드는 GitHub auto-merge, 별도 merge Action, branch protection, release 또는 deployment automation을 추가하지 않는다.
+
 ## Branch and Release Model
 
 - `main`은 다음 릴리스에 포함할 검증된 변경을 계속 통합하는 원격 기본 브랜치다.
@@ -90,6 +96,7 @@ Pull Request는 최소한 다음 정보를 포함한다.
 - `AGENTS.md`: 아키텍처 경계, 개발 규칙, Git, 검증과 릴리스 guardrail.
 - `docs/play-plus-2.0.md`: Play Plus 2.0의 승인된 제품 방향, 데이터 모델, v1.11 마이그레이션, 기능 범위와 완료 기준.
 - `docs/development-workflow.md`: Issue, ChatGPT 협업과 Pull Request lifecycle.
+- `docs/batch-relay.md`: 사람이 정확한 트리거로 활성화하는 선택적 다중 Issue 실행, 검토·병합과 중단 workflow.
 - `docs/manual-smoke-test.md`: 릴리스 전 실제 Chrome 검증 기록.
 - `README.md`: 제품·설치·개발 진입점과 canonical 문서 링크.
 
