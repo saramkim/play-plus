@@ -1,22 +1,22 @@
 import { act } from 'react';
 
-import { PAGE_NAME } from '@utils/constants';
 import { createRoot, Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePageStore } from '@/ui/store/page-store';
 
 import { Header } from './header';
 
-describe('Header navigation lock', () => {
+describe('Header', () => {
   let container: HTMLDivElement;
   let root: Root;
 
+  beforeAll(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
+
   beforeEach(() => {
     usePageStore.setState({
-      currentPage: PAGE_NAME.SUBTITLE_UPLOAD,
-      navigationLocked: true,
-      params: {},
+      currentPage: 'learning',
+      navigationLocked: false,
     });
     container = document.createElement('div');
     document.body.append(container);
@@ -25,11 +25,36 @@ describe('Header navigation lock', () => {
 
   afterEach(() => {
     act(() => root.unmount());
-    usePageStore.getState().setNavigationLocked(false);
+    usePageStore.setState({ currentPage: 'learning', navigationLocked: false });
     container.remove();
   });
 
-  it('disables every global page tab until navigation is unlocked', () => {
+  afterAll(() => vi.unstubAllGlobals());
+
+  it('renders the four v2 destinations and marks the current page', () => {
+    act(() => root.render(<Header />));
+
+    const navigation = container.querySelector('nav');
+    const buttons = Array.from(container.querySelectorAll('button'));
+
+    expect(navigation?.getAttribute('aria-label')).toBe('v2_navigation_label');
+    expect(navigation?.className).toContain('grid-cols-4');
+    expect(buttons).toHaveLength(4);
+    expect(buttons.map((button) => button.getAttribute('aria-current'))).toEqual([
+      'page',
+      null,
+      null,
+      null,
+    ]);
+
+    act(() => buttons[3].click());
+
+    expect(usePageStore.getState().currentPage).toBe('review');
+    expect(buttons[3].getAttribute('aria-current')).toBe('page');
+  });
+
+  it('disables every destination until navigation is unlocked', () => {
+    usePageStore.getState().setNavigationLocked(true);
     act(() => root.render(<Header />));
 
     expect(Array.from(container.querySelectorAll('button')).every((button) => button.disabled)).toBe(true);

@@ -36,8 +36,11 @@ export function LearningCardEditor({
   const [error, setError] = useState<string>();
   const errorId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const initializedCardIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
+    if (initializedCardIdRef.current === card.id) return;
+    initializedCardIdRef.current = card.id;
     setDraft(createLearningCardEditorDraft(card));
     setError(undefined);
     headingRef.current?.focus();

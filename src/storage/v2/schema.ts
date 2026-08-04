@@ -223,7 +223,33 @@ export const v2SyncStorageSchema = z
     shortcuts: v2ShortcutsSchema,
     playbackSpeed: v2PlaybackSpeedSchema,
   })
-  .strict();
+  .strict()
+  .superRefine(({ playbackSpeed, shortcuts }, context) => {
+    const entries = [
+      ['shortcuts.saveCard', shortcuts.saveCard],
+      ['shortcuts.previousCue', shortcuts.previousCue],
+      ['shortcuts.nextCue', shortcuts.nextCue],
+      ['shortcuts.repeatCurrentCue', shortcuts.repeatCurrentCue],
+      ['playbackSpeed.increase', playbackSpeed.increase],
+      ['playbackSpeed.decrease', playbackSpeed.decrease],
+      ['playbackSpeed.reset', playbackSpeed.reset],
+    ] as const;
+    const owners = new Map<string, string>();
+
+    for (const [field, shortcut] of entries) {
+      if (!shortcut) continue;
+      const owner = owners.get(shortcut);
+      if (owner) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Shortcut conflicts with ${owner}`,
+          path: field.split('.'),
+        });
+      } else {
+        owners.set(shortcut, field);
+      }
+    }
+  });
 
 export const v2LocalDataSchema = z
   .object({

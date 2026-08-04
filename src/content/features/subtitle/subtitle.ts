@@ -1,75 +1,113 @@
-import { DEFAULT_CONFIG } from '@storage/default';
-import { getStorage } from '@storage/index';
-import { StorageChanges } from '@storage/type';
-import { REVIEW, SETTINGS } from '@utils/constants';
+import { createV2SyncStorage, V2SyncStorageChanges } from '@storage/v2/sync-storage';
+import { V2SyncStorage } from '@storage/v2/type';
 import { findSubtitle } from '@utils/helper';
-import { sendMessage } from '@utils/message/index';
-import { SubtitleData } from '@utils/parse';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
-import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
+import {
+  selectSubtitleTrack,
+  SUBTITLE_ROLES,
+  useSubtitleStore,
+} from '@/content/features/subtitle/subtitle-store';
 import { applySubtitleStyles } from '@/content/features/subtitle/subtitle-utils';
 
-const { SUBTITLES } = SETTINGS;
-
-export async function onSubtitleStorageChange(changes: StorageChanges) {
-  for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
-    const change = changes[STORAGE_KEY];
-    if (!change) continue;
-
-    const newConfig = change.newValue || DEFAULT_CONFIG[STORAGE_KEY];
-    useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, newConfig);
-
-    const { currentTime } = useVideoStore.getState();
-    syncSubtitles(currentTime, true);
-  }
-}
+type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay'>;
 
 export async function initializeSubtitleSync() {
-  for (const { STORAGE_KEY } of Object.values(SUBTITLES)) {
-    const data = await getStorage(STORAGE_KEY);
-    useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, data);
+  const storage = createV2SyncStorage(chrome.storage.sync);
+  let isInitialized = false;
+  let pendingSettings: Partial<SubtitleSettings> = {};
+
+  const storageSubscription = storage.subscribe(
+    (changes) => {
+      const changedSettings = getChangedSettings(changes);
+      if (!isInitialized) {
+        pendingSettings = { ...pendingSettings, ...changedSettings };
+        return;
+      }
+
+      applySettings(changedSettings);
+    },
+    () => {
+      useSubtitleStore.getState().clearCaches();
+      syncSubtitles(useVideoStore.getState().currentTime);
+    }
+  );
+
+  try {
+    const [learningProfile, subtitleDisplay] = await Promise.all([
+      storage.get('learningProfile'),
+      storage.get('subtitleDisplay'),
+    ]);
+    useSubtitleStore.getState().setSettings({ learningProfile, subtitleDisplay });
+    applySettings(pendingSettings);
+    isInitialized = true;
+  } catch (error) {
+    storageSubscription.remove();
+    throw error;
   }
-  return setupSubtitleSync();
+
+  const subtitleSubscription = useSubtitleStore.subscribe((state, previousState) => {
+    const { currentTime } = useVideoStore.getState();
+    syncSubtitles(currentTime, state.subtitleDisplay !== previousState.subtitleDisplay);
+  });
+  const videoSubscription = useVideoStore.subscribe(({ currentTime }) => {
+    syncSubtitles(currentTime);
+  });
+
+  syncSubtitles(useVideoStore.getState().currentTime, true);
+
+  return () => {
+    storageSubscription.remove();
+    subtitleSubscription();
+    videoSubscription();
+  };
 }
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
-  const { subtitleSettings, customSubtitleId, subtitleCache } = useSubtitleStore.getState();
-  for (const [key, config] of Object.entries(subtitleSettings)) {
-    const { language, enabled } = config;
-    const data = subtitleCache[customSubtitleId[key] ?? language];
-    const subtitleElement = elementStore.getSubtitleElement(key);
+  const state = useSubtitleStore.getState();
 
-    if (hasStyleChanged) applySubtitleStyles(subtitleElement, config);
+  for (const role of SUBTITLE_ROLES) {
+    const subtitleElement = elementStore.getSubtitleElement(role);
+    const display = state.subtitleDisplay[role];
 
-    if (data && enabled) {
-      setupSubtitle(subtitleElement, data, currentTime);
+    if (hasStyleChanged) applySubtitleStyles(subtitleElement, display);
+
+    if (display.visibility === 'hidden') {
+      subtitleElement.textContent = '';
+      continue;
     }
+
+    const { cues, delay } = selectSubtitleTrack(state, role);
+    const cue = findSubtitle(cues, currentTime - delay);
+    subtitleElement.textContent = cue?.text ?? '';
   }
 }
 
-function setupSubtitleSync() {
-  const { currentTime } = useVideoStore.getState();
-  syncSubtitles(currentTime, true);
+const getChangedSettings = (changes: V2SyncStorageChanges): Partial<SubtitleSettings> => {
+  if (changes.learningProfile && changes.learningProfile.newValue === undefined) {
+    throw new Error('Canonical learning profile was removed');
+  }
+  if (changes.subtitleDisplay && changes.subtitleDisplay.newValue === undefined) {
+    throw new Error('Canonical subtitle display was removed');
+  }
 
-  return useVideoStore.subscribe(({ currentTime }) => {
-    syncSubtitles(currentTime);
-    sendMessage('updateCurrentTime', currentTime);
+  return {
+    ...(changes.learningProfile?.newValue === undefined
+      ? {}
+      : { learningProfile: changes.learningProfile.newValue }),
+    ...(changes.subtitleDisplay?.newValue === undefined
+      ? {}
+      : { subtitleDisplay: changes.subtitleDisplay.newValue }),
+  };
+};
+
+const applySettings = (settings: Partial<SubtitleSettings>) => {
+  if (settings.learningProfile === undefined && settings.subtitleDisplay === undefined) return;
+
+  const state = useSubtitleStore.getState();
+  state.setSettings({
+    learningProfile: settings.learningProfile ?? state.learningProfile,
+    subtitleDisplay: settings.subtitleDisplay ?? state.subtitleDisplay,
   });
-}
-
-function setupSubtitle(subtitleElement: HTMLElement, data: SubtitleData[], currentTime: number) {
-  const subtitle = findSubtitle(data, currentTime);
-
-  if (subtitle) {
-    const startTime = String(subtitle.start);
-    if (subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] !== startTime) {
-      subtitleElement.innerHTML = subtitle.text;
-      subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME] = startTime;
-    }
-  } else {
-    subtitleElement.innerHTML = '';
-    delete subtitleElement.dataset[REVIEW.DATA_ATTRIBUTE.START_TIME];
-  }
-}
+};

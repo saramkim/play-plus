@@ -47,19 +47,34 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
     e.preventDefault();
     try {
       await onUpdateDelay(delay);
-    } catch (error) {
-      console.error('Failed to update registered subtitle delay:', error);
+    } catch {
+      console.error('Failed to update the registered subtitle delay');
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className='flex min-w-0 flex-col gap-2'>
       <div className='grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2'>
-        <StepButton step={-0.1} label={t('decrease_sync')} startStepping={startStepping} stopStepping={stopStepping}>
+        <StepButton
+          step={-0.1}
+          label={t('v2_local_subtitles_decrease_sync')}
+          startStepping={startStepping}
+          stopStepping={stopStepping}
+        >
           <MinusIcon />
         </StepButton>
-        <NumberInput aria-label={t('sync_adjustment')} value={delay} onChange={setDelay} step={0.1} />
-        <StepButton step={0.1} label={t('increase_sync')} startStepping={startStepping} stopStepping={stopStepping}>
+        <NumberInput
+          aria-label={t('v2_local_subtitles_sync_adjustment')}
+          value={delay}
+          onChange={setDelay}
+          step={0.1}
+        />
+        <StepButton
+          step={0.1}
+          label={t('v2_local_subtitles_increase_sync')}
+          startStepping={startStepping}
+          stopStepping={stopStepping}
+        >
           <PlusIcon />
         </StepButton>
       </div>

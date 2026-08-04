@@ -1,43 +1,62 @@
-import { SubtitleId } from '@storage/subtitle';
-import { PAGE_NAME, PageName } from '@utils/constants';
 import { create } from 'zustand';
-import { combine, persist } from 'zustand/middleware';
 
-type PageParams = {
-  [PAGE_NAME.SUBTITLE_SETTING]: never;
-  [PAGE_NAME.VIDEO_SETTING]: never;
-  [PAGE_NAME.REVIEW]: never;
-  [PAGE_NAME.SUBTITLE_ANALYSIS]: { id: SubtitleId };
-  [PAGE_NAME.SUBTITLE_UPLOAD]: never;
-};
+export const PAGE_NAMES = ['learning', 'subtitles', 'library', 'review'] as const;
+
+export type PageName = (typeof PAGE_NAMES)[number];
+
+interface PageState {
+  currentPage: PageName;
+  navigationLockTokens: ReadonlySet<symbol>;
+  navigationLocked: boolean;
+  acquireNavigationLock: () => () => void;
+  setNavigationLocked: (navigationLocked: boolean) => void;
+  setPage: (page: PageName) => void;
+}
 
 export type PageStore = ReturnType<typeof usePageStore.getState>;
 
-export const usePageStore = create(
-  persist(
-    combine(
-      {
-        currentPage: Object.values(PAGE_NAME)[0],
-        navigationLocked: false,
-        params: {} as Partial<PageParams>,
-      },
-      (set, get) => ({
-        setNavigationLocked: (navigationLocked: boolean) => set({ navigationLocked }),
-        setPage: <T extends PageName>(page: T, params?: PageParams[T]) => {
-          if (get().navigationLocked) return;
-          set({ currentPage: page, params: { [page]: params } });
-        },
-        getParams: (page: PageName) => get().params[page],
-      })
-    ),
-    {
-      name: 'page-store',
-      partialize: (state) => ({ currentPage: state.currentPage }),
-      version: 1,
-    }
-  )
-);
+const LEGACY_NAVIGATION_LOCK_TOKEN = Symbol('legacy-navigation-lock');
 
-export const usePageParams = (page: PageName) => {
-  return usePageStore.getState().getParams(page);
+export const usePageStore = create<PageState>((set, get) => ({
+  currentPage: 'learning',
+  navigationLockTokens: new Set(),
+  navigationLocked: false,
+  acquireNavigationLock: () => {
+    const token = Symbol('navigation-lock');
+    set((state) => updateNavigationLock(state.navigationLockTokens, token, true));
+
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      set((state) => updateNavigationLock(state.navigationLockTokens, token, false));
+    };
+  },
+  setNavigationLocked: (navigationLocked) =>
+    set((state) =>
+      updateNavigationLock(
+        state.navigationLockTokens,
+        LEGACY_NAVIGATION_LOCK_TOKEN,
+        navigationLocked
+      )
+    ),
+  setPage: (currentPage) => {
+    if (get().navigationLocked) return;
+    set({ currentPage });
+  },
+}));
+
+const updateNavigationLock = (
+  currentTokens: ReadonlySet<symbol>,
+  token: symbol,
+  locked: boolean
+) => {
+  const navigationLockTokens = new Set(currentTokens);
+  if (locked) navigationLockTokens.add(token);
+  else navigationLockTokens.delete(token);
+
+  return {
+    navigationLockTokens,
+    navigationLocked: navigationLockTokens.size > 0,
+  };
 };

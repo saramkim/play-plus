@@ -2,78 +2,168 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ContentRuntime, ContentRuntimeDependencies } from './content-runtime';
 
+const BOOTSTRAP = {
+  learningSubtitleId: 'subtitle-00000000-0000-4000-8000-000000000001',
+  supportSubtitleId: null,
+};
+
 const createDependencies = () => {
+  const startOrder: string[] = [];
   const cleanupOrder: string[] = [];
   const cleanup = (name: string) => vi.fn(() => cleanupOrder.push(name));
   const dependencies: ContentRuntimeDependencies = {
     clearVideo: cleanup('video-state'),
-    initializeMessageListener: vi.fn(() => cleanup('message')),
-    initializeStorageChange: vi.fn(() => cleanup('storage')),
-    initializeSubtitleSync: vi.fn(async () => cleanup('subtitle')),
+    initializeMessageListener: vi.fn(() => {
+      startOrder.push('message-listener');
+      return cleanup('message-listener');
+    }),
+    initializeSubtitleSelections: vi.fn(async () => {
+      startOrder.push('subtitle-selections');
+    }),
+    initializeSubtitleSync: vi.fn(async () => {
+      startOrder.push('subtitle-settings');
+      return cleanup('subtitle-settings');
+    }),
     removeContainers: cleanup('containers'),
-    reportContentInitialized: vi.fn(async () => {}),
-    renderApp: vi.fn(() => cleanup('app')),
-    setupSystemContainer: vi.fn(),
-    startLoopController: vi.fn(),
-    startPlaybackSpeedController: vi.fn(),
-    startVideoController: vi.fn(async () => {}),
-    stopLoopController: cleanup('loop'),
+    reportContentInitialized: vi.fn(async () => {
+      startOrder.push('content-ready');
+      return BOOTSTRAP;
+    }),
+    renderApp: vi.fn(() => {
+      startOrder.push('render');
+      return cleanup('render');
+    }),
+    setupSystemContainer: vi.fn(() => startOrder.push('system-container')),
+    startPlaybackSpeedController: vi.fn(() => startOrder.push('playback-speed')),
+    startVideoController: vi.fn(async () => {
+      startOrder.push('video-controller');
+    }),
     stopPlaybackSpeedController: cleanup('playback-speed'),
     stopVideoController: cleanup('video-controller'),
   };
-  return { cleanupOrder, dependencies };
+  return { cleanupOrder, dependencies, startOrder };
 };
 
-describe('ContentRuntime', () => {
-  it('starts once for concurrent calls and stops resources in reverse order', async () => {
+describe('canonical content runtime', () => {
+  it('waits for content readiness before listeners, settings, controllers, or rendering', async () => {
+    const { dependencies, startOrder } = createDependencies();
+    const readiness = deferred<typeof BOOTSTRAP>();
+    vi.mocked(dependencies.reportContentInitialized).mockImplementation(async () => {
+      startOrder.push('content-ready');
+      return readiness.promise;
+    });
+    const runtime = new ContentRuntime(dependencies);
+
+    const start = runtime.start();
+    await Promise.resolve();
+
+    expect(startOrder).toEqual(['content-ready']);
+    expect(dependencies.initializeMessageListener).not.toHaveBeenCalled();
+    expect(dependencies.initializeSubtitleSync).not.toHaveBeenCalled();
+    expect(dependencies.startPlaybackSpeedController).not.toHaveBeenCalled();
+    expect(dependencies.startVideoController).not.toHaveBeenCalled();
+    expect(dependencies.renderApp).not.toHaveBeenCalled();
+
+    readiness.resolve(BOOTSTRAP);
+    await start;
+
+    expect(startOrder).toEqual([
+      'content-ready',
+      'subtitle-settings',
+      'subtitle-selections',
+      'message-listener',
+      'playback-speed',
+      'video-controller',
+      'system-container',
+      'render',
+    ]);
+    expect(dependencies.initializeSubtitleSelections).toHaveBeenCalledWith(BOOTSTRAP);
+    runtime.stop();
+  });
+
+  it('starts once and cleans canonical resources in reverse ownership order', async () => {
     const { cleanupOrder, dependencies } = createDependencies();
     const runtime = new ContentRuntime(dependencies);
 
-    const firstStart = runtime.start();
-    const secondStart = runtime.start();
-    expect(secondStart).toBe(firstStart);
-    await firstStart;
-
-    expect(dependencies.startLoopController).toHaveBeenCalledOnce();
-    expect(dependencies.startPlaybackSpeedController).toHaveBeenCalledOnce();
-    expect(dependencies.startVideoController).toHaveBeenCalledOnce();
-    expect(dependencies.initializeMessageListener).toHaveBeenCalledOnce();
-    expect(dependencies.initializeStorageChange).toHaveBeenCalledOnce();
-    expect(dependencies.reportContentInitialized).toHaveBeenCalledOnce();
-    expect(dependencies.initializeSubtitleSync).toHaveBeenCalledOnce();
-    expect(dependencies.renderApp).toHaveBeenCalledOnce();
+    const first = runtime.start();
+    expect(runtime.start()).toBe(first);
+    await first;
 
     runtime.stop();
     runtime.stop();
 
     expect(cleanupOrder).toEqual([
-      'app',
-      'subtitle',
+      'render',
       'video-controller',
       'playback-speed',
-      'loop',
-      'storage',
-      'message',
+      'message-listener',
+      'subtitle-settings',
       'video-state',
       'containers',
     ]);
 
     await runtime.start();
-    expect(dependencies.startLoopController).toHaveBeenCalledTimes(2);
+    expect(dependencies.reportContentInitialized).toHaveBeenCalledTimes(2);
     expect(dependencies.renderApp).toHaveBeenCalledTimes(2);
     runtime.stop();
   });
 
-  it('rolls back a partial start and can start again', async () => {
+  it('cancels during readiness without starting normal content work', async () => {
+    const { cleanupOrder, dependencies } = createDependencies();
+    const readiness = deferred<typeof BOOTSTRAP>();
+    vi.mocked(dependencies.reportContentInitialized).mockReturnValue(readiness.promise);
+    const runtime = new ContentRuntime(dependencies);
+
+    const start = runtime.start();
+    await Promise.resolve();
+    runtime.stop();
+    readiness.resolve(BOOTSTRAP);
+    await start;
+
+    expect(cleanupOrder).toEqual(['video-state', 'containers']);
+    expect(dependencies.initializeSubtitleSync).not.toHaveBeenCalled();
+    expect(dependencies.initializeMessageListener).not.toHaveBeenCalled();
+    expect(dependencies.renderApp).not.toHaveBeenCalled();
+  });
+
+  it('disposes a late settings subscription and does not initialize selections after cancellation', async () => {
     const { dependencies } = createDependencies();
-    let finishFirstSubtitle: ((disposer: () => void) => void) | undefined;
-    const firstSubtitle = new Promise<() => void>((resolve) => {
-      finishFirstSubtitle = resolve;
-    });
-    const subtitleCleanup = vi.fn();
-    vi.mocked(dependencies.initializeSubtitleSync)
-      .mockReturnValueOnce(firstSubtitle)
-      .mockResolvedValueOnce(subtitleCleanup);
+    const subtitleSettings = deferred<() => void>();
+    vi.mocked(dependencies.initializeSubtitleSync).mockReturnValue(subtitleSettings.promise);
+    const runtime = new ContentRuntime(dependencies);
+
+    const start = runtime.start();
+    await vi.waitFor(() => expect(dependencies.initializeSubtitleSync).toHaveBeenCalledOnce());
+    runtime.stop();
+    const lateCleanup = vi.fn();
+    subtitleSettings.resolve(lateCleanup);
+    await start;
+
+    expect(lateCleanup).toHaveBeenCalledOnce();
+    expect(dependencies.initializeSubtitleSelections).not.toHaveBeenCalled();
+    expect(dependencies.initializeMessageListener).not.toHaveBeenCalled();
+    expect(dependencies.renderApp).not.toHaveBeenCalled();
+  });
+
+  it('stops a partially starting video controller when startup is cancelled', async () => {
+    const { dependencies } = createDependencies();
+    const videoStart = deferred<void>();
+    vi.mocked(dependencies.startVideoController).mockReturnValue(videoStart.promise);
+    const runtime = new ContentRuntime(dependencies);
+
+    const start = runtime.start();
+    await vi.waitFor(() => expect(dependencies.startVideoController).toHaveBeenCalledOnce());
+    runtime.stop();
+
+    expect(dependencies.stopVideoController).toHaveBeenCalledOnce();
+    expect(dependencies.stopPlaybackSpeedController).toHaveBeenCalledOnce();
+    videoStart.resolve();
+    await start;
+    expect(dependencies.renderApp).not.toHaveBeenCalled();
+  });
+
+  it('rolls back a failed partial start and can start again', async () => {
+    const { dependencies } = createDependencies();
     vi.mocked(dependencies.startVideoController)
       .mockRejectedValueOnce(new Error('video setup failed'))
       .mockResolvedValueOnce();
@@ -82,63 +172,22 @@ describe('ContentRuntime', () => {
     await expect(runtime.start()).rejects.toThrow('video setup failed');
     expect(dependencies.stopVideoController).toHaveBeenCalledOnce();
     expect(dependencies.stopPlaybackSpeedController).toHaveBeenCalledOnce();
-    expect(dependencies.stopLoopController).toHaveBeenCalledOnce();
+    expect(dependencies.initializeMessageListener).toHaveBeenCalledOnce();
     expect(dependencies.removeContainers).toHaveBeenCalledOnce();
     expect(dependencies.renderApp).not.toHaveBeenCalled();
 
-    const lateCleanup = vi.fn();
-    finishFirstSubtitle?.(lateCleanup);
-    await vi.waitFor(() => expect(lateCleanup).toHaveBeenCalledOnce());
-
     await runtime.start();
-    expect(dependencies.startLoopController).toHaveBeenCalledTimes(2);
     expect(dependencies.renderApp).toHaveBeenCalledOnce();
-    runtime.stop();
-    expect(subtitleCleanup).toHaveBeenCalledOnce();
-  });
-
-  it('disposes a late subtitle subscription after stop during startup', async () => {
-    const { dependencies } = createDependencies();
-    let finishSubtitle: ((disposer: () => void) => void) | undefined;
-    vi.mocked(dependencies.initializeSubtitleSync).mockReturnValue(
-      new Promise((resolve) => {
-        finishSubtitle = resolve;
-      })
-    );
-    const runtime = new ContentRuntime(dependencies);
-    const start = runtime.start();
-    await Promise.resolve();
-
-    runtime.stop();
-    const lateCleanup = vi.fn();
-    finishSubtitle?.(lateCleanup);
-    await start;
-
-    expect(lateCleanup).toHaveBeenCalledOnce();
-    expect(dependencies.renderApp).not.toHaveBeenCalled();
-  });
-
-  it('does not start video or subtitle work before session roles are reset', async () => {
-    const { dependencies } = createDependencies();
-    let finishInitialization: (() => void) | undefined;
-    vi.mocked(dependencies.reportContentInitialized).mockReturnValue(
-      new Promise((resolve) => {
-        finishInitialization = resolve;
-      })
-    );
-    const runtime = new ContentRuntime(dependencies);
-
-    const start = runtime.start();
-    await Promise.resolve();
-
-    expect(dependencies.startVideoController).not.toHaveBeenCalled();
-    expect(dependencies.initializeSubtitleSync).not.toHaveBeenCalled();
-
-    finishInitialization?.();
-    await start;
-
-    expect(dependencies.startVideoController).toHaveBeenCalledOnce();
-    expect(dependencies.initializeSubtitleSync).toHaveBeenCalledOnce();
     runtime.stop();
   });
 });
+
+const deferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+};

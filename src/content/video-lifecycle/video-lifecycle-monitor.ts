@@ -111,8 +111,8 @@ export class VideoLifecycleMonitor {
     else this.ensureDelayedTimer();
     try {
       this.callback?.(event);
-    } catch (error) {
-      console.error('Video lifecycle callback failed:', error);
+    } catch {
+      console.error('Video lifecycle callback failed');
     }
   }
 

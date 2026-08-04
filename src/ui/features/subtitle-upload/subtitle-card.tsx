@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 
 import { SubtitleId } from '@storage/subtitle';
 import { TabInfo } from '@storage/tab';
-import { SubtitleMetadata } from '@storage/type';
+import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { Language, LANGUAGES } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { BookOpenTextIcon, CaptionsIcon, PencilIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
+import { CaptionsIcon, PencilIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import {
@@ -17,16 +17,16 @@ import { SubtitleDelayForm } from '@/ui/features/subtitle-upload/subtitle-delay-
 import { SubtitleEditForm } from '@/ui/features/subtitle-upload/subtitle-edit-form';
 
 interface SubtitleCardProps {
-  data: SubtitleMetadata;
+  data: V2RegisteredSubtitleMetadata;
   itemRef: (node: HTMLLIElement | null) => void;
   tabInfo: TabInfo | null;
   isAvailable: boolean;
+  isRoleAvailable: (role: SubtitleRole, language: Language) => boolean;
   pendingRoles: PendingSubtitleRoles;
   onDelete: (id: SubtitleId) => void;
   onEdit: (id: SubtitleId, title: string, language: Language) => Promise<void>;
   onUpdateDelay: (id: SubtitleId, delay: number) => Promise<void>;
-  onAnalyze: (id: SubtitleId) => void;
-  onRoleChange: (role: SubtitleRole, subtitleId: SubtitleId | null, delay: number) => void;
+  onRoleChange: (role: SubtitleRole, subtitleId: SubtitleId | null) => void;
 }
 
 export function SubtitleCard({
@@ -34,11 +34,11 @@ export function SubtitleCard({
   itemRef,
   tabInfo,
   isAvailable,
+  isRoleAvailable,
   pendingRoles,
   onDelete,
   onEdit,
   onUpdateDelay,
-  onAnalyze,
   onRoleChange,
 }: SubtitleCardProps) {
   const [mode, setMode] = useState<SubtitleCardMode>('default');
@@ -46,9 +46,9 @@ export function SubtitleCard({
   const modeHeadingRef = useRef<HTMLHeadingElement>(null);
   const restoreFocusRef = useRef<Exclude<SubtitleCardMode, 'default'> | null>(null);
   const syncButtonRef = useRef<HTMLButtonElement>(null);
-  const isPrimary = tabInfo?.primarySubtitle === data.id;
-  const isSecondary = tabInfo?.secondarySubtitle === data.id;
-  const isCardPending = pendingRoles.primary || pendingRoles.secondary;
+  const isLearning = tabInfo?.learningSubtitleId === data.id;
+  const isSupport = tabInfo?.supportSubtitleId === data.id;
+  const isCardPending = pendingRoles.learning || pendingRoles.support;
   const titleId = `subtitle-title-${data.id}`;
   const syncHeadingId = `subtitle-sync-heading-${data.id}`;
 
@@ -65,7 +65,7 @@ export function SubtitleCard({
   }, [mode]);
 
   const changeRole = (role: SubtitleRole, selected: boolean) => {
-    onRoleChange(role, selected ? null : data.id, selected ? 0 : data.delay ?? 0);
+    onRoleChange(role, selected ? null : data.id);
   };
 
   const openMode = (nextMode: Exclude<SubtitleCardMode, 'default'>) => {
@@ -81,7 +81,7 @@ export function SubtitleCard({
       aria-busy={isCardPending || undefined}
       className={cn(
         'min-w-0 shrink-0 rounded-xl border bg-background shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50',
-        (isPrimary || isSecondary) && 'border-primary/40 bg-primary/5'
+        (isLearning || isSupport) && 'border-primary/40 bg-primary/5'
       )}
     >
       <div className='flex min-w-0 flex-col gap-2.5 p-3'>
@@ -90,7 +90,7 @@ export function SubtitleCard({
             <div className='flex items-center gap-2'>
               <PencilIcon className='size-4 shrink-0' />
               <h3 ref={modeHeadingRef} id={titleId} tabIndex={-1} className='text-[14px] font-semibold outline-none'>
-                {t('edit_subtitle_details')}
+                {t('v2_local_subtitles_edit_details')}
               </h3>
             </div>
             <SubtitleEditForm
@@ -108,8 +108,8 @@ export function SubtitleCard({
             <SubtitleIdentityHeader
               data={data}
               titleId={titleId}
-              isPrimary={isPrimary}
-              isSecondary={isSecondary}
+              isLearning={isLearning}
+              isSupport={isSupport}
               showRoleBadges={false}
               showAddedDate={false}
             />
@@ -122,7 +122,7 @@ export function SubtitleCard({
                   tabIndex={-1}
                   className='text-[14px] font-semibold outline-none'
                 >
-                  {t('sync_adjustment')}
+                  {t('v2_local_subtitles_sync_adjustment')}
                 </h3>
               </div>
               <SubtitleDelayForm
@@ -142,35 +142,35 @@ export function SubtitleCard({
             <SubtitleIdentityHeader
               data={data}
               titleId={titleId}
-              isPrimary={isPrimary}
-              isSecondary={isSecondary}
+              isLearning={isLearning}
+              isSupport={isSupport}
               showRoleBadges
               showAddedDate
             />
 
-            <fieldset className='min-w-0' disabled={!isAvailable}>
-              <legend className='mb-1.5 text-[12px] font-medium text-gray-600'>{t('current_tab_use')}</legend>
+            <fieldset className='min-w-0'>
+              <legend className='mb-1.5 text-[12px] font-medium text-gray-600'>
+                {t('v2_local_subtitles_current_tab_use')}
+              </legend>
               <div className='grid gap-2 min-[360px]:grid-cols-2'>
                 <RoleButton
-                  role='primary'
-                  selected={isPrimary}
-                  pending={pendingRoles.primary}
-                  onClick={() => changeRole('primary', isPrimary)}
+                  role='learning'
+                  selected={isLearning}
+                  available={isLearning ? isAvailable : isRoleAvailable('learning', data.language)}
+                  pending={pendingRoles.learning}
+                  onClick={() => changeRole('learning', isLearning)}
                 />
                 <RoleButton
-                  role='secondary'
-                  selected={isSecondary}
-                  pending={pendingRoles.secondary}
-                  onClick={() => changeRole('secondary', isSecondary)}
+                  role='support'
+                  selected={isSupport}
+                  available={isSupport ? isAvailable : isRoleAvailable('support', data.language)}
+                  pending={pendingRoles.support}
+                  onClick={() => changeRole('support', isSupport)}
                 />
               </div>
             </fieldset>
 
             <div className='grid grid-cols-2 gap-2'>
-              <Button variant='outline' size='sm' className='min-h-9' onClick={() => onAnalyze(data.id)}>
-                <BookOpenTextIcon />
-                {t('analyze')}
-              </Button>
               <Button
                 ref={syncButtonRef}
                 variant='outline'
@@ -180,32 +180,30 @@ export function SubtitleCard({
                 onClick={() => openMode('sync')}
               >
                 <Settings2Icon />
-                {t('sync')}
+                {t('v2_local_subtitles_sync')}
               </Button>
               <Button
                 ref={editButtonRef}
                 variant='outline'
                 size='sm'
-                aria-label={t('edit_subtitle_details')}
-                className={cn('min-h-9', (isPrimary || isSecondary) && 'col-span-2')}
+                aria-label={t('v2_local_subtitles_edit_details')}
+                className='min-h-9'
                 disabled={isCardPending}
                 onClick={() => openMode('edit')}
               >
                 <PencilIcon />
-                {t('edit_short')}
+                {t('v2_local_subtitles_edit')}
               </Button>
-              {!isPrimary && !isSecondary && (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='min-h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
-                  disabled={isCardPending}
-                  onClick={() => onDelete(data.id)}
-                >
-                  <Trash2Icon />
-                  {t('delete')}
-                </Button>
-              )}
+              <Button
+                variant='outline'
+                size='sm'
+                className='col-span-2 min-h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                disabled={isCardPending}
+                onClick={() => onDelete(data.id)}
+              >
+                <Trash2Icon />
+                {t('delete')}
+              </Button>
             </div>
           </>
         )}
@@ -217,10 +215,10 @@ export function SubtitleCard({
 type SubtitleCardMode = 'default' | 'edit' | 'sync';
 
 interface SubtitleIdentityHeaderProps {
-  data: SubtitleMetadata;
+  data: V2RegisteredSubtitleMetadata;
   titleId: string;
-  isPrimary: boolean;
-  isSecondary: boolean;
+  isLearning: boolean;
+  isSupport: boolean;
   showRoleBadges: boolean;
   showAddedDate: boolean;
 }
@@ -228,8 +226,8 @@ interface SubtitleIdentityHeaderProps {
 function SubtitleIdentityHeader({
   data,
   titleId,
-  isPrimary,
-  isSecondary,
+  isLearning,
+  isSupport,
   showRoleBadges,
   showAddedDate,
 }: SubtitleIdentityHeaderProps) {
@@ -239,8 +237,8 @@ function SubtitleIdentityHeader({
         <span className='rounded-full bg-gray-100 px-2 py-0.5 text-[12px] text-gray-600'>
           {t(LANGUAGES[data.language])}
         </span>
-        {showRoleBadges && isPrimary && <RoleBadge>{t('primary_subtitle')}</RoleBadge>}
-        {showRoleBadges && isSecondary && <RoleBadge>{t('secondary_subtitle')}</RoleBadge>}
+        {showRoleBadges && isLearning && <RoleBadge>{t('learning_subtitle')}</RoleBadge>}
+        {showRoleBadges && isSupport && <RoleBadge>{t('support_subtitle')}</RoleBadge>}
       </div>
       <h3
         id={titleId}
@@ -249,8 +247,8 @@ function SubtitleIdentityHeader({
         {data.title}
       </h3>
       <p className='mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-500'>
-        <span>{t('sync_value', formatDelay(data.delay))}</span>
-        {showAddedDate && <span>{t('added_date', formatSavedAt(data.savedAt))}</span>}
+        <span>{t('v2_local_subtitles_sync_value', formatDelay(data.delay))}</span>
+        {showAddedDate && <span>{t('v2_local_subtitles_added_date', formatSavedAt(data.savedAt))}</span>}
       </p>
     </header>
   );
@@ -263,14 +261,13 @@ function RoleBadge({ children }: { children: React.ReactNode }) {
 interface RoleButtonProps {
   role: SubtitleRole;
   selected: boolean;
+  available: boolean;
   pending: boolean;
   onClick: () => void;
 }
 
-function RoleButton({ role, selected, pending, onClick }: RoleButtonProps) {
-  const selectedText = role === 'primary' ? t('primary_selected') : t('secondary_selected');
-  const defaultText = role === 'primary' ? t('use_as_primary') : t('use_as_secondary');
-  const activeLabel = role === 'primary' ? t('return_primary_to_default') : t('return_secondary_to_default');
+function RoleButton({ role, selected, available, pending, onClick }: RoleButtonProps) {
+  const roleTitle = t(role === 'learning' ? 'learning_subtitle' : 'support_subtitle');
 
   return (
     <Button
@@ -278,14 +275,18 @@ function RoleButton({ role, selected, pending, onClick }: RoleButtonProps) {
       variant={selected ? 'secondary' : 'outline'}
       className='min-h-11 h-auto min-w-0 whitespace-normal px-2 py-2 text-left'
       aria-pressed={selected}
-      aria-label={selected ? activeLabel : defaultText}
-      disabled={pending}
+      aria-label={selected ? `${roleTitle}: ${t('v2_local_subtitles_default_short')}` : roleTitle}
+      disabled={pending || !available}
       onClick={onClick}
     >
       <CaptionsIcon className='size-5' />
       <span className='min-w-0 leading-4'>
-        <span className='block'>{pending ? t('applying') : selected ? selectedText : defaultText}</span>
-        {selected && !pending && <span className='block text-[10px] font-normal text-gray-600'>{t('press_to_use_default')}</span>}
+        <span className='block'>{pending ? t('v2_local_subtitles_applying') : roleTitle}</span>
+        {selected && !pending && (
+          <span className='block text-[10px] font-normal text-gray-600'>
+            {t('v2_local_subtitles_default_short')}
+          </span>
+        )}
       </span>
     </Button>
   );

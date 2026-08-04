@@ -9,11 +9,11 @@ beforeEach(() => {
 
 describe('message transport', () => {
   it('preserves falsy runtime and tab message payloads', async () => {
-    await sendMessage('updateCurrentTime', 0);
-    await sendMessageToTab(7, 'updateCurrentTime', 0);
+    await sendMessage('playVideo', { startTime: 0 });
+    await sendMessageToTab(7, 'playVideo', { startTime: 0 });
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ message: 'updateCurrentTime', params: 0 });
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'updateCurrentTime', params: 0 });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ message: 'playVideo', params: { startTime: 0 } });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'playVideo', params: { startTime: 0 } });
   });
 
   it('omits params for messages without payloads', async () => {
@@ -22,20 +22,6 @@ describe('message transport', () => {
 
     expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ message: 'resetElement' });
     expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'resetElement' });
-  });
-
-  it('sends typed OpenSubtitles runtime messages', async () => {
-    await sendMessage('searchOpenSubtitles', { query: 'Example', language: 'en' });
-    await sendMessage('downloadOpenSubtitle', { fileId: 11, language: 'en' });
-
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      message: 'searchOpenSubtitles',
-      params: { query: 'Example', language: 'en' },
-    });
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      message: 'downloadOpenSubtitle',
-      params: { fileId: 11, language: 'en' },
-    });
   });
 
   it('forwards the keepalive return and removes the registered listener', () => {

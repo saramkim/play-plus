@@ -1,46 +1,34 @@
-import { SETTINGS, SubtitleSettingStorageKey } from '@utils/constants';
-
 import { createElement } from '@/content/core/utils/dom';
 import { coupangStrategy } from '@/content/coupang-play';
-import { useLoopStore } from '@/content/features/loop/loop-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
-import { setupSubtitleSaveHandler } from '@/content/features/subtitle/save-subtitle';
-import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
-import { applySubtitleStyles, createSubtitleElement } from '@/content/features/subtitle/subtitle-utils';
+import { SUBTITLE_ROLES, SubtitleRole } from '@/content/features/subtitle/subtitle-store';
+import { createSubtitleElement } from '@/content/features/subtitle/subtitle-utils';
 
 const SUBTITLE_CONTAINER_ID = 'pp-subtitle-container';
 const VIDEO_ROOT_ID = 'pp-video-root';
 const SYSTEM_ROOT_ID = 'pp-system-root';
-const LOOP_MARKER_CONTAINER_ID = 'pp-loop-marker-container';
 
 class ElementStore {
   private subtitleContainer = createElement(SUBTITLE_CONTAINER_ID);
   private videoRoot = createElement(VIDEO_ROOT_ID);
   private systemRoot = createElement(SYSTEM_ROOT_ID);
-  private loopMarkerContainer = createElement(LOOP_MARKER_CONTAINER_ID);
-  private subtitleElementMap = {
-    [SETTINGS.SUBTITLES.PRIMARY.STORAGE_KEY]: createSubtitleElement(),
-    [SETTINGS.SUBTITLES.SECONDARY.STORAGE_KEY]: createSubtitleElement(),
+  private subtitleElementMap: Record<SubtitleRole, HTMLParagraphElement> = {
+    learning: createSubtitleElement('learning'),
+    support: createSubtitleElement('support'),
   };
 
   constructor() {
-    this.setupSubtitleElement();
+    this.setupSubtitleElements();
   }
 
   setupContainer() {
     const videoPlayer = coupangStrategy.getVideoPlayer();
-    if (videoPlayer) {
+    if (videoPlayer && this.videoRoot.parentElement !== videoPlayer) {
       videoPlayer.appendChild(this.videoRoot);
-    } 
-
-    const progressBarContainer = coupangStrategy.getProgressBarContainer();
-    if (progressBarContainer) {
-      progressBarContainer.appendChild(this.loopMarkerContainer);
     }
   }
 
   reset() {
-    this.resetLoopStatus();
     usePlaybackSpeedStore.getState().resetSpeed();
 
     for (const subtitleElement of Object.values(this.subtitleElementMap)) {
@@ -55,9 +43,9 @@ class ElementStore {
   }
 
   removeContainers() {
+    this.subtitleContainer.remove();
     this.systemRoot.remove();
     this.videoRoot.remove();
-    this.loopMarkerContainer.remove();
   }
 
   getVideoRoot() {
@@ -68,34 +56,19 @@ class ElementStore {
     return this.systemRoot;
   }
 
-  getSubtitleElement(key: SubtitleSettingStorageKey) {
-    return this.subtitleElementMap[key];
-  }
-
-  getLoopMarkerContainer() {
-    return this.loopMarkerContainer;
+  getSubtitleElement(role: SubtitleRole) {
+    return this.subtitleElementMap[role];
   }
 
   getSubtitleContainer() {
     return this.subtitleContainer;
   }
 
-  resetLoopStatus() {
-    this.loopMarkerContainer.classList.remove('show');
-    useLoopStore.getState().reset();
-  }
-
-  private setupSubtitleElement() {
+  private setupSubtitleElements() {
     const fragment = document.createDocumentFragment();
 
-    const { subtitleSettings } = useSubtitleStore.getState();
-    for (const [key, config] of Object.entries(subtitleSettings)) {
-      const subtitleElement = this.subtitleElementMap[key];
-      applySubtitleStyles(subtitleElement, config);
-      setupSubtitleSaveHandler(key as SubtitleSettingStorageKey, subtitleElement, (role) =>
-        this.getSubtitleElement(role)
-      );
-      fragment.appendChild(subtitleElement);
+    for (const role of SUBTITLE_ROLES) {
+      fragment.appendChild(this.subtitleElementMap[role]);
     }
 
     this.subtitleContainer.replaceChildren(fragment);

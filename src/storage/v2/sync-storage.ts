@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { DEFAULT_V2_SYNC_STORAGE } from './default';
 import {
   learningControlsSchema,
   learningProfileSchema,
   subtitleDisplaySchema,
   v2PlaybackSpeedSchema,
   v2ShortcutsSchema,
+  v2SyncStorageSchema,
 } from './schema';
 import { V2SyncStorage } from './type';
 
@@ -41,7 +41,11 @@ export interface V2SyncStorageApi {
   get: <K extends V2SyncStorageKey>(key: K) => Promise<V2SyncStorage[K]>;
   getAll: () => Promise<V2SyncStorage>;
   set: <K extends V2SyncStorageKey>(key: K, value: V2SyncStorage[K]) => Promise<void>;
-  subscribe: (callback: (changes: V2SyncStorageChanges) => void) => { remove: () => void };
+  setMany: (values: Partial<V2SyncStorage>) => Promise<void>;
+  subscribe: (
+    callback: (changes: V2SyncStorageChanges) => void,
+    onError?: () => void
+  ) => { remove: () => void };
 }
 
 const V2_SYNC_STORAGE_KEYS = [
@@ -67,30 +71,46 @@ export const createV2SyncStorage = (storage: V2SyncStorageArea): V2SyncStorageAp
   },
   getAll: async () => {
     const values = await storage.get([...V2_SYNC_STORAGE_KEYS]);
-    return Object.fromEntries(
-      V2_SYNC_STORAGE_KEYS.map((key) => [key, parseStoredValue(key, values[key])])
-    ) as V2SyncStorage;
+    return structuredClone(
+      v2SyncStorageSchema.parse(
+        Object.fromEntries(V2_SYNC_STORAGE_KEYS.map((key) => [key, values[key]]))
+      )
+    );
   },
   set: async (key, value) => {
     const parsed = V2_SYNC_STORAGE_SCHEMAS[key].parse(value) as V2SyncStorage[typeof key];
     await storage.set({ [key]: parsed });
   },
-  subscribe: (callback) => {
+  setMany: async (values) => {
+    const parsed = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        V2_SYNC_STORAGE_SCHEMAS[key as V2SyncStorageKey].parse(value),
+      ])
+    );
+    await storage.set(parsed);
+  },
+  subscribe: (callback, onError) => {
     const listener = (rawChanges: Record<string, RawStorageChange>) => {
-      const changes: V2SyncStorageChanges = {};
+      try {
+        const changes: V2SyncStorageChanges = {};
 
-      for (const key of V2_SYNC_STORAGE_KEYS) {
-        const rawChange = rawChanges[key];
-        if (!rawChange) continue;
+        for (const key of V2_SYNC_STORAGE_KEYS) {
+          const rawChange = rawChanges[key];
+          if (!rawChange) continue;
 
-        const change = {
-          ...(rawChange.oldValue === undefined ? {} : { oldValue: parseValue(key, rawChange.oldValue) }),
-          ...(rawChange.newValue === undefined ? {} : { newValue: parseValue(key, rawChange.newValue) }),
-        };
-        Object.assign(changes, { [key]: change });
+          const change = {
+            ...(rawChange.oldValue === undefined ? {} : { oldValue: parseValue(key, rawChange.oldValue) }),
+            ...(rawChange.newValue === undefined ? {} : { newValue: parseValue(key, rawChange.newValue) }),
+          };
+          Object.assign(changes, { [key]: change });
+        }
+
+        if (Object.keys(changes).length > 0) callback(changes);
+      } catch (error) {
+        if (!onError) throw error;
+        onError();
       }
-
-      if (Object.keys(changes).length > 0) callback(changes);
     };
 
     storage.onChanged.addListener(listener);
@@ -99,10 +119,9 @@ export const createV2SyncStorage = (storage: V2SyncStorageArea): V2SyncStorageAp
 });
 
 const parseStoredValue = <K extends V2SyncStorageKey>(key: K, value: unknown): V2SyncStorage[K] => {
-  if (value === undefined) return structuredClone(DEFAULT_V2_SYNC_STORAGE[key]);
   return parseValue(key, value);
 };
 
 const parseValue = <K extends V2SyncStorageKey>(key: K, value: unknown): V2SyncStorage[K] => {
-  return V2_SYNC_STORAGE_SCHEMAS[key].parse(value) as V2SyncStorage[K];
+  return structuredClone(V2_SYNC_STORAGE_SCHEMAS[key].parse(value)) as V2SyncStorage[K];
 };

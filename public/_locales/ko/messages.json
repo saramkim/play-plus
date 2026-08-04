@@ -1,494 +1,715 @@
 {
-  "app_name": { "message": "Play Plus" },
-  "extension_name": { "message": "Play Plus - 쿠팡플레이 기능 확장" },
-  "extension_description": {
-    "message": "이중 자막, 파일·온라인 자막 추가, 반복 재생 등 언어 학습을 위한 기능을 쿠팡플레이에서 사용할 수 있게 해줍니다."
-  },
-  "action_default_title": { "message": "Play Plus 열기" },
-
-  "onboarding_title": { "message": "Play Plus에 오신 것을 환영합니다!" },
-  "onboarding_description_1": {
-    "message": "Play Plus는 쿠팡플레이 자막과 영상 설정을 세부적으로 조정할 수 있는 기능을 제공합니다."
-  },
-  "onboarding_description_2": {
-    "message": "학습에 최적화된 설정을 적용하거나, 처음부터 직접 원하는 대로 설정할 수 있습니다."
-  },
-  "onboarding_description_3": { "message": "어떤 방법을 선택하시겠습니까?" },
-  "onboarding_description_4": {
-    "message": "학습 최적화 설정은 하단 더보기 메뉴에서 언제든 다시 적용할 수 있습니다."
-  },
-
-  "review_empty_title": { "message": "아직 저장한 문장이 없어요" },
-  "review_description": {
-    "message": "영상 자막을 클릭하거나 단축키를 사용해 복습할 문장을 저장해보세요."
-  },
-  "review_loading": { "message": "저장한 문장을 불러오는 중..." },
-  "subtitle_analysis_description": {
-    "message": "시청중인 영상의 자막이나,\n추가한 자막을 선택해 자막을 분석해보세요!"
-  },
-  "subtitle_registration_description": {
-    "message": "파일에서 추가하거나 온라인에서 찾아 쿠팡플레이에서 사용할 자막을 추가해보세요!"
-  },
-
-  "subtitle_count": { "message": "$1개의 자막", "placeholders": { "count": { "content": "$1" } } },
-
-  "subtitle_setting": { "message": "자막 설정" },
-  "learning_languages": { "message": "학습 언어 설정" },
-  "learning_language": { "message": "학습 언어" },
-  "support_language": { "message": "도움 언어(선택)" },
-  "no_support_language": { "message": "도움 문장 사용 안 함" },
-  "learning_profile_confirmation_title": { "message": "학습 언어를 확인해 주세요" },
-  "learning_profile_confirmation_description": {
-    "message": "학습할 언어와 필요할 때 참고할 도움 언어를 선택하세요."
-  },
-  "confirm_languages": { "message": "언어 확인" },
-  "subtitle_display": { "message": "자막 표시" },
-  "learning_subtitle": { "message": "학습 자막" },
-  "support_subtitle": { "message": "도움 자막" },
-  "show_learning_subtitle": { "message": "학습 자막 표시" },
-  "show_support_subtitle": { "message": "도움 자막 표시" },
-  "video_setting": { "message": "영상 설정" },
-  "review": { "message": "복습" },
-  "review_mode": { "message": "복습 보기 선택" },
-  "review_mode_session": { "message": "복습하기" },
-  "review_mode_library": { "message": "저장 목록" },
-  "review_progress": {
-    "message": "$1 / $2번째 문장",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "review_show_second_subtitle": { "message": "두 번째 자막 보기" },
-  "review_hide_second_subtitle": { "message": "두 번째 자막 숨기기" },
-  "review_judgment_prompt": { "message": "이 문장은 어땠나요?" },
-  "review_queue_summary": {
-    "message": "학습 중 $1 · 새 항목 $2",
-    "placeholders": {
-      "learning": { "content": "$1" },
-      "new": { "content": "$2" }
-    }
-  },
-  "review_status_new_description": { "message": "아직 학습 상태를 선택하지 않았어요." },
-  "review_status_learning_description": { "message": "다시 볼 문장으로 표시했어요." },
-  "review_status_mastered_description": { "message": "기억한 문장으로 표시했어요." },
-  "review_start_learning": { "message": "학습 시작" },
-  "review_already_know": { "message": "이미 알고 있어요" },
-  "review_keep_learning": { "message": "계속 학습" },
-  "review_remember": { "message": "기억했어요" },
-  "review_learn_again": { "message": "다시 학습" },
-  "review_still_remember": { "message": "아직 기억해요" },
-  "review_skip": { "message": "건너뛰기" },
-  "review_complete_title": { "message": "복습이 끝났어요" },
-  "review_complete_description": { "message": "이번 복습 목록을 모두 확인했습니다." },
-  "review_queue_empty_title": { "message": "복습할 문장이 없어요" },
-  "review_queue_empty_description": { "message": "새 항목이나 학습 중인 문장이 없습니다." },
-  "review_go_to_library": { "message": "저장 목록 보기" },
-  "review_completed_session": { "message": "완료 문장 복습" },
-  "review_review_completed": { "message": "완료 문장 복습하기" },
-  "review_status_update_failed": { "message": "복습 상태를 저장하지 못했습니다." },
-  "review_status_filter": { "message": "복습 상태 필터" },
-  "review_status_all": { "message": "전체" },
-  "review_status_new": { "message": "새 항목" },
-  "review_status_learning": { "message": "학습 중" },
-  "review_status_mastered": { "message": "완료" },
-  "review_status_change": {
-    "message": "복습 상태 변경: $1",
-    "placeholders": { "status": { "content": "$1" } }
-  },
-  "review_status_empty": { "message": "현재 검색 및 상태 조건에 맞는 저장 자막이 없습니다." },
-  "v2_library_title": { "message": "학습 문장 저장 목록" },
-  "v2_library_loading": { "message": "학습 카드를 불러오는 중..." },
-  "v2_library_load_error": { "message": "학습 카드를 불러오지 못했습니다. 저장된 데이터는 변경하지 않았습니다." },
-  "v2_library_retry": { "message": "다시 시도" },
-  "v2_library_empty_title": { "message": "아직 저장한 학습 카드가 없어요" },
-  "v2_library_empty_description": { "message": "영상을 보며 저장한 문장이 여기에 표시됩니다." },
-  "v2_library_filtered_empty": { "message": "현재 검색과 필터에 맞는 카드가 없습니다." },
-  "v2_library_search_label": { "message": "학습 카드 검색" },
-  "v2_library_sort_label": { "message": "학습 카드 정렬" },
-  "v2_library_state_filter": { "message": "학습 상태 필터" },
-  "v2_library_role_filter": { "message": "문장 역할 필터" },
-  "v2_library_all": { "message": "전체" },
-  "v2_library_active": { "message": "학습 중" },
-  "v2_library_completed": { "message": "완료" },
-  "v2_library_learning": { "message": "학습 문장" },
-  "v2_library_support": { "message": "도움 문장" },
-  "v2_library_unassigned": { "message": "언어와 역할 지정 필요" },
-  "v2_library_language_unassigned": { "message": "언어 미지정" },
-  "v2_library_contains_support": { "message": "도움 문장 포함" },
-  "v2_library_state_change": { "message": "학습 상태 변경" },
-  "v2_library_save_pending": { "message": "변경 사항을 저장하는 중..." },
-  "v2_library_update_error": { "message": "카드를 저장하지 못했습니다. 작성 중인 내용과 저장된 카드는 그대로 유지됩니다." },
-  "v2_library_delete_error": { "message": "카드를 삭제하지 못했습니다." },
-  "v2_library_deleted": { "message": "학습 카드를 삭제했습니다." },
-  "v2_library_restore": { "message": "카드 삭제 취소" },
-  "v2_library_dismiss_undo": { "message": "삭제 알림 닫기" },
-  "v2_library_restore_error": { "message": "삭제한 카드를 되돌리지 못했습니다." },
-  "v2_library_source": { "message": "출처" },
-  "v2_library_created": { "message": "저장 시각" },
-  "v2_library_time": { "message": "영상 시각" },
-  "v2_library_editor_title": { "message": "학습 카드 편집" },
-  "v2_library_editor_assign_title": { "message": "언어와 역할 지정" },
-  "v2_library_learning_text": { "message": "학습 문장" },
-  "v2_library_learning_language": { "message": "학습 언어" },
-  "v2_library_support_text": { "message": "도움 문장" },
-  "v2_library_support_language": { "message": "도움 언어" },
-  "v2_library_add_support": { "message": "도움 문장 추가" },
-  "v2_library_remove_support": { "message": "도움 문장 제거" },
-  "v2_library_swap_roles": { "message": "학습 문장과 도움 문장 역할 바꾸기" },
-  "v2_library_choose_language": { "message": "언어 선택" },
-  "v2_library_editor_invalid": { "message": "모든 문장에 비어 있지 않은 내용과 언어가 필요합니다." },
-  "v2_review_title": { "message": "집중 복습" },
-  "v2_review_session_label": { "message": "복습할 카드 선택" },
-  "v2_review_active_session": { "message": "학습 중" },
-  "v2_review_completed_session": { "message": "완료" },
-  "v2_review_progress": {
-    "message": "$2개 중 $1번째 카드",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "v2_review_show_support": { "message": "도움 문장 보기" },
-  "v2_review_hide_support": { "message": "도움 문장 숨기기" },
-  "v2_review_open_video": { "message": "원래 영상 열기" },
-  "v2_review_navigation_label": { "message": "복습 이동" },
-  "v2_review_previous": { "message": "이전" },
-  "v2_review_skip": { "message": "건너뛰기" },
-  "v2_review_judgment_label": { "message": "학습 상태 선택" },
-  "v2_review_keep_learning": { "message": "계속 학습" },
-  "v2_review_complete": { "message": "완료" },
-  "v2_review_save_pending": { "message": "학습 상태를 저장하는 중..." },
-  "v2_review_update_error": { "message": "카드를 저장하지 못했습니다. 학습 상태는 변경되지 않았습니다." },
-  "v2_review_active_empty_title": { "message": "복습할 학습 중 카드가 없어요" },
-  "v2_review_active_empty_description": { "message": "학습 문장이 있고 학습 중인 카드가 여기에 표시됩니다." },
-  "v2_review_completed_empty_title": { "message": "복습할 완료 카드가 없어요" },
-  "v2_review_completed_empty_description": { "message": "완료한 카드가 여기에 표시됩니다." },
-  "v2_review_finished_title": { "message": "복습이 끝났어요" },
-  "v2_review_finished_description": { "message": "이번 복습의 모든 카드를 확인했습니다." },
-  "v2_review_open_library": { "message": "저장 목록 열기" },
-  "v2_review_loading": { "message": "복습 카드를 불러오는 중..." },
-  "v2_review_load_error": { "message": "복습 카드를 불러오지 못했습니다. 저장된 카드는 변경하지 않았습니다." },
-  "v2_review_retry": { "message": "다시 시도" },
-  "clear_filters": { "message": "필터 초기화" },
-  "clear_search": { "message": "검색어 지우기" },
-  "previous": { "message": "이전" },
-  "next": { "message": "다음" },
-  "subtitle_analysis": { "message": "자막 분석" },
-  "subtitle_upload": { "message": "자막 추가" },
-  "current_tab_subtitles": { "message": "현재 탭의 자막" },
-  "default_subtitle": { "message": "기본 자막" },
-  "display_off": { "message": "표시 꺼짐" },
-  "subtitle_role_unavailable": {
-    "message": "Coupang Play 영상 탭을 연 뒤 선택할 수 있습니다."
-  },
-  "selected_subtitle_missing": { "message": "선택한 자막을 찾을 수 없음" },
-  "default_short": { "message": "기본으로" },
-  "primary_short": { "message": "메인" },
-  "secondary_short": { "message": "서브" },
-  "use_as_primary": { "message": "메인으로 선택" },
-  "use_as_secondary": { "message": "서브로 선택" },
-  "primary_selected": { "message": "메인 선택됨" },
-  "secondary_selected": { "message": "서브 선택됨" },
-  "press_to_use_default": { "message": "누르면 기본 자막으로" },
-  "return_primary_to_default": { "message": "메인 자막을 기본 자막으로 되돌리기" },
-  "return_secondary_to_default": { "message": "서브 자막을 기본 자막으로 되돌리기" },
-  "current_tab_use": { "message": "현재 탭에서 사용" },
-  "applying": { "message": "적용 중" },
-  "analyze": { "message": "분석" },
-  "sync": { "message": "싱크" },
-  "edit_short": { "message": "수정" },
-  "edit_subtitle_details": { "message": "자막 정보 수정" },
-  "decrease_sync": { "message": "싱크 지연 줄이기" },
-  "increase_sync": { "message": "싱크 지연 늘리기" },
-  "sync_value": {
-    "message": "싱크 $value$초",
-    "placeholders": { "value": { "content": "$1" } }
-  },
-  "added_date": {
-    "message": "$date$ 추가",
-    "placeholders": { "date": { "content": "$1" } }
-  },
-
-  "english": { "message": "영어" },
-  "korean": { "message": "한국어" },
-  "japanese": { "message": "일본어" },
-  "chinese_simplified": { "message": "중국어 (간체)" },
-  "chinese_traditional": { "message": "중국어 (번체)" },
-  "spanish": { "message": "스페인어" },
-  "french": { "message": "프랑스어" },
-  "german": { "message": "독일어" },
-  "portuguese": { "message": "포르투갈어" },
-  "russian": { "message": "러시아어" },
-  "arabic": { "message": "아랍어" },
-
-  "all_list": { "message": "전체 목록" },
-  "add": { "message": "추가" },
-  "add_from_file": { "message": "파일에서 추가" },
-  "advanced_search": { "message": "상세 검색" },
-  "advanced_search_applied": {
-    "message": "상세 검색 · $count$개 적용",
-    "placeholders": { "count": { "content": "$1" } }
-  },
-  "add_online_subtitle": {
-    "message": "$fileName$ 자막 추가",
-    "placeholders": { "fileName": { "content": "$1" } }
-  },
-  "add_this_subtitle": { "message": "이 자막 추가" },
-  "adding": { "message": "추가 중" },
-  "allow_line_break": { "message": "줄바꿈 허용" },
-  "auto_scroll": { "message": "자동 스크롤" },
-  "available_on_coupang_play": { "message": "쿠팡플레이에서 사용 가능" },
-  "background_opacity": { "message": "배경 불투명도" },
-  "back_to_subtitles": { "message": "자막 목록으로" },
-  "backward_key": { "message": "뒤로 이동 키" },
-  "bottom": { "message": "하단" },
-  "cancel": { "message": "취소" },
-  "collapse_setting": {
-    "message": "$1 설정 접기",
-    "placeholders": { "setting": { "content": "$1" } }
-  },
-  "center": { "message": "중앙" },
-  "click_to_save": { "message": "클릭하여 저장" },
-  "confirm": { "message": "확인" },
-  "copied": { "message": "복사됨" },
-  "copy": { "message": "복사" },
-  "content_type": { "message": "유형" },
-  "content_type_all": { "message": "전체" },
-  "content_type_episode": { "message": "에피소드" },
-  "content_type_movie": { "message": "영화" },
-  "dark": { "message": "어둡게" },
-  "delete": { "message": "삭제" },
-  "edit": { "message": "편집" },
-  "end_point_key": { "message": "종료 시점 지정 키" },
-  "error": { "message": "실패" },
-  "export_backup": { "message": "백업 내보내기" },
-  "export_backup_confirm": {
-    "message": "백업 파일에는 저장한 자막 문장과 영상 주소가 포함됩니다. 파일을 안전하게 보관하시겠습니까?"
-  },
-  "fallback_unit": { "message": "대체 단위" },
-  "find_online": { "message": "온라인에서 찾기" },
-  "fixed": { "message": "고정형" },
-  "font_weight": { "message": "글씨 굵기" },
-  "forward_key": { "message": "앞으로 이동 키" },
-  "info": { "message": "알림" },
-  "language": { "message": "언어" },
-  "latest": { "message": "최신순" },
-  "light": { "message": "밝게" },
-  "loop_current_subtitle": { "message": "현재 자막 반복" },
-  "loop": { "message": "구간 반복" },
-  "minutes": { "message": "분" },
-  "no_search_results": { "message": "검색 결과가 없습니다." },
-  "online_subtitle_search": { "message": "OpenSubtitles 자막 검색" },
-  "opensubtitles_attribution": { "message": "온라인 자막 제공:" },
-  "opensubtitles_search_privacy": {
-    "message": "검색하면 제목과 선택한 조건이 OpenSubtitles로 전송됩니다."
-  },
-  "oldest": { "message": "오래된 순" },
-  "optimize_for_learning_confirm": { "message": "학습에 최적화된 설정을 적용하시겠습니까?" },
-  "optimize_for_learning": { "message": "학습 최적화" },
-  "play_current_subtitle_once": { "message": "현재 자막 한 번 재생" },
-  "position_offset": { "message": "위치 조정" },
-  "position_reference": { "message": "위치 기준" },
-  "press_any_key": { "message": "키를 눌러 입력하세요" },
-  "primary_subtitle": { "message": "메인 자막" },
-  "upload": { "message": "업로드" },
-  "uploaded_subtitles": { "message": "추가한 자막" },
-  "reset_settings_confirm": { "message": "모든 설정을 초기화하시겠습니까?" },
-  "reset_settings": { "message": "설정 초기화" },
-  "restore_backup": { "message": "백업 복원" },
-  "restore_backup_confirm": {
-    "message": "현재 설정과 학습 데이터를 선택한 백업으로 교체합니다. 이 작업은 완전히 되돌릴 수 없을 수 있습니다. 계속하시겠습니까?"
-  },
-  "responsive": { "message": "반응형" },
-  "save_primary_subtitle": { "message": "메인 자막 저장" },
-  "save_secondary_subtitle": { "message": "서브 자막 저장" },
-  "copy_primary_subtitle": { "message": "메인 자막 복사" },
-  "copy_secondary_subtitle": { "message": "서브 자막 복사" },
-  "save": { "message": "저장" },
-  "search_term": { "message": "검색어" },
-  "search": { "message": "검색" },
-  "search_result_summary": {
-    "message": "$total$개의 자막 결과에서 파일 $visible$개 표시",
-    "placeholders": {
-      "visible": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_characteristics": { "message": "자막 특성" },
-  "result_auto_translated": { "message": "자동 번역" },
-  "result_hearing_impaired": { "message": "청각장애인용" },
-  "result_foreign_parts_only": { "message": "외국어 구간만" },
-  "result_trusted_source": { "message": "신뢰 출처" },
-  "result_trusted_source_description": {
-    "message": "OpenSubtitles에서 제공한 표시이며 안전을 보증하지 않습니다."
-  },
-  "result_rating": {
-    "message": "평점 $rating$ · 투표 $votes$",
-    "placeholders": {
-      "rating": { "content": "$1" },
-      "votes": { "content": "$2" }
-    }
-  },
-  "result_downloads": {
-    "message": "다운로드 $count$회",
-    "placeholders": { "count": { "content": "$1" } }
-  },
-  "result_disc": {
-    "message": "CD $current$/$total$",
-    "placeholders": {
-      "current": { "content": "$1" },
-      "total": { "content": "$2" }
-    }
-  },
-  "result_details": { "message": "상세 정보" },
-  "result_file_name": { "message": "파일명" },
-  "result_uploader_rank": { "message": "업로더 등급" },
-  "result_upload_date": { "message": "업로드일" },
-  "search_title": { "message": "제목" },
-  "searching": { "message": "검색 중" },
-  "secondary_subtitle": { "message": "서브 자막" },
-  "seconds": { "message": "초" },
-  "select": { "message": "선택" },
-  "set_up_manually": { "message": "직접 설정하기" },
-  "shortcuts": { "message": "단축키" },
-  "skip_unit": { "message": "이동 단위" },
-  "start_point_key": { "message": "시작 시점 지정 키" },
-  "sub_video_skip": { "message": "보조 이동" },
-  "subtitle_color": { "message": "자막 색상" },
-  "subtitle_add_source": { "message": "자막 추가 방법" },
-  "subtitle_title": { "message": "자막 제목" },
-  "subtitle_size": { "message": "자막 크기" },
-  "subtitles": { "message": "자막" },
-  "success": { "message": "성공" },
-  "sync_adjustment": { "message": "싱크 조정" },
-  "system": { "message": "시스템" },
-  "toggle_loop_key": { "message": "구간 반복 켜기/끄기" },
-  "toggle_primary_subtitle": { "message": "메인 자막 켜기/끄기" },
-  "toggle_secondary_subtitle": { "message": "서브 자막 켜기/끄기" },
-  "top": { "message": "상단" },
-  "undo": { "message": "취소" },
-  "upload_subtitle_file": { "message": "자막 파일 선택" },
-  "year": { "message": "연도" },
-  "season": { "message": "시즌" },
-  "episode": { "message": "회차" },
-  "show_more": { "message": "더 보기" },
-  "loading_more": { "message": "더 불러오는 중" },
-  "video_skip": { "message": "기본 이동" },
-  "expand_setting": {
-    "message": "$1 설정 펼치기",
-    "placeholders": { "setting": { "content": "$1" } }
-  },
-  "view_video": { "message": "영상에서 보기" },
-
-  "connection_content_connecting": { "message": "쿠팡플레이 연결 중" },
-  "connection_content_connected": { "message": "쿠팡플레이 연결됨" },
-  "connection_content_disconnected": { "message": "쿠팡플레이 연결 끊김" },
-  "connection_video_detecting": { "message": "영상 탐지 중" },
-  "connection_video_detected": { "message": "영상 탐지됨" },
-  "connection_video_not_detected": { "message": "영상 미탐지" },
-  "connection_video_idle": { "message": "영상 대기중" },
-  "connection_sync_detect": { "message": "영상 재탐지" },
-  "connection_not_coupang_tab": { "message": "쿠팡플레이 탭 아님" },
-  "connection_label_connected": { "message": "연결됨" },
-  "connection_label_connecting": { "message": "연결 중" },
-  "connection_label_disconnected": { "message": "연결 끊김" },
-  "connection_label_not_coupang": { "message": "쿠팡플레이 아님" },
-  "connection_label_video_detected": { "message": "탐지됨" },
-  "connection_label_video_detecting": { "message": "탐지 중" },
-  "connection_label_video_not_detected": { "message": "미탐지" },
-  "connection_label_video_idle": { "message": "대기중" },
-
-  "playback_speed": { "message": "재생 속도" },
-  "increase_speed": { "message": "속도 증가" },
-  "decrease_speed": { "message": "속도 감소" },
-  "reset_speed": { "message": "속도 초기화" },
-
-  "previous_subtitle": { "message": "이전 자막" },
-  "next_subtitle": { "message": "다음 자막" },
-  "loop_playback": { "message": "구간 반복 재생" },
-  "focus_mode": { "message": "집중 모드" },
-  "skip_subtitle_gap": { "message": "자막 간격 건너뛰기" },
-
-  "confirm_delete": { "message": "정말 삭제하시겠습니까?" },
-
-  "success_save_subtitle": { "message": "자막 저장 완료" },
-  "success_copy_subtitle": { "message": "자막 복사 완료" },
-  "success_delete_subtitle": { "message": "자막 삭제 완료" },
-  "success_export_backup": { "message": "백업을 내보냈습니다." },
-  "success_restore_backup": { "message": "백업을 복원했습니다." },
-  "success_add_subtitle": {
-    "message": "자막을 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_online_subtitle": {
-    "message": "OpenSubtitles 자막을 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_subtitle_cached": {
-    "message": "OpenSubtitles 자막을 세션 캐시에서 추가했습니다. 목록에서 메인/서브 자막으로 선택해 사용하세요."
-  },
-  "success_add_subtitle_remaining": {
-    "message": "OpenSubtitles 자막을 추가했습니다. OpenSubtitles가 보고한 남은 다운로드 수는 $remaining$회입니다. 목록에서 메인/서브 자막으로 선택해 사용하세요.",
-    "placeholders": { "remaining": { "content": "$1" } }
-  },
-  "error_export_backup": { "message": "백업을 내보내지 못했습니다." },
-  "error_invalid_backup": { "message": "유효한 Play Plus 백업 파일이 아닙니다. 기존 데이터는 변경되지 않았습니다." },
-  "error_restore_backup": { "message": "백업 복원에 실패했습니다. 기존 데이터 복구를 시도했습니다." },
-  "error_restore_backup_rollback": {
-    "message": "백업 복원과 기존 데이터 복구에 실패했습니다. 저장 데이터를 확인해주세요."
-  },
-  "error_save_subtitle": { "message": "자막 저장 실패" },
-  "error_subtitle_role_update": { "message": "자막 선택을 변경하지 못했습니다. 다시 시도해주세요." },
-  "error_copy_subtitle": { "message": "자막 복사 실패" },
-  "error_loop": { "message": "구간 반복 실패" },
-  "info_loop_stop": { "message": "구간 반복 해제" },
-
-  "error_text_type": { "message": "텍스트만 입력할 수 있습니다." },
-  "error_number_type": { "message": "숫자만 입력할 수 있습니다." },
-  "error_type_mismatch": { "message": "타입이 올바르지 않습니다." },
-  "error_max_length": {
-    "message": "최대 길이 $maxLength$를 초과합니다.",
-    "placeholders": { "maxLength": { "content": "$1" } }
-  },
-  "error_min_length": {
-    "message": "최소 길이 $minLength$보다 짧습니다.",
-    "placeholders": { "minLength": { "content": "$1" } }
-  },
-  "error_max_value": {
-    "message": "최대값 $maxValue$를 초과합니다.",
-    "placeholders": { "maxValue": { "content": "$1" } }
-  },
-  "error_min_value": {
-    "message": "최소값 $minValue$보다 작습니다.",
-    "placeholders": { "minValue": { "content": "$1" } }
-  },
-  "error_file_size": { "message": "파일 크기가 너무 큽니다.\n1 MiB 이하의 파일만 추가해주세요." },
-  "error_empty_subtitle": { "message": "사용 가능한 자막 큐를 찾지 못했습니다." },
-  "error_online_access": { "message": "OpenSubtitles가 요청을 허용하지 않았습니다. 제공자 설정을 확인해주세요." },
-  "error_online_configuration": { "message": "OpenSubtitles 연결 설정이 완료되지 않았습니다." },
-  "error_online_download": { "message": "선택한 온라인 자막을 다운로드하지 못했습니다. 결과에서 다시 시도해주세요." },
-  "error_online_expired": { "message": "OpenSubtitles 다운로드 링크가 만료되었습니다. 결과에서 다시 시도해주세요." },
-  "error_online_invalid_query": { "message": "검색 조건을 확인해주세요." },
-  "error_online_network": { "message": "OpenSubtitles에 연결하지 못했습니다. 네트워크를 확인해주세요." },
-  "error_online_permission_denied": {
-    "message": "온라인 자막 검색 권한을 허용하지 않았습니다. 파일에서 추가는 계속 사용할 수 있습니다."
-  },
-  "error_online_search": { "message": "온라인 자막을 검색하지 못했습니다. 잠시 후 다시 시도해주세요." },
-  "error_online_rate_limit": { "message": "OpenSubtitles 다운로드 또는 요청 한도에 도달했습니다. 나중에 다시 시도해주세요." },
-  "error_online_response": { "message": "OpenSubtitles가 읽을 수 없는 응답을 보냈습니다. 나중에 다시 시도해주세요." },
-  "error_online_unavailable": { "message": "OpenSubtitles를 일시적으로 사용할 수 없습니다." },
-  "error_subtitle_decode": { "message": "자막 파일의 문자 인코딩을 읽지 못했습니다." },
-  "error_unsupported_file_type": {
-    "message": "지원하지 않는 파일 형식입니다.\n$fileType$ 파일만 추가해주세요.",
-    "placeholders": { "fileType": { "content": "$1" } }
-  },
-  "error_reserved_shortcuts": { "message": "시스템에서 사용 중입니다" },
-  "error_duplicate_shortcuts": { "message": "단축키가 중복됩니다." },
-  "error_video_not_found": { "message": "영상을 찾을 수 없습니다." },
-  "error_try_later": { "message": "나중에 다시 시도해주세요." },
-  "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
-  "error_no_subtitle": { "message": "자막이 없습니다." },
-  "error_no_current_subtitle": { "message": "현재 자막이 없습니다." },
-  "error_unknown": { "message": "알 수 없는 오류" },
-  "error_loop_time_message": { "message": "시작 시점이 종료 시점보다 큽니다." },
-  "info_loop_stop_message": { "message": "반복 구간을 벗어나 반복을 해제합니다." }
+    "app_name":  {
+                     "message":  "Play Plus"
+                 },
+    "extension_name":  {
+                           "message":  "Play Plus - 쿠팡플레이 기능 확장"
+                       },
+    "extension_description":  {
+                                  "message":  "쿠팡플레이에 학습·도움 자막, 학습 컨트롤, 저장한 카드 복습 기능을 추가합니다."
+                              },
+    "action_default_title":  {
+                                 "message":  "Play Plus 열기"
+                             },
+    "learning_languages":  {
+                               "message":  "학습 언어 설정"
+                           },
+    "learning_language":  {
+                              "message":  "학습 언어"
+                          },
+    "support_language":  {
+                             "message":  "도움 언어(선택)"
+                         },
+    "no_support_language":  {
+                                "message":  "도움 문장 사용 안 함"
+                            },
+    "learning_profile_confirmation_title":  {
+                                                "message":  "학습 언어를 확인해 주세요"
+                                            },
+    "learning_profile_confirmation_description":  {
+                                                      "message":  "학습할 언어와 필요할 때 참고할 도움 언어를 선택하세요."
+                                                  },
+    "confirm_languages":  {
+                              "message":  "언어 확인"
+                          },
+    "subtitle_display":  {
+                             "message":  "자막 표시"
+                         },
+    "learning_subtitle":  {
+                              "message":  "학습 자막"
+                          },
+    "support_subtitle":  {
+                             "message":  "도움 자막"
+                         },
+    "show_learning_subtitle":  {
+                                   "message":  "학습 자막 표시"
+                               },
+    "show_support_subtitle":  {
+                                  "message":  "도움 자막 표시"
+                              },
+    "v2_library_title":  {
+                             "message":  "학습 문장 저장 목록"
+                         },
+    "v2_library_loading":  {
+                               "message":  "학습 카드를 불러오는 중..."
+                           },
+    "v2_library_load_error":  {
+                                  "message":  "학습 카드를 불러오지 못했습니다. 저장된 데이터는 변경하지 않았습니다."
+                              },
+    "v2_library_retry":  {
+                             "message":  "다시 시도"
+                         },
+    "v2_library_empty_title":  {
+                                   "message":  "아직 저장한 학습 카드가 없어요"
+                               },
+    "v2_library_empty_description":  {
+                                         "message":  "영상을 보며 저장한 문장이 여기에 표시됩니다."
+                                     },
+    "v2_library_filtered_empty":  {
+                                      "message":  "현재 검색과 필터에 맞는 카드가 없습니다."
+                                  },
+    "v2_library_search_label":  {
+                                    "message":  "학습 카드 검색"
+                                },
+    "v2_library_sort_label":  {
+                                  "message":  "학습 카드 정렬"
+                              },
+    "v2_library_state_filter":  {
+                                    "message":  "학습 상태 필터"
+                                },
+    "v2_library_role_filter":  {
+                                   "message":  "문장 역할 필터"
+                               },
+    "v2_library_all":  {
+                           "message":  "전체"
+                       },
+    "v2_library_active":  {
+                              "message":  "학습 중"
+                          },
+    "v2_library_completed":  {
+                                 "message":  "완료"
+                             },
+    "v2_library_learning":  {
+                                "message":  "학습 문장"
+                            },
+    "v2_library_support":  {
+                               "message":  "도움 문장"
+                           },
+    "v2_library_unassigned":  {
+                                  "message":  "언어와 역할 지정 필요"
+                              },
+    "v2_library_language_unassigned":  {
+                                           "message":  "언어 미지정"
+                                       },
+    "v2_library_contains_support":  {
+                                        "message":  "도움 문장 포함"
+                                    },
+    "v2_library_state_change":  {
+                                    "message":  "학습 상태 변경"
+                                },
+    "v2_library_save_pending":  {
+                                    "message":  "변경 사항을 저장하는 중..."
+                                },
+    "v2_library_update_error":  {
+                                    "message":  "카드를 저장하지 못했습니다. 작성 중인 내용과 저장된 카드는 그대로 유지됩니다."
+                                },
+    "v2_library_delete_error":  {
+                                    "message":  "카드를 삭제하지 못했습니다."
+                                },
+    "v2_library_deleted":  {
+                               "message":  "학습 카드를 삭제했습니다."
+                           },
+    "v2_library_restore":  {
+                               "message":  "카드 삭제 취소"
+                           },
+    "v2_library_dismiss_undo":  {
+                                    "message":  "삭제 알림 닫기"
+                                },
+    "v2_library_restore_error":  {
+                                     "message":  "삭제한 카드를 되돌리지 못했습니다."
+                                 },
+    "v2_library_source":  {
+                              "message":  "출처"
+                          },
+    "v2_library_created":  {
+                               "message":  "저장 시각"
+                           },
+    "v2_library_time":  {
+                            "message":  "영상 시각"
+                        },
+    "v2_library_editor_title":  {
+                                    "message":  "학습 카드 편집"
+                                },
+    "v2_library_editor_assign_title":  {
+                                           "message":  "언어와 역할 지정"
+                                       },
+    "v2_library_learning_text":  {
+                                     "message":  "학습 문장"
+                                 },
+    "v2_library_learning_language":  {
+                                         "message":  "학습 언어"
+                                     },
+    "v2_library_support_text":  {
+                                    "message":  "도움 문장"
+                                },
+    "v2_library_support_language":  {
+                                        "message":  "도움 언어"
+                                    },
+    "v2_library_add_support":  {
+                                   "message":  "도움 문장 추가"
+                               },
+    "v2_library_remove_support":  {
+                                      "message":  "도움 문장 제거"
+                                  },
+    "v2_library_swap_roles":  {
+                                  "message":  "학습 문장과 도움 문장 역할 바꾸기"
+                              },
+    "v2_library_choose_language":  {
+                                       "message":  "언어 선택"
+                                   },
+    "v2_library_editor_invalid":  {
+                                      "message":  "모든 문장에 비어 있지 않은 내용과 언어가 필요합니다."
+                                  },
+    "v2_review_title":  {
+                            "message":  "집중 복습"
+                        },
+    "v2_review_session_label":  {
+                                    "message":  "복습할 카드 선택"
+                                },
+    "v2_review_active_session":  {
+                                     "message":  "학습 중"
+                                 },
+    "v2_review_completed_session":  {
+                                        "message":  "완료"
+                                    },
+    "v2_review_progress":  {
+                               "message":  "$2개 중 $1번째 카드",
+                               "placeholders":  {
+                                                    "current":  {
+                                                                    "content":  "$1"
+                                                                },
+                                                    "total":  {
+                                                                  "content":  "$2"
+                                                              }
+                                                }
+                           },
+    "v2_review_show_support":  {
+                                   "message":  "도움 문장 보기"
+                               },
+    "v2_review_hide_support":  {
+                                   "message":  "도움 문장 숨기기"
+                               },
+    "v2_review_open_video":  {
+                                 "message":  "원래 영상 열기"
+                             },
+    "v2_review_navigation_label":  {
+                                       "message":  "복습 이동"
+                                   },
+    "v2_review_previous":  {
+                               "message":  "이전"
+                           },
+    "v2_review_skip":  {
+                           "message":  "건너뛰기"
+                       },
+    "v2_review_judgment_label":  {
+                                     "message":  "학습 상태 선택"
+                                 },
+    "v2_review_keep_learning":  {
+                                    "message":  "계속 학습"
+                                },
+    "v2_review_complete":  {
+                               "message":  "완료"
+                           },
+    "v2_review_save_pending":  {
+                                   "message":  "학습 상태를 저장하는 중..."
+                               },
+    "v2_review_update_error":  {
+                                   "message":  "카드를 저장하지 못했습니다. 학습 상태는 변경되지 않았습니다."
+                               },
+    "v2_review_active_empty_title":  {
+                                         "message":  "복습할 학습 중 카드가 없어요"
+                                     },
+    "v2_review_active_empty_description":  {
+                                               "message":  "학습 문장이 있고 학습 중인 카드가 여기에 표시됩니다."
+                                           },
+    "v2_review_completed_empty_title":  {
+                                            "message":  "복습할 완료 카드가 없어요"
+                                        },
+    "v2_review_completed_empty_description":  {
+                                                  "message":  "완료한 카드가 여기에 표시됩니다."
+                                              },
+    "v2_review_finished_title":  {
+                                     "message":  "복습이 끝났어요"
+                                 },
+    "v2_review_finished_description":  {
+                                           "message":  "이번 복습의 모든 카드를 확인했습니다."
+                                       },
+    "v2_review_open_library":  {
+                                   "message":  "저장 목록 열기"
+                               },
+    "v2_review_loading":  {
+                              "message":  "복습 카드를 불러오는 중..."
+                          },
+    "v2_review_load_error":  {
+                                 "message":  "복습 카드를 불러오지 못했습니다. 저장된 카드는 변경하지 않았습니다."
+                             },
+    "v2_review_retry":  {
+                            "message":  "다시 시도"
+                        },
+    "clear_filters":  {
+                          "message":  "필터 초기화"
+                      },
+    "clear_search":  {
+                         "message":  "검색어 지우기"
+                     },
+    "english":  {
+                    "message":  "영어"
+                },
+    "korean":  {
+                   "message":  "한국어"
+               },
+    "japanese":  {
+                     "message":  "일본어"
+                 },
+    "chinese_simplified":  {
+                               "message":  "중국어 (간체)"
+                           },
+    "chinese_traditional":  {
+                                "message":  "중국어 (번체)"
+                            },
+    "spanish":  {
+                    "message":  "스페인어"
+                },
+    "french":  {
+                   "message":  "프랑스어"
+               },
+    "german":  {
+                   "message":  "독일어"
+               },
+    "portuguese":  {
+                       "message":  "포르투갈어"
+                   },
+    "russian":  {
+                    "message":  "러시아어"
+                },
+    "arabic":  {
+                   "message":  "아랍어"
+               },
+    "all_list":  {
+                     "message":  "전체 목록"
+                 },
+    "add":  {
+                "message":  "추가"
+            },
+    "allow_line_break":  {
+                             "message":  "줄바꿈 허용"
+                         },
+    "background_opacity":  {
+                               "message":  "배경 불투명도"
+                           },
+    "bottom":  {
+                   "message":  "하단"
+               },
+    "cancel":  {
+                   "message":  "취소"
+               },
+    "collapse_setting":  {
+                             "message":  "$1 설정 접기",
+                             "placeholders":  {
+                                                  "setting":  {
+                                                                  "content":  "$1"
+                                                              }
+                                              }
+                         },
+    "center":  {
+                   "message":  "중앙"
+               },
+    "confirm":  {
+                    "message":  "확인"
+                },
+    "dark":  {
+                 "message":  "어둡게"
+             },
+    "delete":  {
+                   "message":  "삭제"
+               },
+    "edit":  {
+                 "message":  "편집"
+             },
+    "error":  {
+                  "message":  "실패"
+              },
+    "font_weight":  {
+                        "message":  "글씨 굵기"
+                    },
+    "language":  {
+                     "message":  "언어"
+                 },
+    "latest":  {
+                   "message":  "최신순"
+               },
+    "light":  {
+                  "message":  "밝게"
+              },
+    "oldest":  {
+                   "message":  "오래된 순"
+               },
+    "position_offset":  {
+                            "message":  "위치 조정"
+                        },
+    "position_reference":  {
+                               "message":  "위치 기준"
+                           },
+    "save":  {
+                 "message":  "저장"
+             },
+    "search_term":  {
+                        "message":  "검색어"
+                    },
+    "search":  {
+                   "message":  "검색"
+               },
+    "select":  {
+                   "message":  "선택"
+               },
+    "shortcuts":  {
+                      "message":  "단축키"
+                  },
+    "subtitle_color":  {
+                           "message":  "자막 색상"
+                       },
+    "subtitle_title":  {
+                           "message":  "자막 제목"
+                       },
+    "subtitle_size":  {
+                          "message":  "자막 크기"
+                      },
+    "system":  {
+                   "message":  "시스템"
+               },
+    "top":  {
+                "message":  "상단"
+            },
+    "undo":  {
+                 "message":  "취소"
+             },
+    "expand_setting":  {
+                           "message":  "$1 설정 펼치기",
+                           "placeholders":  {
+                                                "setting":  {
+                                                                "content":  "$1"
+                                                            }
+                                            }
+                       },
+    "connection_content_connecting":  {
+                                          "message":  "쿠팡플레이 연결 중"
+                                      },
+    "connection_content_connected":  {
+                                         "message":  "쿠팡플레이 연결됨"
+                                     },
+    "connection_content_disconnected":  {
+                                            "message":  "쿠팡플레이 연결 끊김"
+                                        },
+    "connection_video_detecting":  {
+                                       "message":  "영상 탐지 중"
+                                   },
+    "connection_video_detected":  {
+                                      "message":  "영상 탐지됨"
+                                  },
+    "connection_video_not_detected":  {
+                                          "message":  "영상 미탐지"
+                                      },
+    "connection_video_idle":  {
+                                  "message":  "영상 대기중"
+                              },
+    "connection_sync_detect":  {
+                                   "message":  "영상 재탐지"
+                               },
+    "connection_not_coupang_tab":  {
+                                       "message":  "쿠팡플레이 탭 아님"
+                                   },
+    "connection_label_connected":  {
+                                       "message":  "연결됨"
+                                   },
+    "connection_label_connecting":  {
+                                        "message":  "연결 중"
+                                    },
+    "connection_label_disconnected":  {
+                                          "message":  "연결 끊김"
+                                      },
+    "connection_label_not_coupang":  {
+                                         "message":  "쿠팡플레이 아님"
+                                     },
+    "connection_label_video_detected":  {
+                                            "message":  "탐지됨"
+                                        },
+    "connection_label_video_detecting":  {
+                                             "message":  "탐지 중"
+                                         },
+    "connection_label_video_not_detected":  {
+                                                "message":  "미탐지"
+                                            },
+    "connection_label_video_idle":  {
+                                        "message":  "대기중"
+                                    },
+    "playback_speed":  {
+                           "message":  "재생 속도"
+                       },
+    "increase_speed":  {
+                           "message":  "속도 증가"
+                       },
+    "decrease_speed":  {
+                           "message":  "속도 감소"
+                       },
+    "reset_speed":  {
+                        "message":  "속도 초기화"
+                    },
+    "error_file_size":  {
+                            "message":  "파일 크기가 너무 큽니다.\n1 MiB 이하의 파일만 추가해주세요."
+                        },
+    "error_empty_subtitle":  {
+                                 "message":  "사용 가능한 자막 큐를 찾지 못했습니다."
+                             },
+    "error_subtitle_decode":  {
+                                  "message":  "자막 파일의 문자 인코딩을 읽지 못했습니다."
+                              },
+    "error_unsupported_file_type":  {
+                                        "message":  "지원하지 않는 파일 형식입니다.\n$fileType$ 파일만 추가해주세요.",
+                                        "placeholders":  {
+                                                             "fileType":  {
+                                                                              "content":  "$1"
+                                                                          }
+                                                         }
+                                    },
+    "error_video_not_found":  {
+                                  "message":  "영상을 찾을 수 없습니다."
+                              },
+    "error_try_later":  {
+                            "message":  "나중에 다시 시도해주세요."
+                        },
+    "v2_navigation_label":  {
+                                "message":  "Play Plus 탐색"
+                            },
+    "v2_nav_learning":  {
+                            "message":  "학습"
+                        },
+    "v2_nav_subtitles":  {
+                             "message":  "자막"
+                         },
+    "v2_nav_library":  {
+                           "message":  "보관함"
+                       },
+    "v2_nav_review":  {
+                          "message":  "집중 복습"
+                      },
+    "v2_retry":  {
+                     "message":  "다시 시도"
+                 },
+    "v2_readiness_loading":  {
+                                 "message":  "Play Plus를 불러오는 중…"
+                             },
+    "v2_readiness_unavailable_title":  {
+                                           "message":  "Play Plus 데이터를 사용할 수 없습니다"
+                                       },
+    "v2_readiness_unavailable_description":  {
+                                                 "message":  "기존 데이터는 변경되지 않았습니다. 계속하려면 마이그레이션을 다시 시도하세요."
+                                             },
+    "v2_review_open_video_error":  {
+                                       "message":  "원본 영상을 열지 못했습니다."
+                                   },
+    "v2_first_entry_title":  {
+                                 "message":  "Play Plus 2.0 설정"
+                             },
+    "v2_first_entry_description":  {
+                                       "message":  "학습할 언어와 필요할 때 사용할 도움 언어를 선택하세요."
+                                   },
+    "v2_first_entry_loading":  {
+                                   "message":  "설정을 불러오는 중…"
+                               },
+    "v2_first_entry_load_error":  {
+                                      "message":  "설정을 불러오지 못했습니다. 기존 데이터는 변경되지 않았습니다."
+                                  },
+    "v2_first_entry_shortcuts_title":  {
+                                           "message":  "단축키 확인"
+                                       },
+    "v2_first_entry_disable_shortcut":  {
+                                            "message":  "사용 안 함"
+                                        },
+    "v2_first_entry_reason_multiple_candidates":  {
+                                                      "message":  "유지할 기존 단축키를 선택하세요."
+                                                  },
+    "v2_first_entry_reason_ambiguous_semantics":  {
+                                                      "message":  "이 단축키가 계속 이 학습 동작에 맞는지 확인하세요."
+                                                  },
+    "v2_first_entry_reason_conflict":  {
+                                           "message":  "이 단축키를 사용할 학습 동작을 하나 선택하세요."
+                                       },
+    "v2_save_learning_card":  {
+                                  "message":  "학습 카드 저장"
+                              },
+    "v2_local_subtitles_loading":  {
+                                       "message":  "로컬 자막을 불러오는 중…"
+                                   },
+    "v2_local_subtitles_back":  {
+                                    "message":  "자막으로 돌아가기"
+                                },
+    "v2_local_subtitles_add":  {
+                                   "message":  "자막 추가"
+                               },
+    "v2_local_subtitles_empty_description":  {
+                                                 "message":  "쿠팡플레이에서 사용할 자막 파일을 추가하세요."
+                                             },
+    "v2_local_subtitles_add_file":  {
+                                        "message":  "자막 파일 추가"
+                                    },
+    "v2_local_subtitles_load_error":  {
+                                          "message":  "로컬 자막을 불러오지 못했습니다. 저장된 자막은 변경되지 않았습니다."
+                                      },
+    "v2_local_subtitles_unavailable_title":  {
+                                                 "message":  "사용할 수 없는 이전 자막($count$개)",
+                                                 "placeholders":  {
+                                                                      "count":  {
+                                                                                    "content":  "$1"
+                                                                                }
+                                                                  }
+                                             },
+    "v2_local_subtitles_unavailable_description":  {
+                                                       "message":  "이 항목은 그대로 보관했습니다. Play Plus가 수정하거나 삭제하지 않았습니다."
+                                                   },
+    "v2_local_subtitles_unavailable_invalid_metadata":  {
+                                                            "message":  "자막 정보가 잘못되었습니다"
+                                                        },
+    "v2_local_subtitles_unavailable_missing_body":  {
+                                                        "message":  "자막 파일 데이터가 없습니다"
+                                                    },
+    "v2_local_subtitles_unavailable_invalid_body":  {
+                                                        "message":  "자막 파일 데이터가 잘못되었습니다"
+                                                    },
+    "v2_local_subtitles_unavailable_orphan_body":  {
+                                                       "message":  "연결되지 않은 자막 파일 데이터"
+                                                   },
+    "v2_local_subtitles_refresh_error":  {
+                                             "message":  "자막은 저장했지만 현재 영상에 다시 반영하지 못했습니다."
+                                         },
+    "v2_local_subtitles_confirm_delete":  {
+                                              "message":  "이 자막을 삭제할까요?"
+                                          },
+    "v2_local_subtitles_delete_error":  {
+                                            "message":  "현재 영상에서 자막을 완전히 제거하지 못했습니다. 다시 시도하세요."
+                                        },
+    "v2_local_subtitles_role_update_error":  {
+                                                 "message":  "현재 영상에 사용할 자막을 변경하지 못했습니다. 다시 시도하세요."
+                                             },
+    "v2_local_subtitles_current_tab_title":  {
+                                                 "message":  "현재 영상 자막"
+                                             },
+    "v2_local_subtitles_role_unavailable":  {
+                                                "message":  "자막을 선택하려면 쿠팡플레이 영상 탭을 여세요."
+                                            },
+    "v2_local_subtitles_selected_missing":  {
+                                                "message":  "선택한 자막을 찾을 수 없습니다"
+                                            },
+    "v2_local_subtitles_not_configured":  {
+                                              "message":  "설정되지 않음"
+                                          },
+    "v2_local_subtitles_default":  {
+                                       "message":  "기본 자막"
+                                   },
+    "v2_local_subtitles_default_short":  {
+                                             "message":  "기본값"
+                                         },
+    "v2_local_subtitles_applying":  {
+                                        "message":  "적용 중…"
+                                    },
+    "v2_local_subtitles_edit_details":  {
+                                            "message":  "자막 정보 편집"
+                                        },
+    "v2_local_subtitles_sync_adjustment":  {
+                                               "message":  "자막 싱크 조절"
+                                           },
+    "v2_local_subtitles_current_tab_use":  {
+                                               "message":  "현재 영상에 사용"
+                                           },
+    "v2_local_subtitles_sync":  {
+                                    "message":  "싱크"
+                                },
+    "v2_local_subtitles_edit":  {
+                                    "message":  "편집"
+                                },
+    "v2_local_subtitles_sync_value":  {
+                                          "message":  "싱크 $value$초",
+                                          "placeholders":  {
+                                                               "value":  {
+                                                                             "content":  "$1"
+                                                                         }
+                                                           }
+                                      },
+    "v2_local_subtitles_added_date":  {
+                                          "message":  "$date$ 추가",
+                                          "placeholders":  {
+                                                               "date":  {
+                                                                            "content":  "$1"
+                                                                        }
+                                                           }
+                                      },
+    "v2_local_subtitles_decrease_sync":  {
+                                             "message":  "자막 싱크 느리게"
+                                         },
+    "v2_local_subtitles_increase_sync":  {
+                                             "message":  "자막 싱크 빠르게"
+                                         },
+    "v2_local_subtitles_choose_file":  {
+                                           "message":  "자막 파일 선택"
+                                       },
+    "v2_local_subtitles_add_error":  {
+                                         "message":  "자막을 추가하지 못했습니다. 다시 시도하세요."
+                                     },
+    "v2_local_subtitles_added":  {
+                                     "message":  "자막을 추가했습니다."
+                                 },
+    "v2_hide_support_subtitle":  {
+                                     "message":  "도움 자막 숨기기"
+                                 },
+    "v2_support_subtitle_toggle_error":  {
+                                             "message":  "도움 자막 표시 상태를 변경하지 못했습니다."
+                                         },
+    "v2_previous_learning_cue":  {
+                                     "message":  "이전 학습 자막"
+                                 },
+    "v2_next_learning_cue":  {
+                                 "message":  "다음 학습 자막"
+                             },
+    "v2_repeat_current_learning_cue":  {
+                                           "message":  "현재 학습 자막 다시 재생"
+                                       },
+    "v2_show_learning_controls":  {
+                                      "message":  "학습 컨트롤 표시"
+                                  },
+    "v2_hide_learning_controls":  {
+                                      "message":  "학습 컨트롤 숨기기"
+                                  },
+    "v2_no_video_available":  {
+                                  "message":  "사용할 수 있는 영상이 없습니다."
+                              },
+    "v2_no_current_learning_cue_to_save":  {
+                                               "message":  "저장할 현재 학습 자막이 없습니다."
+                                           },
+    "v2_learning_card_saved":  {
+                                   "message":  "학습 카드를 저장했습니다."
+                               },
+    "v2_learning_card_saved_without_support":  {
+                                                   "message":  "도움 문장 없이 학습 카드를 저장했습니다."
+                                               },
+    "v2_learning_card_save_error":  {
+                                        "message":  "학습 카드를 저장하지 못했습니다."
+                                    },
+    "v2_no_current_learning_cue":  {
+                                       "message":  "현재 학습 자막이 없습니다."
+                                   },
+    "v2_no_learning_cue_in_direction":  {
+                                            "message":  "해당 방향에 학습 자막이 없습니다."
+                                        },
+    "v2_content_action_failed":  {
+                                     "message":  "콘텐츠 동작을 완료하지 못했습니다."
+                                 }
 }

@@ -1,66 +1,48 @@
-import { onStorageChange } from '@storage/index';
 import { sendMessage } from '@utils/message';
+import type { ContentBootstrap } from '@utils/message/type';
 
 import { renderApp } from './app';
 import { elementStore } from './core/store/element-store';
 import { videoManager } from './core/video/video-manager';
-import { loopController } from './features/loop';
 import { playbackSpeedController } from './features/playback-speed/playback-speed';
-import { initializeSubtitleSync, onSubtitleStorageChange } from './features/subtitle/subtitle';
+import { initializeSubtitleSync } from './features/subtitle/subtitle';
 import { videoController } from './features/video/video-controller';
-import { initializeMessageListener } from './message-handler';
+import { initializeMessageListener, initializeSubtitleSelections } from './message-handler';
 
 type Disposer = () => void;
 
 export type ContentRuntimeDependencies = {
   clearVideo: Disposer;
   initializeMessageListener: () => Disposer;
-  initializeStorageChange: () => Disposer;
+  initializeSubtitleSelections: (bootstrap: ContentBootstrap) => Promise<void>;
   initializeSubtitleSync: () => Promise<Disposer>;
   removeContainers: Disposer;
-  reportContentInitialized: () => Promise<void>;
+  reportContentInitialized: () => Promise<ContentBootstrap>;
   renderApp: () => Disposer;
   setupSystemContainer: () => void;
-  startLoopController: () => void;
   startPlaybackSpeedController: () => void;
   startVideoController: () => Promise<void>;
-  stopLoopController: Disposer;
   stopPlaybackSpeedController: Disposer;
   stopVideoController: Disposer;
 };
 
-type RuntimeRun = {
-  cancelled: boolean;
-  disposers: Disposer[];
-  promise: Promise<void>;
-};
-
-const initializeStorageChange = () => {
-  const registration = onStorageChange((changes) => {
-    onSubtitleStorageChange(changes);
-    videoController.onVideoControlStorageChange(changes);
-    loopController.onLoopStorageChange(changes);
-    playbackSpeedController.onStorageChange(changes);
-  });
-  return () => registration.remove();
-};
+type RuntimeRun = { cancelled: boolean; disposers: Disposer[]; promise: Promise<void> };
 
 const defaultDependencies: ContentRuntimeDependencies = {
   clearVideo: () => videoManager.clear(),
   initializeMessageListener,
-  initializeStorageChange,
+  initializeSubtitleSelections,
   initializeSubtitleSync,
   removeContainers: () => elementStore.removeContainers(),
   reportContentInitialized: async () => {
     const response = await sendMessage('contentInitialized');
-    if (!response.success) throw new Error(response.message);
+    if (!response.success) throw new Error('Content readiness failed');
+    return response.data;
   },
   renderApp: () => renderApp(elementStore.getSystemRoot(), elementStore.getVideoRoot()),
   setupSystemContainer: () => elementStore.setupSystemContainer(),
-  startLoopController: () => loopController.start(),
   startPlaybackSpeedController: () => playbackSpeedController.start(),
   startVideoController: () => videoController.start(),
-  stopLoopController: () => loopController.stop(),
   stopPlaybackSpeedController: () => playbackSpeedController.stop(),
   stopVideoController: () => videoController.stop(),
 };
@@ -72,12 +54,7 @@ export class ContentRuntime {
 
   start() {
     if (this.activeRun) return this.activeRun.promise;
-
-    const run: RuntimeRun = {
-      cancelled: false,
-      disposers: [],
-      promise: Promise.resolve(),
-    };
+    const run: RuntimeRun = { cancelled: false, disposers: [], promise: Promise.resolve() };
     run.promise = this.startRun(run).catch((error: unknown) => {
       const wasCancelled = run.cancelled;
       run.cancelled = true;
@@ -92,7 +69,6 @@ export class ContentRuntime {
   stop() {
     const run = this.activeRun;
     if (!run) return;
-
     this.activeRun = null;
     run.cancelled = true;
     this.releaseRun(run);
@@ -102,25 +78,20 @@ export class ContentRuntime {
     this.addDisposer(run, this.dependencies.removeContainers);
     this.addDisposer(run, this.dependencies.clearVideo);
 
-    this.addDisposer(run, this.dependencies.initializeMessageListener());
-    this.addDisposer(run, this.dependencies.initializeStorageChange());
-
-    await this.dependencies.reportContentInitialized();
+    const bootstrap = await this.dependencies.reportContentInitialized();
     if (run.cancelled) return;
 
-    this.dependencies.startLoopController();
-    this.addDisposer(run, this.dependencies.stopLoopController);
+    const subtitleDisposer = await this.dependencies.initializeSubtitleSync();
+    this.addDisposer(run, subtitleDisposer);
+    if (run.cancelled) return;
+    await this.dependencies.initializeSubtitleSelections(bootstrap);
+    if (run.cancelled) return;
 
-    this.dependencies.startPlaybackSpeedController();
+    this.addDisposer(run, this.dependencies.initializeMessageListener());
     this.addDisposer(run, this.dependencies.stopPlaybackSpeedController);
-
-    const videoStart = this.dependencies.startVideoController();
+    this.dependencies.startPlaybackSpeedController();
     this.addDisposer(run, this.dependencies.stopVideoController);
-
-    const subtitleStart = this.dependencies
-      .initializeSubtitleSync()
-      .then((disposer) => this.addDisposer(run, disposer));
-    await Promise.all([videoStart, subtitleStart]);
+    await this.dependencies.startVideoController();
     if (run.cancelled) return;
 
     this.dependencies.setupSystemContainer();
@@ -128,11 +99,8 @@ export class ContentRuntime {
   }
 
   private addDisposer(run: RuntimeRun, disposer: Disposer) {
-    if (run.cancelled) {
-      this.dispose(disposer);
-      return;
-    }
-    run.disposers.push(disposer);
+    if (run.cancelled) this.dispose(disposer);
+    else run.disposers.push(disposer);
   }
 
   private releaseRun(run: RuntimeRun) {
@@ -146,8 +114,8 @@ export class ContentRuntime {
   private dispose(disposer: Disposer) {
     try {
       disposer();
-    } catch (error) {
-      console.error('Content runtime cleanup failed:', error);
+    } catch {
+      console.error('Content runtime cleanup failed');
     }
   }
 }

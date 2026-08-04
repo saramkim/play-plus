@@ -1,4 +1,4 @@
-import type { PendingSubtitleRequest } from '@storage/type';
+import type { PendingSubtitleRequest } from '@storage/session-type';
 import { COUPANG_PLAY_SUBTITLE_API_URL } from '@utils/constants';
 import { sendMessageToTab } from '@utils/message';
 
@@ -33,8 +33,8 @@ export const registerSubtitleRequestCapture = (
       const hasCustomHeader = requestHeaders?.some((header) => header.name === 'X-Extension-Request');
       if (hasCustomHeader || tabId < 0) return;
 
-      void sendSubtitleRequest(tabId, { url, headers: requestHeaders ?? [] }).catch((error) =>
-        console.error('Error preserving subtitle request:', error)
+      void sendSubtitleRequest(tabId, { url, headers: requestHeaders ?? [] }).catch(() =>
+        console.error('Unable to preserve a subtitle request')
       );
     },
     { urls: [`${COUPANG_PLAY_SUBTITLE_API_URL}?*`] },

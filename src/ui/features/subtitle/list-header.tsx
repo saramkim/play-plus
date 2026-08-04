@@ -1,21 +1,20 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { SavedSubtitle, SubtitleMetadata } from '@storage/type';
 import { t } from '@utils/i18n';
 import { XIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
 
-interface ListHeaderProps<T extends SubtitleMetadata | SavedSubtitle> {
+interface ListHeaderProps<T extends { savedAt: string }> {
   originalList: T[];
   onFilteredListChange: (filteredList: T[]) => void;
   filterKey?: keyof T extends string ? keyof T : never;
   getFilterText?: (item: T) => string;
 }
 
-export function ListHeader<T extends SubtitleMetadata | SavedSubtitle>({
+export function ListHeader<T extends { savedAt: string }>({
   originalList,
   onFilteredListChange,
   filterKey,

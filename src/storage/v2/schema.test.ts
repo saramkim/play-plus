@@ -105,4 +105,62 @@ describe('v2 storage schemas', () => {
       }).success
     ).toBe(false);
   });
+
+  it('rejects reserved and duplicate canonical shortcuts', () => {
+    const valid = {
+      learningProfile: { learningLanguage: 'en', supportLanguage: 'ko' },
+      subtitleDisplay: {
+        learning: {
+          visibility: 'visible',
+          appearance: {
+            positionReference: 'bottom',
+            positionOffset: 0,
+            color: '#ffffff',
+            fontSize: 6,
+            fontWeight: 4,
+            backgroundOpacity: 0,
+            lineBreak: true,
+          },
+        },
+        support: {
+          visibility: 'hidden',
+          appearance: {
+            positionReference: 'bottom',
+            positionOffset: 0,
+            color: '#ffffff',
+            fontSize: 4,
+            fontWeight: 2,
+            backgroundOpacity: 0,
+            lineBreak: false,
+          },
+        },
+      },
+      learningControls: {
+        previousCue: { enabled: true },
+        nextCue: { enabled: true },
+        repeatCurrentCue: { enabled: false },
+      },
+      shortcuts: {
+        enabled: true,
+        saveCard: 'KeyS',
+        previousCue: 'ArrowLeft',
+        nextCue: 'ArrowRight',
+        repeatCurrentCue: 'KeyR',
+      },
+      playbackSpeed: { enabled: true, increase: 'BracketRight', decrease: 'BracketLeft', reset: 'KeyP' },
+    } as const;
+
+    expect(
+      v2SyncStorageSchema.safeParse({
+        ...valid,
+        shortcuts: { ...valid.shortcuts, saveCard: 'Space' },
+      }).success
+    ).toBe(false);
+    expect(
+      v2SyncStorageSchema.safeParse({
+        ...valid,
+        playbackSpeed: { ...valid.playbackSpeed, increase: valid.shortcuts.previousCue },
+      }).success
+    ).toBe(false);
+  });
 });

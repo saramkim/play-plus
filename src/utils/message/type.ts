@@ -1,14 +1,27 @@
-import { SubtitleId } from '@storage/subtitle';
-import {
-  OpenSubtitlesDownloadedSubtitle,
-  OpenSubtitlesErrorCode,
-  OpenSubtitlesSearchQuery,
-  OpenSubtitlesSearchResult,
-} from '@utils/opensubtitles/type';
-import { SubtitleData } from '@utils/parse';
+import type { DeletedLearningCard } from '@storage/v2/learning-card-storage';
+import type { LearningCard } from '@storage/v2/type';
+
+export type SubtitleRole = 'learning' | 'support';
+
+export type ContentBootstrap = {
+  learningSubtitleId: string | null;
+  supportSubtitleId: string | null;
+};
+
+export type V2ReadinessStatus =
+  | { status: 'ready' }
+  | { status: 'error'; code: 'migration-failed' };
 
 export type MessageSchema = {
-  contentInitialized: void;
+  getV2Readiness: {
+    response: V2ReadinessStatus;
+  };
+  retryV2Readiness: {
+    response: V2ReadinessStatus;
+  };
+  contentInitialized: {
+    response: ContentBootstrap;
+  };
   resetElement: void;
   detectVideo: void;
   fetchVideoMetadata: {
@@ -20,20 +33,11 @@ export type MessageSchema = {
   viewVideo: {
     params: { url: string; startTime: number };
   };
-  setPrimarySubtitle: {
-    params: { subtitleId: SubtitleId | null; delay: number };
+  setSubtitleRole: {
+    params: { role: SubtitleRole; subtitleId: string | null };
   };
-  setSecondarySubtitle: {
-    params: { subtitleId: SubtitleId | null; delay: number };
-  };
-  updateSubtitleDelay: {
-    params: { subtitleId: SubtitleId; delay: number };
-  };
-  updateCurrentTime: {
-    params: number;
-  };
-  updateSubtitles: {
-    params: { lang: string; subtitleData: SubtitleData[] | null };
+  refreshRegisteredSubtitle: {
+    params: { subtitleId: string };
   };
   pingContent: {
     response: { hasVideo: boolean };
@@ -41,17 +45,23 @@ export type MessageSchema = {
   contentStatus: {
     params: { hasVideo: boolean; isVideoUrl: boolean };
   };
-  getVideoTime: {
-    response: number;
+  getLearningCards: {
+    response: LearningCard[];
   };
-  searchOpenSubtitles: {
-    params: OpenSubtitlesSearchQuery;
-    response: OpenSubtitlesSearchResult;
-    error: OpenSubtitlesErrorCode;
+  addLearningCard: {
+    params: { card: LearningCard };
+    response: LearningCard;
   };
-  downloadOpenSubtitle: {
-    params: { fileId: number; language: OpenSubtitlesSearchQuery['language'] };
-    response: OpenSubtitlesDownloadedSubtitle;
-    error: OpenSubtitlesErrorCode;
+  updateLearningCard: {
+    params: { id: string; card: LearningCard };
+    response: LearningCard;
+  };
+  deleteLearningCard: {
+    params: { id: string };
+    response: DeletedLearningCard;
+  };
+  restoreLearningCard: {
+    params: { deleted: DeletedLearningCard };
+    response: LearningCard;
   };
 };

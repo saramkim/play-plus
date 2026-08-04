@@ -8,12 +8,25 @@ describe('v2 sync storage', () => {
     expectTypeOf(chrome.storage.sync).toMatchTypeOf<V2SyncStorageArea>();
   });
 
-  it('returns canonical defaults only for missing keys', async () => {
+  it('fails closed when canonical keys are missing', async () => {
     const storage = new FakeSyncStorage();
     const api = createV2SyncStorage(storage);
 
-    await expect(api.get('learningProfile')).resolves.toEqual(DEFAULT_V2_SYNC_STORAGE.learningProfile);
-    await expect(api.getAll()).resolves.toEqual(DEFAULT_V2_SYNC_STORAGE);
+    await expect(api.get('learningProfile')).rejects.toThrow();
+    await expect(api.getAll()).rejects.toThrow();
+  });
+
+  it('returns clones of strict canonical values', async () => {
+    const storage = new FakeSyncStorage({ ...DEFAULT_V2_SYNC_STORAGE });
+    const api = createV2SyncStorage(storage);
+
+    const learningProfile = await api.get('learningProfile');
+    const all = await api.getAll();
+    learningProfile.learningLanguage = 'ko';
+    all.subtitleDisplay.learning.appearance.color = '#000000';
+
+    expect(storage.values.learningProfile).toEqual(DEFAULT_V2_SYNC_STORAGE.learningProfile);
+    expect(storage.values.subtitleDisplay).toEqual(DEFAULT_V2_SYNC_STORAGE.subtitleDisplay);
   });
 
   it('fails closed when a persisted canonical value is invalid', async () => {
@@ -21,6 +34,19 @@ describe('v2 sync storage', () => {
     const api = createV2SyncStorage(storage);
 
     await expect(api.get('learningProfile')).rejects.toThrow();
+  });
+
+  it('fails closed when the complete canonical settings contain a shortcut conflict', async () => {
+    const storage = new FakeSyncStorage({
+      ...DEFAULT_V2_SYNC_STORAGE,
+      shortcuts: {
+        ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
+        saveCard: DEFAULT_V2_SYNC_STORAGE.shortcuts.previousCue,
+      },
+    });
+    const api = createV2SyncStorage(storage);
+
+    await expect(api.getAll()).rejects.toThrow();
   });
 
   it('validates the complete canonical value before writing', async () => {
@@ -34,6 +60,25 @@ describe('v2 sync storage', () => {
       api.set('learningProfile', { learningLanguage: 'ko' } as never)
     ).rejects.toThrow();
     expect(storage.setCalls).toHaveLength(1);
+  });
+
+  it('writes related canonical settings in one storage operation', async () => {
+    const storage = new FakeSyncStorage();
+    const api = createV2SyncStorage(storage);
+
+    await api.setMany({
+      learningControls: DEFAULT_V2_SYNC_STORAGE.learningControls,
+      shortcuts: DEFAULT_V2_SYNC_STORAGE.shortcuts,
+      playbackSpeed: DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
+    });
+
+    expect(storage.setCalls).toEqual([
+      {
+        learningControls: DEFAULT_V2_SYNC_STORAGE.learningControls,
+        shortcuts: DEFAULT_V2_SYNC_STORAGE.shortcuts,
+        playbackSpeed: DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
+      },
+    ]);
   });
 
   it('emits only strict canonical changes and removes its listener', () => {

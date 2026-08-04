@@ -1,6 +1,9 @@
-import { StorageSchema } from '@storage/type';
+import { V2SyncStorage } from '@storage/v2/type';
 
 import { applyStyles } from '@/content/core/utils/dom';
+import { SubtitleRole } from '@/content/features/subtitle/subtitle-store';
+
+type SubtitleRoleDisplay = V2SyncStorage['subtitleDisplay'][SubtitleRole];
 
 export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[]): Record<string, string> => {
   return headersArray.reduce((obj, item) => {
@@ -8,15 +11,15 @@ export const arrayToHeadersObject = (headersArray: chrome.webRequest.HttpHeader[
   }, {});
 };
 
-export const createSubtitleElement = () => {
+export const createSubtitleElement = (role: SubtitleRole) => {
   const subtitle = document.createElement('p');
+  subtitle.dataset.subtitleRole = role;
 
   applyStyles(subtitle, {
     lineHeight: '1.5em',
     display: 'none',
     left: '50%',
-    pointerEvents: 'auto',
-    cursor: 'pointer',
+    pointerEvents: 'none',
     zIndex: '1000',
     padding: '0 0.5em',
     position: 'absolute',
@@ -25,9 +28,11 @@ export const createSubtitleElement = () => {
   return subtitle;
 };
 
-export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema['primarySubtitle']) => {
-  const { enabled, positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity } =
-    config;
+export const applySubtitleStyles = (subtitle: HTMLElement, display: SubtitleRoleDisplay) => {
+  const {
+    visibility,
+    appearance: { positionReference, positionOffset, color, fontSize, fontWeight, lineBreak, backgroundOpacity },
+  } = display;
 
   const positions = {
     top: { top: `calc(1.5em + ${positionOffset}px)`, bottom: 'auto', transform: 'translate(-50%, -50%)' },
@@ -36,7 +41,7 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
   };
 
   applyStyles(subtitle, {
-    display: enabled ? 'block' : 'none',
+    display: visibility === 'visible' ? 'block' : 'none',
     color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,

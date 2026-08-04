@@ -11,18 +11,22 @@ import { createLearningSettingsStore } from './learning-settings-store';
 
 describe('v2 learning settings store', () => {
   let changesCallback: ((changes: V2SyncStorageChanges) => void) | undefined;
+  let changesErrorCallback: (() => void) | undefined;
   let storage: V2SyncStorageApi;
 
   beforeEach(() => {
     changesCallback = undefined;
+    changesErrorCallback = undefined;
     const get = async <K extends V2SyncStorageKey>(key: K): Promise<V2SyncStorage[K]> =>
       structuredClone(DEFAULT_V2_SYNC_STORAGE[key]);
     storage = {
       get,
       getAll: vi.fn(async () => structuredClone(DEFAULT_V2_SYNC_STORAGE)),
       set: vi.fn(async () => undefined),
-      subscribe: vi.fn((callback) => {
+      setMany: vi.fn(async () => undefined),
+      subscribe: vi.fn((callback, onError) => {
         changesCallback = callback;
+        changesErrorCallback = onError;
         return { remove: vi.fn() };
       }),
     };
@@ -45,7 +49,10 @@ describe('v2 learning settings store', () => {
     expect(useStore.getState().learningProfile).toEqual({ learningLanguage: 'ko', supportLanguage: null });
 
     changesCallback?.({ learningProfile: {} });
-    expect(useStore.getState().learningProfile).toEqual(DEFAULT_V2_SYNC_STORAGE.learningProfile);
+    expect(useStore.getState()).toMatchObject({ error: true, loading: true });
+
+    changesErrorCallback?.();
+    expect(useStore.getState()).toMatchObject({ error: true, loading: true });
   });
 
   it('persists canonical values before updating local state', async () => {
@@ -60,5 +67,23 @@ describe('v2 learning settings store', () => {
     expect(storage.set).toHaveBeenNthCalledWith(1, 'learningProfile', learningProfile);
     expect(storage.set).toHaveBeenNthCalledWith(2, 'subtitleDisplay', subtitleDisplay);
     expect(useStore.getState()).toMatchObject({ learningProfile, subtitleDisplay });
+  });
+
+  it('writes related control settings atomically after validating shortcut conflicts', async () => {
+    const useStore = createLearningSettingsStore(storage);
+    const settings = {
+      learningControls: structuredClone(DEFAULT_V2_SYNC_STORAGE.learningControls),
+      playbackSpeed: structuredClone(DEFAULT_V2_SYNC_STORAGE.playbackSpeed),
+      shortcuts: structuredClone(DEFAULT_V2_SYNC_STORAGE.shortcuts),
+    };
+
+    await useStore.getState().setLearningControls(settings);
+
+    expect(storage.setMany).toHaveBeenCalledOnce();
+    expect(storage.setMany).toHaveBeenCalledWith(settings);
+
+    settings.shortcuts.saveCard = settings.shortcuts.previousCue;
+    await expect(useStore.getState().setLearningControls(settings)).rejects.toThrow();
+    expect(storage.setMany).toHaveBeenCalledOnce();
   });
 });

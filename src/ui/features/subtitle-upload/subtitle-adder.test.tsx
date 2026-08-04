@@ -1,16 +1,40 @@
 import { act } from 'react';
 
+import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { createRoot, Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SubtitleAdder } from './subtitle-adder';
 
-vi.mock('./open-subtitles-search', () => ({
-  OpenSubtitlesSearch: () => <input aria-label='online-draft' defaultValue='Online draft' />,
-}));
+const addedSubtitle: V2RegisteredSubtitleMetadata = {
+  id: 'subtitle-00000000-0000-0000-0000-000000000001',
+  title: 'Lesson',
+  language: 'en',
+  savedAt: '2026-08-04T00:00:00.000Z',
+};
 
 vi.mock('./subtitle-uploader', () => ({
-  SubtitleUploader: () => <input aria-label='file-draft' defaultValue='File draft' />,
+  SubtitleUploader: ({
+    focusOnMount,
+    onAdded,
+    onBusyChange,
+  }: {
+    focusOnMount: boolean;
+    onAdded: (subtitle: V2RegisteredSubtitleMetadata) => void;
+    onBusyChange: (busy: boolean) => void;
+  }) => (
+    <section data-focus-on-mount={String(focusOnMount)}>
+      <button type='button' onClick={() => onBusyChange(true)}>
+        start
+      </button>
+      <button type='button' onClick={() => onBusyChange(false)}>
+        finish
+      </button>
+      <button type='button' onClick={() => onAdded(addedSubtitle)}>
+        add
+      </button>
+    </section>
+  ),
 }));
 
 describe('SubtitleAdder', () => {
@@ -28,43 +52,25 @@ describe('SubtitleAdder', () => {
     container.remove();
   });
 
-  it('keeps both source drafts mounted while hiding the inactive workflow', () => {
+  it('renders only the file uploader and forwards focus, busy, and added state', () => {
+    const onAdded = vi.fn();
+    const onBusyChange = vi.fn();
+
     act(() => {
       root.render(
-        <SubtitleAdder
-          initialSource='file'
-          onAdded={vi.fn()}
-          onBusyChange={vi.fn()}
-        />
+        <SubtitleAdder focusFirstControl onAdded={onAdded} onBusyChange={onBusyChange} />
       );
     });
 
-    const fileDraft = container.querySelector<HTMLInputElement>("input[aria-label='file-draft']");
-    const onlineDraft = container.querySelector<HTMLInputElement>("input[aria-label='online-draft']");
-    const onlineToggle = container.querySelector<HTMLButtonElement>("button[aria-label='find_online']");
-    const fileToggle = container.querySelector<HTMLButtonElement>("button[aria-label='add_from_file']");
+    expect(container.querySelector('section')?.dataset.focusOnMount).toBe('true');
+    expect(container.querySelectorAll('button')).toHaveLength(3);
 
-    expect(fileDraft).not.toBeNull();
-    expect(onlineDraft).not.toBeNull();
-    expect(fileDraft?.closest('[hidden]')).toBeNull();
-    expect(onlineDraft?.closest('[hidden]')).not.toBeNull();
+    const buttons = Array.from(container.querySelectorAll('button'));
+    act(() => buttons[0].click());
+    act(() => buttons[1].click());
+    act(() => buttons[2].click());
 
-    if (!fileDraft || !onlineDraft || !onlineToggle || !fileToggle) throw new Error('Expected subtitle source controls');
-    fileDraft.value = 'Preserved file draft';
-    onlineDraft.value = 'Preserved online draft';
-
-    act(() => onlineToggle.click());
-
-    expect(fileDraft.closest('[hidden]')).not.toBeNull();
-    expect(onlineDraft.closest('[hidden]')).toBeNull();
-    expect(fileDraft.value).toBe('Preserved file draft');
-    expect(document.activeElement).toBe(onlineToggle);
-
-    act(() => fileToggle.click());
-
-    expect(fileDraft.closest('[hidden]')).toBeNull();
-    expect(onlineDraft.closest('[hidden]')).not.toBeNull();
-    expect(onlineDraft.value).toBe('Preserved online draft');
-    expect(document.activeElement).toBe(fileToggle);
+    expect(onBusyChange.mock.calls).toEqual([[true], [false]]);
+    expect(onAdded).toHaveBeenCalledWith(addedSubtitle);
   });
 });
