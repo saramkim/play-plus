@@ -9,6 +9,7 @@ import { t } from '@utils/i18n';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
+import { usePageStore } from '@/ui/store/page-store';
 
 import { LearningCardContent } from './learning-card-content';
 import { LearningCardEditor } from './learning-card-editor';
@@ -49,6 +50,7 @@ const DEFAULT_QUERY: LearningCardLibraryQuery = {
 };
 
 export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCardLibraryProps) {
+  const acquireNavigationLock = usePageStore((state) => state.acquireNavigationLock);
   const [cards, setCards] = useState<LearningCard[]>();
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState(DEFAULT_QUERY);
@@ -66,7 +68,26 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
   );
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handledRefreshRevisionRef = useRef(refreshRevision);
+  const mutationReleaseRef = useRef<(() => void) | undefined>(undefined);
   const undoRef = useRef<HTMLButtonElement>(null);
+
+  const beginMutation = useCallback(
+    (cardId: string) => {
+      if (mutationReleaseRef.current) return;
+      const releaseNavigationLock = acquireNavigationLock();
+      mutationReleaseRef.current = releaseNavigationLock;
+      setPendingCardId(cardId);
+      return releaseNavigationLock;
+    },
+    [acquireNavigationLock]
+  );
+
+  const finishMutation = useCallback((releaseNavigationLock: () => void) => {
+    releaseNavigationLock();
+    if (mutationReleaseRef.current !== releaseNavigationLock) return;
+    mutationReleaseRef.current = undefined;
+    setPendingCardId(undefined);
+  }, []);
 
   const load = useCallback(async () => {
     setCards(undefined);
@@ -82,6 +103,14 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(
+    () => () => {
+      mutationReleaseRef.current?.();
+      mutationReleaseRef.current = undefined;
+    },
+    []
+  );
 
   useEffect(() => {
     if (handledRefreshRevisionRef.current === refreshRevision) return;
@@ -127,36 +156,37 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
   };
 
   const handleStateChange = async (card: LearningCard, studyState: LearningCard['studyState']) => {
-    if (card.studyState === studyState || pendingCardId) return;
+    if (card.studyState === studyState) return;
+    const releaseNavigationLock = beginMutation(card.id);
+    if (!releaseNavigationLock) return;
     setActionError(undefined);
-    setPendingCardId(card.id);
     try {
       replaceCard(await storage.update(card.id, { ...card, studyState }));
       setFocusRequest({ action: 'state', cardId: card.id });
     } catch {
       setActionError({ cardId: card.id, message: t('v2_library_update_error') });
     } finally {
-      setPendingCardId(undefined);
+      finishMutation(releaseNavigationLock);
     }
   };
 
   const handleSave = async (card: LearningCard) => {
-    if (pendingCardId) throw new Error('A card mutation is already pending');
+    const releaseNavigationLock = beginMutation(card.id);
+    if (!releaseNavigationLock) throw new Error('A card mutation is already pending');
     setActionError(undefined);
-    setPendingCardId(card.id);
     try {
       replaceCard(await storage.update(card.id, card));
       setEditingId(undefined);
       setFocusRequest({ action: 'edit', cardId: card.id });
     } finally {
-      setPendingCardId(undefined);
+      finishMutation(releaseNavigationLock);
     }
   };
 
   const handleDelete = async (card: LearningCard) => {
-    if (pendingCardId) return;
+    const releaseNavigationLock = beginMutation(card.id);
+    if (!releaseNavigationLock) return;
     setActionError(undefined);
-    setPendingCardId(card.id);
     try {
       const deletion = await storage.delete(card.id);
       setCards((current) => removeLearningCard(current, card.id));
@@ -165,14 +195,15 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
     } catch {
       setActionError({ cardId: card.id, message: t('v2_library_delete_error') });
     } finally {
-      setPendingCardId(undefined);
+      finishMutation(releaseNavigationLock);
     }
   };
 
   const handleRestore = async () => {
-    if (!deleted || pendingCardId) return;
+    if (!deleted) return;
+    const releaseNavigationLock = beginMutation(deleted.card.id);
+    if (!releaseNavigationLock) return;
     setActionError(undefined);
-    setPendingCardId(deleted.card.id);
     try {
       const restored = await storage.restore(deleted);
       setCards((current) => insertLearningCard(current, restored, deleted.index));
@@ -181,7 +212,7 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
     } catch {
       setActionError({ message: t('v2_library_restore_error') });
     } finally {
-      setPendingCardId(undefined);
+      finishMutation(releaseNavigationLock);
     }
   };
 

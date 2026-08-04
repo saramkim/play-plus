@@ -4,6 +4,9 @@ import { LearningCard } from '@storage/v2/type';
 import { createRoot, Root } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Header } from '@/ui/layout/header';
+import { usePageStore } from '@/ui/store/page-store';
+
 import {
   FocusedReview,
   FocusedReviewStorage,
@@ -46,7 +49,9 @@ describe('v2 Focused Review component', () => {
   let container: HTMLDivElement;
   let root: Root;
   let onOpenLibrary: ReturnType<typeof vi.fn<() => void>>;
-  let onOpenOriginalVideo: ReturnType<typeof vi.fn<(target: OpenOriginalVideoTarget) => void>>;
+  let onOpenOriginalVideo: ReturnType<
+    typeof vi.fn<(target: OpenOriginalVideoTarget) => Promise<void>>
+  >;
 
   beforeAll(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
 
@@ -60,7 +65,12 @@ describe('v2 Focused Review component', () => {
       return [key, ...values].join(':');
     });
     onOpenLibrary = vi.fn<() => void>();
-    onOpenOriginalVideo = vi.fn();
+    onOpenOriginalVideo = vi.fn(async () => undefined);
+    usePageStore.setState({
+      currentPage: 'review',
+      navigationLockTokens: new Set(),
+      navigationLocked: false,
+    });
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
@@ -68,6 +78,11 @@ describe('v2 Focused Review component', () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    usePageStore.setState({
+      currentPage: 'learning',
+      navigationLockTokens: new Set(),
+      navigationLocked: false,
+    });
     container.remove();
   });
 
@@ -289,12 +304,16 @@ describe('v2 Focused Review component', () => {
     expect(harness.storage.update).toHaveBeenCalledTimes(1);
     expect(onOpenOriginalVideo).not.toHaveBeenCalled();
     expect(onOpenLibrary).not.toHaveBeenCalled();
+    expect(getHeaderButtons(container).every((button) => button.disabled)).toBe(true);
+    act(() => usePageStore.getState().setPage('learning'));
+    expect(usePageStore.getState().currentPage).toBe('review');
 
     await act(async () => {
       deferred.resolve({ ...first, studyState: 'completed' });
       await deferred.promise;
     });
     expect(container.textContent).toContain('Learning second');
+    expect(getHeaderButtons(container).every((button) => !button.disabled)).toBe(true);
   });
 
   it('preserves the card, revealed support, and initiating-button focus after a failed write', async () => {
@@ -373,12 +392,14 @@ describe('v2 Focused Review component', () => {
     expect(container.querySelector("[role='alert']")).toBeNull();
   });
 
-  it('opens only the exact immutable video target without writing card state', async () => {
+  it('awaits one exact video target and locks all navigation until it succeeds', async () => {
     const card: LearningCard = {
       ...assignedCard('video'),
       content: { learning: { text: 'Learning video', language: 'en' } },
     };
     const harness = createStorageHarness([card]);
+    const deferred = createDeferred<void>();
+    onOpenOriginalVideo.mockReturnValueOnce(deferred.promise);
     await renderReview(harness.storage);
 
     expect(
@@ -386,7 +407,11 @@ describe('v2 Focused Review component', () => {
         button.textContent?.includes('v2_review_show_support')
       )
     ).toBe(false);
-    act(() => getButton(container, 'v2_review_open_video').click());
+    const openVideo = getButton(container, 'v2_review_open_video');
+    await act(async () => {
+      openVideo.click();
+      await Promise.resolve();
+    });
 
     expect(onOpenOriginalVideo).toHaveBeenCalledWith({
       url: card.source.url,
@@ -397,9 +422,65 @@ describe('v2 Focused Review component', () => {
       'url',
     ]);
     expect(harness.storage.update).not.toHaveBeenCalled();
+    expect(getFocusedCard(container).getAttribute('aria-busy')).toBe('true');
+    expect(container.textContent).not.toContain('v2_review_save_pending');
+    expect(getHeaderButtons(container).every((button) => button.disabled)).toBe(true);
+    expect(getButton(container, 'v2_review_active_session').disabled).toBe(true);
+    expect(getButton(container, 'v2_review_open_library').disabled).toBe(true);
+    expect(getButton(container, 'v2_review_skip').disabled).toBe(true);
+    expect(openVideo.disabled).toBe(true);
+
+    act(() => openVideo.click());
+    expect(onOpenOriginalVideo).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+    expect(getFocusedCard(container).getAttribute('aria-busy')).toBe('false');
+    expect(getHeaderButtons(container).every((button) => !button.disabled)).toBe(true);
+    expect(container.querySelector("[role='alert']")).toBeNull();
   });
 
-  it('refreshes the current session without remounting the focused card', async () => {
+  it('preserves the card, progress, support, and trigger focus when opening video fails', async () => {
+    const card = assignedCard('video-failure');
+    const harness = createStorageHarness([card]);
+    const deferred = createRejectedDeferred<void>();
+    onOpenOriginalVideo.mockReturnValueOnce(deferred.promise);
+    await renderReview(harness.storage);
+
+    act(() => getButton(container, 'v2_review_show_support').click());
+    const article = getFocusedCard(container);
+    const progress = getProgressbar(container);
+    const openVideo = getButton(container, 'v2_review_open_video');
+    openVideo.focus();
+    await act(async () => {
+      openVideo.click();
+      await Promise.resolve();
+    });
+
+    expect(getHeaderButtons(container).every((button) => button.disabled)).toBe(true);
+
+    await act(async () => {
+      deferred.reject(new Error('Transport unavailable'));
+      await deferred.promise.catch(() => undefined);
+    });
+
+    expect(getFocusedCard(container)).toBe(article);
+    expect(getProgressbar(container)).toBe(progress);
+    expect(progress.getAttribute('aria-valuenow')).toBe('1');
+    expect(progress.getAttribute('aria-valuemax')).toBe('1');
+    expect(container.textContent).toContain('Learning video-failure');
+    expect(container.textContent).toContain('Support video-failure');
+    expect(container.querySelector("[role='alert']")?.textContent).toBe(
+      'v2_review_open_video_error'
+    );
+    expect(document.activeElement).toBe(openVideo);
+    expect(getHeaderButtons(container).every((button) => !button.disabled)).toBe(true);
+    expect(harness.storage.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the current session snapshot until the user explicitly restarts it', async () => {
     const first = assignedCard('refresh-first');
     const second = assignedCard('refresh-second');
     const third = assignedCard('refresh-third');
@@ -410,38 +491,47 @@ describe('v2 Focused Review component', () => {
         .mockResolvedValueOnce([first, second, third]),
       update: vi.fn(),
     };
-    await renderReview(storage, 0);
+    await renderReview(storage);
     act(() => getButton(container, 'v2_review_skip').click());
     act(() => getButton(container, 'v2_review_show_support').click());
     const article = getFocusedCard(container);
     expect(article.textContent).toContain('Support refresh-second');
 
     await act(async () => {
-      render(storage, 1);
+      render(storage);
       await Promise.resolve();
     });
 
     expect(getFocusedCard(container)).toBe(article);
     expect(article.textContent).toContain('Learning refresh-second');
     expect(article.textContent).toContain('Support refresh-second');
-    expect(getProgressbar(container).getAttribute('aria-valuemax')).toBe('3');
+    expect(getProgressbar(container).getAttribute('aria-valuemax')).toBe('2');
     expect(getProgressbar(container).getAttribute('aria-valuenow')).toBe('2');
+    expect(storage.get).toHaveBeenCalledTimes(1);
+
+    await act(async () => getButton(container, 'v2_review_active_session').click());
+    expect(storage.get).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toContain('Learning refresh-first');
+    expect(getProgressbar(container).getAttribute('aria-valuemax')).toBe('3');
+    expect(getProgressbar(container).getAttribute('aria-valuenow')).toBe('1');
   });
 
-  function render(storage: FocusedReviewStorage, refreshRevision = 0) {
+  function render(storage: FocusedReviewStorage) {
     root.render(
-      <FocusedReview
-        refreshRevision={refreshRevision}
-        storage={storage}
-        onOpenLibrary={onOpenLibrary}
-        onOpenOriginalVideo={onOpenOriginalVideo}
-      />
+      <>
+        <Header />
+        <FocusedReview
+          storage={storage}
+          onOpenLibrary={onOpenLibrary}
+          onOpenOriginalVideo={onOpenOriginalVideo}
+        />
+      </>
     );
   }
 
-  async function renderReview(storage: FocusedReviewStorage, refreshRevision = 0) {
+  async function renderReview(storage: FocusedReviewStorage) {
     await act(async () => {
-      render(storage, refreshRevision);
+      render(storage);
       await Promise.resolve();
     });
   }
@@ -523,6 +613,10 @@ function getProgressbar(container: HTMLElement) {
   const progressbar = container.querySelector("[role='progressbar']");
   if (!progressbar) throw new Error('Expected Review progressbar');
   return progressbar;
+}
+
+function getHeaderButtons(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLButtonElement>('nav button'));
 }
 
 function createDeferred<T>() {

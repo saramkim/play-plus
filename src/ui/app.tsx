@@ -120,7 +120,6 @@ export function App() {
     }
     return (
       <FocusedReview
-        refreshRevision={cardRevision}
         storage={learningCardStorage}
         onOpenLibrary={() => setPage('library')}
         onOpenOriginalVideo={async (source) => {

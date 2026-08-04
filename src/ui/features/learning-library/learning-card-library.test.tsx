@@ -8,6 +8,9 @@ import { LearningCard } from '@storage/v2/type';
 import { createRoot, Root } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Header } from '@/ui/layout/header';
+import { usePageStore } from '@/ui/store/page-store';
+
 import {
   getVisibleLearningCards,
   LearningCardLibrary,
@@ -48,6 +51,11 @@ describe('v2 learning card Library component', () => {
 
   beforeEach(() => {
     vi.mocked(chrome.i18n.getMessage).mockImplementation((key) => key);
+    usePageStore.setState({
+      currentPage: 'learning',
+      navigationLockTokens: new Set(),
+      navigationLocked: false,
+    });
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
@@ -55,6 +63,11 @@ describe('v2 learning card Library component', () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    usePageStore.setState({
+      currentPage: 'learning',
+      navigationLockTokens: new Set(),
+      navigationLocked: false,
+    });
     container.remove();
   });
 
@@ -157,6 +170,7 @@ describe('v2 learning card Library component', () => {
       studyState: 'completed',
     });
     expect(getCard(container, 'Learning pending').getAttribute('aria-busy')).toBe('true');
+    expect(usePageStore.getState().navigationLocked).toBe(true);
     expect(Array.from(container.querySelectorAll('button, select')).every((control) => {
       if (control.getAttribute('aria-label')?.includes('filter')) return true;
       if (control.getAttribute('aria-label')?.includes('sort')) return true;
@@ -168,6 +182,7 @@ describe('v2 learning card Library component', () => {
 
     expect(stateSelect.value).toBe('completed');
     expect(document.activeElement).toBe(stateSelect);
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 
   it('keeps persisted state unchanged and reports a recoverable direct-update failure', async () => {
@@ -238,10 +253,20 @@ describe('v2 learning card Library component', () => {
     const harness = createStorageHarness([editingCard, otherCard]);
     const deferred = createRejectedDeferred<LearningCard>();
     harness.storage.update = vi.fn(() => deferred.promise);
-    await renderLibrary(root, harness.storage);
+    usePageStore.setState({ currentPage: 'library' });
+    await act(async () => {
+      root.render(
+        <>
+          <Header />
+          <LearningCardLibrary storage={harness.storage} />
+        </>
+      );
+      await Promise.resolve();
+    });
     act(() => getButton(getCard(container, 'Learning locked-draft'), 'edit').click());
     const text = getTextarea(container, `${editingCard.id}-learning-text`);
     changeInput(text, 'Draft that must stay mounted');
+    text.focus();
 
     await act(async () => {
       submitEditor(container);
@@ -254,6 +279,12 @@ describe('v2 learning card Library component', () => {
     expect(search.disabled).toBe(true);
     expect(stateFilter.disabled).toBe(true);
     expect(getButton(getCard(container, 'Learning other'), 'edit').disabled).toBe(true);
+    expect(getNavigationButtons(container).every((button) => button.disabled)).toBe(true);
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+
+    act(() => usePageStore.getState().setPage('review'));
+    expect(usePageStore.getState().currentPage).toBe('library');
+    expect(document.activeElement).toBe(text);
 
     changeInput(search, 'no matching cards');
     changeSelect(stateFilter, 'completed');
@@ -267,6 +298,30 @@ describe('v2 learning card Library component', () => {
     expect(text.value).toBe('Draft that must stay mounted');
     expect(container.textContent).toContain('v2_library_update_error');
     expect(container.querySelector(`#${editingCard.id}-learning-text`)).toBe(text);
+    expect(document.activeElement).toBe(text);
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+    expect(getNavigationButtons(container).every((button) => !button.disabled)).toBe(true);
+  });
+
+  it('releases its navigation lock when an in-flight mutation is unmounted', async () => {
+    const card = assignedCard('unmount-pending');
+    const harness = createStorageHarness([card]);
+    const deferred = createDeferred<DeletedLearningCard>();
+    harness.storage.delete = vi.fn(() => deferred.promise);
+    await renderLibrary(root, harness.storage);
+
+    await act(async () => {
+      getButton(getCard(container, 'Learning unmount-pending'), 'delete').click();
+      await Promise.resolve();
+    });
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+
+    act(() => root.render(<Header />));
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+    expect(getNavigationButtons(container).every((button) => !button.disabled)).toBe(true);
+
+    await act(async () => deferred.resolve({ card, index: 0 }));
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 
   it('supports role swapping, support removal, and cancel focus restoration in the editor', async () => {
@@ -315,18 +370,43 @@ describe('v2 learning card Library component', () => {
     const middle = assignedCard('middle');
     const last = assignedCard('last');
     const harness = createStorageHarness([first, middle, last]);
+    const deleteDeferred = createDeferred<void>();
+    const deleteCard = harness.storage.delete;
+    harness.storage.delete = vi.fn(async (id) => {
+      await deleteDeferred.promise;
+      return deleteCard(id);
+    });
     await renderLibrary(root, harness.storage);
-    act(() => getButton(getCard(container, 'Learning middle'), 'delete').click());
-    await act(async () => Promise.resolve());
+    await act(async () => {
+      getButton(getCard(container, 'Learning middle'), 'delete').click();
+      await Promise.resolve();
+    });
+
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+    await act(async () => deleteDeferred.resolve(undefined));
 
     expect(harness.state()).toEqual([first, last]);
     expect(container.textContent).not.toContain('Learning middle');
+    expect(usePageStore.getState().navigationLocked).toBe(false);
     const undo = getButton(container, 'v2_library_restore');
     expect(document.activeElement).toBe(undo);
 
-    await act(async () => undo.click());
+    const restoreDeferred = createDeferred<void>();
+    const restoreCard = harness.storage.restore;
+    harness.storage.restore = vi.fn(async (deletion) => {
+      await restoreDeferred.promise;
+      return restoreCard(deletion);
+    });
+    await act(async () => {
+      undo.click();
+      await Promise.resolve();
+    });
+
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+    await act(async () => restoreDeferred.resolve(undefined));
 
     expect(harness.state()).toEqual([first, middle, last]);
+    expect(usePageStore.getState().navigationLocked).toBe(false);
     const restoredDelete = getButton(getCard(container, 'Learning middle'), 'delete');
     expect(document.activeElement).toBe(restoredDelete);
   });
@@ -358,22 +438,22 @@ describe('v2 learning card Library component', () => {
     expect(container.textContent).not.toContain('Learning delete-failure');
   });
 
-  it('refreshes canonical cards without remounting query, focus, or undo state', async () => {
-    const first = assignedCard('refresh-first');
-    const deleted = assignedCard('refresh-deleted');
-    const harness = createStorageHarness([first, deleted]);
+  it('refreshes added canonical cards without resetting the active editor, query, or focus', async () => {
+    const current = assignedCard('refresh-current');
+    const added = assignedCard('refresh-added', 'active', '2026-08-03T00:00:00.000Z');
+    const harness = createStorageHarness([current]);
     await act(async () => {
       root.render(<LearningCardLibrary refreshRevision={0} storage={harness.storage} />);
       await Promise.resolve();
     });
     const search = getInput(container, 'v2_library_search_label');
     changeInput(search, 'Learning');
-    search.focus();
+    act(() => getButton(getCard(container, 'Learning refresh-current'), 'edit').click());
+    const text = getTextarea(container, `${current.id}-learning-text`);
+    changeInput(text, 'Unsaved text that survives refresh');
+    text.focus();
 
-    await act(async () =>
-      getButton(getCard(container, 'Learning refresh-deleted'), 'delete').click()
-    );
-    const undo = getButton(container, 'v2_library_restore');
+    await act(async () => harness.storage.add(added));
 
     await act(async () => {
       root.render(<LearningCardLibrary refreshRevision={1} storage={harness.storage} />);
@@ -382,7 +462,10 @@ describe('v2 learning card Library component', () => {
 
     expect(getInput(container, 'v2_library_search_label')).toBe(search);
     expect(search.value).toBe('Learning');
-    expect(getButton(container, 'v2_library_restore')).toBe(undo);
+    expect(getTextarea(container, `${current.id}-learning-text`)).toBe(text);
+    expect(text.value).toBe('Unsaved text that survives refresh');
+    expect(document.activeElement).toBe(text);
+    expect(container.textContent).toContain('Learning refresh-added');
     expect(harness.storage.get).toHaveBeenCalledTimes(2);
   });
 });
@@ -472,6 +555,12 @@ function getButton(scope: ParentNode, accessibleName: string) {
   );
   if (!button) throw new Error(`Expected button: ${accessibleName}`);
   return button;
+}
+
+function getNavigationButtons(container: HTMLElement) {
+  const navigation = container.querySelector('nav');
+  if (!navigation) throw new Error('Expected page navigation');
+  return Array.from(navigation.querySelectorAll('button'));
 }
 
 function getCard(container: HTMLElement, text: string) {

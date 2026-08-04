@@ -14,6 +14,7 @@ import { getLocalSubtitle, removeLocalSubtitle, setLocalSubtitle, SubtitleId } f
 const UUID = '00000000-0000-4000-8000-000000000001';
 const ID = `${REGISTRATION.ID_PREFIX}-${UUID}` as SubtitleId;
 const OTHER_ID = `${REGISTRATION.ID_PREFIX}-00000000-0000-4000-8000-000000000002` as SubtitleId;
+const THIRD_ID = `${REGISTRATION.ID_PREFIX}-00000000-0000-4000-8000-000000000003` as SubtitleId;
 const SAVED_AT = '2026-08-01T00:00:00.000Z';
 const BODY = [{ start: 1, end: 2, text: 'Hello' }];
 const metadata: V2RegisteredSubtitleMetadata = {
@@ -26,6 +27,12 @@ const otherMetadata: V2RegisteredSubtitleMetadata = {
   id: OTHER_ID,
   title: 'Korean',
   language: 'ko',
+  savedAt: SAVED_AT,
+};
+const thirdMetadata: V2RegisteredSubtitleMetadata = {
+  id: THIRD_ID,
+  title: 'Japanese',
+  language: 'ja',
   savedAt: SAVED_AT,
 };
 
@@ -128,7 +135,7 @@ describe('registered subtitle storage', () => {
   });
 
   it('deletes metadata before removing its body and preserves siblings', async () => {
-    localStorage.registeredSubtitles = [metadata, otherMetadata];
+    localStorage.registeredSubtitles = [otherMetadata, metadata, thirdMetadata];
     localStorage[ID] = BODY;
     const events: string[] = [];
     vi.mocked(chrome.storage.local.set).mockImplementation(async (items) => {
@@ -143,31 +150,51 @@ describe('registered subtitle storage', () => {
     await expect(deleteRegisteredSubtitle(ID)).resolves.toEqual(metadata);
 
     expect(events).toEqual(['metadata', 'body']);
-    expect(localStorage.registeredSubtitles).toEqual([otherMetadata]);
+    expect(localStorage.registeredSubtitles).toEqual([otherMetadata, thirdMetadata]);
     expect(localStorage[ID]).toBeUndefined();
   });
 
   it('does not remove a body when the metadata write fails and recovers the mutation queue', async () => {
-    localStorage.registeredSubtitles = [metadata];
+    localStorage.registeredSubtitles = [otherMetadata, metadata];
     localStorage[ID] = BODY;
     const error = new Error('metadata write failed');
     vi.mocked(chrome.storage.local.set).mockRejectedValueOnce(error);
 
     await expect(deleteRegisteredSubtitle(ID)).rejects.toBe(error);
     expect(chrome.storage.local.remove).not.toHaveBeenCalled();
+    expect(localStorage.registeredSubtitles).toEqual([otherMetadata, metadata]);
+    expect(localStorage[ID]).toEqual(BODY);
     await expect(updateRegisteredSubtitle(ID, { delay: 0.5 })).resolves.toEqual({ ...metadata, delay: 0.5 });
+    expect(localStorage.registeredSubtitles).toEqual([otherMetadata, { ...metadata, delay: 0.5 }]);
   });
 
-  it('propagates a body removal failure after committing the metadata deletion', async () => {
-    localStorage.registeredSubtitles = [metadata, otherMetadata];
+  it('restores the exact metadata order and body after body removal fails, then recovers the queue', async () => {
+    const originalMetadata = [otherMetadata, metadata, thirdMetadata];
+    localStorage.registeredSubtitles = originalMetadata;
     localStorage[ID] = BODY;
     const error = new Error('body removal failed');
-    vi.mocked(chrome.storage.local.remove).mockRejectedValueOnce(error);
+    vi.mocked(chrome.storage.local.remove).mockImplementationOnce(async (key) => {
+      if (typeof key === 'string') delete localStorage[key];
+      throw error;
+    });
 
     await expect(deleteRegisteredSubtitle(ID)).rejects.toBe(error);
 
-    expect(localStorage.registeredSubtitles).toEqual([otherMetadata]);
+    expect(chrome.storage.local.set).toHaveBeenNthCalledWith(1, {
+      registeredSubtitles: [otherMetadata, thirdMetadata],
+    });
+    expect(chrome.storage.local.set).toHaveBeenNthCalledWith(2, {
+      registeredSubtitles: originalMetadata,
+      [ID]: BODY,
+    });
+    expect(localStorage.registeredSubtitles).toEqual(originalMetadata);
     expect(localStorage[ID]).toEqual(BODY);
+    await expect(updateRegisteredSubtitle(ID, { delay: 0.5 })).resolves.toEqual({ ...metadata, delay: 0.5 });
+    expect(localStorage.registeredSubtitles).toEqual([
+      otherMetadata,
+      { ...metadata, delay: 0.5 },
+      thirdMetadata,
+    ]);
   });
 
   it('rejects without writing or removing when a delete target is missing', async () => {

@@ -87,13 +87,21 @@ export const deleteRegisteredSubtitle = (id: SubtitleId) => {
     if (index < 0) throw new Error(`Registered subtitle not found: ${id}`);
 
     const deleted = subtitles[index];
-    await getLocalSubtitle(id);
+    const body = await getLocalSubtitle(id);
     await chrome.storage.local.set({
       [REGISTRATION.STORAGE_KEY]: registeredSubtitleMetadataSchema
         .array()
         .parse(subtitles.filter((subtitle) => subtitle.id !== id)),
     });
-    await chrome.storage.local.remove(id);
+    try {
+      await chrome.storage.local.remove(id);
+    } catch (error) {
+      await chrome.storage.local.set({
+        [REGISTRATION.STORAGE_KEY]: subtitles,
+        [id]: body,
+      });
+      throw error;
+    }
     return deleted;
   });
 };

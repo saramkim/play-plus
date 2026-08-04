@@ -65,24 +65,52 @@ describe('registered subtitle role transactions', () => {
     });
   });
 
-  it('runs storage mutation only after preparation and rolls roles back on failure', async () => {
+  it('restores selected roles only after a failed storage mutation has restored metadata', async () => {
     const order: string[] = [];
-    const rollback = vi.fn(async () => {
-      order.push('rollback');
+    const originalMetadata = ['before', subtitleId, 'after'];
+    let storedMetadata = [...originalMetadata];
+    const selectedRoles: Record<'learning' | 'support', string | null> = {
+      learning: subtitleId,
+      support: subtitleId,
+    };
+    const apply = vi.fn(async (selection: SubtitleRoleSelection) => {
+      const action = selection.subtitleId === null ? 'clear' : 'restore';
+      if (action === 'restore') expect(storedMetadata).toEqual(originalMetadata);
+      selectedRoles[selection.role] = selection.subtitleId;
+      order.push(`${action}-${selection.role}`);
+      return true;
     });
 
     await expect(
       runGuardedMutation(
         async () => {
-          order.push('prepare');
-          return rollback;
+          return clearSubtitleRolesWithRollback(
+            [
+              { role: 'learning', subtitleId },
+              { role: 'support', subtitleId },
+            ],
+            apply
+          );
         },
         async () => {
-          order.push('mutate');
+          storedMetadata = ['before', 'after'];
+          order.push('metadata-delete');
+          order.push('body-remove');
+          storedMetadata = [...originalMetadata];
+          order.push('metadata-restore');
           throw new Error('storage failed');
         }
       )
     ).rejects.toThrow('storage failed');
-    expect(order).toEqual(['prepare', 'mutate', 'rollback']);
+    expect(order).toEqual([
+      'clear-learning',
+      'clear-support',
+      'metadata-delete',
+      'body-remove',
+      'metadata-restore',
+      'restore-support',
+      'restore-learning',
+    ]);
+    expect(selectedRoles).toEqual({ learning: subtitleId, support: subtitleId });
   });
 });

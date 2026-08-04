@@ -18,6 +18,7 @@ import {
   LearningCardContent,
   LearningCardSupportContent,
 } from '@/ui/features/learning-library/learning-card-content';
+import { usePageStore } from '@/ui/store/page-store';
 
 export type FocusedReviewSessionKind = LearningCard['studyState'];
 export type FocusedReviewStorage = Pick<V2LearningCardStorageApi, 'get' | 'update'>;
@@ -25,9 +26,8 @@ export type OpenOriginalVideoTarget = Pick<LearningCard['source'], 'startTime' |
 
 interface FocusedReviewProps {
   storage: FocusedReviewStorage;
-  refreshRevision?: number;
   onOpenLibrary: () => void;
-  onOpenOriginalVideo: (target: OpenOriginalVideoTarget) => void;
+  onOpenOriginalVideo: (target: OpenOriginalVideoTarget) => Promise<void>;
 }
 
 interface FocusedReviewSession {
@@ -38,6 +38,7 @@ interface FocusedReviewSession {
 }
 
 type LoadStatus = 'error' | 'loading' | 'ready';
+type PendingAction = 'judgment' | 'video';
 
 export const getFocusedReviewQueue = (
   cards: LearningCard[],
@@ -47,21 +48,22 @@ export const getFocusedReviewQueue = (
 
 export function FocusedReview({
   storage,
-  refreshRevision = 0,
   onOpenLibrary,
   onOpenOriginalVideo,
 }: FocusedReviewProps) {
+  const acquireNavigationLock = usePageStore((state) => state.acquireNavigationLock);
   const [requestedKind, setRequestedKind] = useState<FocusedReviewSessionKind>('active');
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
   const [session, setSession] = useState<FocusedReviewSession>();
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>();
   const [actionError, setActionError] = useState<string>();
   const generationRef = useRef(0);
-  const handledRefreshRevisionRef = useRef(refreshRevision);
   const operationRef = useRef(0);
   const pendingRef = useRef(false);
   const sessionRef = useRef<FocusedReviewSession | undefined>(undefined);
   const failureFocusRef = useRef<HTMLButtonElement | undefined>(undefined);
+  const releaseNavigationLockRef = useRef<(() => void) | undefined>(undefined);
+  const pending = pendingAction !== undefined;
 
   const loadSession = useCallback(
     async (kind: FocusedReviewSessionKind) => {
@@ -74,7 +76,7 @@ export function FocusedReview({
       setRequestedKind(kind);
       setLoadStatus('loading');
       setSession(undefined);
-      setPending(false);
+      setPendingAction(undefined);
       setActionError(undefined);
 
       try {
@@ -97,36 +99,6 @@ export function FocusedReview({
     [storage]
   );
 
-  const refreshSession = useCallback(async () => {
-    const current = sessionRef.current;
-    if (!current) return;
-
-    try {
-      const cards = getFocusedReviewQueue(await storage.get(), current.kind);
-      if (sessionRef.current !== current) return;
-      const currentCardId = current.cards[current.currentIndex]?.id;
-      const matchingIndex = currentCardId
-        ? cards.findIndex((card) => card.id === currentCardId)
-        : -1;
-      const nextSession = {
-        ...current,
-        cards,
-        currentIndex:
-          matchingIndex >= 0
-            ? matchingIndex
-            : Math.min(current.currentIndex, cards.length),
-      };
-      sessionRef.current = nextSession;
-      setSession(nextSession);
-      setLoadStatus('ready');
-    } catch {
-      if (sessionRef.current !== current) return;
-      sessionRef.current = undefined;
-      setSession(undefined);
-      setLoadStatus('error');
-    }
-  }, [storage]);
-
   useEffect(() => {
     void loadSession('active');
     return () => {
@@ -134,14 +106,10 @@ export function FocusedReview({
       operationRef.current += 1;
       pendingRef.current = false;
       sessionRef.current = undefined;
+      releaseNavigationLockRef.current?.();
+      releaseNavigationLockRef.current = undefined;
     };
   }, [loadSession]);
-
-  useEffect(() => {
-    if (pending || handledRefreshRevisionRef.current === refreshRevision) return;
-    handledRefreshRevisionRef.current = refreshRevision;
-    void refreshSession();
-  }, [pending, refreshRevision, refreshSession]);
 
   useEffect(() => {
     if (pending || !actionError || !failureFocusRef.current) return;
@@ -175,8 +143,10 @@ export function FocusedReview({
     const operation = operationRef.current + 1;
     operationRef.current = operation;
     pendingRef.current = true;
+    const releaseNavigationLock = acquireNavigationLock();
+    releaseNavigationLockRef.current = releaseNavigationLock;
     failureFocusRef.current = undefined;
-    setPending(true);
+    setPendingAction('judgment');
     setActionError(undefined);
 
     try {
@@ -210,7 +180,48 @@ export function FocusedReview({
     } finally {
       if (generationRef.current === current.generation && operationRef.current === operation) {
         pendingRef.current = false;
-        setPending(false);
+        setPendingAction(undefined);
+      }
+      releaseNavigationLock();
+      if (releaseNavigationLockRef.current === releaseNavigationLock) {
+        releaseNavigationLockRef.current = undefined;
+      }
+    }
+  };
+
+  const handleOpenOriginalVideo = async (
+    target: OpenOriginalVideoTarget,
+    trigger: HTMLButtonElement
+  ) => {
+    const current = sessionRef.current;
+    const card = current?.cards[current.currentIndex];
+    if (pendingRef.current || !current || !card) return;
+
+    const operation = operationRef.current + 1;
+    operationRef.current = operation;
+    pendingRef.current = true;
+    const releaseNavigationLock = acquireNavigationLock();
+    releaseNavigationLockRef.current = releaseNavigationLock;
+    failureFocusRef.current = undefined;
+    setPendingAction('video');
+    setActionError(undefined);
+
+    try {
+      await onOpenOriginalVideo(target);
+    } catch {
+      if (!isCurrentOperation(current, card.id, operation, generationRef, operationRef, sessionRef)) {
+        return;
+      }
+      failureFocusRef.current = trigger;
+      setActionError(t('v2_review_open_video_error'));
+    } finally {
+      if (generationRef.current === current.generation && operationRef.current === operation) {
+        pendingRef.current = false;
+        setPendingAction(undefined);
+      }
+      releaseNavigationLock();
+      if (releaseNavigationLockRef.current === releaseNavigationLock) {
+        releaseNavigationLockRef.current = undefined;
       }
     }
   };
@@ -288,10 +299,9 @@ export function FocusedReview({
             currentIndex={session.currentIndex}
             total={session.cards.length}
             pending={pending}
+            judgmentPending={pendingAction === 'judgment'}
             error={actionError}
-            onOpenOriginalVideo={(target) => {
-              if (!pendingRef.current) onOpenOriginalVideo(target);
-            }}
+            onOpenOriginalVideo={handleOpenOriginalVideo}
             onPrevious={() => moveTo(session.currentIndex - 1)}
             onSkip={() => moveTo(session.currentIndex + 1)}
             onJudgment={handleJudgment}
@@ -313,13 +323,17 @@ interface FocusedCardProps {
   card: LearningCard;
   currentIndex: number;
   error?: string;
+  judgmentPending: boolean;
   pending: boolean;
   total: number;
   onJudgment: (
     studyState: LearningCard['studyState'],
     trigger: HTMLButtonElement
   ) => Promise<void>;
-  onOpenOriginalVideo: (target: OpenOriginalVideoTarget) => void;
+  onOpenOriginalVideo: (
+    target: OpenOriginalVideoTarget,
+    trigger: HTMLButtonElement
+  ) => Promise<void>;
   onPrevious: () => void;
   onSkip: () => void;
 }
@@ -328,6 +342,7 @@ function FocusedCard({
   card,
   currentIndex,
   error,
+  judgmentPending,
   pending,
   total,
   onJudgment,
@@ -369,7 +384,7 @@ function FocusedCard({
         </div>
       </div>
 
-      {pending && (
+      {judgmentPending && (
         <p role='status' className='text-sm text-muted-foreground'>
           {t('v2_review_save_pending')}
         </p>
@@ -425,11 +440,14 @@ function FocusedCard({
           size='sm'
           className='h-auto min-h-8 min-w-0 whitespace-normal py-2 text-center'
           disabled={pending}
-          onClick={() =>
-            onOpenOriginalVideo({
-              url: card.source.url,
-              startTime: card.source.startTime,
-            })
+          onClick={(event) =>
+            void onOpenOriginalVideo(
+              {
+                url: card.source.url,
+                startTime: card.source.startTime,
+              },
+              event.currentTarget
+            )
           }
         >
           <ExternalLinkIcon />

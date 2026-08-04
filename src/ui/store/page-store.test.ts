@@ -6,6 +6,7 @@ describe('page store', () => {
   beforeEach(() => {
     usePageStore.setState({
       currentPage: 'learning',
+      navigationLockTokens: new Set(),
       navigationLocked: false,
     });
   });
@@ -25,5 +26,25 @@ describe('page store', () => {
     usePageStore.getState().setPage('review');
 
     expect(usePageStore.getState().currentPage).toBe('review');
+  });
+
+  it('aggregates independent lock owners without stale releases unlocking another owner', () => {
+    const releaseFirst = usePageStore.getState().acquireNavigationLock();
+    const releaseSecond = usePageStore.getState().acquireNavigationLock();
+
+    releaseFirst();
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+
+    usePageStore.getState().setNavigationLocked(true);
+    releaseSecond();
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+
+    const releaseCurrent = usePageStore.getState().acquireNavigationLock();
+    usePageStore.getState().setNavigationLocked(false);
+    releaseFirst();
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+
+    releaseCurrent();
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 });

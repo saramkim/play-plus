@@ -9,6 +9,9 @@ const harness = vi.hoisted(() => ({
   localListener: undefined as
     | ((changes: Record<string, chrome.storage.StorageChange>) => void)
     | undefined,
+  openOriginalVideo: undefined as
+    | ((source: { startTime: number; url: string }) => Promise<void>)
+    | undefined,
   sendMessage: vi.fn(),
   setPage: vi.fn(),
   settingsInitialize: vi.fn(),
@@ -46,9 +49,14 @@ vi.mock('@/ui/features/learning-library/learning-card-library', () => ({
   ),
 }));
 vi.mock('@/ui/features/focused-review/focused-review', () => ({
-  FocusedReview: ({ refreshRevision }: { refreshRevision: number }) => (
-    <div data-testid='review' data-revision={refreshRevision}>review</div>
-  ),
+  FocusedReview: ({
+    onOpenOriginalVideo,
+  }: {
+    onOpenOriginalVideo: (source: { startTime: number; url: string }) => Promise<void>;
+  }) => {
+    harness.openOriginalVideo = onOpenOriginalVideo;
+    return <div data-testid='review'>review</div>;
+  },
 }));
 vi.mock('@/ui/layout/connection-status', () => ({ ConnectionStatus: () => null }));
 vi.mock('@/ui/layout/footer', () => ({ Footer: () => null }));
@@ -79,6 +87,7 @@ describe('v2 side-panel boot boundary', () => {
     harness.currentPage = 'library';
     harness.firstEntryComplete = undefined;
     harness.localListener = undefined;
+    harness.openOriginalVideo = undefined;
     harness.settingsInitialize.mockResolvedValue({ remove: harness.settingsRemove });
     harness.tabInitialize.mockResolvedValue(harness.tabRemove);
     vi.mocked(chrome.storage.local.onChanged.addListener).mockImplementation((listener) => {
@@ -187,6 +196,32 @@ describe('v2 side-panel boot boundary', () => {
     });
     expect(container.textContent).toContain('v2_readiness_unavailable_title');
     expect(harness.settingsRemove).toHaveBeenCalledOnce();
+  });
+
+  it('forwards exact video targets and rejects response and transport failures', async () => {
+    localStorage.setItem('v2OnboardingComplete', 'true');
+    harness.currentPage = 'review';
+    harness.sendMessage
+      .mockResolvedValueOnce({ success: true, data: { status: 'ready' } })
+      .mockResolvedValueOnce({ success: true, data: undefined });
+
+    await act(async () => {
+      root.render(<App />);
+      await Promise.resolve();
+    });
+    const openOriginalVideo = harness.openOriginalVideo;
+    if (!openOriginalVideo) throw new Error('Expected Review video callback');
+    const source = { url: 'https://www.coupangplay.com/play/example', startTime: 42 };
+
+    await expect(openOriginalVideo(source)).resolves.toBeUndefined();
+    expect(harness.sendMessage).toHaveBeenNthCalledWith(2, 'viewVideo', source);
+
+    harness.sendMessage.mockResolvedValueOnce({ success: false, error: 'Tab unavailable' });
+    await expect(openOriginalVideo(source)).rejects.toThrow('v2_review_open_video_error');
+
+    const transportError = new Error('Runtime port closed');
+    harness.sendMessage.mockRejectedValueOnce(transportError);
+    await expect(openOriginalVideo(source)).rejects.toBe(transportError);
   });
 });
 

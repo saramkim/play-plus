@@ -195,6 +195,7 @@ function ShortcutRow({
         readOnly
         value={value}
         onKeyDown={(event) => {
+          if (event.key === 'Tab') return;
           event.preventDefault();
           onChange(event.code === 'Backspace' || event.code === 'Delete' ? '' : event.code);
         }}
