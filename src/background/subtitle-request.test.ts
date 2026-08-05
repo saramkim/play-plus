@@ -220,12 +220,12 @@ describe('subtitle request replay controller', () => {
     await oldCapture;
 
     expect(replayByTab.get(5)).toEqual(
-      createRequest('request-new', null, { contentInstanceId: null })
+      createRequest('request-new', OTHER_VIDEO_ID, { contentInstanceId: null })
     );
     expect(dependencies.saveReplay).toHaveBeenCalledOnce();
     expect(dependencies.saveReplay).toHaveBeenCalledWith(
       5,
-      createRequest('request-new', null, { contentInstanceId: null })
+      createRequest('request-new', OTHER_VIDEO_ID, { contentInstanceId: null })
     );
   });
 
@@ -412,7 +412,7 @@ describe('subtitle request replay controller', () => {
     await controller.handleNavigation(5, `https://www.coupangplay.com/play/${OTHER_VIDEO_ID}`);
 
     expect(replayByTab.get(5)).toEqual(
-      createRequest('request-current', null, {
+      createRequest('request-current', OTHER_VIDEO_ID, {
         capturedAt: 2_100,
         contentInstanceId: null,
         documentId: 'document-current',
@@ -460,7 +460,7 @@ describe('subtitle request replay controller', () => {
     expect(replayByTab.get(5)).toMatchObject({
       contentInstanceId: null,
       documentId: 'document-old',
-      videoId: null,
+      videoId: OTHER_VIDEO_ID,
     });
 
     await controller.handleContentStatus(5, {
@@ -481,6 +481,36 @@ describe('subtitle request replay controller', () => {
       })
     );
     expect(dependencies.deliver).toHaveBeenCalledOnce();
+  });
+
+  it('rejects conflicting document identities when the video identity is unavailable', async () => {
+    const { controller, dependencies, replayByTab } = createHarness();
+    dependencies.pingContent.mockRejectedValue(new Error('synthetic no receiver'));
+
+    await controller.capture(
+      5,
+      {
+        contentInstanceId: null,
+        documentId: 'document-old',
+        requestId: 'request-unknown',
+        url: 'https://synthetic.test/playback',
+        headers: [],
+      },
+      async () => null,
+      2_100
+    );
+    await controller.handleContentStatus(5, {
+      contentInstanceId: 'content-current',
+      documentId: 'document-current',
+      hasVideo: true,
+      isVideoUrl: true,
+      routeChangedAt: 2_000,
+      videoId: OTHER_VIDEO_ID,
+      videoRevision: 1,
+    });
+
+    expect(replayByTab.has(5)).toBe(false);
+    expect(dependencies.deliver).not.toHaveBeenCalled();
   });
 
   it('keeps a current request when Chrome omits both document identities', async () => {
@@ -551,7 +581,68 @@ describe('subtitle request replay controller', () => {
     expect(replayByTab.get(5)).toMatchObject({
       contentInstanceId: null,
       requestId: 'request-current',
-      videoId: null,
+      videoId: OTHER_VIDEO_ID,
+    });
+    expect(dependencies.deliver).not.toHaveBeenCalled();
+
+    await controller.handleContentStatus(5, {
+      contentInstanceId: 'content-current',
+      documentId: null,
+      hasVideo: true,
+      isVideoUrl: true,
+      routeChangedAt: 2_000,
+      videoId: OTHER_VIDEO_ID,
+      videoRevision: 1,
+    });
+
+    expect(replayByTab.get(5)).toMatchObject({
+      contentInstanceId: 'content-current',
+      requestId: 'request-current',
+      videoId: OTHER_VIDEO_ID,
+    });
+    expect(dependencies.deliver).toHaveBeenCalledOnce();
+  });
+
+  it('preserves a quarantined capture until the stale content route advances', async () => {
+    const { controller, dependencies, replayByTab } = createHarness();
+    await controller.handleNavigation(5, `https://www.coupangplay.com/play/${OTHER_VIDEO_ID}`);
+    dependencies.pingContent.mockResolvedValue({
+      success: true,
+      data: {
+        contentInstanceId: 'content-old',
+        hasVideo: true,
+        routeChangedAt: 1_000,
+        videoId: VIDEO_ID,
+        videoRevision: 1,
+      },
+    });
+
+    await controller.capture(
+      5,
+      {
+        contentInstanceId: null,
+        documentId: null,
+        requestId: 'request-current',
+        url: 'https://synthetic.test/playback',
+        headers: [],
+      },
+      async () => OTHER_VIDEO_ID,
+      2_100
+    );
+    await controller.handleContentStatus(5, {
+      contentInstanceId: 'content-old',
+      documentId: null,
+      hasVideo: true,
+      isVideoUrl: true,
+      routeChangedAt: 1_000,
+      videoId: VIDEO_ID,
+      videoRevision: 1,
+    });
+
+    expect(replayByTab.get(5)).toMatchObject({
+      contentInstanceId: null,
+      requestId: 'request-current',
+      videoId: OTHER_VIDEO_ID,
     });
     expect(dependencies.deliver).not.toHaveBeenCalled();
 

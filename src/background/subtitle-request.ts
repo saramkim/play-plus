@@ -144,7 +144,7 @@ export const createSubtitleRequestReplayController = (
     if (contentSnapshot) {
       if (replay.capturedAt !== null && replay.capturedAt < contentSnapshot.routeChangedAt) return;
       if (replay.videoId !== null && replay.videoId !== contentSnapshot.videoId) {
-        replay = { ...replay, contentInstanceId: null, videoId: null };
+        replay = { ...replay, contentInstanceId: null };
         contentSnapshot = null;
       }
     }
@@ -161,9 +161,7 @@ export const createSubtitleRequestReplayController = (
       if (replay.videoId === null) replay = { ...replay, videoId: contentSnapshot.videoId };
       else if (replay.videoId !== contentSnapshot.videoId) return;
       ownershipRevision = advanceOwnership(ownershipRevisions, tabId);
-    } else if (replay.contentInstanceId === null) {
-      replay = { ...replay, videoId: null };
-    } else if (routeVideoIds.has(tabId)) {
+    } else if (replay.contentInstanceId !== null && routeVideoIds.has(tabId)) {
       const routeVideoId = routeVideoIds.get(tabId) ?? null;
       if (replay.videoId === null) replay = { ...replay, videoId: routeVideoId };
       else if (replay.videoId !== routeVideoId) {
@@ -299,22 +297,34 @@ export const createSubtitleRequestReplayController = (
     if ((latestVideoRevisions.get(tabId) ?? status.videoRevision) > status.videoRevision) return;
     if (replay) {
       if (replay.contentInstanceId === null) {
-        const isCurrentCapture =
-          replay.capturedAt !== null && replay.capturedAt >= status.routeChangedAt;
-        const hasLegacyRouteIdentity =
-          replay.capturedAt === null &&
-          ((replay.videoId !== null && replay.videoId === status.videoId) ||
-            (replay.documentId !== null &&
-              status.documentId !== null &&
-              replay.documentId === status.documentId));
-        if (!isCurrentCapture && !hasLegacyRouteIdentity) {
-          if (replay.capturedAt !== null) {
-            await clearReplaySource(tabId, ownershipRevision);
-          }
+        if (replay.capturedAt !== null && replay.capturedAt < status.routeChangedAt) {
+          await clearReplaySource(tabId, ownershipRevision);
           return;
+        }
+        const hasMatchingDocumentIdentity =
+          replay.documentId !== null &&
+          status.documentId !== null &&
+          replay.documentId === status.documentId;
+        const hasConflictingDocumentIdentity =
+          replay.documentId !== null &&
+          status.documentId !== null &&
+          replay.documentId !== status.documentId;
+        if (replay.videoId === null) {
+          if (hasConflictingDocumentIdentity) {
+            await clearReplaySource(tabId, ownershipRevision);
+            return;
+          }
+          if (replay.capturedAt === null && !hasMatchingDocumentIdentity) return;
         }
       }
       if (replay.videoId !== null && replay.videoId !== status.videoId) {
+        if (
+          replay.contentInstanceId === null &&
+          replay.capturedAt !== null &&
+          replay.capturedAt >= status.routeChangedAt
+        ) {
+          return;
+        }
         await clearReplaySource(tabId, ownershipRevision);
         return;
       }
@@ -372,11 +382,18 @@ export const createSubtitleRequestReplayController = (
     const replay = await dependencies.getReplay(tabId);
     if (ownershipRevisions.get(tabId) !== ownershipRevision) return;
     if (!replay) return;
+    if (nextVideoId !== null && replay.videoId === nextVideoId) return;
     if (
       nextVideoId !== null &&
-      (replay.videoId === nextVideoId ||
-        (replay.contentInstanceId === null && replay.capturedAt !== null))
+      replay.contentInstanceId === null &&
+      replay.capturedAt !== null
     ) {
+      const routedReplay = { ...replay, videoId: nextVideoId };
+      await mutateReplay(tabId, async () => {
+        if (ownershipRevisions.get(tabId) !== ownershipRevision) return;
+        await dependencies.saveReplay(tabId, routedReplay);
+      });
+      if (ownershipRevisions.get(tabId) === ownershipRevision) dirtyTabs.add(tabId);
       return;
     }
     await clearReplaySource(tabId, ownershipRevision);
