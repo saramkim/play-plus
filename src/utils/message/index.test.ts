@@ -31,7 +31,17 @@ describe('message transport', () => {
 
     expect(listener).toBeDefined();
     expect(listener?.(
-      { message: 'contentStatus', params: { hasVideo: true, isVideoUrl: true } },
+      {
+        message: 'contentStatus',
+        params: {
+          contentInstanceId: 'content-1',
+          hasVideo: true,
+          isVideoUrl: true,
+          routeChangedAt: 1_000,
+          videoId: '123e4567-e89b-12d3-a456-426614174000',
+          videoRevision: 1,
+        },
+      },
       {},
       vi.fn()
     )).toBe(true);

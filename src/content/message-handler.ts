@@ -2,6 +2,7 @@ import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getLocalSubtitle } from '@storage/subtitle';
 import { languageSchema, subtitleCueSchema } from '@storage/v2/schema';
 import { COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
+import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { t } from '@utils/i18n';
 import { AsyncMessageResponse, onMessage, sendMessage } from '@utils/message';
 import type { ContentBootstrap, MessageSchema, SubtitleRole } from '@utils/message/type';
@@ -23,13 +24,20 @@ export type VideoLifecycleDependencies = {
   resetElements: () => void;
   setCurrentTime: (time: number) => void;
   setDetectionStatus: (status: 'idle' | 'detecting' | 'detected' | 'failed') => void;
-  reportContentStatus: (hasVideo: boolean) => void;
+  reportContentStatus: (
+    hasVideo: boolean,
+    videoRevision: number,
+    videoId: string | null
+  ) => void;
 };
 
-export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependencies) =>
-  (event: VideoLifecycleEvent) => {
+export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependencies) => {
+  let videoRevision = 0;
+
+  return (event: VideoLifecycleEvent) => {
     if (event.state === 'content' && event.video) {
       if (!dependencies.isCurrentVideo(event.video)) {
+        videoRevision += 1;
         if (dependencies.getVideo()) {
           dependencies.clearNativeCues();
           dependencies.resetElements();
@@ -39,7 +47,7 @@ export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependen
         dependencies.setupContainer();
       }
       dependencies.setDetectionStatus('detected');
-      dependencies.reportContentStatus(true);
+      dependencies.reportContentStatus(true, videoRevision, event.videoId);
       return;
     }
 
@@ -50,8 +58,9 @@ export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependen
       dependencies.setCurrentTime(0);
     }
     dependencies.setDetectionStatus(event.delayed ? 'failed' : 'detecting');
-    dependencies.reportContentStatus(false);
+    dependencies.reportContentStatus(false, videoRevision, event.videoId);
   };
+};
 
 type MessageListenerDependencies = {
   createVideoLifecycleMonitor: () => VideoLifecycleMonitor;
@@ -64,8 +73,18 @@ const defaultMessageListenerDependencies: MessageListenerDependencies = {
 };
 
 let activeVideoLifecycleMonitor: VideoLifecycleMonitor | null = null;
+let activeRouteChangedAt = performance.timeOrigin;
+let activeRouteVideoId = getCoupangPlayVideoId(window.location.href);
+let activeVideoRevision = 0;
+const contentInstanceId = crypto.randomUUID();
+let latestNativeSubtitleRequestId: string | null = null;
 
 export function initializeMessageListener(dependencies = defaultMessageListenerDependencies) {
+  const currentVideoId = getCoupangPlayVideoId(window.location.href);
+  if (currentVideoId !== activeRouteVideoId) {
+    activeRouteChangedAt = Date.now();
+    activeRouteVideoId = currentVideoId;
+  }
   const videoLifecycleMonitor = dependencies.createVideoLifecycleMonitor();
   const registration = dependencies.registerMessageListener(({ message, params, sendResponse }) => {
     switch (message) {
@@ -85,7 +104,16 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
       case 'refreshRegisteredSubtitle':
         return respond(sendResponse, () => handleRefreshRegisteredSubtitle(params.subtitleId));
       case 'pingContent':
-        sendResponse({ success: true, data: { hasVideo: Boolean(videoManager.get()) } });
+        sendResponse({
+          success: true,
+          data: {
+            contentInstanceId,
+            hasVideo: Boolean(videoManager.get()),
+            routeChangedAt: activeRouteChangedAt,
+            videoId: activeRouteVideoId,
+            videoRevision: activeVideoRevision,
+          },
+        });
         break;
     }
   });
@@ -123,11 +151,23 @@ export const retryVideoDetection = () => {
 
 const handleResetElement = () => {
   elementStore.reset();
-  useSubtitleStore.getState().clearNativeCues();
 };
 
-const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
+const handleFetchVideoMetadata = async ({
+  headers,
+  requestId,
+  url,
+  videoId,
+}: MessageSchema['fetchVideoMetadata']['params']) => {
+  latestNativeSubtitleRequestId = requestId;
   const subtitles = await coupangStrategy.fetchSubtitles(url, headers);
+  if (
+    latestNativeSubtitleRequestId !== requestId ||
+    videoId === null ||
+    getCoupangPlayVideoId(window.location.href) !== videoId
+  ) {
+    return;
+  }
   const store = useSubtitleStore.getState();
   store.clearNativeCues();
   const tracks = (subtitles ?? []).flatMap((subtitle) => {
@@ -178,9 +218,25 @@ const handleRefreshRegisteredSubtitle = async (subtitleId: string) => {
   }
 };
 
-const reportContentStatus = (hasVideo: boolean) => {
+const reportContentStatus = (
+  hasVideo: boolean,
+  videoRevision: number,
+  videoId: string | null
+) => {
+  if (videoId !== activeRouteVideoId) {
+    activeRouteChangedAt = Date.now();
+    activeRouteVideoId = videoId;
+  }
+  activeVideoRevision = videoRevision;
   const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
-  void sendMessage('contentStatus', { hasVideo, isVideoUrl });
+  void sendMessage('contentStatus', {
+    contentInstanceId,
+    hasVideo,
+    isVideoUrl,
+    routeChangedAt: activeRouteChangedAt,
+    videoId: activeRouteVideoId,
+    videoRevision,
+  });
 };
 
 const handleVideoLifecycle = createVideoLifecycleHandler({

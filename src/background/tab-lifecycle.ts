@@ -1,18 +1,27 @@
-import { setSessionStorage } from '@storage/session';
-import type { PendingSubtitleRequest } from '@storage/session-type';
 import { updateTabInfo } from '@storage/tab';
 import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { sendMessageToTab } from '@utils/message';
 
-import { takePendingSubtitleRequest, takeViewAction } from './pending-actions';
+import { takeViewAction } from './pending-actions';
 
 type MessageResult = { success: boolean; message?: string };
 
 export const createTabLifecycleDependencies = {
   awaitReady: async () => {},
-  setActiveTab: (tab: chrome.tabs.Tab) => setSessionStorage('activeTab', tab),
+  clearSubtitleReplay: async (_tabId: number) => {},
+  getTab: (tabId: number) => chrome.tabs.get(tabId),
   updateTabInfo,
+  updateNavigatingStatus: async (
+    tabId: number,
+    isVideoUrl: boolean,
+    _expectedVideoId: string | null
+  ) => {
+    await updateTabInfo(tabId, {
+      connectionStatus: 'connecting',
+      videoStatus: isVideoUrl ? 'detecting' : 'idle',
+    });
+  },
   checkContentConnection: async (_tabId: number, _isVideoUrl: boolean) => {},
   sendMessageToTab: (tabId: number, message: string, params?: unknown): Promise<MessageResult> =>
     params === undefined
@@ -22,8 +31,6 @@ export const createTabLifecycleDependencies = {
           message,
           params
         ),
-  takePendingSubtitleRequest,
-  sendSubtitleRequest: async (_tabId: number, _request: PendingSubtitleRequest) => {},
   takeViewAction,
 };
 
@@ -35,17 +42,21 @@ export const handleTabCompleted = async (
   dependencies: TabLifecycleDependencies = createTabLifecycleDependencies
 ) => {
   await dependencies.awaitReady();
-  if (tab.active) await dependencies.setActiveTab(tab);
+  const isCurrentRoute = async () => {
+    const currentTab = await dependencies.getTab(tabId);
+    return currentTab.status !== 'loading' && currentTab.url === tab.url;
+  };
+  if (!(await isCurrentRoute())) return;
 
   const isPlatformUrl = Boolean(tab.url?.startsWith(COUPANG_PLAY_BASE_URL));
   const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tab.url?.startsWith(url));
+  const videoId = getCoupangPlayVideoId(tab.url);
 
   if (isPlatformUrl) {
-    await dependencies.updateTabInfo(tabId, {
-      connectionStatus: 'connecting',
-      videoStatus: isVideoUrl ? 'detecting' : 'idle',
-    });
+    await dependencies.updateNavigatingStatus(tabId, isVideoUrl, videoId);
+    if (!(await isCurrentRoute())) return;
     await dependencies.checkContentConnection(tabId, isVideoUrl);
+    if (!(await isCurrentRoute())) return;
     try {
       await dependencies.sendMessageToTab(tabId, 'resetElement');
     } catch {
@@ -53,9 +64,14 @@ export const handleTabCompleted = async (
     }
   }
 
-  if (!isVideoUrl) return;
+  if (!(await isCurrentRoute())) return;
+  if (!isVideoUrl) {
+    await dependencies.clearSubtitleReplay(tabId);
+    return;
+  }
 
   const response = await dependencies.sendMessageToTab(tabId, 'detectVideo');
+  if (!(await isCurrentRoute())) return;
   if (!response.success) {
     await dependencies.updateTabInfo(tabId, {
       connectionStatus: 'connected',
@@ -64,10 +80,8 @@ export const handleTabCompleted = async (
     return;
   }
 
-  const pendingRequest = await dependencies.takePendingSubtitleRequest(tabId);
-  if (pendingRequest) await dependencies.sendSubtitleRequest(tabId, pendingRequest);
-
-  const videoId = getCoupangPlayVideoId(tab.url);
   const action = await dependencies.takeViewAction(videoId, tab.url);
-  if (action) await dependencies.sendMessageToTab(tabId, 'playVideo', { startTime: action.startTime });
+  if (action && (await isCurrentRoute())) {
+    await dependencies.sendMessageToTab(tabId, 'playVideo', { startTime: action.startTime });
+  }
 };

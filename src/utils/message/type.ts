@@ -25,7 +25,12 @@ export type MessageSchema = {
   resetElement: void;
   detectVideo: void;
   fetchVideoMetadata: {
-    params: { url: string; headers: chrome.webRequest.HttpHeader[] };
+    params: {
+      requestId: string;
+      videoId: string | null;
+      url: string;
+      headers: chrome.webRequest.HttpHeader[];
+    };
   };
   playVideo: {
     params: { startTime: number };
@@ -40,10 +45,23 @@ export type MessageSchema = {
     params: { subtitleId: string };
   };
   pingContent: {
-    response: { hasVideo: boolean };
+    response: {
+      contentInstanceId: string;
+      hasVideo: boolean;
+      routeChangedAt: number;
+      videoId: string | null;
+      videoRevision: number;
+    };
   };
   contentStatus: {
-    params: { hasVideo: boolean; isVideoUrl: boolean };
+    params: {
+      contentInstanceId: string;
+      hasVideo: boolean;
+      isVideoUrl: boolean;
+      routeChangedAt: number;
+      videoId: string | null;
+      videoRevision: number;
+    };
   };
   getLearningCards: {
     response: LearningCard[];

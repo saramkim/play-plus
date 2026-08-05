@@ -10,8 +10,31 @@ type BackgroundMessageHandlerDependencies = {
   retryReadiness: () => Promise<V2ReadinessStatus>;
   getContentBootstrap: (tabId: number) => Promise<ContentBootstrap>;
   handleViewVideo: (params: MessageSchema['viewVideo']['params']) => Promise<void>;
+  handleSubtitleContentStatus: (
+    tabId: number,
+    status: {
+      contentInstanceId: string;
+      documentId: string | null;
+      hasVideo: boolean;
+      isVideoUrl: boolean;
+      routeChangedAt: number;
+      videoId: string | null;
+      videoRevision: number;
+    }
+  ) => Promise<void>;
   learningCards: V2LearningCardStorageApi;
-  updateConnectedStatus: (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => Promise<void>;
+  updateConnectedStatus: (
+    tabId: number,
+    status: {
+      contentInstanceId: string;
+      documentId: string | null;
+      hasVideo: boolean;
+      isVideoUrl: boolean;
+      routeChangedAt: number;
+      videoId: string | null;
+      videoRevision: number;
+    }
+  ) => Promise<boolean>;
 };
 
 const CARD_OPERATION_ERROR = 'Unable to access the learning library';
@@ -19,8 +42,23 @@ const BACKGROUND_OPERATION_ERROR = 'Unable to complete the Play Plus action';
 
 export const registerBackgroundMessageHandler = (
   dependencies: BackgroundMessageHandlerDependencies
-) =>
-  onMessage((request) => {
+) => {
+  const contentStatusTails = new Map<number, Promise<void>>();
+
+  const enqueueContentStatus = (tabId: number, task: () => Promise<void>) => {
+    const operation = (contentStatusTails.get(tabId) ?? Promise.resolve()).then(task);
+    const tail = operation.then(
+      () => undefined,
+      () => undefined
+    );
+    contentStatusTails.set(tabId, tail);
+    void tail.then(() => {
+      if (contentStatusTails.get(tabId) === tail) contentStatusTails.delete(tabId);
+    });
+    return operation;
+  };
+
+  return onMessage((request) => {
     switch (request.message) {
       case 'getV2Readiness':
         return respondToAsyncMessage(request.sendResponse, dependencies.getReadiness);
@@ -45,14 +83,42 @@ export const registerBackgroundMessageHandler = (
         );
       }
       case 'contentStatus': {
+        const tabId = request.sender.tab?.id;
+        if (tabId === undefined) {
+          return respondToAsyncMessage(request.sendResponse, () =>
+            runBackgroundOperation(async () => {
+              await dependencies.awaitReady();
+              throw new Error('Content status is unavailable');
+            })
+          );
+        }
+
         return respondToAsyncMessage(request.sendResponse, () =>
-          runBackgroundOperation(async () => {
-            await dependencies.awaitReady();
-            const tabId = request.sender.tab?.id;
-            if (tabId === undefined) throw new Error('Content status is unavailable');
-            const { hasVideo, isVideoUrl } = request.params;
-            await dependencies.updateConnectedStatus(tabId, isVideoUrl, hasVideo);
-          })
+          enqueueContentStatus(tabId, () =>
+            runBackgroundOperation(async () => {
+              await dependencies.awaitReady();
+              const {
+                contentInstanceId,
+                hasVideo,
+                isVideoUrl,
+                routeChangedAt,
+                videoId,
+                videoRevision,
+              } = request.params;
+              const status = {
+                contentInstanceId,
+                documentId: request.sender.documentId ?? null,
+                hasVideo,
+                isVideoUrl,
+                routeChangedAt,
+                videoId,
+                videoRevision,
+              };
+              if (await dependencies.updateConnectedStatus(tabId, status)) {
+                await dependencies.handleSubtitleContentStatus(tabId, status);
+              }
+            })
+          )
         );
       }
       case 'getLearningCards':
@@ -79,6 +145,7 @@ export const registerBackgroundMessageHandler = (
         );
     }
   });
+};
 
 const runCardOperation = async <T>(
   dependencies: Pick<BackgroundMessageHandlerDependencies, 'awaitReady'>,

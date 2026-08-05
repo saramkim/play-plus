@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  clearSubtitleReplayRequest,
   enqueueViewAction,
-  savePendingSubtitleRequest,
-  takePendingSubtitleRequest,
+  getSubtitleReplayRequest,
+  saveSubtitleReplayRequest,
   takeViewAction,
 } from './pending-actions';
 
@@ -39,12 +40,67 @@ describe('pending view actions', () => {
 });
 
 describe('pending subtitle requests', () => {
-  it('stores requests by tab id and consumes only the matching request once', async () => {
-    const request = { url: 'https://example.com/playback', headers: [{ name: 'x-test', value: 'yes' }] };
-    await savePendingSubtitleRequest(12, request);
+  it('keeps the matching replay source until it is explicitly cleared', async () => {
+    const request = {
+      capturedAt: 1234,
+      contentInstanceId: 'content-instance-1',
+      documentId: 'document-1',
+      requestId: 'request-1',
+      videoId: '123e4567-e89b-12d3-a456-426614174000',
+      url: 'https://example.com/playback',
+      headers: [{ name: 'x-test', value: 'yes' }],
+    };
+    await saveSubtitleReplayRequest(12, request);
 
-    await expect(takePendingSubtitleRequest(99)).resolves.toBeUndefined();
-    await expect(takePendingSubtitleRequest(12)).resolves.toEqual(request);
-    await expect(takePendingSubtitleRequest(12)).resolves.toBeUndefined();
+    await expect(getSubtitleReplayRequest(99)).resolves.toBeUndefined();
+    await expect(getSubtitleReplayRequest(12)).resolves.toEqual(request);
+    await expect(getSubtitleReplayRequest(12)).resolves.toEqual(request);
+    await clearSubtitleReplayRequest(12);
+    await expect(getSubtitleReplayRequest(12)).resolves.toBeUndefined();
+  });
+
+  it('serializes concurrent per-tab mutations without losing either source', async () => {
+    const first = {
+      capturedAt: 1234,
+      contentInstanceId: 'content-instance-1',
+      documentId: 'document-1',
+      requestId: 'request-1',
+      videoId: '123e4567-e89b-12d3-a456-426614174000',
+      url: 'https://synthetic.test/playback/one',
+      headers: [],
+    };
+    const second = {
+      capturedAt: null,
+      contentInstanceId: null,
+      documentId: null,
+      requestId: 'request-2',
+      videoId: '123e4567-e89b-12d3-a456-426614174001',
+      url: 'https://synthetic.test/playback/two',
+      headers: [],
+    };
+
+    await Promise.all([
+      saveSubtitleReplayRequest(12, first),
+      saveSubtitleReplayRequest(13, second),
+    ]);
+
+    await expect(getSubtitleReplayRequest(12)).resolves.toEqual(first);
+    await expect(getSubtitleReplayRequest(13)).resolves.toEqual(second);
+  });
+
+  it('removes a legacy replay source without a capture epoch', async () => {
+    session.pendingSubtitleRequests = {
+      12: {
+        contentInstanceId: 'content-instance-legacy',
+        documentId: 'document-legacy',
+        requestId: 'request-legacy',
+        videoId: '123e4567-e89b-12d3-a456-426614174000',
+        url: 'https://synthetic.test/old-playback',
+        headers: [],
+      },
+    };
+
+    await expect(getSubtitleReplayRequest(12)).resolves.toBeUndefined();
+    expect(session.pendingSubtitleRequests).toEqual({});
   });
 });
