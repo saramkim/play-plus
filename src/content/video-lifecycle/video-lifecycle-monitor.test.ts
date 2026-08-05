@@ -26,13 +26,24 @@ const flushLifecycleSignals = async () => {
 
 const createRouteObserver = () => {
   let callback: ((videoId: string | null) => void) | undefined;
+  let pendingVideoId: string | null | undefined;
+  const check = vi.fn(() => {
+    if (pendingVideoId === undefined) return;
+    const videoId = pendingVideoId;
+    pendingVideoId = undefined;
+    callback?.(videoId);
+  });
   const remove = vi.fn();
   return {
     observe: (onChange: (videoId: string | null) => void) => {
       callback = onChange;
-      return { check: vi.fn(), remove };
+      return { check, remove };
     },
     change: (videoId: string | null) => callback?.(videoId),
+    changeOnCheck: (videoId: string | null) => {
+      pendingVideoId = videoId;
+    },
+    check,
     remove,
   };
 };
@@ -104,6 +115,22 @@ describe('VideoLifecycleMonitor', () => {
     await flushLifecycleSignals();
 
     expect(events.at(-1)?.state).toBe('transitioning');
+    monitor.stop();
+  });
+
+  it('checks the current route whenever media signals refresh the lifecycle', () => {
+    const route = createRouteObserver();
+    const video = addMainVideo(addPlayer());
+    video.src = 'blob:https://www.coupangplay.com/old';
+    const monitor = new VideoLifecycleMonitor(document, route.observe);
+    const events: VideoLifecycleEvent[] = [];
+    monitor.start((event) => events.push(event));
+
+    route.changeOnCheck(NEXT_ID);
+    monitor.refresh();
+
+    expect(route.check).toHaveBeenCalledTimes(2);
+    expect(events.at(-1)).toMatchObject({ state: 'transitioning', videoId: NEXT_ID });
     monitor.stop();
   });
 

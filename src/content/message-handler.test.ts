@@ -2,6 +2,7 @@ import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getLocalSubtitle } from '@storage/subtitle';
 import { DEFAULT_V2_SYNC_STORAGE } from '@storage/v2/default';
 import { LANGUAGES, Language } from '@utils/constants';
+import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import type { MessageSchema } from '@utils/message/type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,15 +14,25 @@ import { VideoLifecycleEvent } from './video-lifecycle/video-lifecycle-monitor';
 
 vi.mock('@storage/registered-subtitle', () => ({ getRegisteredSubtitles: vi.fn() }));
 vi.mock('@storage/subtitle', () => ({ getLocalSubtitle: vi.fn() }));
+vi.mock('@utils/coupang-play', () => ({ getCoupangPlayVideoId: vi.fn() }));
 vi.mock('./coupang-play', () => ({ coupangStrategy: { fetchSubtitles: vi.fn() } }));
 
+const VIDEO_ID = '123e4567-e89b-12d3-a456-426614174000';
+const OTHER_VIDEO_ID = '123e4567-e89b-12d3-a456-426614174001';
 const SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000001';
 const SECOND_SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000002';
+
+const createNativeRequest = (requestId = 'request-1', videoId: string | null = VIDEO_ID) => ({
+  requestId,
+  videoId,
+  url: 'https://synthetic.test/playback',
+  headers: [] as chrome.webRequest.HttpHeader[],
+});
 
 const contentEvent = (video: HTMLVideoElement): VideoLifecycleEvent => ({
   state: 'content',
   video,
-  videoId: '123e4567-e89b-12d3-a456-426614174000',
+  videoId: VIDEO_ID,
   delayed: false,
 });
 
@@ -66,7 +77,7 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.setVideo).toHaveBeenCalledOnce();
     expect(dependencies.setupContainer).toHaveBeenCalledOnce();
     expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('detected');
-    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(true);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(true, 1, VIDEO_ID);
   });
 
   it.each(['advertisement', 'placeholder', 'waiting', 'transitioning'] as const)(
@@ -86,7 +97,7 @@ describe('canonical video lifecycle handler', () => {
       expect(dependencies.resetElements).toHaveBeenCalledOnce();
       expect(dependencies.setCurrentTime).toHaveBeenCalledWith(0);
       expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('detecting');
-      expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false);
+      expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, 1, null);
     }
   );
 
@@ -99,7 +110,7 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.clearVideo).not.toHaveBeenCalled();
     expect(dependencies.resetElements).not.toHaveBeenCalled();
     expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('failed');
-    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, 0, null);
   });
 
   it('clears native cues when Coupang replaces one content video directly', () => {
@@ -117,6 +128,7 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.resetElements).toHaveBeenCalledOnce();
     expect(dependencies.setCurrentTime).toHaveBeenCalledWith(0);
     expect(dependencies.setVideo).toHaveBeenCalledTimes(2);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(true, 2, VIDEO_ID);
   });
 });
 
@@ -124,10 +136,28 @@ describe('canonical content messages', () => {
   beforeEach(() => {
     vi.mocked(getRegisteredSubtitles).mockReset().mockResolvedValue([]);
     vi.mocked(getLocalSubtitle).mockReset();
+    vi.mocked(getCoupangPlayVideoId).mockReset().mockReturnValue(VIDEO_ID);
     vi.mocked(coupangStrategy.fetchSubtitles).mockReset().mockResolvedValue([]);
     const store = useSubtitleStore.getState();
     store.clearCaches();
     store.setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
+  });
+
+  it('returns page-owned video identity with the synchronous content ping', () => {
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('pingContent', undefined);
+
+    expect(request.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        contentInstanceId: expect.any(String),
+        hasVideo: false,
+        routeChangedAt: expect.any(Number),
+        videoId: VIDEO_ID,
+        videoRevision: 0,
+      },
+    });
   });
 
   it('acquires raw native cues for every supported language and ignores unsupported tracks', async () => {
@@ -146,7 +176,7 @@ describe('canonical content messages', () => {
     ]);
     const { dispatch } = createMessageHarness();
 
-    const request = dispatch('fetchVideoMetadata', { url: 'https://example.test', headers: [] });
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
     expect(request.result).toBe(true);
     await expectResponse(request.sendResponse, { success: true });
 
@@ -161,11 +191,60 @@ describe('canonical content messages', () => {
     ]);
     const { dispatch } = createMessageHarness();
 
-    const request = dispatch('fetchVideoMetadata', { url: 'https://example.test', headers: [] });
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
     expect(request.result).toBe(true);
     await expectFailure(request.sendResponse);
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({});
+  });
+
+  it('keeps native cues when a generic element reset is requested', () => {
+    const cues = [{ start: 0, end: 1, text: 'Synthetic cue' }];
+    useSubtitleStore.getState().setNativeCues('en', cues);
+    const { dispatch } = createMessageHarness();
+
+    dispatch('resetElement', undefined);
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
+  });
+
+  it('ignores a superseded native response that finishes after the latest request', async () => {
+    const firstFetch = createDeferred<FetchedSubtitles>();
+    const secondFetch = createDeferred<FetchedSubtitles>();
+    vi.mocked(coupangStrategy.fetchSubtitles)
+      .mockImplementationOnce(() => firstFetch.promise)
+      .mockImplementationOnce(() => secondFetch.promise);
+    const { dispatch } = createMessageHarness();
+
+    const first = dispatch('fetchVideoMetadata', createNativeRequest('request-1'));
+    const second = dispatch('fetchVideoMetadata', createNativeRequest('request-2'));
+    secondFetch.resolve([
+      { lang: 'en', subtitleData: [{ start: 2, end: 3, text: 'Latest synthetic cue' }] },
+    ]);
+    await expectResponse(second.sendResponse, { success: true });
+    firstFetch.resolve([
+      { lang: 'en', subtitleData: [{ start: 0, end: 1, text: 'Older synthetic cue' }] },
+    ]);
+    await expectResponse(first.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache.en).toEqual([
+      { start: 2, end: 3, text: 'Latest synthetic cue' },
+    ]);
+  });
+
+  it('does not apply native cues after navigation to a different video', async () => {
+    const existing = [{ start: 0, end: 1, text: 'Existing synthetic cue' }];
+    useSubtitleStore.getState().setNativeCues('ko', existing);
+    vi.mocked(getCoupangPlayVideoId).mockReturnValue(OTHER_VIDEO_ID);
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
+      { lang: 'en', subtitleData: [{ start: 2, end: 3, text: 'Stale synthetic cue' }] },
+    ]);
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest('request-1', VIDEO_ID));
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: existing });
   });
 
   it('sets a registered role with raw cues and a separately validated delay, then refreshes it', async () => {
@@ -245,7 +324,7 @@ describe('canonical content messages', () => {
     const { dispatch } = createMessageHarness();
 
     for (const [message, params] of [
-      ['fetchVideoMetadata', { url: 'https://example.test', headers: [] }],
+      ['fetchVideoMetadata', createNativeRequest()],
       ['setSubtitleRole', { role: 'learning', subtitleId: SUBTITLE_ID }],
       ['refreshRegisteredSubtitle', { subtitleId: SUBTITLE_ID }],
     ] as const) {
@@ -273,6 +352,8 @@ type CapturedRequest = {
   sender: chrome.runtime.MessageSender;
   sendResponse: (response: unknown) => void;
 };
+
+type FetchedSubtitles = Awaited<ReturnType<typeof coupangStrategy.fetchSubtitles>>;
 
 type CapturedListener = (request: CapturedRequest) => true | void;
 
@@ -312,4 +393,12 @@ const expectFailure = async (sendResponse: ReturnType<typeof vi.fn>) => {
       message: 'v2_content_action_failed',
     })
   );
+};
+
+const createDeferred = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 };

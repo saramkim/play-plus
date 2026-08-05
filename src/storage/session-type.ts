@@ -11,10 +11,18 @@ export type PendingSubtitleRequest = {
   headers: chrome.webRequest.HttpHeader[];
 };
 
+export type SubtitleReplayRequest = PendingSubtitleRequest & {
+  capturedAt: number | null;
+  contentInstanceId: string | null;
+  documentId: string | null;
+  requestId: string;
+  videoId: string | null;
+};
+
 export type SessionStorageSchema = {
   activeTab: chrome.tabs.Tab;
   pendingViewActions: PendingViewAction[];
-  pendingSubtitleRequests: Record<number, PendingSubtitleRequest>;
+  pendingSubtitleRequests: Record<number, SubtitleReplayRequest>;
 };
 
 export type SessionStorageKey = keyof SessionStorageSchema;
