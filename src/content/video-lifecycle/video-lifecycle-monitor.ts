@@ -51,6 +51,7 @@ export class VideoLifecycleMonitor {
   }
 
   refresh(): VideoLifecycleEvent {
+    this.routeSubscription?.check();
     const classification = classifyCoupangPlayVideo(this.root);
     const source = classification.video?.currentSrc || classification.video?.src || '';
     const isStaleTransitionVideo =

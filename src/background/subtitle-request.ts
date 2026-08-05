@@ -143,6 +143,13 @@ export const createSubtitleRequestReplayController = (
 
     if (contentSnapshot) {
       if (replay.capturedAt !== null && replay.capturedAt < contentSnapshot.routeChangedAt) return;
+      if (replay.videoId !== null && replay.videoId !== contentSnapshot.videoId) {
+        replay = { ...replay, contentInstanceId: null, videoId: null };
+        contentSnapshot = null;
+      }
+    }
+
+    if (contentSnapshot) {
       if (!adoptContentRoute(tabId, contentSnapshot)) return;
       if (
         replay.contentInstanceId !== null &&
@@ -292,13 +299,16 @@ export const createSubtitleRequestReplayController = (
     if ((latestVideoRevisions.get(tabId) ?? status.videoRevision) > status.videoRevision) return;
     if (replay) {
       if (replay.contentInstanceId === null) {
-        if (
-          replay.documentId === null ||
-          status.documentId === null ||
-          replay.documentId !== status.documentId ||
-          (replay.capturedAt !== null && replay.capturedAt < status.routeChangedAt)
-        ) {
-          if (status.documentId !== null) {
+        const isCurrentCapture =
+          replay.capturedAt !== null && replay.capturedAt >= status.routeChangedAt;
+        const hasLegacyRouteIdentity =
+          replay.capturedAt === null &&
+          ((replay.videoId !== null && replay.videoId === status.videoId) ||
+            (replay.documentId !== null &&
+              status.documentId !== null &&
+              replay.documentId === status.documentId));
+        if (!isCurrentCapture && !hasLegacyRouteIdentity) {
+          if (replay.capturedAt !== null) {
             await clearReplaySource(tabId, ownershipRevision);
           }
           return;
@@ -365,9 +375,7 @@ export const createSubtitleRequestReplayController = (
     if (
       nextVideoId !== null &&
       (replay.videoId === nextVideoId ||
-        (replay.contentInstanceId === null &&
-          replay.documentId !== null &&
-          replay.capturedAt !== null))
+        (replay.contentInstanceId === null && replay.capturedAt !== null))
     ) {
       return;
     }

@@ -439,7 +439,7 @@ describe('subtitle request replay controller', () => {
     expect(dependencies.deliver).toHaveBeenCalledOnce();
   });
 
-  it('rejects an old-document request that resolves against the new tab route', async () => {
+  it('binds a current request when Chrome reports a different document identity', async () => {
     const { controller, dependencies, replayByTab } = createHarness();
     await controller.handleNavigation(5, `https://www.coupangplay.com/play/${OTHER_VIDEO_ID}`);
     dependencies.pingContent.mockRejectedValue(new Error('synthetic no receiver'));
@@ -451,7 +451,7 @@ describe('subtitle request replay controller', () => {
         documentId: 'document-old',
         requestId: 'request-old',
         url: 'https://synthetic.test/playback',
-        headers: [],
+        headers: [{ name: 'x-test', value: 'yes' }],
       },
       async () => OTHER_VIDEO_ID,
       2_100
@@ -473,11 +473,107 @@ describe('subtitle request replay controller', () => {
       videoRevision: 1,
     });
 
-    expect(replayByTab.has(5)).toBe(false);
-    expect(dependencies.deliver).not.toHaveBeenCalled();
+    expect(replayByTab.get(5)).toEqual(
+      createRequest('request-old', OTHER_VIDEO_ID, {
+        capturedAt: 2_100,
+        contentInstanceId: 'content-new',
+        documentId: 'document-new',
+      })
+    );
+    expect(dependencies.deliver).toHaveBeenCalledOnce();
   });
 
-  it('rejects a same-document request whose capture predates the new content route', async () => {
+  it('keeps a current request when Chrome omits both document identities', async () => {
+    const { controller, dependencies, replayByTab } = createHarness();
+    dependencies.pingContent.mockRejectedValue(new Error('synthetic no receiver'));
+
+    await controller.capture(
+      5,
+      {
+        contentInstanceId: null,
+        documentId: null,
+        requestId: 'request-current',
+        url: 'https://synthetic.test/playback',
+        headers: [{ name: 'x-test', value: 'yes' }],
+      },
+      async () => VIDEO_ID,
+      2_100
+    );
+    await controller.handleNavigation(5, VIDEO_URL);
+
+    await controller.handleContentStatus(5, {
+      contentInstanceId: 'content-current',
+      documentId: null,
+      hasVideo: true,
+      isVideoUrl: true,
+      routeChangedAt: 2_000,
+      videoId: VIDEO_ID,
+      videoRevision: 1,
+    });
+
+    expect(replayByTab.get(5)).toEqual(
+      createRequest('request-current', VIDEO_ID, {
+        capturedAt: 2_100,
+        contentInstanceId: 'content-current',
+        documentId: null,
+      })
+    );
+    expect(dependencies.deliver).toHaveBeenCalledOnce();
+  });
+
+  it('quarantines a capture until stale content advances to the captured route', async () => {
+    const { controller, dependencies, replayByTab } = createHarness();
+    await controller.handleNavigation(5, `https://www.coupangplay.com/play/${OTHER_VIDEO_ID}`);
+    dependencies.pingContent.mockResolvedValue({
+      success: true,
+      data: {
+        contentInstanceId: 'content-old',
+        hasVideo: true,
+        routeChangedAt: 1_000,
+        videoId: VIDEO_ID,
+        videoRevision: 1,
+      },
+    });
+
+    await controller.capture(
+      5,
+      {
+        contentInstanceId: null,
+        documentId: null,
+        requestId: 'request-current',
+        url: 'https://synthetic.test/playback',
+        headers: [],
+      },
+      async () => OTHER_VIDEO_ID,
+      2_100
+    );
+
+    expect(replayByTab.get(5)).toMatchObject({
+      contentInstanceId: null,
+      requestId: 'request-current',
+      videoId: null,
+    });
+    expect(dependencies.deliver).not.toHaveBeenCalled();
+
+    await controller.handleContentStatus(5, {
+      contentInstanceId: 'content-current',
+      documentId: null,
+      hasVideo: true,
+      isVideoUrl: true,
+      routeChangedAt: 2_000,
+      videoId: OTHER_VIDEO_ID,
+      videoRevision: 1,
+    });
+
+    expect(replayByTab.get(5)).toMatchObject({
+      contentInstanceId: 'content-current',
+      requestId: 'request-current',
+      videoId: OTHER_VIDEO_ID,
+    });
+    expect(dependencies.deliver).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a request whose capture predates the new content route', async () => {
     const { controller, dependencies, replayByTab } = createHarness();
     await controller.handleNavigation(5, `https://www.coupangplay.com/play/${OTHER_VIDEO_ID}`);
     dependencies.pingContent.mockRejectedValue(new Error('synthetic no receiver'));
@@ -486,7 +582,7 @@ describe('subtitle request replay controller', () => {
       5,
       {
         contentInstanceId: null,
-        documentId: 'document-shared',
+        documentId: null,
         requestId: 'request-old',
         url: 'https://synthetic.test/playback',
         headers: [],
@@ -496,7 +592,7 @@ describe('subtitle request replay controller', () => {
     );
     await controller.handleContentStatus(5, {
       contentInstanceId: 'content-new',
-      documentId: 'document-shared',
+      documentId: null,
       hasVideo: true,
       isVideoUrl: true,
       routeChangedAt: 2_000,
