@@ -93,13 +93,13 @@ export const parseSRT = (data: string) => {
   const subtitles: SubtitleData[] = [];
   const lines = data.split(/\r?\n/);
   let currentSubtitle = { ...INITIAL_SUBTITLE };
-  let step = 0; // 0: 인덱스, 1: 시간, 2: 텍스트
+  let step = 0; // 0: 인덱스, 1: 시간, 2: 텍스트, 3: 잘못된 cue
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
     if (!line) {
-      if (currentSubtitle.text.trim()) {
+      if (step === 2 && currentSubtitle.text.trim()) {
         subtitles.push({ ...currentSubtitle });
       }
       currentSubtitle = { ...INITIAL_SUBTITLE };
@@ -110,7 +110,17 @@ export const parseSRT = (data: string) => {
     if (step === 0 && /^\d+$/.test(line)) {
       step = 1;
     } else if (step === 1 && line.includes('-->')) {
-      const [start, end] = line.split(' --> ').map((time) => timeToSeconds(time.trim()) ?? 0);
+      const timeMatch = line.match(/^(.+?)\s+-->\s+(.+)$/);
+      if (!timeMatch) {
+        step = 3;
+        continue;
+      }
+      const start = srtTimeToSeconds(timeMatch[1].trim());
+      const end = srtTimeToSeconds(timeMatch[2].trim());
+      if (start === null || end === null || end < start) {
+        step = 3;
+        continue;
+      }
       currentSubtitle.start = start;
       currentSubtitle.end = end;
       step = 2;
@@ -119,7 +129,7 @@ export const parseSRT = (data: string) => {
     }
   }
 
-  if (currentSubtitle.text.trim()) {
+  if (step === 2 && currentSubtitle.text.trim()) {
     subtitles.push({ ...currentSubtitle });
   }
 
@@ -180,4 +190,16 @@ const timeToSeconds = (time: string) => {
 
   const [, hours = '0', minutes, seconds, fraction = ''] = match;
   return Number(hours) * 3600 + Number(minutes) * 60 + Number(`${seconds}${fraction.replace(',', '.')}`);
+};
+
+const srtTimeToSeconds = (time: string) => {
+  const match = time.match(/^(?:(\d+):)?([0-5]\d):([0-5]\d)([.,]\d+)?$/);
+  if (!match) return null;
+
+  const [, hours = '0', minutes, seconds, fraction = ''] = match;
+  const result =
+    Number(hours) * 3600 +
+    Number(minutes) * 60 +
+    Number(`${seconds}${fraction.replace(',', '.')}`);
+  return Number.isFinite(result) ? result : null;
 };

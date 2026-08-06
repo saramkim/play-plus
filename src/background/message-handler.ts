@@ -3,12 +3,19 @@ import { onMessage } from '@utils/message';
 import type { ContentBootstrap, MessageSchema, V2ReadinessStatus } from '@utils/message/type';
 
 import { respondToAsyncMessage } from './async-message-response';
+import { getOpenSubtitlesErrorDetails } from './opensubtitles-client';
 
 type BackgroundMessageHandlerDependencies = {
   awaitReady: () => Promise<void>;
   getReadiness: () => Promise<V2ReadinessStatus>;
   retryReadiness: () => Promise<V2ReadinessStatus>;
   getContentBootstrap: (tabId: number) => Promise<ContentBootstrap>;
+  searchOpenSubtitles: (
+    params: MessageSchema['searchOpenSubtitles']['params']
+  ) => Promise<MessageSchema['searchOpenSubtitles']['response']>;
+  downloadOpenSubtitle: (
+    params: MessageSchema['downloadOpenSubtitle']['params']
+  ) => Promise<MessageSchema['downloadOpenSubtitle']['response']>;
   handleViewVideo: (params: MessageSchema['viewVideo']['params']) => Promise<void>;
   handleSubtitleContentStatus: (
     tabId: number,
@@ -121,6 +128,24 @@ export const registerBackgroundMessageHandler = (
           )
         );
       }
+      case 'searchOpenSubtitles':
+        return respondToAsyncMessage(
+          request.sendResponse,
+          async () => {
+            await dependencies.awaitReady();
+            return dependencies.searchOpenSubtitles(request.params);
+          },
+          getOpenSubtitlesErrorDetails
+        );
+      case 'downloadOpenSubtitle':
+        return respondToAsyncMessage(
+          request.sendResponse,
+          async () => {
+            await dependencies.awaitReady();
+            return dependencies.downloadOpenSubtitle(request.params);
+          },
+          getOpenSubtitlesErrorDetails
+        );
       case 'getLearningCards':
         return respondToAsyncMessage(request.sendResponse, () =>
           runCardOperation(dependencies, () => dependencies.learningCards.get())

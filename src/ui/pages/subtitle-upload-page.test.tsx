@@ -59,15 +59,21 @@ const addedSubtitle: V2RegisteredSubtitleMetadata = {
 
 vi.mock('@/ui/features/subtitle-upload/subtitle-adder', () => ({
   SubtitleAdder: ({
+    initialSource,
     focusFirstControl,
     onAdded,
     onBusyChange,
   }: {
+    initialSource: 'file' | 'online';
     focusFirstControl: boolean;
     onAdded: (subtitle: V2RegisteredSubtitleMetadata) => void;
     onBusyChange: (busy: boolean) => void;
   }) => (
-    <section data-testid='subtitle-adder' data-focus-first={String(focusFirstControl)}>
+    <section
+      data-testid='subtitle-adder'
+      data-source={initialSource}
+      data-focus-first={String(focusFirstControl)}
+    >
       <button onClick={() => onBusyChange(true)}>start-busy</button>
       <button
         onClick={() => {
@@ -169,21 +175,24 @@ describe('SubtitleUploadPage', () => {
     vi.useRealTimers();
   });
 
-  it('offers one local-file add action and restores focus after Back', () => {
+  it('opens either explicit add source and restores focus after Back', () => {
     act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
 
-    expect(findButton(container, 'find_online')).toBeUndefined();
     expect(findButton(container, 'analyze')).toBeUndefined();
     expect(container.querySelectorAll("[data-scroll-owner='local-subtitles']")).toHaveLength(1);
 
-    const addButton = getButton(container, 'v2_local_subtitles_add_file');
-    act(() => addButton.click());
+    const onlineButton = getButton(container, 'find_online');
+    act(() => onlineButton.click());
 
+    expect(container.querySelector("[data-testid='subtitle-adder']")?.getAttribute('data-source')).toBe('online');
     expect(container.querySelector("[data-testid='subtitle-adder']")?.getAttribute('data-focus-first')).toBe('true');
     expect(container.querySelectorAll("[data-scroll-owner='local-subtitles']")).toHaveLength(1);
 
     act(() => getButton(container, 'v2_local_subtitles_back').click());
-    expect(document.activeElement).toBe(getButton(container, 'v2_local_subtitles_add_file'));
+    expect(document.activeElement).toBe(getButton(container, 'find_online'));
+
+    act(() => getButton(container, 'add_from_file').click());
+    expect(container.querySelector("[data-testid='subtitle-adder']")?.getAttribute('data-source')).toBe('file');
   });
 
   it('focuses the add heading from the list and locks navigation while busy', () => {
@@ -327,7 +336,9 @@ describe('SubtitleUploadPage', () => {
     expect(notice?.textContent).toContain('v2_local_subtitles_unavailable_missing_body: 1');
     expect(notice?.textContent).not.toContain('private subtitle text');
     expect(notice?.querySelector('button')).toBeNull();
-    expect(container.querySelectorAll('button')).toHaveLength(1);
+    expect(container.querySelectorAll('button')).toHaveLength(2);
+    expect(getButton(container, 'add_from_file')).toBeDefined();
+    expect(getButton(container, 'find_online')).toBeDefined();
   });
 
   it('shows a retryable error instead of silently replacing invalid local state', async () => {

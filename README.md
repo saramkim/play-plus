@@ -7,7 +7,7 @@
 ## Play Plus 2.0 학습 흐름
 
 1. 첫 진입에서 학습 언어와 선택적인 도움 언어를 확인합니다.
-2. Coupang Play가 제공하는 자막이나 사용자가 추가한 로컬 자막 파일을 학습·도움 역할에 지정합니다.
+2. Coupang Play 자막, 로컬 파일 또는 사용자가 명시적으로 검색·추가한 OpenSubtitles 자막을 학습·도움 역할에 지정합니다.
 3. 이전/다음 학습 문장으로 이동하거나 현재 학습 문장을 반복하며 시청합니다.
 4. 한 번의 저장 동작으로 현재 학습 문장을 카드로 저장합니다. 시간 정렬 신뢰도가 충분할 때만 도움 문장이 함께 저장됩니다.
 5. Library에서 카드를 검색·정렬·필터링하고, 문장과 역할을 편집하거나 상태를 바꾸고 삭제·실행 취소합니다.
@@ -19,11 +19,20 @@
 ### 학습·도움 자막
 
 - Coupang Play 자막과 로컬 SRT, VTT, SMI 파일 지원
+- 사용자가 명시적으로 검색하고 선택한 OpenSubtitles 자막을 기존 등록 자막 경계로 추가
 - 학습 언어와 선택적인 도움 언어 설정
 - 역할별 표시·숨김, 위치, 오프셋, 색상, 크기, 굵기, 배경 투명도와 줄바꿈 설정
 - 역할별 delay를 한 번만 적용하는 재생·저장 동작
 - 도움 언어를 사용하지 않을 때 도움 자막 제어를 비활성화하되 저장된 외형 값은 보존
 - 등록 자막 메타데이터와 cue 본문을 브라우저 로컬 저장소에 유지
+
+### OpenSubtitles 온라인 자막
+
+- 온라인 화면을 열거나 검색어·필터를 입력하는 것만으로는 외부 요청을 보내지 않고, 사용자가 **검색**을 실행한 뒤에만 요청
+- 검색 시 사용자가 입력한 제목 또는 query, 언어, 유형·연도·시즌·회차와 page만 전송
+- 접근 가능한 결과 목록과 명시적인 pagination을 제공하고, 사용자가 **추가**를 실행한 하나의 `file_id`만 다운로드
+- 다운로드한 자막을 엄격하게 decode·parse한 뒤 기존 등록 자막과 같은 로컬 형식으로 저장하며, 학습·도움 역할은 자동 지정하지 않음
+- 선택적 권한 거부·취소·회수, provider 오류 또는 quota 제한 뒤에도 Coupang Play 자막과 로컬 파일 경로를 계속 사용
 
 ### 재생과 저장
 
@@ -59,8 +68,10 @@
 
 - 학습 카드와 등록 자막은 사용자의 브라우저에 로컬로 저장됩니다.
 - 설정은 Chrome Storage의 확장 프로그램 전용 영역에 저장됩니다.
-- 핵심 학습 흐름은 계정, 외부 자막 공급자, 번역 서버, telemetry 또는 별도 백엔드 없이 작동합니다.
-- 확장 프로그램이 접근하는 웹 호스트는 Coupang Play로 제한됩니다.
+- Coupang Play 자막과 로컬 파일을 사용하는 핵심 학습 흐름은 OpenSubtitles 권한이나 연결 없이 작동합니다.
+- OpenSubtitles는 사용자가 검색·추가를 명시적으로 실행할 때만 사용하는 선택 기능이며, 시청 URL·Coupang Play video ID·재생 시각·카드·cue 본문을 전송하지 않습니다.
+- 검색 입력·결과 metadata·임시 URL·quota는 영속화하지 않습니다. 선택한 다운로드의 same-session cache만 최대 8개, 총 4 MiB, 6시간 TTL로 `chrome.storage.session`에 제한하고, 성공적으로 등록한 metadata와 cue만 로컬에 보존합니다.
+- 사용자 계정·JWT, BYOK, Play Plus proxy/backend, 원격 번역과 telemetry를 사용하지 않습니다.
 - 오류와 진단 정보에는 실제 자막 문장, 등록 자막 본문 또는 전체 시청 URL을 기록하지 않습니다.
 - 로컬 데이터는 장치 간 동기화나 복구를 보장하지 않습니다.
 
@@ -76,7 +87,14 @@
 | `sidePanel` | 확장 프로그램 action에서 학습 UI가 있는 Chrome side panel을 엽니다. |
 | `unlimitedStorage` | 사용자가 추가한 로컬 자막의 cue 본문과 누적 학습 카드를 브라우저 로컬에 보존할 때 일반 확장 저장 용량 제한으로 인한 예기치 않은 손실을 피합니다. |
 
-필수 host access는 `https://www.coupangplay.com/*`뿐이며 optional host permission은 없습니다.
+필수 host access는 `https://www.coupangplay.com/*`뿐입니다. OpenSubtitles용 host는 설치 시 부여되지 않는 다음 exact optional permission으로 분리합니다.
+
+| 선택적 host | 필요한 이유 |
+| --- | --- |
+| `https://api.opensubtitles.com/*` | 사용자가 실행한 검색과 선택한 `file_id`의 임시 다운로드 URL 발급 요청을 background service worker에서 수행합니다. |
+| `https://www.opensubtitles.com/*` | API가 반환하고 사전 검증한 임시 `/download/` URL에서 선택한 자막 하나를 가져옵니다. |
+
+두 origin은 첫 번째 명시적 **검색**에서 한 번에 요청합니다. 거부·취소하거나 나중에 회수하면 provider 요청을 보내지 않으며 Coupang Play 자막과 로컬 파일 기능은 계속 작동합니다. wildcard나 다른 OpenSubtitles 후보 host는 선언하지 않습니다.
 
 ## 설치
 
@@ -94,6 +112,21 @@ cd play-plus
 yarn install
 yarn build
 ```
+
+OpenSubtitles 개발 빌드를 검증하려면 `.env.example`을 `.env.local`로 복사하고 승인된 Consumer 값을 설정합니다.
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+| 변수 | 용도 |
+| --- | --- |
+| `OPENSUBTITLES_API_KEY` | build-time에 주입하는 OpenSubtitles public Consumer key입니다. 온라인 검색·추가 검증에 필요합니다. |
+| `OPENSUBTITLES_USER_AGENT` | 선택적인 app/version 식별자입니다. 비워 두면 현재 package 버전의 `Play Plus v<version>`을 사용합니다. |
+
+`.env.local`과 실제 key는 commit하지 않습니다. 배포 가능한 public client용 Consumer key이므로 보안 secret이라고 주장하지 않으며, 최종 사용자에게 API key·계정·JWT 입력을 요구하지 않습니다. key가 없거나 provider가 거부하면 온라인 기능만 실패하고 로컬 자막 경로는 유지되어야 합니다.
+
+이 설정만으로 production 사용이 승인되지는 않습니다. 릴리스 전에는 승인된 Play Plus Consumer로 로그인/JWT 없이 trailing-slash search·download와 반환된 임시 URL이 redirect 없이 exact optional origin에서 동작하는지 실제 Chrome에서 확인하고, plan·quota·attribution 조건을 OpenSubtitles와 다시 확인해야 합니다.
 
 Chrome의 `chrome://extensions/`에서 개발자 모드를 켜고 **압축해제된 확장 프로그램을 로드합니다**를 선택한 뒤 `dist/`를 지정합니다.
 
@@ -113,11 +146,11 @@ yarn test:run     # Vitest 1회 실행
 
 Play Plus는 Chrome Extension Manifest V3의 세 실행 컨텍스트를 분리합니다.
 
-- `src/ui/`: side panel React 앱. 학습 설정, 로컬 자막, Library와 Focused Review를 제공합니다.
-- `src/background/`: service worker. v2 준비 상태, 탭 생명주기와 컨텍스트 간 메시지를 조정합니다.
+- `src/ui/`: side panel React 앱. 학습 설정, 로컬·OpenSubtitles 자막 추가, Library와 Focused Review를 제공합니다.
+- `src/background/`: service worker. v2 준비 상태, 탭 생명주기, OpenSubtitles 네트워크·session cache와 컨텍스트 간 메시지를 조정합니다.
 - `src/content/`: Coupang Play 페이지의 DOM·video·cue 접근, 자막 렌더링, 재생 제어와 저장 anchor를 담당합니다.
 - `src/storage/`: Chrome Storage의 strict schema, v1.11.0 one-shot decoder, v2 migration과 canonical API를 제공합니다.
-- `src/utils/`: 타입이 지정된 메시지 계약, i18n과 공통 유틸리티를 제공합니다.
+- `src/utils/`: 타입이 지정된 메시지·OpenSubtitles 계약, i18n과 공통 유틸리티를 제공합니다.
 
 UI와 background는 페이지 DOM이나 video에 직접 접근하지 않습니다. 컨텍스트 간 동작은 중앙 메시지 schema와 Storage 경계를 사용합니다.
 

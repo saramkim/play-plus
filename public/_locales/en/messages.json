@@ -464,6 +464,100 @@
     "reset_speed":  {
                         "message":  "Reset Speed"
                     },
+  "subtitle_add_source": { "message": "Subtitle Source" },
+  "add_from_file": { "message": "Add from File" },
+  "find_online": { "message": "Find Online" },
+  "online_subtitle_search": { "message": "Search OpenSubtitles" },
+  "search_title": { "message": "Title" },
+  "advanced_search": { "message": "Advanced Search" },
+  "advanced_search_applied": {
+    "message": "Advanced Search · $count$ applied",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "content_type": { "message": "Type" },
+  "content_type_all": { "message": "All" },
+  "content_type_movie": { "message": "Movie" },
+  "content_type_episode": { "message": "Episode" },
+  "year": { "message": "Year" },
+  "season": { "message": "Season" },
+  "episode": { "message": "Episode" },
+  "opensubtitles_search_privacy": {
+    "message": "Searching sends the title, language, and selected filters to OpenSubtitles."
+  },
+  "opensubtitles_search_permission": {
+    "message": "On your first Search, Chrome asks for optional access to exactly https://api.opensubtitles.com and https://www.opensubtitles.com. If you do not allow it, file and Coupang Play subtitles remain available."
+  },
+  "searching": { "message": "Searching" },
+  "error_online_permission_denied": {
+    "message": "Online subtitle access was not allowed. You can continue adding subtitles from files."
+  },
+  "error_online_configuration": { "message": "The OpenSubtitles connection is not configured." },
+  "error_online_invalid_query": { "message": "Check the search conditions." },
+  "error_online_access": { "message": "OpenSubtitles did not allow the request. Check the provider configuration." },
+  "error_online_search": { "message": "Online subtitles could not be searched. Please try again later." },
+  "error_online_download": { "message": "The selected online subtitle could not be downloaded. Try it again from the results." },
+  "error_online_rate_limit": { "message": "The OpenSubtitles download or request limit was reached. Please try again later." },
+  "error_online_network": { "message": "Could not connect to OpenSubtitles. Check your network connection." },
+  "error_online_unavailable": { "message": "OpenSubtitles is temporarily unavailable." },
+  "error_online_response": { "message": "OpenSubtitles returned unreadable data. Please try again later." },
+  "error_online_expired": { "message": "The OpenSubtitles download link expired. Try it again from the results." },
+  "no_search_results": { "message": "No search results." },
+  "search_result_summary": {
+    "message": "Showing $visible$ files from $total$ subtitle results",
+    "placeholders": {
+      "visible": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "show_more": { "message": "Show More" },
+  "loading_more": { "message": "Loading More" },
+  "opensubtitles_attribution": { "message": "Online subtitles provided by:" },
+  "result_disc": {
+    "message": "CD $current$/$total$",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "result_rating": {
+    "message": "Rating $rating$ · Votes $votes$",
+    "placeholders": {
+      "rating": { "content": "$1" },
+      "votes": { "content": "$2" }
+    }
+  },
+  "result_downloads": {
+    "message": "Downloads $count$",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "result_characteristics": { "message": "Subtitle characteristics" },
+  "result_auto_translated": { "message": "Auto-translated" },
+  "result_hearing_impaired": { "message": "SDH" },
+  "result_foreign_parts_only": { "message": "Foreign parts only" },
+  "result_trusted_source": { "message": "Trusted source" },
+  "result_trusted_source_description": {
+    "message": "Label provided by OpenSubtitles; it is not a safety guarantee."
+  },
+  "result_details": { "message": "Details" },
+  "result_file_name": { "message": "File name" },
+  "result_uploader_rank": { "message": "Uploader rank" },
+  "result_upload_date": { "message": "Uploaded" },
+  "add_online_subtitle": {
+    "message": "Add $fileName$ subtitle",
+    "placeholders": { "fileName": { "content": "$1" } }
+  },
+  "adding": { "message": "Adding" },
+  "add_this_subtitle": { "message": "Add This Subtitle" },
+  "success_add_subtitle_cached": {
+    "message": "The OpenSubtitles subtitle was registered locally from the session cache. To use it, explicitly select it as the learning or support subtitle from the list. No role was applied automatically."
+  },
+  "success_add_subtitle_remaining": {
+    "message": "The OpenSubtitles subtitle was registered locally. OpenSubtitles reported $remaining$ downloads remaining. To use it, explicitly select it as the learning or support subtitle from the list. No role was applied automatically.",
+    "placeholders": { "remaining": { "content": "$1" } }
+  },
+  "success_add_online_subtitle": {
+    "message": "The OpenSubtitles subtitle was registered locally. To use it, explicitly select it as the learning or support subtitle from the list. No role was applied automatically."
+  },
     "error_file_size":  {
                             "message":  "File size is too large.\nPlease add a file no larger than 1 MiB."
                         },
@@ -557,7 +651,7 @@
                                    "message":  "Add subtitle"
                                },
     "v2_local_subtitles_empty_description":  {
-                                                 "message":  "Add a subtitle file to use while watching Coupang Play."
+                                                 "message":  "Add a subtitle file or find one online to use while watching Coupang Play."
                                              },
     "v2_local_subtitles_add_file":  {
                                         "message":  "Add subtitle file"

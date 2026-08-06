@@ -1,5 +1,11 @@
 import type { DeletedLearningCard } from '@storage/v2/learning-card-storage';
 import type { LearningCard } from '@storage/v2/type';
+import type {
+  OpenSubtitlesDownloadedSubtitle,
+  OpenSubtitlesErrorCode,
+  OpenSubtitlesSearchQuery,
+  OpenSubtitlesSearchResult,
+} from '@utils/opensubtitles/type';
 
 export type SubtitleRole = 'learning' | 'support';
 
@@ -62,6 +68,16 @@ export type MessageSchema = {
       videoId: string | null;
       videoRevision: number;
     };
+  };
+  searchOpenSubtitles: {
+    params: OpenSubtitlesSearchQuery;
+    response: OpenSubtitlesSearchResult;
+    error: OpenSubtitlesErrorCode;
+  };
+  downloadOpenSubtitle: {
+    params: { fileId: number; language: OpenSubtitlesSearchQuery['language'] };
+    response: OpenSubtitlesDownloadedSubtitle;
+    error: OpenSubtitlesErrorCode;
   };
   getLearningCards: {
     response: LearningCard[];

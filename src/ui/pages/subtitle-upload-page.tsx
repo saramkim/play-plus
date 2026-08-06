@@ -17,7 +17,7 @@ import {
   SubtitleRole,
   useSubtitleSettings,
 } from '@/ui/features/subtitle/use-subtitle-settings';
-import { SubtitleAdder } from '@/ui/features/subtitle-upload/subtitle-adder';
+import { SubtitleAdder, SubtitleAddSource } from '@/ui/features/subtitle-upload/subtitle-adder';
 import { SubtitleCard } from '@/ui/features/subtitle-upload/subtitle-card';
 import { SubtitleRoleSummary } from '@/ui/features/subtitle-upload/subtitle-role-summary';
 import { useUploadedSubtitles } from '@/ui/features/subtitle-upload/use-uploaded-subtitles';
@@ -36,7 +36,8 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
   const [isAddBusy, setIsAddBusy] = useState(false);
   const [pendingFocusId, setPendingFocusId] = useState<SubtitleId | null>(null);
   const addHeadingRef = useRef<HTMLHeadingElement>(null);
-  const emptyAddButtonRef = useRef<HTMLButtonElement>(null);
+  const emptyFileButtonRef = useRef<HTMLButtonElement>(null);
+  const emptyOnlineButtonRef = useRef<HTMLButtonElement>(null);
   const listAddButtonRef = useRef<HTMLButtonElement>(null);
   const listModeRef = useRef<HTMLDivElement>(null);
   const subtitleItemRefs = useRef(new Map<SubtitleId, HTMLLIElement>());
@@ -103,11 +104,20 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
   useEffect(() => {
     if (mode.name !== 'list' || restoreFocusOriginRef.current === null) return;
 
+    const origin = restoreFocusOriginRef.current;
     const originTarget =
-      restoreFocusOriginRef.current === 'list'
+      origin === 'list'
         ? listAddButtonRef.current
-        : emptyAddButtonRef.current;
-    (originTarget ?? listAddButtonRef.current ?? emptyAddButtonRef.current ?? listModeRef.current)?.focus();
+        : origin === 'empty-file'
+          ? emptyFileButtonRef.current
+          : emptyOnlineButtonRef.current;
+    (
+      originTarget ??
+      listAddButtonRef.current ??
+      emptyFileButtonRef.current ??
+      emptyOnlineButtonRef.current ??
+      listModeRef.current
+    )?.focus();
     restoreFocusOriginRef.current = null;
   }, [mode.name, subtitles.length]);
 
@@ -124,17 +134,26 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
   useEffect(() => {
     if (mode.name !== 'list' || pendingFocusId === null) return;
     const fallbackTimer = window.setTimeout(() => {
-      (listAddButtonRef.current ?? emptyAddButtonRef.current ?? listModeRef.current)?.focus();
+      (
+        listAddButtonRef.current ??
+        emptyFileButtonRef.current ??
+        emptyOnlineButtonRef.current ??
+        listModeRef.current
+      )?.focus();
       setPendingFocusId(null);
     }, 1500);
     return () => window.clearTimeout(fallbackTimer);
   }, [mode.name, pendingFocusId]);
 
-  const openAddMode = (origin: AddModeOrigin, focusFirstControl: boolean) => {
+  const openAddMode = (
+    initialSource: SubtitleAddSource,
+    origin: AddModeOrigin,
+    focusFirstControl: boolean
+  ) => {
     restoreFocusOriginRef.current = origin;
     setIsAddBusy(false);
     setNavigationLocked(false);
-    setMode({ name: 'add', focusFirstControl });
+    setMode({ name: 'add', initialSource, focusFirstControl });
   };
 
   const closeAddMode = () => {
@@ -195,6 +214,7 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
           data-scroll-owner='local-subtitles'
         >
           <SubtitleAdder
+            initialSource={mode.initialSource}
             focusFirstControl={mode.focusFirstControl}
             onAdded={handleAdded}
             onBusyChange={handleAddBusyChange}
@@ -208,9 +228,11 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
     return (
       <EmptyState
         containerRef={listModeRef}
-        addButtonRef={emptyAddButtonRef}
+        fileButtonRef={emptyFileButtonRef}
+        onlineButtonRef={emptyOnlineButtonRef}
         unavailableSubtitles={unavailableSubtitles}
-        onAdd={() => openAddMode('empty', true)}
+        onAddFromFile={() => openAddMode('file', 'empty-file', true)}
+        onFindOnline={() => openAddMode('online', 'empty-online', true)}
       />
     );
   }
@@ -257,7 +279,11 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
         </ul>
       </div>
       <footer className='shrink-0 border-t pt-3'>
-        <Button ref={listAddButtonRef} className='w-full' onClick={() => openAddMode('list', false)}>
+        <Button
+          ref={listAddButtonRef}
+          className='w-full'
+          onClick={() => openAddMode('file', 'list', false)}
+        >
           {t('v2_local_subtitles_add')}
         </Button>
       </footer>
@@ -267,18 +293,27 @@ export function SubtitleUploadPage({ learningProfile }: SubtitleUploadPageProps)
 
 type SubtitleUploadMode =
   | { name: 'list' }
-  | { name: 'add'; focusFirstControl: boolean };
+  | { name: 'add'; initialSource: SubtitleAddSource; focusFirstControl: boolean };
 
-type AddModeOrigin = 'list' | 'empty';
+type AddModeOrigin = 'list' | 'empty-file' | 'empty-online';
 
 interface EmptyStateProps {
   containerRef: React.Ref<HTMLDivElement>;
-  addButtonRef: React.Ref<HTMLButtonElement>;
+  fileButtonRef: React.Ref<HTMLButtonElement>;
+  onlineButtonRef: React.Ref<HTMLButtonElement>;
   unavailableSubtitles: V2UnavailableRegisteredSubtitle[];
-  onAdd: () => void;
+  onAddFromFile: () => void;
+  onFindOnline: () => void;
 }
 
-function EmptyState({ containerRef, addButtonRef, unavailableSubtitles, onAdd }: EmptyStateProps) {
+function EmptyState({
+  containerRef,
+  fileButtonRef,
+  onlineButtonRef,
+  unavailableSubtitles,
+  onAddFromFile,
+  onFindOnline,
+}: EmptyStateProps) {
   return (
     <div
       ref={containerRef}
@@ -289,8 +324,11 @@ function EmptyState({ containerRef, addButtonRef, unavailableSubtitles, onAdd }:
       <UnavailableSubtitleNotice subtitles={unavailableSubtitles} />
       <div className='flex min-h-40 flex-1 flex-col justify-center gap-3'>
         <p className='text-wrap text-center text-gray-500'>{t('v2_local_subtitles_empty_description')}</p>
-        <Button ref={addButtonRef} onClick={onAdd}>
-          {t('v2_local_subtitles_add_file')}
+        <Button ref={fileButtonRef} onClick={onAddFromFile}>
+          {t('add_from_file')}
+        </Button>
+        <Button ref={onlineButtonRef} variant='outline' onClick={onFindOnline}>
+          {t('find_online')}
         </Button>
       </div>
     </div>
