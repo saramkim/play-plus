@@ -17,6 +17,12 @@ const card: LearningCard = {
 
 const createDependencies = () => ({
   awaitReady: vi.fn(async () => {}),
+  downloadOpenSubtitle: vi.fn(async () => ({
+    fileId: 11,
+    fileName: 'example.srt',
+    text: 'subtitle',
+    fromCache: false,
+  })),
   getReadiness: vi.fn<() => Promise<V2ReadinessStatus>>(async () => ({ status: 'ready' })),
   retryReadiness: vi.fn<() => Promise<V2ReadinessStatus>>(async () => ({ status: 'ready' })),
   getContentBootstrap: vi.fn(async () => ({
@@ -25,6 +31,12 @@ const createDependencies = () => ({
   })),
   handleViewVideo: vi.fn(async () => {}),
   handleSubtitleContentStatus: vi.fn(async () => {}),
+  searchOpenSubtitles: vi.fn(async () => ({
+    totalCount: 0,
+    totalPages: 0,
+    page: 1,
+    candidates: [],
+  })),
   learningCards: {
     get: vi.fn(async () => [card]),
     add: vi.fn(async () => card),
@@ -233,6 +245,82 @@ describe('background message handler', () => {
       videoId: VIDEO_ID,
       videoRevision: 2,
     });
+  });
+
+  it('gates OpenSubtitles requests and returns typed provider data', async () => {
+    const dependencies = createDependencies();
+    const searchResponse = vi.fn();
+    const downloadResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(
+      listener?.(
+        { message: 'searchOpenSubtitles', params: { query: 'Example', language: 'en' } },
+        {},
+        searchResponse
+      )
+    ).toBe(true);
+    expect(
+      listener?.(
+        { message: 'downloadOpenSubtitle', params: { fileId: 11, language: 'en' } },
+        {},
+        downloadResponse
+      )
+    ).toBe(true);
+
+    await vi.waitFor(() =>
+      expect(searchResponse).toHaveBeenCalledWith({
+        success: true,
+        data: { totalCount: 0, totalPages: 0, page: 1, candidates: [] },
+      })
+    );
+    await vi.waitFor(() =>
+      expect(downloadResponse).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          fileId: 11,
+          fileName: 'example.srt',
+          text: 'subtitle',
+          fromCache: false,
+        },
+      })
+    );
+    expect(dependencies.awaitReady).toHaveBeenCalledTimes(2);
+    expect(dependencies.searchOpenSubtitles).toHaveBeenCalledWith({
+      query: 'Example',
+      language: 'en',
+    });
+    expect(dependencies.downloadOpenSubtitle).toHaveBeenCalledWith({
+      fileId: 11,
+      language: 'en',
+    });
+  });
+
+  it('returns a typed provider failure without exposing unknown details', async () => {
+    const dependencies = createDependencies();
+    dependencies.downloadOpenSubtitle.mockRejectedValueOnce(
+      new Error('raw provider detail https://www.opensubtitles.com/download/private')
+    );
+    const sendResponse = vi.fn();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    expect(
+      listener?.(
+        { message: 'downloadOpenSubtitle', params: { fileId: 11, language: 'en' } },
+        {},
+        sendResponse
+      )
+    ).toBe(true);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        code: 'SERVER',
+        message: 'The OpenSubtitles request failed.',
+      })
+    );
   });
 
   it('does not expose raw learning-card storage failures', async () => {

@@ -18,14 +18,16 @@
 | Candidate version | `1.11.0` manifest/package value; Play Plus 2.0은 아직 출시되었다고 간주하지 않음 |
 | Commit SHA | 커밋 전 후보; exact-head CI는 아직 실행하지 않음 |
 | Build command | `yarn build` |
-| Chrome version | NOT RUN — 연결된 Chrome 확장 테스트 환경 없음 |
+| Chrome version | UNKNOWN — 외부 Chrome 연결은 성공했지만 버전은 수집하지 않음 |
 | OS | Windows |
-| Tester / date | Codex / 2026-08-04 (자동 게이트만 수행) |
-| Coupang Play account / region | NOT RUN |
+| Tester / date | Codex / 2026-08-07 (자동 게이트, provider 사전 실증, Chrome 접속 시도 수행) |
+| Coupang Play account / region | UNKNOWN — 현재 연결 환경에서 홈페이지가 `/not-available`로 이동해 signed-in 재생 경로를 열 수 없었음 |
 | Korean test route | `https://www.coupangplay.com/play/<video-id>` |
 | English test route | `https://www.coupangplay.com/en/play/<video-id>` |
 | v1.11.0 upgrade profile | 실제 배포 v1.11.0에서 대표 데이터를 만든 별도 signed-in profile 필요 |
 | Fresh-install profile | 확장 Storage와 Web Storage가 없는 별도 clean profile 필요 |
+| OpenSubtitles Consumer / plan | UNKNOWN — 기존 Consumer로 login/JWT-free direct qualification은 통과했으나 production plan·attribution 승인은 별도 확인 필요; key 값은 기록하지 않음 |
+| OpenSubtitles build environment | PASS — ignored `.env.local`의 key 존재와 package-version 기본 User-Agent 사용을 값 노출 없이 확인 |
 
 ## Automated preconditions
 
@@ -35,12 +37,13 @@
 | --- | --- | --- |
 | `yarn type-check` | PASS | `yarn.cmd type-check` |
 | `yarn lint` | PASS | `yarn.cmd lint` |
-| `yarn test:run` | PASS | `yarn.cmd test:run --pool=forks --maxWorkers=2`: 54 files, 310 tests |
-| `yarn build` | PASS | Production Webpack build completed; 3 bundle-size warnings |
+| `yarn test:run` | PASS | `yarn.cmd test:run`: 62 files, 424 tests |
+| `yarn build` | PASS | Production Webpack build completed; 기존 bundle-size warning 3건 |
 | `git diff --check` | PASS | Whitespace errors 없음; Windows line-ending 안내만 출력 |
 | GitHub CI on exact head SHA | NOT RUN | |
-| Production bundle contains no retired/deferred runtime module | PASS | Entrypoint reachability 및 production `dist/` 문자열 검사 |
-| Manifest contains only reviewed active permissions and no optional host | PASS | JSON/entrypoint/permission 정적 검사 |
+| Production bundle contains no retired/deferred runtime module | NOT RUN | 이번 구현 후보에서 전체 legacy reachability audit는 아직 실행하지 않음 |
+| Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | built manifest에 `https://api.opensubtitles.com/*`, `https://www.opensubtitles.com/*`만 optional로 존재; required host는 Coupang Play 하나 |
+| Reload unpacked `dist/` and run signed-in Chrome smoke | NOT RUN | 연결된 Chrome의 보안 정책상 `chrome://extensions` 조작이 차단되었고 Coupang Play는 `/not-available`로 이동함; 최신 후보가 로드됐다고 간주하지 않음 |
 
 ## Fresh install and readiness
 
@@ -136,6 +139,42 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Save pending/error | Inject write delay/failure | Duplicate saves are blocked; failure creates no partial card and leaves a truthful recoverable state | NOT RUN | |
 | Shortcut enforcement | Both routes | Disabled shortcuts, reserved keys and conflicts do not execute actions | NOT RUN | |
 
+## OpenSubtitles explicit acquisition
+
+Use provider mocks for deterministic boundary/error/cache cases and an approved production Consumer for the real-provider rows. Never record the API key, full temporary URL, downloaded subtitle text or provider error body in evidence. A mock PASS does not replace the production gate.
+
+| Area | Route / setup | Check | Result | Evidence / notes |
+| --- | --- | --- | --- | --- |
+| Build-time Consumer | Production `dist/` built from `.env.local` | `OPENSUBTITLES_API_KEY` is injected only as the approved public Consumer key and never appears in UI, Storage, logs or captured evidence; `OPENSUBTITLES_USER_AGENT` uses the configured app/version or defaults to `Play Plus v<package version>` in the approved request | NOT RUN | |
+| Missing Consumer key | Build with an empty `OPENSUBTITLES_API_KEY` | Explicit search reports that online search is unavailable without sending a provider request; Coupang Play and local subtitle paths remain usable | NOT RUN | |
+| Zero implicit requests | Clean profile, Network open | Open the subtitle-add screen and online source, then type and edit query, language, type, year, season and episode; no permission prompt or extension-initiated OpenSubtitles request occurs before **Search** | NOT RUN | |
+| Search disclosure boundary | Prepared query with every filter | Before Search, UI identifies the provider fields, the two exact optional origins requested on first Search, and that denial leaves file/Coupang Play subtitles available; the actual request contains only title/query, language, selected type/year/season/episode and page, never watched URL, Coupang Play video ID, playback time, cards, cues or registered subtitle bodies | NOT RUN | |
+| Permission grant | Clean profile, first explicit Search | Request exactly `https://api.opensubtitles.com/*` and `https://www.opensubtitles.com/*` together; after grant, run only the submitted search and do not request a wildcard or candidate host | NOT RUN | |
+| Permission deny | Clean profile, deny first-search prompt | Send no provider request, preserve the online draft, show truthful recovery guidance and keep local-file/Coupang Play subtitle flows usable | NOT RUN | |
+| Permission cancel | Clean profile, dismiss first-search prompt | Treat dismissal as no grant: send no provider request, preserve the draft and keep local flows usable | NOT RUN | |
+| Permission revoke | Granted profile; revoke the API origin, download origin and both in separate runs | Do not use stale permission state; make no automatic request, safely block or re-gate the next explicit provider action, and leave local registered data unaffected | NOT RUN | |
+| Direct search contract | Approved production Consumer, granted origins | Send direct `GET https://api.opensubtitles.com/api/v1/subtitles/?...` with a trailing slash, sorted/lowercase parameters and `+` spaces; receive the response without a 3xx, redirect hop or unapproved origin | NOT RUN | |
+| Search authentication boundary | Same request | Send `Api-Key` and the approved app/version identifier only; no user `Authorization`/JWT, developer login, BYOK field or Play Plus proxy/backend is involved | NOT RUN | |
+| Result list | Search with multiple results | Show an accessible result list with file-level choices and metadata; do not download any result merely because it is visible or focused | NOT RUN | |
+| Pagination | Multi-page result | **Show More** is explicit, keeps the submitted filters, changes only `page`, appends new file-level results without duplicates and performs no subtitle download | NOT RUN | |
+| Empty search | Provider mock and production query with zero results | Show a factual empty state, keep the search form usable and create no registered subtitle or cache entry | NOT RUN | |
+| Search error | Network, invalid-response and 5xx fixtures | Show a bounded provider error without raw response body or credential; local source and a user-initiated retry remain available | NOT RUN | |
+| Rate/quota state | 429 and exhausted-download fixtures | Distinguish rate/quota failure from empty results, expose only safe reset guidance when available, perform no partial registration and leave local flows usable | NOT RUN | |
+| Selected-only download | Results with at least two file choices | Before **Add**, make no `/download/` request; one Add sends exactly one selected file-level `file_id`, and no unselected candidate is downloaded or prefetched | NOT RUN | |
+| Direct download contract | Approved production Consumer, selected result | Send direct `POST https://api.opensubtitles.com/api/v1/download/` with a trailing slash, then fetch only the returned `https://www.opensubtitles.com/download/…` URL; every step succeeds without 3xx, redirect following or another origin | NOT RUN | |
+| Temporary-link validation | Valid, expired, wrong-origin and wrong-path fixtures | Accept only HTTPS, the approved exact origin and `/download/` path; reject expired, malformed, credential-bearing or unexpected links before fetching | NOT RUN | |
+| Decode/parse/atomic registration | Valid UTF-8 SRT plus oversized, undecodable, malformed and empty fixtures | Enforce byte, decode, strict parse and non-empty-cue checks; success writes one ordinary registered-subtitle metadata/body pair, while every failure leaves no partial metadata or cue body | NOT RUN | |
+| No automatic role | Existing learning/support selections | After online registration, keep both role selections unchanged; the new item is available for a later explicit learning or support assignment | NOT RUN | |
+| Local fallback | Permission and provider failure cases | Add and select a local SRT/VTT/SMI subtitle successfully without granting OpenSubtitles permission or retrying the provider | NOT RUN | |
+| Same-session cache hit | Download one selected `file_id`, then request it again in the same extension session | Reuse only the validated cached download and avoid a second provider download; registration still goes through the ordinary strict boundary | NOT RUN | |
+| Cache entry cap | Controlled clock/provider, nine small selected downloads | `chrome.storage.session` contains at most 8 valid entries; inserting the ninth applies the documented deterministic eviction and never writes the cache to local/sync storage | NOT RUN | |
+| Cache byte cap | Controlled downloads around the boundary | Complete serialized JSON cache payload never exceeds 4 MiB; deterministic eviction occurs before accepting a fitting entry, and an entry that cannot fit is not retained | NOT RUN | |
+| Cache TTL | Controlled clock around the boundary | An entry is reusable before 6 hours and expires at the 6-hour boundary; expiry causes a new download only after another explicit Add | NOT RUN | |
+| Cache worker restart | Warm cache, restart only the service worker | `chrome.storage.session` restores the bounded cache without relying on worker memory and the same selected file remains a cache hit | NOT RUN | |
+| Cache session restart | Warm cache, restart the extension/browser session | Provider cache is cleared; previously registered local metadata/cues remain, and no redownload occurs until the user explicitly selects Add again | NOT RUN | |
+| Storage privacy | Search, page, download, success and failure cases | `chrome.storage.local`/`sync` contain no provider query, result metadata, `file_id`, quota, temporary URL or download cache; session storage contains only the bounded cache; only successfully registered metadata/cues persist | NOT RUN | |
+| Provider production gate | Approved Consumer and documented plan | Record login/JWT-free behavior, direct exact origins, quota/plan and attribution terms without recording credentials; mark `UNKNOWN` and block release if OpenSubtitles approval or any contract term cannot be confirmed | NOT RUN | |
+
 ## Library
 
 | Area | Setup | Check | Result | Evidence / notes |
@@ -179,12 +218,13 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | SPA navigation | Both routes | Navigate away and back without full reload; new video/cue state replaces stale state | NOT RUN | |
 | Service-worker restart | Active video | Restart worker; readiness, active-tab state and content handshake recover | NOT RUN | |
 | Coupang Play request | Both routes | Required native subtitle acquisition still works through the active host boundary | NOT RUN | |
-| External requests | Network panel | No extension-initiated request goes to an external subtitle, translation, telemetry, account or payment service | NOT RUN | |
-| Optional hosts | Manifest and Chrome details | No optional host permission is declared or requested | NOT RUN | |
-| Host scope | Manifest and runtime | Host access is limited to `https://www.coupangplay.com/*` | NOT RUN | |
+| External requests | Network panel | Before explicit OpenSubtitles Search there are zero external provider requests; afterward only the submitted fields and selected download use the approved exact origins, with no translation, telemetry, account or payment request | NOT RUN | |
+| Optional hosts | Manifest and Chrome details | Only `https://api.opensubtitles.com/*` and `https://www.opensubtitles.com/*` are optional, neither is granted at install, and no wildcard or unqualified candidate host is present | NOT RUN | |
+| Host scope | Manifest and runtime | Required access remains `https://www.coupangplay.com/*`; OpenSubtitles access remains separately optional and user initiated | NOT RUN | |
 | Required permissions | Manifest and runtime | `storage`, `tabs`, `webRequest`, `sidePanel` and `unlimitedStorage` each support an observed active v2 path | NOT RUN | |
 | Local storage volume | Large local subtitle/card fixture | Local cue bodies and cards remain available without quota loss; no external upload occurs | NOT RUN | |
-| Console privacy | Background/content/side-panel/page consoles | No actual sentence, cue body, registered body or complete watched URL appears in diagnostics | NOT RUN | |
+| Provider identity boundary | UI, requests and Storage | No OpenSubtitles account/login, JWT, user-supplied API key, developer credential, BYOK or Play Plus proxy/backend surface exists | NOT RUN | |
+| Console privacy | Background/content/side-panel/page consoles | No API key, temporary URL, provider error body, actual sentence, cue body, registered body or complete watched URL appears in diagnostics | NOT RUN | |
 | Removed surfaces | Side panel, commands and network | No retired/deferred screen, control, shortcut, request, permission or hidden route is reachable | NOT RUN | |
 
 ## Narrow-width accessibility
@@ -193,9 +233,9 @@ Run every row in light and dark mode with long learning/support text and visible
 
 | Width | Views | Check | Result | Evidence / notes |
 | ---: | --- | --- | --- | --- |
-| 320px | Migration/error, first entry, settings, local subtitles, Library, Review | Keyboard-operate every action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
-| 360px | Migration/error, first entry, settings, local subtitles, Library, Review | Keyboard-operate every action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
-| 390px | Migration/error, first entry, settings, local subtitles, Library, Review | Keyboard-operate every action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
+| 320px | Migration/error, first entry, settings, local and OpenSubtitles search/result/permission/error states, Library, Review | Keyboard-operate every field, filter, pagination and Add action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
+| 360px | Migration/error, first entry, settings, local and OpenSubtitles search/result/permission/error states, Library, Review | Keyboard-operate every field, filter, pagination and Add action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
+| 390px | Migration/error, first entry, settings, local and OpenSubtitles search/result/permission/error states, Library, Review | Keyboard-operate every field, filter, pagination and Add action; verify visible focus, correct labels/order, no horizontal overflow, wrapping, focus restoration and exactly one vertical scroll owner per view | NOT RUN | |
 
 ## Release decision
 

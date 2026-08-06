@@ -464,6 +464,100 @@
     "reset_speed":  {
                         "message":  "속도 초기화"
                     },
+  "subtitle_add_source": { "message": "자막 추가 방법" },
+  "add_from_file": { "message": "파일에서 추가" },
+  "find_online": { "message": "온라인에서 찾기" },
+  "online_subtitle_search": { "message": "OpenSubtitles 자막 검색" },
+  "search_title": { "message": "제목" },
+  "advanced_search": { "message": "상세 검색" },
+  "advanced_search_applied": {
+    "message": "상세 검색 · $count$개 적용",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "content_type": { "message": "유형" },
+  "content_type_all": { "message": "전체" },
+  "content_type_movie": { "message": "영화" },
+  "content_type_episode": { "message": "에피소드" },
+  "year": { "message": "연도" },
+  "season": { "message": "시즌" },
+  "episode": { "message": "회차" },
+  "opensubtitles_search_privacy": {
+    "message": "검색하면 입력한 제목, 언어와 선택한 조건이 OpenSubtitles로 전송됩니다."
+  },
+  "opensubtitles_search_permission": {
+    "message": "첫 검색 시 Chrome이 정확히 https://api.opensubtitles.com과 https://www.opensubtitles.com에 대한 선택적 접근 권한을 요청합니다. 허용하지 않아도 파일 자막과 Coupang Play 자막은 계속 사용할 수 있습니다."
+  },
+  "searching": { "message": "검색 중" },
+  "error_online_permission_denied": {
+    "message": "온라인 자막 검색 권한을 허용하지 않았습니다. 파일에서 추가는 계속 사용할 수 있습니다."
+  },
+  "error_online_configuration": { "message": "OpenSubtitles 연결 설정이 완료되지 않았습니다." },
+  "error_online_invalid_query": { "message": "검색 조건을 확인해주세요." },
+  "error_online_access": { "message": "OpenSubtitles가 요청을 허용하지 않았습니다. 제공자 설정을 확인해주세요." },
+  "error_online_search": { "message": "온라인 자막을 검색하지 못했습니다. 잠시 후 다시 시도해주세요." },
+  "error_online_download": { "message": "선택한 온라인 자막을 다운로드하지 못했습니다. 결과에서 다시 시도해주세요." },
+  "error_online_rate_limit": { "message": "OpenSubtitles 다운로드 또는 요청 한도에 도달했습니다. 나중에 다시 시도해주세요." },
+  "error_online_network": { "message": "OpenSubtitles에 연결하지 못했습니다. 네트워크를 확인해주세요." },
+  "error_online_unavailable": { "message": "OpenSubtitles를 일시적으로 사용할 수 없습니다." },
+  "error_online_response": { "message": "OpenSubtitles가 읽을 수 없는 응답을 보냈습니다. 나중에 다시 시도해주세요." },
+  "error_online_expired": { "message": "OpenSubtitles 다운로드 링크가 만료되었습니다. 결과에서 다시 시도해주세요." },
+  "no_search_results": { "message": "검색 결과가 없습니다." },
+  "search_result_summary": {
+    "message": "$total$개의 자막 결과에서 파일 $visible$개 표시",
+    "placeholders": {
+      "visible": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "show_more": { "message": "더 보기" },
+  "loading_more": { "message": "더 불러오는 중" },
+  "opensubtitles_attribution": { "message": "온라인 자막 제공:" },
+  "result_disc": {
+    "message": "CD $current$/$total$",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "result_rating": {
+    "message": "평점 $rating$ · 투표 $votes$",
+    "placeholders": {
+      "rating": { "content": "$1" },
+      "votes": { "content": "$2" }
+    }
+  },
+  "result_downloads": {
+    "message": "다운로드 $count$회",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "result_characteristics": { "message": "자막 특성" },
+  "result_auto_translated": { "message": "자동 번역" },
+  "result_hearing_impaired": { "message": "청각장애인용" },
+  "result_foreign_parts_only": { "message": "외국어 구간만" },
+  "result_trusted_source": { "message": "신뢰 출처" },
+  "result_trusted_source_description": {
+    "message": "OpenSubtitles에서 제공한 표시이며 안전을 보증하지 않습니다."
+  },
+  "result_details": { "message": "상세 정보" },
+  "result_file_name": { "message": "파일명" },
+  "result_uploader_rank": { "message": "업로더 등급" },
+  "result_upload_date": { "message": "업로드일" },
+  "add_online_subtitle": {
+    "message": "$fileName$ 자막 추가",
+    "placeholders": { "fileName": { "content": "$1" } }
+  },
+  "adding": { "message": "추가 중" },
+  "add_this_subtitle": { "message": "이 자막 추가" },
+  "success_add_subtitle_cached": {
+    "message": "OpenSubtitles 자막을 세션 캐시에서 로컬에 등록했습니다. 사용하려면 목록에서 학습 또는 도움 자막으로 직접 선택하세요. 역할은 자동 적용되지 않았습니다."
+  },
+  "success_add_subtitle_remaining": {
+    "message": "OpenSubtitles 자막을 로컬에 등록했습니다. OpenSubtitles가 보고한 남은 다운로드 수는 $remaining$회입니다. 사용하려면 목록에서 학습 또는 도움 자막으로 직접 선택하세요. 역할은 자동 적용되지 않았습니다.",
+    "placeholders": { "remaining": { "content": "$1" } }
+  },
+  "success_add_online_subtitle": {
+    "message": "OpenSubtitles 자막을 로컬에 등록했습니다. 사용하려면 목록에서 학습 또는 도움 자막으로 직접 선택하세요. 역할은 자동 적용되지 않았습니다."
+  },
     "error_file_size":  {
                             "message":  "파일 크기가 너무 큽니다.\n1 MiB 이하의 파일만 추가해주세요."
                         },
@@ -557,7 +651,7 @@
                                    "message":  "자막 추가"
                                },
     "v2_local_subtitles_empty_description":  {
-                                                 "message":  "쿠팡플레이에서 사용할 자막 파일을 추가하세요."
+                                                 "message":  "쿠팡플레이에서 사용할 자막을 파일로 추가하거나 온라인에서 찾으세요."
                                              },
     "v2_local_subtitles_add_file":  {
                                         "message":  "자막 파일 추가"

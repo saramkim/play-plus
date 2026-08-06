@@ -7,6 +7,8 @@ import { sendMessageToTab } from '@utils/message';
 
 import { createConnectionStatus } from './connection-status';
 import { registerBackgroundMessageHandler } from './message-handler';
+import { createOpenSubtitlesClient } from './opensubtitles-client';
+import { createOpenSubtitlesSessionCache } from './opensubtitles-session-cache';
 import {
   clearSubtitleReplayRequest,
   getSubtitleReplayRequest,
@@ -29,6 +31,11 @@ const awaitReady = async () => {
 };
 const handleViewVideo = createViewVideoHandler();
 const learningCards = createV2LearningCardStorage(chrome.storage.local);
+const openSubtitles = createOpenSubtitlesClient({
+  apiKey: __OPENSUBTITLES_API_KEY__,
+  userAgent: __OPENSUBTITLES_USER_AGENT__,
+  cache: createOpenSubtitlesSessionCache(chrome.storage.session),
+});
 const syncStorage = createV2SyncStorage(chrome.storage.sync);
 const subtitleRequests = createSubtitleRequestReplayController({
   clearReplay: clearSubtitleReplayRequest,
@@ -44,6 +51,7 @@ const connectionStatus = createConnectionStatus({
 registerRuntimeEvents();
 registerBackgroundMessageHandler({
   awaitReady,
+  downloadOpenSubtitle: ({ fileId, language }) => openSubtitles.download(fileId, language),
   getReadiness: readiness.wait,
   retryReadiness: readiness.retry,
   getContentBootstrap: (tabId) =>
@@ -56,6 +64,7 @@ registerBackgroundMessageHandler({
   handleViewVideo,
   handleSubtitleContentStatus: subtitleRequests.handleContentStatus,
   learningCards,
+  searchOpenSubtitles: openSubtitles.search,
   updateConnectedStatus: connectionStatus.updateConnectedStatus,
 });
 registerSubtitleRequestCapture(subtitleRequests.capture);
