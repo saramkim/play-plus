@@ -40,6 +40,7 @@ type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay
 export interface SubtitleStoreState extends SubtitleSettings {
   nativeCueCache: Partial<Record<Language, V2SubtitleCue[]>>;
   registeredSelections: Record<SubtitleRole, RegisteredSubtitleSelection | null>;
+  subtitleRevision: number;
 
   setSettings: (settings: SubtitleSettings) => void;
   setNativeCues: (language: Language, cues: V2SubtitleCue[]) => void;
@@ -79,31 +80,42 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
   ...initialSettings,
   nativeCueCache: {},
   registeredSelections: createEmptyRegisteredSelections(),
+  subtitleRevision: 0,
 
   setSettings: ({ learningProfile, subtitleDisplay }) => {
     const settings = {
       learningProfile: learningProfileSchema.parse(learningProfile),
       subtitleDisplay: subtitleDisplaySchema.parse(subtitleDisplay),
     };
-    set(settings);
+    set((state) => ({
+      ...settings,
+      subtitleRevision: state.subtitleRevision + 1,
+    }));
   },
   setNativeCues: (language, cues) => {
     const parsedLanguage = languageSchema.parse(language);
     const parsedCues = z.array(subtitleCueSchema).parse(cues);
     set((state) => ({
       nativeCueCache: { ...state.nativeCueCache, [parsedLanguage]: parsedCues },
+      subtitleRevision: state.subtitleRevision + 1,
     }));
   },
   clearNativeCues: (language) => {
     if (language === undefined) {
-      set({ nativeCueCache: {} });
+      set((state) => ({
+        nativeCueCache: {},
+        subtitleRevision: state.subtitleRevision + 1,
+      }));
       return;
     }
 
     const parsedLanguage = languageSchema.parse(language);
     set((state) => {
       const { [parsedLanguage]: _, ...nativeCueCache } = state.nativeCueCache;
-      return { nativeCueCache };
+      return {
+        nativeCueCache,
+        subtitleRevision: state.subtitleRevision + 1,
+      };
     });
   },
   setRegisteredSelection: (role, selection) => {
@@ -111,17 +123,20 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
     const parsedSelection = registeredSubtitleSelectionSchema.parse(selection);
     set((state) => ({
       registeredSelections: { ...state.registeredSelections, [parsedRole]: parsedSelection },
+      subtitleRevision: state.subtitleRevision + 1,
     }));
   },
   clearRegisteredSelection: (role) => {
     const parsedRole = subtitleRoleSchema.parse(role);
     set((state) => ({
       registeredSelections: { ...state.registeredSelections, [parsedRole]: null },
+      subtitleRevision: state.subtitleRevision + 1,
     }));
   },
   clearCaches: () =>
-    set({
+    set((state) => ({
       nativeCueCache: {},
       registeredSelections: createEmptyRegisteredSelections(),
-    }),
+      subtitleRevision: state.subtitleRevision + 1,
+    })),
 }));

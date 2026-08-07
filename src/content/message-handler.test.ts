@@ -3,9 +3,11 @@ import { getLocalSubtitle } from '@storage/subtitle';
 import { DEFAULT_V2_SYNC_STORAGE } from '@storage/v2/default';
 import { LANGUAGES, Language } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
+import { sendMessage } from '@utils/message';
 import type { MessageSchema } from '@utils/message/type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { videoManager } from '@/content/core/video/video-manager';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
 import { coupangStrategy } from './coupang-play';
@@ -15,6 +17,10 @@ import { VideoLifecycleEvent } from './video-lifecycle/video-lifecycle-monitor';
 vi.mock('@storage/registered-subtitle', () => ({ getRegisteredSubtitles: vi.fn() }));
 vi.mock('@storage/subtitle', () => ({ getLocalSubtitle: vi.fn() }));
 vi.mock('@utils/coupang-play', () => ({ getCoupangPlayVideoId: vi.fn() }));
+vi.mock('@utils/message', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@utils/message')>();
+  return { ...actual, sendMessage: vi.fn() };
+});
 vi.mock('./coupang-play', () => ({ coupangStrategy: { fetchSubtitles: vi.fn() } }));
 
 const VIDEO_ID = '123e4567-e89b-12d3-a456-426614174000';
@@ -134,10 +140,13 @@ describe('canonical video lifecycle handler', () => {
 
 describe('canonical content messages', () => {
   beforeEach(() => {
+    videoManager.clear();
+    document.body.replaceChildren();
     vi.mocked(getRegisteredSubtitles).mockReset().mockResolvedValue([]);
     vi.mocked(getLocalSubtitle).mockReset();
     vi.mocked(getCoupangPlayVideoId).mockReset().mockReturnValue(VIDEO_ID);
     vi.mocked(coupangStrategy.fetchSubtitles).mockReset().mockResolvedValue([]);
+    vi.mocked(sendMessage).mockReset().mockResolvedValue({ success: true, data: {} } as never);
     const store = useSubtitleStore.getState();
     store.clearCaches();
     store.setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
@@ -158,6 +167,617 @@ describe('canonical content messages', () => {
         videoRevision: 0,
       },
     });
+  });
+
+  it('returns atomic native learning and support tracks with the same identity as ping', () => {
+    const video = attachVideo(12.345);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 1, end: 2, text: 'Native learning' },
+    ]);
+    useSubtitleStore.getState().setNativeCues('ko', [
+      { start: 1, end: 2, text: 'Native support' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+
+    const ping = dispatch('pingContent', undefined);
+    const overview = dispatch('getSubtitleOverview', undefined);
+    const time = dispatch('getVideoTime', undefined);
+    const pingData = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, ...identity } = pingData;
+
+    expect(video.currentTime).toBe(12.345);
+    expect(hasVideo).toBe(true);
+    expect(overview.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        status: 'ready',
+        identity,
+        subtitleRevision,
+        currentTime: 12.345,
+        tracks: {
+          learning: {
+            role: 'learning',
+            language: 'en',
+            source: { kind: 'native', language: 'en' },
+            cues: [
+              {
+                sourceIndex: 0,
+                startTime: 1,
+                endTime: 2,
+                text: 'Native learning',
+                alignedSupport: { sourceIndices: [0], text: 'Native support' },
+              },
+            ],
+          },
+          support: {
+            role: 'support',
+            language: 'ko',
+            source: { kind: 'native', language: 'ko' },
+            cues: [
+              { sourceIndex: 0, startTime: 1, endTime: 2, text: 'Native support' },
+            ],
+          },
+        },
+      },
+    });
+    expect(time.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'ready', identity, subtitleRevision, currentTime: 12.345 },
+    });
+
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 3, end: 4, text: 'Late cue' }]);
+    const lateTime = dispatch('getVideoTime', undefined);
+    expect(lateTime.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        status: 'ready',
+        identity,
+        subtitleRevision: subtitleRevision + 1,
+        currentTime: 12.345,
+      },
+    });
+  });
+
+  it('returns registered source metadata and applies each role delay exactly once', () => {
+    attachVideo(4);
+    useSubtitleStore.getState().setRegisteredSelection('learning', {
+      subtitleId: SUBTITLE_ID,
+      cues: [{ start: 1.2344, end: 2.3456, text: '<i>Registered</i>' }],
+      delay: 0.1112,
+    });
+    useSubtitleStore.getState().setRegisteredSelection('support', {
+      subtitleId: SECOND_SUBTITLE_ID,
+      cues: [{ start: 1.3456, end: 2.4567, text: '<b>Registered support</b>' }],
+      delay: 0,
+    });
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('getSubtitleOverview', undefined);
+
+    expect(request.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        status: 'ready',
+        identity: expect.objectContaining({ videoId: VIDEO_ID }),
+        subtitleRevision,
+        currentTime: 4,
+        tracks: {
+          learning: {
+            role: 'learning',
+            language: 'en',
+            source: {
+              kind: 'registered',
+              language: 'en',
+              subtitleId: SUBTITLE_ID,
+              delaySeconds: 0.1112,
+            },
+            cues: [
+              {
+                sourceIndex: 0,
+                startTime: 1.346,
+                endTime: 2.457,
+                text: 'Registered',
+                alignedSupport: {
+                  sourceIndices: [0],
+                  text: 'Registered support',
+                },
+              },
+            ],
+          },
+          support: {
+            role: 'support',
+            language: 'ko',
+            source: {
+              kind: 'registered',
+              language: 'ko',
+              subtitleId: SECOND_SUBTITLE_ID,
+              delaySeconds: 0,
+            },
+            cues: [
+              {
+                sourceIndex: 0,
+                startTime: 1.346,
+                endTime: 2.457,
+                text: 'Registered support',
+              },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it('returns exact no-video and support-null states without invented role data', () => {
+    const { dispatch: dispatchWithoutVideo } = createMessageHarness();
+    const overviewWithoutVideo = dispatchWithoutVideo('getSubtitleOverview', undefined);
+    const timeWithoutVideo = dispatchWithoutVideo('getVideoTime', undefined);
+    const playWithoutVideo = dispatchWithoutVideo('playVideo', { startTime: 10 });
+    const noVideoIdentity = overviewWithoutVideo.sendResponse.mock.calls[0][0].data.identity;
+
+    expect(overviewWithoutVideo.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'no-video', identity: noVideoIdentity },
+    });
+    expect(timeWithoutVideo.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'no-video', identity: noVideoIdentity },
+    });
+    expect(playWithoutVideo.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'no-video' },
+    });
+
+    attachVideo(1);
+    const state = useSubtitleStore.getState();
+    state.setSettings({
+      learningProfile: { learningLanguage: 'en', supportLanguage: null },
+      subtitleDisplay: state.subtitleDisplay,
+    });
+    const { dispatch: dispatchWithVideo } = createMessageHarness();
+    const overview = dispatchWithVideo('getSubtitleOverview', undefined);
+
+    expect(overview.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        status: 'ready',
+        identity: expect.objectContaining({ videoId: VIDEO_ID }),
+        subtitleRevision: useSubtitleStore.getState().subtitleRevision,
+        currentTime: 1,
+        tracks: {
+          learning: {
+            role: 'learning',
+            language: 'en',
+            source: { kind: 'native', language: 'en' },
+            cues: [],
+          },
+          support: null,
+        },
+      },
+    });
+  });
+
+  it('fails closed during the SPA route gap before lifecycle catches up', async () => {
+    const video = attachVideo(12);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 10, end: 11, text: 'Video A learning cue' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...videoAIdentity } = ping.sendResponse.mock.calls[0][0].data;
+
+    expect(hasVideo).toBe(true);
+    expect(videoAIdentity.videoId).toBe(VIDEO_ID);
+
+    vi.mocked(getCoupangPlayVideoId).mockReturnValue(OTHER_VIDEO_ID);
+
+    const overview = dispatch('getSubtitleOverview', undefined);
+    const time = dispatch('getVideoTime', undefined);
+    expect(overview.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'no-video', identity: videoAIdentity },
+    });
+    expect(time.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'no-video', identity: videoAIdentity },
+    });
+
+    const seek = dispatch('playVideo', {
+      startTime: 30,
+      expectedIdentity: videoAIdentity,
+      expectedSubtitleRevision: subtitleRevision,
+    });
+    expect(seek.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'stale' },
+    });
+    expect(video.currentTime).toBe(12);
+
+    const save = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: videoAIdentity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    });
+    await expectResponse(save.sendResponse, {
+      success: true,
+      data: { status: 'stale' },
+    });
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('saves the exact learning source index without seeking and reports aligned support', async () => {
+    const video = attachVideo(99);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: 'Earlier cue' },
+      { start: 10, end: 11, text: '<i>Chosen &amp; learning cue</i>' },
+    ]);
+    useSubtitleStore.getState().setNativeCues('ko', [
+      { start: 10, end: 11, text: '<b>Aligned &amp; support cue</b>' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const overview = dispatch('getSubtitleOverview', undefined);
+
+    const request = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 1,
+    });
+
+    expect(hasVideo).toBe(true);
+    expect(overview.sendResponse.mock.calls[0][0].data.tracks.learning.cues[1]).toMatchObject({
+      text: 'Chosen & learning cue',
+      alignedSupport: { text: 'Aligned & support cue' },
+    });
+    expect(request.result).toBe(true);
+    await expectResponse(request.sendResponse, {
+      success: true,
+      data: { status: 'saved-with-support' },
+    });
+    expect(video.currentTime).toBe(99);
+    expect(sendMessage).toHaveBeenCalledWith('addLearningCard', {
+      card: {
+        id: expect.stringMatching(/^card-/),
+        content: {
+          learning: { text: 'Chosen & learning cue', language: 'en' },
+          support: { text: 'Aligned & support cue', language: 'ko' },
+        },
+        source: { url: window.location.href, startTime: 10, endTime: 11 },
+        studyState: 'active',
+        createdAt: expect.any(String),
+      },
+    });
+  });
+
+  it('saves a learning-only card when no support cue aligns', async () => {
+    attachVideo(50);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 3, end: 4, text: 'Learning only' },
+    ]);
+    useSubtitleStore.getState().setNativeCues('ko', [
+      { start: 30, end: 31, text: 'Unrelated support' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+
+    const request = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    });
+
+    expect(request.result).toBe(true);
+    await expectResponse(request.sendResponse, {
+      success: true,
+      data: { status: 'saved-learning-only' },
+    });
+    expect(sendMessage).toHaveBeenCalledWith(
+      'addLearningCard',
+      expect.objectContaining({
+        card: expect.objectContaining({
+          content: { learning: { text: 'Learning only', language: 'en' } },
+          source: { url: window.location.href, startTime: 3, endTime: 4 },
+        }),
+      })
+    );
+  });
+
+  it('omits formatting-only aligned support exactly as the overview does', async () => {
+    attachVideo(1);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: '<i>Visible learning</i>' },
+    ]);
+    useSubtitleStore.getState().setNativeCues('ko', [
+      { start: 0, end: 1, text: '<i></i>' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+
+    const overview = dispatch('getSubtitleOverview', undefined);
+    const request = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    });
+
+    expect(hasVideo).toBe(true);
+    expect(overview.sendResponse.mock.calls[0][0].data.tracks.learning.cues[0]).not.toHaveProperty(
+      'alignedSupport'
+    );
+    await expectResponse(request.sendResponse, {
+      success: true,
+      data: { status: 'saved-learning-only' },
+    });
+    expect(sendMessage).toHaveBeenCalledWith(
+      'addLearningCard',
+      expect.objectContaining({
+        card: expect.objectContaining({
+          content: { learning: { text: 'Visible learning', language: 'en' } },
+        }),
+      })
+    );
+  });
+
+  it('fails closed for stale overview identities and subtitle revisions', async () => {
+    attachVideo(1);
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 0, end: 1, text: 'Cue' }]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+
+    const staleIdentity = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: { ...identity, videoRevision: identity.videoRevision + 1 },
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    });
+    await expectResponse(staleIdentity.sendResponse, {
+      success: true,
+      data: { status: 'stale' },
+    });
+
+    const staleRevision = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision + 1,
+      learningSourceIndex: 0,
+    });
+    await expectResponse(staleRevision.sendResponse, {
+      success: true,
+      data: { status: 'stale' },
+    });
+
+    for (const params of [
+      { learningSourceIndex: 0 },
+      {
+        expectedIdentity: identity,
+        learningSourceIndex: 0,
+      },
+      {
+        expectedSubtitleRevision: subtitleRevision,
+        learningSourceIndex: 0,
+      },
+      {
+        expectedIdentity: { ...identity, contentInstanceId: '' },
+        expectedSubtitleRevision: subtitleRevision,
+        learningSourceIndex: 0,
+      },
+      {
+        expectedIdentity: identity,
+        expectedSubtitleRevision: Number.NaN,
+        learningSourceIndex: 0,
+      },
+    ]) {
+      const invalidGuard = dispatch('saveSubtitleOverviewCue', params);
+      await expectResponse(invalidGuard.sendResponse, {
+        success: true,
+        data: { status: 'stale' },
+      });
+    }
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid, missing, and empty learning source indices', async () => {
+    attachVideo(1);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: '   ' },
+      { start: 1, end: 2, text: '<i></i>' },
+    ]);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+
+    for (const learningSourceIndex of [-1, 1.5, 4, 0, 1]) {
+      const request = dispatch('saveSubtitleOverviewCue', {
+        expectedIdentity: identity,
+        expectedSubtitleRevision: subtitleRevision,
+        learningSourceIndex,
+      });
+      await expectResponse(request.sendResponse, {
+        success: true,
+        data: { status: 'cue-unavailable' },
+      });
+    }
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('returns no-video before building or storing a card', async () => {
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+
+    const request = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: useSubtitleStore.getState().subtitleRevision,
+      learningSourceIndex: 0,
+    });
+
+    expect(hasVideo).toBe(false);
+    await expectResponse(request.sendResponse, {
+      success: true,
+      data: { status: 'no-video' },
+    });
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('reports storage failures without leaving the save coordinator locked', async () => {
+    attachVideo(1);
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 0, end: 1, text: 'Cue' }]);
+    vi.mocked(sendMessage)
+      .mockResolvedValueOnce({ success: false, message: 'storage failed' } as never)
+      .mockResolvedValueOnce({ success: true, data: {} } as never);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const params = {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    };
+
+    const failed = dispatch('saveSubtitleOverviewCue', params);
+    await expectResponse(failed.sendResponse, {
+      success: true,
+      data: { status: 'error' },
+    });
+
+    const retry = dispatch('saveSubtitleOverviewCue', params);
+    await expectResponse(retry.sendResponse, {
+      success: true,
+      data: { status: 'saved-learning-only' },
+    });
+  });
+
+  it('returns busy while another overview card save is pending', async () => {
+    attachVideo(1);
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 0, end: 1, text: 'Cue' }]);
+    const deferred = createDeferred<never>();
+    vi.mocked(sendMessage).mockReturnValueOnce(deferred.promise);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const params = {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    };
+
+    const first = dispatch('saveSubtitleOverviewCue', params);
+    const second = dispatch('saveSubtitleOverviewCue', params);
+
+    await expectResponse(second.sendResponse, {
+      success: true,
+      data: { status: 'busy' },
+    });
+    deferred.resolve({ success: true, data: {} } as never);
+    await expectResponse(first.sendResponse, {
+      success: true,
+      data: { status: 'saved-learning-only' },
+    });
+    expect(sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it('rejects stale guarded seeks and keeps legacy callers working', () => {
+    const video = attachVideo(10);
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+
+    expect(hasVideo).toBe(true);
+
+    const staleIdentity = dispatch('playVideo', {
+      startTime: 20,
+      expectedIdentity: { ...identity, videoRevision: identity.videoRevision + 1 },
+      expectedSubtitleRevision: subtitleRevision,
+    });
+    expect(staleIdentity.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'stale' },
+    });
+    expect(video.currentTime).toBe(10);
+
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 1, end: 2, text: 'New cue' }]);
+    const staleRevision = dispatch('playVideo', {
+      startTime: 30,
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+    });
+    expect(staleRevision.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'stale' },
+    });
+    expect(video.currentTime).toBe(10);
+
+    const guarded = dispatch('playVideo', {
+      startTime: 35,
+      expectedIdentity: identity,
+      expectedSubtitleRevision: useSubtitleStore.getState().subtitleRevision,
+    });
+    expect(guarded.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'played' },
+    });
+    expect(video.currentTime).toBe(35);
+
+    const legacy = dispatch('playVideo', { startTime: 40 });
+    expect(legacy.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'played' },
+    });
+    expect(video.currentTime).toBe(40);
+  });
+
+  it('rechecks guarded deferred seeks before canplay changes the captured video time', () => {
+    const capturedVideo = attachVideo(10, 0);
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+
+    expect(hasVideo).toBe(true);
+
+    const pendingSwap = dispatch('playVideo', {
+      startTime: 20,
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+    });
+    expect(pendingSwap.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'played' },
+    });
+
+    const replacementVideo = attachVideo(50);
+    capturedVideo.dispatchEvent(new Event('canplay'));
+    expect(capturedVideo.currentTime).toBe(10);
+    expect(replacementVideo.currentTime).toBe(50);
+
+    videoManager.clear();
+    const revisionVideo = attachVideo(11, 0);
+    const currentRevision = useSubtitleStore.getState().subtitleRevision;
+    const pendingRevision = dispatch('playVideo', {
+      startTime: 30,
+      expectedIdentity: identity,
+      expectedSubtitleRevision: currentRevision,
+    });
+    expect(pendingRevision.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'played' },
+    });
+
+    useSubtitleStore.getState().setNativeCues('en', [{ start: 2, end: 3, text: 'Changed' }]);
+    revisionVideo.dispatchEvent(new Event('canplay'));
+    expect(revisionVideo.currentTime).toBe(11);
   });
 
   it('acquires raw native cues for every supported language and ignores unsupported tracks', async () => {
@@ -401,4 +1021,15 @@ const createDeferred = <T>() => {
     resolve = resolvePromise;
   });
   return { promise, resolve };
+};
+
+const attachVideo = (currentTime: number, readyState = 4) => {
+  const video = document.createElement('video');
+  Object.defineProperty(video, 'readyState', { configurable: true, value: readyState });
+  video.currentTime = currentTime;
+  video.requestVideoFrameCallback = vi.fn(() => 1);
+  video.cancelVideoFrameCallback = vi.fn();
+  document.body.append(video);
+  videoManager.set(video);
+  return video;
 };

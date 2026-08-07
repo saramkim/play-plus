@@ -641,12 +641,157 @@
     "v2_save_learning_card":  {
                                   "message":  "학습 카드 저장"
                               },
+    "v2_subtitles_subview_label":  {
+                                         "message":  "자막 화면"
+                                     },
+    "v2_subtitles_add_tab":  {
+                                  "message":  "자막 추가"
+                              },
+    "v2_subtitles_overview_tab":  {
+                                       "message":  "전체 자막"
+                                   },
+    "v2_subtitle_overview_title":  {
+                                         "message":  "전체 자막"
+                                     },
+    "v2_subtitle_overview_role_label":  {
+                                              "message":  "자막 보기"
+                                          },
+    "v2_subtitle_overview_together":  {
+                                             "message":  "함께"
+                                         },
+    "v2_subtitle_overview_learning":  {
+                                             "message":  "학습"
+                                         },
+    "v2_subtitle_overview_support":  {
+                                            "message":  "도움"
+                                        },
+    "v2_subtitle_overview_source_coupang_play":  {
+                                                       "message":  "쿠팡플레이 자막"
+                                                   },
+    "v2_subtitle_overview_change_source":  {
+                                                  "message":  "변경"
+                                              },
+    "v2_subtitle_overview_change_source_label":  {
+                                                        "message":  "현재 자막 변경"
+                                                    },
+    "v2_subtitle_overview_search_label":  {
+                                                "message":  "현재 자막 검색"
+                                            },
+    "v2_subtitle_overview_count":  {
+                                         "message":  "$total$개 중 $result$개 문장",
+                                         "placeholders":  {
+                                                              "result":  {
+                                                                               "content":  "$1"
+                                                                           },
+                                                              "total":  {
+                                                                              "content":  "$2"
+                                                                          }
+                                                          }
+                                     },
+    "v2_subtitle_overview_time_range":  {
+                                              "message":  "전체 구간: $start$–$end$",
+                                              "placeholders":  {
+                                                                   "start":  {
+                                                                                 "content":  "$1"
+                                                                             },
+                                                                   "end":  {
+                                                                               "content":  "$2"
+                                                                           }
+                                                               }
+                                          },
+    "v2_subtitle_overview_current":  {
+                                           "message":  "현재 문장"
+                                       },
+    "v2_subtitle_overview_following":  {
+                                             "message":  "재생 위치를 따라가는 중"
+                                         },
+    "v2_subtitle_overview_resume_follow":  {
+                                                 "message":  "재생 위치 따라가기"
+                                             },
+    "v2_subtitle_overview_refresh":  {
+                                           "message":  "자막 새로고침"
+                                       },
+    "v2_subtitle_overview_loading":  {
+                                           "message":  "전체 자막을 불러오는 중…"
+                                       },
+    "v2_subtitle_overview_disconnected":  {
+                                                "message":  "현재 탭에 연결할 수 없습니다. 쿠팡플레이 영상 탭을 열어 주세요."
+                                            },
+    "v2_subtitle_overview_no_video":  {
+                                            "message":  "현재 탭에서 재생할 영상을 찾지 못했습니다."
+                                        },
+    "v2_subtitle_overview_empty_learning":  {
+                                                  "message":  "현재 선택한 학습 자막에 표시할 문장이 없습니다."
+                                              },
+    "v2_subtitle_overview_empty_support":  {
+                                                 "message":  "현재 선택한 도움 자막에 표시할 문장이 없습니다."
+                                             },
+    "v2_subtitle_overview_no_results":  {
+                                               "message":  "검색어와 일치하는 문장이 없습니다."
+                                           },
+    "v2_subtitle_overview_error":  {
+                                         "message":  "전체 자막을 불러오지 못했습니다. 다시 시도해 주세요."
+                                     },
+    "v2_subtitle_overview_stale":  {
+                                         "message":  "영상이 변경되어 자막을 새로 확인해야 합니다."
+                                     },
+    "v2_subtitle_overview_seek_error":  {
+                                              "message":  "해당 장면으로 이동하지 못했습니다."
+                                          },
+    "v2_subtitle_overview_save_row":  {
+                                            "message":  "학습 카드로 저장"
+                                        },
+    "v2_subtitle_overview_saved_row":  {
+                                              "message":  "저장된 카드 있음 · 다시 저장"
+                                          },
+    "v2_subtitle_overview_saved_with_support":  {
+                                                      "message":  "학습 문장과 도움 문장을 카드로 저장했습니다."
+                                                  },
+    "v2_subtitle_overview_saved_learning_only":  {
+                                                       "message":  "학습 문장을 카드로 저장했습니다. 맞는 도움 문장은 찾지 못했습니다."
+                                                   },
+    "v2_subtitle_overview_save_busy":  {
+                                             "message":  "다른 학습 카드 저장이 진행 중입니다."
+                                         },
+    "v2_subtitle_overview_save_stale":  {
+                                              "message":  "자막이 변경되어 이 문장을 저장하지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
+                                          },
+    "v2_subtitle_overview_save_unavailable":  {
+                                                    "message":  "현재 학습 자막에서 이 문장을 찾지 못했습니다."
+                                                },
+    "v2_subtitle_overview_save_error":  {
+                                              "message":  "학습 카드를 저장하지 못했습니다. 다시 시도해 주세요."
+                                          },
     "v2_local_subtitles_loading":  {
                                        "message":  "로컬 자막을 불러오는 중…"
                                    },
     "v2_local_subtitles_back":  {
                                     "message":  "자막으로 돌아가기"
                                 },
+    "v2_local_subtitles_preview":  {
+                                       "message":  "자막 확인"
+                                   },
+    "v2_registered_subtitle_preview_title":  {
+                                                "message":  "등록 자막"
+                                            },
+    "v2_registered_subtitle_preview_back":  {
+                                               "message":  "등록 자막 목록으로 돌아가기"
+                                           },
+    "v2_registered_subtitle_preview_search_label":  {
+                                                       "message":  "이 등록 자막 검색"
+                                                   },
+    "v2_registered_subtitle_preview_loading":  {
+                                                  "message":  "자막을 불러오는 중…"
+                                              },
+    "v2_registered_subtitle_preview_error":  {
+                                                "message":  "이 자막을 불러오지 못했습니다. 다시 시도해 주세요."
+                                            },
+    "v2_registered_subtitle_preview_unavailable":  {
+                                                      "message":  "이 등록 자막을 더 이상 찾을 수 없습니다."
+                                                  },
+    "v2_registered_subtitle_preview_empty":  {
+                                                "message":  "이 자막에는 표시할 문장이 없습니다."
+                                            },
     "v2_local_subtitles_add":  {
                                    "message":  "자막 추가"
                                },

@@ -6,7 +6,7 @@ import { V2RegisteredSubtitleMetadata } from '@storage/v2/type';
 import { Language, LANGUAGES } from '@utils/constants';
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
-import { CaptionsIcon, PencilIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
+import { CaptionsIcon, EyeIcon, PencilIcon, Settings2Icon, Trash2Icon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import {
@@ -23,8 +23,11 @@ interface SubtitleCardProps {
   isAvailable: boolean;
   isRoleAvailable: (role: SubtitleRole, language: Language) => boolean;
   pendingRoles: PendingSubtitleRoles;
+  previewButtonRef?: React.Ref<HTMLButtonElement>;
+  previewDisabled?: boolean;
   onDelete: (id: SubtitleId) => void;
   onEdit: (id: SubtitleId, title: string, language: Language) => Promise<void>;
+  onPreview: (id: SubtitleId) => void;
   onUpdateDelay: (id: SubtitleId, delay: number) => Promise<void>;
   onRoleChange: (role: SubtitleRole, subtitleId: SubtitleId | null) => void;
 }
@@ -36,8 +39,11 @@ export function SubtitleCard({
   isAvailable,
   isRoleAvailable,
   pendingRoles,
+  previewButtonRef,
+  previewDisabled = false,
   onDelete,
   onEdit,
+  onPreview,
   onUpdateDelay,
   onRoleChange,
 }: SubtitleCardProps) {
@@ -195,9 +201,21 @@ export function SubtitleCard({
                 {t('v2_local_subtitles_edit')}
               </Button>
               <Button
+                ref={previewButtonRef}
                 variant='outline'
                 size='sm'
-                className='col-span-2 min-h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                className='min-h-9'
+                data-subtitle-preview-id={data.id}
+                disabled={isCardPending || previewDisabled}
+                onClick={() => onPreview(data.id)}
+              >
+                <EyeIcon />
+                {t('v2_local_subtitles_preview')}
+              </Button>
+              <Button
+                variant='outline'
+                size='sm'
+                className='min-h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
                 disabled={isCardPending}
                 onClick={() => onDelete(data.id)}
               >

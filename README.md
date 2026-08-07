@@ -8,11 +8,12 @@
 
 1. 첫 진입에서 학습 언어와 선택적인 도움 언어를 확인합니다.
 2. Coupang Play 자막, 로컬 파일 또는 사용자가 명시적으로 검색·추가한 OpenSubtitles 자막을 학습·도움 역할에 지정합니다.
-3. 이전/다음 학습 문장으로 이동하거나 현재 학습 문장을 반복하며 시청합니다.
-4. 한 번의 저장 동작으로 현재 학습 문장을 카드로 저장합니다. 시간 정렬 신뢰도가 충분할 때만 도움 문장이 함께 저장됩니다.
-5. Library에서 카드를 검색·정렬·필터링하고, 문장과 역할을 편집하거나 상태를 바꾸고 삭제·실행 취소합니다.
-6. Focused Review에서 도움 문장을 필요할 때 공개하고 카드를 `active` 또는 `completed`로 정리합니다.
-7. 카드에 기록된 정확한 원본 URL과 재생 시점으로 돌아갑니다.
+3. 현재 선택한 학습·도움 자막의 전체 문장을 함께 또는 역할별로 탐색하고, 원하는 장면으로 이동하거나 학습 문장을 바로 카드로 저장합니다.
+4. 이전/다음 학습 문장으로 이동하거나 현재 학습 문장을 반복하며 시청합니다.
+5. 한 번의 저장 동작으로 현재 학습 문장을 카드로 저장합니다. 시간 정렬 신뢰도가 충분할 때만 도움 문장이 함께 저장됩니다.
+6. Library에서 카드를 검색·정렬·필터링하고, 문장과 역할을 편집하거나 상태를 바꾸고 삭제·실행 취소합니다.
+7. Focused Review에서 도움 문장을 필요할 때 공개하고 카드를 `active` 또는 `completed`로 정리합니다.
+8. 카드에 기록된 정확한 원본 URL과 재생 시점으로 돌아갑니다.
 
 ## 주요 기능
 
@@ -25,6 +26,18 @@
 - 역할별 delay를 한 번만 적용하는 재생·저장 동작
 - 도움 언어를 사용하지 않을 때 도움 자막 제어를 비활성화하되 저장된 외형 값은 보존
 - 등록 자막 메타데이터와 cue 본문을 브라우저 로컬 저장소에 유지
+
+### 전체 자막
+
+- 기존 `Subtitles` 화면 안에서 `자막 추가 | 전체 자막`을 바로 전환
+- 현재 재생에 선택한 native 또는 등록 학습·도움 자막의 source를 표시하고 기존 관리 화면에서 변경
+- 학습 문장을 기준으로 도움 문장을 함께 보여 주는 기본 보기와 짧은 `함께 | 학습 | 도움` 역할별 전체 보기
+- 카드 외곽과 반복 label을 없앤 고밀도 목록에서 학습 한 줄과 도움 한 줄을 빠르게 훑고, 시작 시각은 항상 보며 전체 범위·잘린 전문은 hover·focus·touch로 확인
+- 대소문자를 구분하지 않는 문장 검색, 결과 수·delay 반영 시간 범위, 현재 문장 강조와 명시적인 follow 재개
+- 수천 문장도 겹치지 않는 가상 목록으로 탐색하고 pointer 또는 키보드로 원하는 장면에 이동
+- `함께 | 학습` 보기의 문장을 seek 없이 바로 카드로 저장하며, 결과는 기존 side panel toast로 알리고 기존 카드와 일치하는 행은 저장 표시를 제공
+- 저장 표시는 toggle·delete·dedupe가 아니며 완료 뒤 같은 문장을 다시 저장하면 별도 카드로 보존
+- 등록 자막 카드의 `자막 확인`에서 역할 지정이나 영상 연결 없이 제목·언어·delay와 전체 문장을 읽기 전용으로 검색·확인
 
 ### OpenSubtitles 온라인 자막
 
@@ -73,6 +86,7 @@
 - 검색 입력·결과 metadata·임시 URL·quota는 영속화하지 않습니다. 선택한 다운로드의 same-session cache만 최대 8개, 총 4 MiB, 6시간 TTL로 `chrome.storage.session`에 제한하고, 성공적으로 등록한 metadata와 cue만 로컬에 보존합니다.
 - 사용자 계정·JWT, BYOK, Play Plus proxy/backend, 원격 번역과 telemetry를 사용하지 않습니다.
 - 오류와 진단 정보에는 실제 자막 문장, 등록 자막 본문 또는 전체 시청 URL을 기록하지 않습니다.
+- 전체 자막 snapshot과 현재 재생 시각은 활성 탭의 content script에서 side panel로 직접 전달해 일시적으로만 사용합니다. 등록 자막 확인은 이미 로컬에 저장된 cue를 strict하게 읽을 뿐이며, 어느 경로도 본문을 추가 Storage, background, 외부 네트워크나 로그에 복제하지 않습니다.
 - 로컬 데이터는 장치 간 동기화나 복구를 보장하지 않습니다.
 
 ## Manifest 권한
@@ -146,7 +160,7 @@ yarn test:run     # Vitest 1회 실행
 
 Play Plus는 Chrome Extension Manifest V3의 세 실행 컨텍스트를 분리합니다.
 
-- `src/ui/`: side panel React 앱. 학습 설정, 로컬·OpenSubtitles 자막 추가, Library와 Focused Review를 제공합니다.
+- `src/ui/`: side panel React 앱. 학습 설정, 로컬·OpenSubtitles 자막 추가와 읽기 전용 확인, 현재 학습·도움 자막의 함께/역할별 탐색·행 저장·저장 표시, Library와 Focused Review를 제공합니다.
 - `src/background/`: service worker. v2 준비 상태, 탭 생명주기, OpenSubtitles 네트워크·session cache와 컨텍스트 간 메시지를 조정합니다.
 - `src/content/`: Coupang Play 페이지의 DOM·video·cue 접근, 자막 렌더링, 재생 제어와 저장 anchor를 담당합니다.
 - `src/storage/`: Chrome Storage의 strict schema, v1.11.0 one-shot decoder, v2 migration과 canonical API를 제공합니다.

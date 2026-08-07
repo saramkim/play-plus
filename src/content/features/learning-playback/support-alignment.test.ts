@@ -5,6 +5,7 @@ import { resolveCue } from '@/content/features/learning-playback/learning-playba
 import {
   alignSupportCues,
   compareSupportAlignments,
+  createSupportAlignmentIndex,
   isWithinSupportWindow,
   SupportAlignment,
 } from '@/content/features/learning-playback/support-alignment';
@@ -86,9 +87,20 @@ describe('support alignment', () => {
   });
 
   it('treats empty support cues as group boundaries', () => {
-    const result = align([cue(0, 0.5, 'One'), cue(0.5, 0.5, '  '), cue(0.5, 1, 'Two')]);
+    const result = align([
+      cue(0, 0.5, 'One'),
+      cue(0.5, 0.5, '<i></i>'),
+      cue(0.5, 1, 'Two'),
+    ]);
 
     expect(result?.text).toBe('One');
+  });
+
+  it('returns canonical sanitized support text for display and card storage', () => {
+    const result = align([cue(0, 1, '<i>Support &amp; translation</i>')]);
+
+    expect(result?.text).toBe('Support & translation');
+    expect(result?.cues[0].cue.text).toBe('Support & translation');
   });
 
   it('omits low-confidence support regardless of text equality', () => {
@@ -113,6 +125,66 @@ describe('support alignment', () => {
     expect(
       compareSupportAlignments(alignment({ centerDistanceMs: 10 }), alignment({ centerDistanceMs: 20 }))
     ).toBeLessThan(0);
+  });
+
+  it('keeps indexed batch alignment equivalent to independent single-cue alignment', () => {
+    const supportCues = [
+      cue(5, 6, 'Later'),
+      cue(0.4, 1, 'Second'),
+      cue(0, 0.4, 'First'),
+      cue(9, 10, '<i>Final</i>'),
+    ];
+    const learningCues = [
+      resolveCue(cue(0, 1, 'Learning one'), 0),
+      resolveCue(cue(5, 6, 'Learning two'), 1),
+      resolveCue(cue(9, 10, 'Learning three'), 2),
+    ];
+    const supportDelaySeconds = 0.125;
+    const index = createSupportAlignmentIndex(supportCues, supportDelaySeconds);
+
+    expect(learningCues.map((learning) => index.align(learning))).toEqual(
+      learningCues.map((learning) =>
+        alignSupportCues({ learningCue: learning, supportCues, supportDelaySeconds })
+      )
+    );
+  });
+
+  it('uses the time index instead of scanning every candidate for every learning cue', () => {
+    const cueCount = 500;
+    const supportCues = Array.from({ length: cueCount }, (_, index) =>
+      cue(index * 10, index * 10 + 1, `Support ${index}`)
+    );
+    const index = createSupportAlignmentIndex(supportCues);
+    let intervalReads = 0;
+
+    for (let sourceIndex = 0; sourceIndex < cueCount; sourceIndex += 1) {
+      const learning = resolveCue(
+        cue(sourceIndex * 10, sourceIndex * 10 + 1, `Learning ${sourceIndex}`),
+        sourceIndex
+      );
+      const startMs = learning.startMs;
+      const endMs = learning.endMs;
+      Object.defineProperties(learning, {
+        startMs: {
+          configurable: true,
+          get: () => {
+            intervalReads += 1;
+            return startMs;
+          },
+        },
+        endMs: {
+          configurable: true,
+          get: () => {
+            intervalReads += 1;
+            return endMs;
+          },
+        },
+      });
+
+      expect(index.align(learning)?.text).toBe(`Support ${sourceIndex}`);
+    }
+
+    expect(intervalReads).toBeLessThan(cueCount * 30);
   });
 });
 

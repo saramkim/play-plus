@@ -9,10 +9,14 @@ const harness = vi.hoisted(() => ({
   localListener: undefined as
     | ((changes: Record<string, chrome.storage.StorageChange>) => void)
     | undefined,
+  learningCardStorage: {},
   openOriginalVideo: undefined as
     | ((source: { startTime: number; url: string }) => Promise<void>)
     | undefined,
   sendMessage: vi.fn(),
+  subtitlePageProps: undefined as
+    | { cardRevision: number; learningCardStorage: unknown }
+    | undefined,
   setPage: vi.fn(),
   settingsInitialize: vi.fn(),
   settingsRemove: vi.fn(),
@@ -23,7 +27,7 @@ const harness = vi.hoisted(() => ({
 vi.mock('@storage/v2/sync-storage', () => ({ createV2SyncStorage: vi.fn(() => ({})) }));
 vi.mock('@utils/message', () => ({ sendMessage: harness.sendMessage }));
 vi.mock('@/ui/adapters/v2-learning-card-storage', () => ({
-  createMessageLearningCardStorage: vi.fn(() => ({})),
+  createMessageLearningCardStorage: vi.fn(() => harness.learningCardStorage),
 }));
 vi.mock('@/ui/features/first-entry/first-entry', () => ({
   V2_ONBOARDING_COMPLETE_KEY: 'v2OnboardingComplete',
@@ -62,7 +66,12 @@ vi.mock('@/ui/layout/connection-status', () => ({ ConnectionStatus: () => null }
 vi.mock('@/ui/layout/footer', () => ({ Footer: () => null }));
 vi.mock('@/ui/layout/header', () => ({ Header: () => null }));
 vi.mock('@/ui/pages/learning-settings-page', () => ({ LearningSettingsPage: () => <div>learning</div> }));
-vi.mock('@/ui/pages/subtitle-upload-page', () => ({ SubtitleUploadPage: () => <div>subtitles</div> }));
+vi.mock('@/ui/pages/subtitle-upload-page', () => ({
+  SubtitleUploadPage: (props: { cardRevision: number; learningCardStorage: unknown }) => {
+    harness.subtitlePageProps = props;
+    return <div data-testid='subtitles' data-revision={props.cardRevision}>subtitles</div>;
+  },
+}));
 vi.mock('@/ui/store/page-store', () => ({
   usePageStore: (selector: (state: { currentPage: typeof harness.currentPage; setPage: typeof harness.setPage }) => unknown) =>
     selector({ currentPage: harness.currentPage, setPage: harness.setPage }),
@@ -88,6 +97,7 @@ describe('v2 side-panel boot boundary', () => {
     harness.firstEntryComplete = undefined;
     harness.localListener = undefined;
     harness.openOriginalVideo = undefined;
+    harness.subtitlePageProps = undefined;
     harness.settingsInitialize.mockResolvedValue({ remove: harness.settingsRemove });
     harness.tabInitialize.mockResolvedValue(harness.tabRemove);
     vi.mocked(chrome.storage.local.onChanged.addListener).mockImplementation((listener) => {
@@ -183,6 +193,28 @@ describe('v2 side-panel boot boundary', () => {
     expect(harness.settingsRemove).toHaveBeenCalledOnce();
     expect(harness.tabRemove).toHaveBeenCalledOnce();
     expect(chrome.storage.local.onChanged.removeListener).toHaveBeenCalledOnce();
+  });
+
+  it('forwards canonical card storage revisions to the subtitle overview page', async () => {
+    localStorage.setItem('v2OnboardingComplete', 'true');
+    harness.currentPage = 'subtitles';
+    harness.sendMessage.mockResolvedValue({ success: true, data: { status: 'ready' } });
+
+    await act(async () => {
+      root.render(<App />);
+      await Promise.resolve();
+    });
+
+    expect(harness.subtitlePageProps).toMatchObject({
+      cardRevision: 0,
+      learningCardStorage: harness.learningCardStorage,
+    });
+
+    act(() => harness.localListener?.({ learningCards: { newValue: [] } }));
+    expect(harness.subtitlePageProps).toMatchObject({
+      cardRevision: 1,
+      learningCardStorage: harness.learningCardStorage,
+    });
   });
 
   it('removes a partial settings subscription when tab initialization fails', async () => {

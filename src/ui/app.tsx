@@ -114,7 +114,15 @@ export function App() {
 
   const page = (() => {
     if (currentPage === 'learning') return <LearningSettingsPage store={useLearningSettingsStore} />;
-    if (currentPage === 'subtitles') return <SubtitleUploadPage learningProfile={learningProfile} />;
+    if (currentPage === 'subtitles') {
+      return (
+        <SubtitleUploadPage
+          cardRevision={cardRevision}
+          learningCardStorage={learningCardStorage}
+          learningProfile={learningProfile}
+        />
+      );
+    }
     if (currentPage === 'library') {
       return <LearningCardLibrary refreshRevision={cardRevision} storage={learningCardStorage} />;
     }

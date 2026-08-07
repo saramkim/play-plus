@@ -1,4 +1,5 @@
 import { V2SubtitleCue } from '@storage/v2/type';
+import { stripTags } from '@utils/helper';
 
 export interface ResolvedLearningCue {
   cue: V2SubtitleCue;
@@ -44,7 +45,7 @@ export const resolveLearningCueCommand = ({
 
 export const resolveNonEmptyCues = (cues: V2SubtitleCue[], delaySeconds = 0): ResolvedLearningCue[] => {
   return cues.flatMap((cue, sourceIndex) => {
-    if (cue.text.trim().length === 0) return [];
+    if (stripTags(cue.text).length === 0) return [];
     return [resolveCue(cue, sourceIndex, delaySeconds)];
   });
 };

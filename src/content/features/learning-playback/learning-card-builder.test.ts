@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildLearningCard } from '@/content/features/learning-playback/learning-card-builder';
+import {
+  buildLearningCard,
+  buildLearningCardFromResolvedCue,
+} from '@/content/features/learning-playback/learning-card-builder';
+import { resolveCue } from '@/content/features/learning-playback/learning-playback';
 
 describe('learning card builder', () => {
   it('creates a strict learning-only active card without a title', () => {
@@ -98,6 +102,91 @@ describe('learning card builder', () => {
 
     expect(first).toMatchObject({ status: 'created', card: { id: 'card-repeat-0' } });
     expect(second).toMatchObject({ status: 'created', card: { id: 'card-repeat-1' } });
+  });
+
+  it('creates a card from the exact resolved learning cue without resolving current time again', () => {
+    const result = buildLearningCardFromResolvedCue({
+      learningCue: resolveCue(
+        { start: 10, end: 12, text: '<i>Selected &amp; row</i>' },
+        42,
+        -2
+      ),
+      supportCues: [{ start: 8, end: 10, text: '<b>선택한 &amp; 도움 문장</b>' }],
+      learningLanguage: 'en',
+      supportLanguage: 'ko',
+      url: URL,
+      idFactory: () => 'card-selected-row',
+      createdAtFactory: () => CREATED_AT,
+    });
+
+    expect(result).toEqual({
+      status: 'created',
+      card: {
+        id: 'card-selected-row',
+        content: {
+          learning: { text: 'Selected & row', language: 'en' },
+          support: { text: '선택한 & 도움 문장', language: 'ko' },
+        },
+        source: { url: URL, startTime: 8, endTime: 10 },
+        studyState: 'active',
+        createdAt: CREATED_AT,
+      },
+    });
+  });
+
+  it('treats formatting-only learning text as unavailable without calling factories', () => {
+    const idFactory = vi.fn(() => 'card-unused');
+    const createdAtFactory = vi.fn(() => CREATED_AT);
+
+    const currentTimeResult = build({
+      learningCues: [{ start: 1, end: 2, text: '<i></i>' }],
+      idFactory,
+      createdAtFactory,
+    });
+    const resolvedResult = buildLearningCardFromResolvedCue({
+      learningCue: resolveCue({ start: 1, end: 2, text: '<b> </b>' }, 0),
+      learningLanguage: 'en',
+      supportLanguage: null,
+      url: URL,
+      idFactory,
+      createdAtFactory,
+    });
+
+    expect(currentTimeResult).toEqual({ status: 'no-current-cue' });
+    expect(resolvedResult).toEqual({ status: 'no-current-cue' });
+    expect(idFactory).not.toHaveBeenCalled();
+    expect(createdAtFactory).not.toHaveBeenCalled();
+  });
+
+  it('omits formatting-only support while preserving a canonical learning sentence', () => {
+    const result = build({
+      learningCues: [{ start: 1, end: 2, text: '<i>Learning &amp; sentence</i>' }],
+      supportCues: [{ start: 1, end: 2, text: '<b></b>' }],
+    });
+
+    expect(result).toMatchObject({
+      status: 'created',
+      card: {
+        content: { learning: { text: 'Learning & sentence', language: 'en' } },
+      },
+    });
+    if (result.status === 'created') expect(result.card.content).not.toHaveProperty('support');
+  });
+
+  it('creates distinct cards when the same resolved cue is saved again', () => {
+    let nextId = 0;
+    const create = () =>
+      buildLearningCardFromResolvedCue({
+        learningCue: resolveCue({ start: 1, end: 2, text: 'Selected row' }, 7),
+        learningLanguage: 'en',
+        supportLanguage: null,
+        url: URL,
+        idFactory: () => `card-exact-repeat-${nextId++}`,
+        createdAtFactory: () => CREATED_AT,
+      });
+
+    expect(create()).toMatchObject({ status: 'created', card: { id: 'card-exact-repeat-0' } });
+    expect(create()).toMatchObject({ status: 'created', card: { id: 'card-exact-repeat-1' } });
   });
 });
 
