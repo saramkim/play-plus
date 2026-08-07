@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-07 — OpenSubtitles를 초기 2.0 필수 범위에 포함
+최종 개정 승인일: 2026-08-07 — OpenSubtitles, 고밀도 현재 자막 전체 보기·학습 행 저장 표시와 등록 자막 읽기 전용 확인을 초기 2.0 필수 범위에 포함
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -26,6 +26,8 @@ Play Plus 2.0은 Coupang Play를 위한 범용 편의 기능 모음이 아니라
 4. Library에서 저장한 카드를 확인·수정한다.
 5. Review에서 한 카드에 집중하고 도움 문장을 필요할 때 공개한다.
 6. 카드를 `active` 또는 `completed`로 정리한 뒤 원래 영상 시점으로 돌아갈 수 있다.
+
+시청 중에는 현재 선택한 학습·도움 자막의 전체 문장을 함께 또는 역할별로 한눈에 탐색하고, 원하는 장면으로 이동하거나 학습 문장을 바로 카드로 저장할 수 있다. 이는 별도의 분석 workflow가 아니라 시청과 문장 학습을 돕는 자막 기능이다.
 
 2.0의 성공 기준은 많은 기능 수가 아니다. 저장이 빠르고, 학습/도움 역할이 명확하며, 저장한 문장을 잃지 않고, 복습이 시청으로 다시 이어지는지가 기준이다.
 
@@ -239,6 +241,22 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 
 두 개의 저장 명령, 자막 복사 단축키, primary/secondary 토글이라는 이름은 남기지 않는다. 같은 키 충돌과 예약 키 검증은 계속 필요하다.
 
+#### Current subtitle overview
+
+- 기존 네 개의 top-level destination은 유지한다. `Subtitles` 안에 항상 보이는 `자막 추가 | 전체 자막` subview를 두며 기본값은 `자막 추가`이고 선택은 영속화하지 않는다.
+- `전체 자막`은 content script가 현재 재생에 실제로 선택한 학습·도움 역할을 하나의 원자적 snapshot으로 제공한다. 기본은 학습 cue를 anchor로 대응 도움 문장을 함께 보여 주는 `함께` 보기이며, 사용자는 `학습` 또는 `도움`만 볼 수 있다. 도움 역할이 없으면 도움 관련 control을 숨기고 학습 목록만 표시하며, 역할은 설정됐지만 cue가 없으면 사실적인 empty state를 표시한다.
+- `함께` 보기의 도움 문장은 저장과 같은 결정론적 multi-cue alignment를 사용한다. 매칭되지 않은 학습 cue도 학습 문장만으로 남고, 같은 도움 문장이 인접한 여러 학습 cue의 최선 대응일 수 있다. `도움` 보기는 매칭되지 않은 cue를 포함한 도움 track 전체를 source 순서대로 보여 준다.
+- 현재 활성 source가 Coupang Play native인지 사용자가 등록한 자막인지 역할별로 표시한다. `변경`은 기존 자막 추가·역할 관리 영역으로 이동하며, `전체 자막` 안에 임의 source 선택기나 활성 역할을 바꾸는 control을 만들지 않는다.
+- 등록 자막 목록의 `자막 확인`은 학습·도움 역할 지정이나 활성 영상 연결 없이 해당 로컬 자막의 내용을 읽기 전용으로 보여 준다. 이 화면은 역할 보기, 현재 cue, follow, seek와 카드 저장을 제공하지 않고 제목·언어·delay, 검색·문장 수와 단일 track cue 목록만 제공한다. UI가 기존 strict 로컬 자막 저장 경계를 직접 읽으며, 닫기 또는 뒤로 가기는 시작한 control로 focus를 복원한다.
+- 빈 문장을 제외한 전체 cue를 source 순서로 가상화해 보여 준다. 활성 전체 보기의 각 행은 카드 외곽과 역할 label을 반복하지 않는 고밀도 divider 목록이며, `함께`에서는 학습 한 줄과 대응 도움 한 줄을 기본 시각 높이로 삼는다. compact 시작 timestamp는 항상 보이고 종료 시각과 잘린 전체 문장은 hover뿐 아니라 keyboard focus와 touch에서도 확인할 수 있다. 여러 줄·다국어 원문과 검색 전후에도 측정된 행이 다음 행과 겹치지 않아야 한다.
+- 검색은 현재 보기에서 보이는 학습·도움 본문에 trim한 대소문자 비구분 substring 일치만 지원하며 source 순서를 바꾸지 않는다. 결과 수와 전체 수, 명시적인 검색 지우기 동작을 제공하고 보기 전환 시 query를 초기화한다.
+- 현재 cue는 해당 보기의 anchor에서 1ms로 반올림한 닫힌 시간 구간 중 가장 늦게 시작한 cue를 우선하고, 시작 시각이 같으면 더 작은 source index를 우선한다. gap에서는 어떤 cue도 현재라고 표시하지 않는다.
+- 성공한 snapshot 뒤 follow를 기본 활성화한다. 사용자 scroll이나 비어 있지 않은 검색은 follow를 끄지만 현재 cue highlight는 유지하며, 검색을 지워도 자동 재개하지 않는다. 사용자는 명시적인 control로 follow를 재개하고 현재 cue가 있으면 즉시 가운데로 이동할 수 있다.
+- 각 행의 본문은 pointer와 키보드 `Enter`/`Space`로 해당 장면을 seek하는 실제 action이다. 가상 목록의 결과 집합에는 roving focus와 `ArrowUp`/`ArrowDown`/`Home`/`End` 이동을 제공한다. 행별 저장은 seek와 중첩되지 않은 별도 action이어야 한다.
+- `함께`와 `학습` 보기의 학습 anchor 행은 바로 카드로 저장할 수 있다. UI는 snapshot의 video/content identity, subtitle revision과 학습 source index만 보내고, content script가 현재 활성 학습 cue를 원자적으로 다시 검증한 뒤 기존 delay·도움 정렬·카드 저장 경계를 사용한다. 저장 결과는 도움 포함, 학습만 저장, 오래된 snapshot, cue 없음, 진행 중과 오류를 구분하고 기존 side panel toast로 알린다. `도움` 보기에는 저장 action을 제공하지 않는다.
+- 학습 행의 저장 표시는 canonical `learningCards`에서 같은 Coupang Play video ID, 학습 언어, 정제된 학습 문장과 1ms로 반올림한 시작·종료 시각이 모두 일치하는 assigned 카드가 있는지 파생한다. 이는 자막 provenance를 완전히 증명하지 않는 best-effort 표시이며 toggle, dedupe, 저장 차단이나 삭제 control이 아니다. 성공 직후 표시하고 storage revision으로 다시 조정하되 새 provenance schema나 cue 사본을 만들지 않는다. 진행 중인 현재 cue 저장과 행별 저장은 하나의 pending lock을 공유하며, 완료 뒤 같은 문장을 다시 저장하면 기존 카드 계약대로 별도 카드가 추가된다.
+- UI는 cue 본문을 Storage나 background에 복제하지 않는다. 활성 tab의 content script에서 직접 받은 일시 snapshot과 재생 시각만 사용하고, tab·SPA route·content instance·video·자막 revision 변경과 늦은 응답을 격리한다. 행 seek와 저장은 content 경계에서 snapshot identity와 자막 revision을 원자적으로 다시 검증한 뒤에만 실행한다.
+
 #### Save and multi-cue alignment
 
 - 저장의 anchor는 현재 재생 중인 학습 cue다.
@@ -287,7 +305,7 @@ OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함�
 
 ### 5.2 확정 — 2.0에서 제거
 
-- 독립된 자막 분석 top-level 화면, 전체 자막 탐색과 단어 빈도 기능
+- 독립된 자막 분석 top-level 화면과 단어 빈도·통계 기능
 - 학습 프리셋과 preset storage/module/UI
 - 시간 단위·자막 단위 스킵을 중복 구성하는 `videoSkip`/`subVideoSkip` 모델
 - 사용자가 시작·끝을 정하는 수동 A/B 루프와 일반 루프 설정
@@ -328,12 +346,17 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 자막 외형 설정은 고급 영역에 둘 수 있지만 찾을 수 있어야 하며, 접근성 있는 label과 현재 값을 제공한다.
 - 자막 추가 화면은 로컬 파일과 온라인 검색 source를 명확히 구분하고 각 draft를 보존한다. 검색 전에 OpenSubtitles로 전송할 필드와 선택적 권한을 알리며, 권한 거부·검색 실패·quota 제한 뒤에도 로컬 파일 추가 경로를 유지한다.
 - 온라인 결과는 사용자가 파일을 선택하고 `추가`를 실행해야 등록된다. 등록 성공과 학습/도움 역할 적용을 같은 동작으로 오해하게 만들지 않는다.
+- `Subtitles`의 `자막 추가 | 전체 자막` subview는 언제나 발견 가능해야 하며 navigation lock 중에는 전환하지 않는다. 활성 `전체 자막`은 현재 학습/도움 source의 정체와 기존 관리 영역으로 가는 `변경`만 노출하고, 임의 source 선택기나 분석 용어를 만들지 않는다. 등록 자막 카드의 `자막 확인`은 역할을 바꾸지 않는 별도 읽기 전용 target으로 같은 surface에서 열고 활성 전체 보기의 control을 노출하지 않는다.
+- 전체 자막은 `함께`를 기본으로 하고 짧은 전용 문구의 `함께 | 학습 | 도움` segmented control을 제공한다. 행은 학습 한 줄과 도움 한 줄을 우선하는 고밀도 divider 형태로 구성하고 반복 역할 label과 별도 metadata 행을 두지 않는다. compact 시작 timestamp는 항상 보이며, 종료 시각과 잘린 전체 문장은 hover·focus·touch disclosure에서 동등하게 확인할 수 있다. 현재 문장, follow 상태와 재개 action은 색상에만 의존하지 않고 행 seek·저장과 목록 이동은 pointer와 키보드에서 모두 작동해야 한다.
+- 행 저장 결과는 목록 높이를 바꾸는 inline 문구가 아니라 기존 side panel toast로 제공한다. 기존 카드에서 파생한 저장 표시는 `저장된 카드 있음 · 다시 저장` 의미이며 사용자가 같은 문장을 다시 별도 카드로 저장하는 동작을 막지 않는다.
+- 좁은 panel에서 중복 제목을 시각적으로 반복하지 않는다. 새로고침·검색 지우기·행 저장처럼 의미가 보편적인 보조 action은 접근 가능한 이름과 tooltip을 가진 icon control로 압축할 수 있지만, 보기·역할·source 변경과 follow처럼 icon만으로 뜻이 불명확한 control은 텍스트를 유지한다.
 
 ## 7. Privacy and Permissions
 
 - 학습 카드와 등록 자막은 사용자의 브라우저에 로컬로 저장한다.
 - 2.0 핵심 흐름은 계정과 외부 자막 공급자 없이 작동해야 한다. OpenSubtitles는 사용자가 명시적으로 검색·추가할 때만 사용하는 승인된 예외다.
-- 원격 번역, 분석, telemetry, BYOK와 클라우드 저장을 추가하지 않는다.
+- 원격 번역, 외부 분석, telemetry, BYOK와 클라우드 저장을 추가하지 않는다.
+- 전체 자막 snapshot과 현재 재생 시각은 활성 tab의 UI-content 직접 메시지에서만 일시적으로 사용한다. 등록 자막 읽기 전용 확인은 이미 canonical 로컬 저장소에 있는 해당 cue 본문을 UI에서 strict하게 읽을 뿐 새 사본을 만들지 않는다. cue 본문을 background, 추가 Storage, network, telemetry 또는 진단 로그로 복제하지 않는다.
 - 필수 host access는 Coupang Play로 제한한다. OpenSubtitles에는 pre-implementation qualification으로 증명한 API base와 download origin 각각만 exact optional permission으로 선언하고 첫 명시적 검색에서 요청한다. 후보 host 전체나 wildcard를 선언하지 않는다.
 - OpenSubtitles에는 사용자가 제출한 제목/query, 언어, 선택 필터와 page만 전송한다. query, 결과 metadata, `file_id`, quota, 임시 URL과 다운로드 원문은 provider-specific persistent storage에 남기지 않고, 성공적으로 등록한 자막 metadata와 cue만 기존 로컬 저장소에 보존한다.
 - build-time consumer credential과 app/version `User-Agent`는 OpenSubtitles가 배포 가능한 public client 사용을 승인하고 로그인/JWT 없이 동작하는 경우에만 모든 API 요청에 사용한다. credential은 보안 secret으로 주장하지 않으며 실제 값은 source, fixture와 로그에 commit하지 않고 build 환경에서 주입한다. confidential secret이 필요해지면 현재 범위를 중단한다.
@@ -349,9 +372,10 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 3. **Learning playback and save**: 핵심 단축키, 현재 cue anchor, multi-cue 도움 문장 정렬과 one-action save.
 4. **Library and card editing**: canonical 카드 목록, 상태·역할 필터와 제한된 편집.
 5. **Focused Review**: 도움 문장 공개, 상태 전환, video link, pending lock와 접근성.
-6. **Scope cleanup**: backup, 분석, preset, 구 상태 모델, 제거된 재생 설정과 관련 locale·테스트 삭제.
+6. **Scope cleanup**: backup, 독립 분석 화면과 통계, preset, 구 상태 모델, 제거된 재생 설정과 관련 locale·테스트 삭제.
 7. **OpenSubtitles acquisition**: 명시적 검색·선택·등록, exact optional permission, background network, session-only cache, provider qualification과 개인정보 proof.
-8. **Legacy audit and release validation**: v1 정상 경로 참조 제거 증명, 전체 자동 검증과 실제 Chrome upgrade/fresh-install/provider smoke.
+8. **Current subtitle overview restoration**: 현재 학습·도움 역할의 원자적 일시 cue snapshot, 함께/역할별 가상 목록, 검색, follow, 키보드 seek, 학습 행 직접 저장과 stale identity 격리.
+9. **Legacy audit and release validation**: v1 정상 경로 참조 제거 증명, 전체 자동 검증과 실제 Chrome upgrade/fresh-install/provider smoke.
 
 기능을 먼저 제거해 v1.11 사용자의 데이터를 읽지 못하게 만들면 안 된다. migration decoder와 fixture를 먼저 고정하고, 제거 작업과 정상 v2 경로 전환이 같은 릴리스에서 일관되게 완료돼야 한다.
 
@@ -393,7 +417,14 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 승인된 login-free Consumer에서 redirect 자동 추적 없이 동작하는 전체 API/download origin 집합을 증명해 각각 exact permission으로 고정하며, wildcard와 미확정 후보 host가 없다.
 - 사용자가 제출한 필드만 검색에 사용하고, 명시적으로 선택한 하나의 결과만 다운로드해 strict 등록 경계로 저장한다. 등록 뒤에도 학습/도움 역할을 자동 적용하지 않는다.
 - 검색 입력, 결과 metadata, 임시 URL과 provider download cache가 영속 저장되지 않으며, session cache의 entry·byte·TTL 상한과 eviction이 지켜지고 provider production consumer 승인·attribution·quota·로그인 없는 실제 동작이 확인된다.
-- 백업, 분석과 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
+- 현재 선택한 native 또는 등록 학습·도움 source의 전체 cue가 delay를 정확히 한 번 적용한 source 순서로 표시되고, source 정체와 기존 관리 영역으로 가는 변경 동작이 사실대로 작동한다.
+- 기본 `함께` 보기에서 저장과 같은 결정론적 alignment로 도움 문장이 학습 cue에 대응되고, 매칭되지 않은 학습 cue와 `학습`/`도움` 전체 보기가 손실 없이 작동한다. 검색·현재 cue highlight·follow 재개·pointer/keyboard seek가 각 보기에서 작동한다.
+- `함께`와 `학습` 행 저장은 seek 없이 정확한 학습 source index를 다시 검증해 기존 카드 builder와 저장소를 사용한다. 도움 포함/학습만 저장 결과, stale·cue 없음·pending·오류가 구분되고, 현재 cue 저장과 중복 요청 lock을 공유하며 완료 뒤 반복 저장은 별도 카드가 된다.
+- 전체 자막 행은 좁은 panel에서 학습 한 줄과 도움 한 줄을 우선하는 고밀도 divider 목록이며, 시작 시각은 상시 보이고 종료 시각과 잘린 전체 문장은 hover·focus·touch에서 확인된다. 저장 결과 toast는 목록을 밀지 않고, 기존 카드와 일치하는 학습 행 표시는 반복 저장을 막지 않으며 카드 추가·수정·삭제 뒤 다시 조정된다.
+- 등록 자막은 학습·도움 역할이나 현재 영상 연결 없이도 `자막 확인`에서 제목·언어·delay와 전체 cue를 검색·탐색할 수 있다. 이 읽기 전용 화면은 active overview의 역할 보기, current/follow, seek와 저장 의미를 가장하지 않는다.
+- 수천 cue와 여러 줄·다국어 문장에서 가상 목록이 하나의 scroll owner를 유지하고 검색 전후에도 행이 겹치지 않으며, 늦은 native cue 도착과 tab·SPA route·content instance·video·자막 revision 변경이 자동 반영되고 이전 snapshot이 새 영상을 노출·제어·저장하지 않는다.
+- 전체 자막 snapshot과 재생 시각은 영속 저장·background relay·외부 전송·본문 logging 없이 활성 tab에서만 일시적으로 사용된다.
+- 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
 
 ### 9.4 Verification gate
 
@@ -409,9 +440,11 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 검색 전 외부 요청 0건, 허용 origin·전송 필드·로그·session/persistent storage와 자동 역할 미적용을 Network/Chrome Storage에서 확인
 - 승인된 production consumer credential과 app identifier로 로그인/JWT 없는 실제 OpenSubtitles.com REST search/download를 확인
 - README, 한국어·영어 locale, manifest 권한 설명과 적용 가능한 공개 개인정보/Chrome Web Store disclosure가 명시적 전송, 선택적 권한, 로컬 등록과 자동 역할 미적용을 사실대로 설명하는지 확인
+- native·등록 자막과 양수·음수 delay에서 함께/학습/도움 목록·source 표시·시간 범위·검색·follow·키보드 seek·학습 행 저장·toast·저장 표시를 확인하고, 대형·여러 줄 cue fixture에서 고밀도 가상화·검색 후 비겹침과 stale identity 격리를 검증
+- 역할로 선택하지 않은 등록 자막의 읽기 전용 확인, 검색, delay 표시, late load·삭제 오류와 Back focus 복원을 검증하고 active overview의 seek/save/current/follow control이 섞이지 않는지 확인
 - v1.11.0을 설치하고 대표 데이터를 만든 실제 Chrome profile에서 2.0으로 update하는 upgrade smoke
 - 깨끗한 Chrome profile의 fresh-install smoke
-- 최소 320px, 360px와 390px 폭 side panel에서 Library, Review, 설정, migration 오류 상태의 키보드·스크롤·레이아웃 확인
+- 실제 Chrome에서는 해당 빌드가 허용하는 최소 side panel 폭(현재 환경 기준 360 CSS px)과 약 390 CSS px에서 전체 자막, Library, Review, 설정, migration 오류 상태의 키보드·스크롤·레이아웃을 확인한다. 320 CSS px는 자동 반응형 검증으로 유지하며, Chrome이 360px에서 폭을 고정하면 실제 Chrome의 320px 결과는 `FAIL`이 아니라 브라우저 제약이 기록된 `NOT RUN`이다.
 
 자동 테스트는 실제 Chrome upgrade smoke를 대신하지 않는다. 실행하지 않은 항목은 `NOT RUN`, 외부 환경 때문에 판정할 수 없는 항목은 `UNKNOWN`으로 기록한다.
 
@@ -425,6 +458,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - broad optional host, download redirect 허용, provider provenance 영속 schema와 multi-file/CD 자동 병합
 - telemetry나 사용자 조사 수집 코드
 - 전면적인 디자인 시스템 교체
+- 저장 표시 정확도를 위한 새 subtitle provenance/source-index schema, 자동 dedupe, 저장 toggle 또는 행 삭제
 - MV3 경계를 넘는 편의성 리팩터링
 - 다른 스트리밍 서비스 지원
 

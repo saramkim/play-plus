@@ -1,5 +1,6 @@
 import type { DeletedLearningCard } from '@storage/v2/learning-card-storage';
 import type { LearningCard } from '@storage/v2/type';
+import type { Language } from '@utils/constants';
 import type {
   OpenSubtitlesDownloadedSubtitle,
   OpenSubtitlesErrorCode,
@@ -8,6 +9,79 @@ import type {
 } from '@utils/opensubtitles/type';
 
 export type SubtitleRole = 'learning' | 'support';
+
+export type ContentVideoIdentity = {
+  contentInstanceId: string;
+  routeChangedAt: number;
+  videoId: string | null;
+  videoRevision: number;
+};
+
+export type SubtitleOverviewCue = {
+  sourceIndex: number;
+  startTime: number;
+  endTime: number;
+  text: string;
+};
+
+export type SubtitleOverviewLearningCue = SubtitleOverviewCue & {
+  alignedSupport?: {
+    sourceIndices: number[];
+    text: string;
+  };
+};
+
+export type SubtitleOverviewSource =
+  | { kind: 'native'; language: Language }
+  | {
+      kind: 'registered';
+      language: Language;
+      subtitleId: string;
+      delaySeconds: number;
+    };
+
+export type SubtitleOverviewTrack<Cue extends SubtitleOverviewCue = SubtitleOverviewCue> = {
+  role: SubtitleRole;
+  language: Language;
+  source: SubtitleOverviewSource;
+  cues: Cue[];
+};
+
+export type SubtitleOverviewResponse =
+  | {
+      status: 'ready';
+      identity: ContentVideoIdentity;
+      subtitleRevision: number;
+      currentTime: number;
+      tracks: {
+        learning: SubtitleOverviewTrack<SubtitleOverviewLearningCue>;
+        support: SubtitleOverviewTrack | null;
+      };
+    }
+  | { status: 'no-video'; identity: ContentVideoIdentity };
+
+export type VideoTimeResponse =
+  | {
+      status: 'ready';
+      identity: ContentVideoIdentity;
+      subtitleRevision: number;
+      currentTime: number;
+    }
+  | { status: 'no-video'; identity: ContentVideoIdentity };
+
+export type PlayVideoResponse =
+  | { status: 'played' }
+  | { status: 'stale' }
+  | { status: 'no-video' };
+
+export type SaveSubtitleOverviewCueResponse =
+  | { status: 'saved-with-support' }
+  | { status: 'saved-learning-only' }
+  | { status: 'stale' }
+  | { status: 'no-video' }
+  | { status: 'cue-unavailable' }
+  | { status: 'busy' }
+  | { status: 'error' };
 
 export type ContentBootstrap = {
   learningSubtitleId: string | null;
@@ -39,7 +113,12 @@ export type MessageSchema = {
     };
   };
   playVideo: {
-    params: { startTime: number };
+    params: {
+      startTime: number;
+      expectedIdentity?: ContentVideoIdentity;
+      expectedSubtitleRevision?: number;
+    };
+    response: PlayVideoResponse;
   };
   viewVideo: {
     params: { url: string; startTime: number };
@@ -50,13 +129,23 @@ export type MessageSchema = {
   refreshRegisteredSubtitle: {
     params: { subtitleId: string };
   };
+  getSubtitleOverview: {
+    response: SubtitleOverviewResponse;
+  };
+  saveSubtitleOverviewCue: {
+    params: {
+      expectedIdentity: ContentVideoIdentity;
+      expectedSubtitleRevision: number;
+      learningSourceIndex: number;
+    };
+    response: SaveSubtitleOverviewCueResponse;
+  };
+  getVideoTime: {
+    response: VideoTimeResponse;
+  };
   pingContent: {
-    response: {
-      contentInstanceId: string;
+    response: ContentVideoIdentity & {
       hasVideo: boolean;
-      routeChangedAt: number;
-      videoId: string | null;
-      videoRevision: number;
     };
   };
   contentStatus: {

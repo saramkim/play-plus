@@ -221,6 +221,28 @@ describe('canonical learning commands', () => {
     controller.stop();
   });
 
+  it('ignores a concurrent current-cue save while the shared persistence lock is pending', async () => {
+    const storage = new FakeSyncStorage();
+    const controller = new VideoController(createDependencies(storage));
+    await controller.start();
+    vi.spyOn(videoManager, 'get').mockReturnValue(createObservedVideo(1.5).video);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 1, end: 2, text: 'Learning once' },
+    ]);
+    const persistence = deferred<{ success: true; data: object }>();
+    vi.mocked(sendMessage).mockReturnValueOnce(persistence.promise as never);
+
+    const firstSave = controller.execute('save');
+    await controller.execute('save');
+
+    expect(sendMessage).toHaveBeenCalledOnce();
+    expect(useToastStore.getState().toasts).toHaveLength(0);
+    persistence.resolve({ success: true, data: {} });
+    await firstSave;
+    expect(lastToastMessage()).toBe('v2_learning_card_saved_without_support');
+    controller.stop();
+  });
+
   it('distinguishes paired save success and handles response or transport failure', async () => {
     const storage = new FakeSyncStorage();
     const controller = new VideoController(createDependencies(storage));

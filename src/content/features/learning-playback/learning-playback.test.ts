@@ -58,11 +58,12 @@ describe('learning playback resolver', () => {
   });
 
   it('returns explicit empty results when there are no valid cues', () => {
-    const cues = [cue(0, 1, ''), cue(1, 2, '   ')];
+    const cues = [cue(0, 1, ''), cue(1, 2, '   '), cue(2, 3, '<i></i>')];
 
     expect(resolve('previous', cues, 1)).toEqual({ status: 'no-target-cue' });
     expect(resolve('next', cues, 1)).toEqual({ status: 'no-target-cue' });
     expect(resolve('save', cues, 1)).toEqual({ status: 'no-current-cue' });
+    expect(resolve('save', cues, 2.5)).toEqual({ status: 'no-current-cue' });
   });
 });
 

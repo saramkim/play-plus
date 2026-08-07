@@ -88,4 +88,20 @@ describe('canonical subtitle store', () => {
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({});
     expect(useSubtitleStore.getState().registeredSelections).toEqual({ learning: null, support: null });
   });
+
+  it('increments its content-local revision for every presentation mutation', () => {
+    expect(useSubtitleStore.getInitialState().subtitleRevision).toBe(0);
+
+    const store = useSubtitleStore.getState();
+    const initialRevision = store.subtitleRevision;
+
+    store.setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
+    store.setNativeCues('en', [{ start: 1, end: 2, text: 'Native' }]);
+    store.clearNativeCues();
+    store.setRegisteredSelection('learning', registeredSelection);
+    store.clearRegisteredSelection('learning');
+    store.clearCaches();
+
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(initialRevision + 6);
+  });
 });

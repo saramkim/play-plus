@@ -641,12 +641,157 @@
     "v2_save_learning_card":  {
                                   "message":  "Save learning card"
                               },
+    "v2_subtitles_subview_label":  {
+                                         "message":  "Subtitle view"
+                                     },
+    "v2_subtitles_add_tab":  {
+                                  "message":  "Add subtitles"
+                              },
+    "v2_subtitles_overview_tab":  {
+                                       "message":  "Full subtitles"
+                                   },
+    "v2_subtitle_overview_title":  {
+                                         "message":  "Full subtitles"
+                                     },
+    "v2_subtitle_overview_role_label":  {
+                                              "message":  "Subtitle view"
+                                          },
+    "v2_subtitle_overview_together":  {
+                                             "message":  "Together"
+                                         },
+    "v2_subtitle_overview_learning":  {
+                                             "message":  "Learning"
+                                         },
+    "v2_subtitle_overview_support":  {
+                                            "message":  "Support"
+                                        },
+    "v2_subtitle_overview_source_coupang_play":  {
+                                                       "message":  "Coupang Play subtitles"
+                                                   },
+    "v2_subtitle_overview_change_source":  {
+                                                  "message":  "Change"
+                                              },
+    "v2_subtitle_overview_change_source_label":  {
+                                                        "message":  "Change active subtitle sources"
+                                                    },
+    "v2_subtitle_overview_search_label":  {
+                                                "message":  "Search current subtitles"
+                                            },
+    "v2_subtitle_overview_count":  {
+                                         "message":  "$result$ of $total$ sentences",
+                                         "placeholders":  {
+                                                              "result":  {
+                                                                               "content":  "$1"
+                                                                           },
+                                                              "total":  {
+                                                                              "content":  "$2"
+                                                                          }
+                                                          }
+                                     },
+    "v2_subtitle_overview_time_range":  {
+                                              "message":  "Full range: $start$–$end$",
+                                              "placeholders":  {
+                                                                   "start":  {
+                                                                                 "content":  "$1"
+                                                                             },
+                                                                   "end":  {
+                                                                               "content":  "$2"
+                                                                           }
+                                                               }
+                                          },
+    "v2_subtitle_overview_current":  {
+                                           "message":  "Current sentence"
+                                       },
+    "v2_subtitle_overview_following":  {
+                                             "message":  "Following playback position"
+                                         },
+    "v2_subtitle_overview_resume_follow":  {
+                                                 "message":  "Follow playback position"
+                                             },
+    "v2_subtitle_overview_refresh":  {
+                                           "message":  "Refresh subtitles"
+                                       },
+    "v2_subtitle_overview_loading":  {
+                                           "message":  "Loading full subtitles…"
+                                       },
+    "v2_subtitle_overview_disconnected":  {
+                                                "message":  "Play Plus is not connected to the current tab. Open a Coupang Play video tab."
+                                            },
+    "v2_subtitle_overview_no_video":  {
+                                            "message":  "No playable video was found in the current tab."
+                                        },
+    "v2_subtitle_overview_empty_learning":  {
+                                                  "message":  "The selected learning subtitle has no sentences to show."
+                                              },
+    "v2_subtitle_overview_empty_support":  {
+                                                 "message":  "The selected support subtitle has no sentences to show."
+                                             },
+    "v2_subtitle_overview_no_results":  {
+                                               "message":  "No sentences match this search."
+                                           },
+    "v2_subtitle_overview_error":  {
+                                         "message":  "Could not load full subtitles. Try again."
+                                     },
+    "v2_subtitle_overview_stale":  {
+                                         "message":  "The video changed, so the subtitles need to be refreshed."
+                                     },
+    "v2_subtitle_overview_seek_error":  {
+                                              "message":  "Could not seek to that scene."
+                                          },
+    "v2_subtitle_overview_save_row":  {
+                                            "message":  "Save learning card"
+                                        },
+    "v2_subtitle_overview_saved_row":  {
+                                              "message":  "Saved card exists · Save again"
+                                          },
+    "v2_subtitle_overview_saved_with_support":  {
+                                                      "message":  "Saved the learning and support sentences as a card."
+                                                  },
+    "v2_subtitle_overview_saved_learning_only":  {
+                                                       "message":  "Saved the learning sentence. No reliable support match was found."
+                                                   },
+    "v2_subtitle_overview_save_busy":  {
+                                             "message":  "Another learning card save is in progress."
+                                         },
+    "v2_subtitle_overview_save_stale":  {
+                                              "message":  "The subtitles changed, so this sentence was not saved. Refresh and try again."
+                                          },
+    "v2_subtitle_overview_save_unavailable":  {
+                                                    "message":  "This sentence is no longer available in the active learning subtitle."
+                                                },
+    "v2_subtitle_overview_save_error":  {
+                                              "message":  "Could not save this learning card. Try again."
+                                          },
     "v2_local_subtitles_loading":  {
                                        "message":  "Loading local subtitles…"
                                    },
     "v2_local_subtitles_back":  {
                                     "message":  "Back to subtitles"
                                 },
+    "v2_local_subtitles_preview":  {
+                                       "message":  "View subtitles"
+                                   },
+    "v2_registered_subtitle_preview_title":  {
+                                                "message":  "Registered subtitle"
+                                            },
+    "v2_registered_subtitle_preview_back":  {
+                                               "message":  "Back to registered subtitles"
+                                           },
+    "v2_registered_subtitle_preview_search_label":  {
+                                                       "message":  "Search this registered subtitle"
+                                                   },
+    "v2_registered_subtitle_preview_loading":  {
+                                                  "message":  "Loading subtitle…"
+                                              },
+    "v2_registered_subtitle_preview_error":  {
+                                                "message":  "Could not load this subtitle. Try again."
+                                            },
+    "v2_registered_subtitle_preview_unavailable":  {
+                                                      "message":  "This registered subtitle is no longer available."
+                                                  },
+    "v2_registered_subtitle_preview_empty":  {
+                                                "message":  "This subtitle has no sentences to show."
+                                            },
     "v2_local_subtitles_add":  {
                                    "message":  "Add subtitle"
                                },

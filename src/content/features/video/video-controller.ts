@@ -2,12 +2,12 @@ import { DEFAULT_V2_SYNC_STORAGE } from '@storage/v2/default';
 import { createV2SyncStorage, V2SyncStorageChanges } from '@storage/v2/sync-storage';
 import type { V2SyncStorage } from '@storage/v2/type';
 import { t } from '@utils/i18n';
-import { sendMessage } from '@utils/message';
 import { create } from 'zustand';
 
 import { useToastStore } from '@/content/core/store/toast-store';
 import { videoManager } from '@/content/core/video/video-manager';
 import { buildLearningCard } from '@/content/features/learning-playback/learning-card-builder';
+import { saveLearningCard } from '@/content/features/learning-playback/learning-card-save-coordinator';
 import { LearningCueCommand, resolveLearningCueCommand } from '@/content/features/learning-playback/learning-playback';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { selectSubtitleTrack, useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
@@ -91,34 +91,33 @@ export class VideoController {
 
     if (command === 'save') {
       const support = selectSubtitleTrack(subtitleState, 'support');
-      const result = buildLearningCard({
-        learningCues: learning.cues,
-        learningDelaySeconds: learning.delay,
-        supportCues: support.cues,
-        supportDelaySeconds: support.delay,
-        currentTime: video.currentTime,
-        learningLanguage: subtitleState.learningProfile.learningLanguage,
-        supportLanguage: subtitleState.learningProfile.supportLanguage,
-        url: window.location.href,
+      const result = await saveLearningCard(() => {
+        const buildResult = buildLearningCard({
+          learningCues: learning.cues,
+          learningDelaySeconds: learning.delay,
+          supportCues: support.cues,
+          supportDelaySeconds: support.delay,
+          currentTime: video.currentTime,
+          learningLanguage: subtitleState.learningProfile.learningLanguage,
+          supportLanguage: subtitleState.learningProfile.supportLanguage,
+          url: window.location.href,
+        });
+        return buildResult.status === 'created' ? buildResult.card : undefined;
       });
-      if (result.status !== 'created') {
+      if (result.status === 'card-unavailable') {
         showFeedback(t('v2_no_current_learning_cue_to_save'));
         return;
       }
-      try {
-        const response = await sendMessage('addLearningCard', { card: result.card });
-        if (!response.success) {
-          showFeedback(t('v2_learning_card_save_error'));
-          return;
-        }
-        showFeedback(
-          'support' in result.card.content
-            ? t('v2_learning_card_saved')
-            : t('v2_learning_card_saved_without_support')
-        );
-      } catch {
+      if (result.status === 'error') {
         showFeedback(t('v2_learning_card_save_error'));
+        return;
       }
+      if (result.status === 'busy') return;
+      showFeedback(
+        'support' in result.card.content
+          ? t('v2_learning_card_saved')
+          : t('v2_learning_card_saved_without_support')
+      );
       return;
     }
 
