@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-07 — OpenSubtitles, 고밀도 현재 자막 전체 보기·학습 행 저장 표시와 등록 자막 읽기 전용 확인을 초기 2.0 필수 범위에 포함
+최종 개정 승인일: 2026-08-08 — 학습 재생 제어를 항상 제공하는 핵심 동작으로 고정하고, `shortcuts`를 키보드 바인딩 전용 설정으로 단순화
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -72,8 +72,7 @@ v2의 정상 코드가 사용하는 영속 데이터는 다음처럼 소유한�
 | `chrome.storage.local` | `subtitle-<uuid>` | 등록 자막 cue 본문 |
 | `chrome.storage.sync` | `learningProfile` | 학습 언어와 도움 언어 |
 | `chrome.storage.sync` | `subtitleDisplay` | 역할별 표시 방식과 자막 외형 |
-| `chrome.storage.sync` | `learningControls` | 이전/다음 학습 문장, 현재 문장 반복 등 핵심 재생 제어 |
-| `chrome.storage.sync` | `shortcuts` | 하나의 저장 동작과 승인된 핵심 제어의 단축키 |
+| `chrome.storage.sync` | `shortcuts` | 하나의 저장 동작과 이전/다음/반복의 키보드 바인딩 및 단일 master |
 | `chrome.storage.sync` | `playbackSpeed` | 재생 속도 제어 |
 
 학습 카드는 로컬 데이터다. 2.0은 계정, 장치 간 동기화 또는 복구를 약속하지 않는다. `chrome.storage.sync`에 카드를 넣거나 저장 용량을 쪼개 우회하지 않는다.
@@ -221,6 +220,8 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 - 하나의 저장 동작에 사용할 수 있는 기존 저장 단축키가 하나뿐이면 그 값을 후보로 이전한다. 두 값이 모두 있거나 충돌하면 임의로 선택하지 말고 첫 진입 확인 대상으로 둔다.
 - `videoSkip.skipTimeUnit`이 `subtitles`일 때 유효한 `backward`/`forward` 단축키는 이전/다음 학습 문장 후보로 이전한다. 문장 이동 수가 1이 아니거나 다른 v2 단축키와 충돌하면 첫 진입 확인 대상으로 두며 임의로 의미를 바꾸지 않는다.
 - `loop.loopCurrentSubtitle`의 유효한 단축키는 현재 학습 문장 반복 후보로 이전한다. `playCurrentSubtitleOnce`를 별도 명령으로 유지하지 않는다.
+- v2 `shortcuts.enabled`는 기존 `shortcuts.enabled`, 활성화된 자막 단위 `videoSkip`에서 보존할 이전/다음 후보가 있는 경우, 활성화된 `loopCurrentSubtitle`에서 보존할 반복 후보가 있는 경우를 OR해 결정한다. 충돌·모호성으로 첫 진입 확인이 필요한 후보도 기존 활성 의도를 잃지 않으며, 사용자가 거부한 후보는 빈 바인딩으로 남긴다.
+- 첫 진입은 모호하거나 충돌한 키 후보와 학습/도움 언어만 확인한다. 이전/다음/반복 동작 자체를 끄는 별도 상태를 만들거나 기록하지 않는다.
 - 복사 전용, primary/secondary 중복 저장·표시, 초/분 단위 스킵, `subVideoSkip`, 수동 A/B 시작·끝, 일반 loop toggle과 일회 재생 설정은 v2 데이터로 이전하지 않는다.
 - 유효한 `vite-ui-theme` 값은 유지한다.
 - 기존 `page-store`는 2.0 정보 구조와 맞지 않으므로 제거하고 v2 기본 진입점에서 시작한다.
@@ -239,7 +240,11 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 - 도움 자막 보이기/숨기기
 - 현재 학습 문장을 저장하는 하나의 명령과 하나의 사용자 단축키
 
-두 개의 저장 명령, 자막 복사 단축키, primary/secondary 토글이라는 이름은 남기지 않는다. 같은 키 충돌과 예약 키 검증은 계속 필요하다.
+이전·다음·반복은 항상 제공하는 핵심 재생 동작이며 사용자가 설정에서 개별적으로 숨기거나 비활성화하지 않는다. `shortcuts.enabled`는 저장·이전·다음·반복의 **키보드 바인딩만** 한꺼번에 켜고 끈다. master가 꺼져도 영상 위 재생 control과 직접 명령은 유지하고, master가 켜졌을 때 비어 있지 않은 바인딩만 동작한다. 재생 속도는 자체 master를 유지한다.
+
+설정에는 `Learning playback controls`나 개별 enabled checkbox를 두지 않는다. 저장·이전·다음·반복과 재생 속도의 raw `KeyboardEvent.code`는 저장·검증·runtime 비교에만 사용하고, 사용자에게는 같은 code를 일관된 읽기 쉬운 키 이름으로 변환해 표시한다. 같은 키 충돌과 예약 키 검증은 계속 필요하며 저장할 수 없는 입력에는 해당 필드와 연결된 이유를 즉시 표시한다.
+
+두 개의 저장 명령, 자막 복사 단축키, primary/secondary 토글이라는 이름은 남기지 않는다.
 
 #### Current subtitle overview
 
@@ -310,6 +315,7 @@ OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함�
 - 시간 단위·자막 단위 스킵을 중복 구성하는 `videoSkip`/`subVideoSkip` 모델
 - 사용자가 시작·끝을 정하는 수동 A/B 루프와 일반 루프 설정
 - primary/secondary별 저장·복사·표시 단축키
+- 이전/다음/반복을 개별적으로 숨기거나 막는 `learningControls` enabled 모델
 - `new | learning | mastered` 복습 상태와 이를 전제로 한 필터·문구·세션 override
 - 하이라이트, 추천, 대시보드, 퀴즈, 공유와 밝기 조절 같은 범용 확장 기능
 
@@ -394,6 +400,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 실제 v1.11 형식 fixture로 저장 카드의 수·순서·중복·텍스트·URL·시각·저장일이 보존된다.
 - 같은 fixture를 여러 번 변환해 같은 ID와 결과를 얻는다.
 - 학습/도움 자막의 유효한 외형 값이 각 역할에 정확히 보존된다.
+- v1.11의 저장, 자막 단위 이전/다음, 현재 문장 반복 단축키 후보와 활성 의도가 하나의 v2 `shortcuts` master와 바인딩으로 결정론적으로 이전되고, 첫 진입에서 거부한 후보는 빈 바인딩으로 남는다.
 - 유효한 등록 자막 metadata와 cue body가 byte-for-byte 또는 구조적으로 동등하게 보존된다.
 - 변환, 쓰기, 재읽기, 표식과 정리 각 단계의 실패를 주입해 원본 비삭제, 무표식, 재시도와 오류 UI를 증명한다.
 - 손상된 등록 자막 한 항목이 정상 카드와 다른 등록 자막의 이전을 막지 않고 격리된다.
@@ -405,11 +412,13 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 정상 UI/content/background가 `savedSubtitles`, `primarySubtitle`, `secondarySubtitle`, `videoSkip`, `subVideoSkip` 또는 구 `loop`를 읽거나 쓰지 않는다.
 - 미배포 backup v1과 `new | learning | mastered` 호환 분기가 없다.
 - 제거한 feature의 route, UI, controller/store, schema/default, message handler, locale, test와 Chrome permission이 남지 않는다.
+- 정상 v2 schema, default, storage API, Settings, First Entry, content controller와 runtime에 `learningControls` 키나 개별 enabled 분기가 남지 않는다.
 - migration 완료 뒤 정리 대상 v1 키가 사라지고, 정리가 중단돼도 다음 시작에서 안전하게 끝난다.
 
 ### 9.3 Product proof
 
 - 학습/도움 언어 확인 → 시청 → 한 번 저장 → Library 확인/수정 → 집중 Review → 영상 복귀의 전체 흐름이 작동한다.
+- 이전·다음·반복 control과 직접 명령은 Shortcuts master 상태와 관계없이 항상 제공되고, master는 저장·이전·다음·반복의 비어 있지 않은 키보드 바인딩만 제어한다. 저장된 raw code와 사용자 표시 label은 구분되며 예약·중복 키 오류는 충돌 대상을 포함해 접근 가능하게 설명된다.
 - 도움 자막이 한 cue 및 여러 연속 cue일 때 올바르게 pair되고, 낮은 신뢰도에서는 학습 문장만 저장된다.
 - `unassigned`는 Library에 남고 Review에서 제외되며 사용자가 정상 카드로 바꿀 수 있다.
 - `active`와 `completed`만으로 Review와 Library 동작이 일관된다.

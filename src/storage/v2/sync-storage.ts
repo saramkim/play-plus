@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import {
-  learningControlsSchema,
   learningProfileSchema,
   subtitleDisplaySchema,
   v2PlaybackSpeedSchema,
@@ -51,7 +50,6 @@ export interface V2SyncStorageApi {
 const V2_SYNC_STORAGE_KEYS = [
   'learningProfile',
   'subtitleDisplay',
-  'learningControls',
   'shortcuts',
   'playbackSpeed',
 ] as const satisfies readonly V2SyncStorageKey[];
@@ -59,7 +57,6 @@ const V2_SYNC_STORAGE_KEYS = [
 const V2_SYNC_STORAGE_SCHEMAS = {
   learningProfile: learningProfileSchema,
   subtitleDisplay: subtitleDisplaySchema,
-  learningControls: learningControlsSchema,
   shortcuts: v2ShortcutsSchema,
   playbackSpeed: v2PlaybackSpeedSchema,
 } satisfies { [K in V2SyncStorageKey]: z.ZodType<V2SyncStorage[K]> };

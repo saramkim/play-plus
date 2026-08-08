@@ -63,6 +63,7 @@ describe('v2 first entry', () => {
         theme: localStorage.getItem('vite-ui-theme'),
       });
     });
+    expect(container.querySelector('kbd')?.textContent).toBe('S');
     let submit = getButton(container, 'confirm_languages');
     expect(submit.disabled).toBe(true);
 
@@ -96,6 +97,30 @@ describe('v2 first entry', () => {
     expect((localValues.migrationState as ReturnType<typeof createMigrationState>).shortcutConfirmations).toEqual([]);
   });
 
+  it('shows a friendly candidate label while selecting and storing its raw code', async () => {
+    localValues = {
+      migrationState: createMigrationState('Numpad1'),
+    };
+    const onComplete = vi.fn();
+    await renderFirstEntry(root, container, onComplete);
+
+    expect(container.querySelector('kbd')?.textContent).toBe('Num 1');
+
+    await act(async () => {
+      container.querySelector<HTMLInputElement>("input[type='radio']")?.click();
+      await Promise.resolve();
+    });
+    const submit = getButton(container, 'confirm_languages');
+    await act(async () =>
+      submit.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    );
+
+    expect((syncValues.shortcuts as typeof DEFAULT_V2_SYNC_STORAGE.shortcuts).saveCard).toBe(
+      'Numpad1'
+    );
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
   it('keeps legacy state and the new marker absent when confirmation persistence fails', async () => {
     localStorage.setItem('isOnboardingComplete', 'true');
     localStorage.setItem('page-store', 'legacy-page');
@@ -124,13 +149,13 @@ describe('v2 first entry', () => {
   });
 });
 
-const createMigrationState = () => ({
+const createMigrationState = (shortcut = 'KeyS') => ({
   status: 'complete' as const,
   sourceVersion: '1.11.0' as const,
   shortcutConfirmations: [
     {
       field: 'saveCard' as const,
-      candidates: [{ source: 'savePrimary' as const, shortcut: 'KeyS' }],
+      candidates: [{ source: 'savePrimary' as const, shortcut }],
       reason: 'multiple-candidates' as const,
     },
   ],

@@ -69,21 +69,20 @@ describe('v2 learning settings store', () => {
     expect(useStore.getState()).toMatchObject({ learningProfile, subtitleDisplay });
   });
 
-  it('writes related control settings atomically after validating shortcut conflicts', async () => {
+  it('writes shortcut and playback-speed settings atomically after validating conflicts', async () => {
     const useStore = createLearningSettingsStore(storage);
     const settings = {
-      learningControls: structuredClone(DEFAULT_V2_SYNC_STORAGE.learningControls),
       playbackSpeed: structuredClone(DEFAULT_V2_SYNC_STORAGE.playbackSpeed),
       shortcuts: structuredClone(DEFAULT_V2_SYNC_STORAGE.shortcuts),
     };
 
-    await useStore.getState().setLearningControls(settings);
+    await useStore.getState().setShortcutSettings(settings);
 
     expect(storage.setMany).toHaveBeenCalledOnce();
     expect(storage.setMany).toHaveBeenCalledWith(settings);
 
     settings.shortcuts.saveCard = settings.shortcuts.previousCue;
-    await expect(useStore.getState().setLearningControls(settings)).rejects.toThrow();
+    await expect(useStore.getState().setShortcutSettings(settings)).rejects.toThrow();
     expect(storage.setMany).toHaveBeenCalledOnce();
   });
 });

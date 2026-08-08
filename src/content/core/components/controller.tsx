@@ -24,7 +24,6 @@ const BUTTON_SIZE = 40;
 
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const learningControls = useVideoControlStore((state) => state.learningControls);
   const playbackSpeed = useVideoControlStore((state) => state.playbackSpeed);
   const ready = useVideoControlStore((state) => state.ready);
   const supportLanguage = useSubtitleStore((state) => state.learningProfile.supportLanguage);
@@ -33,15 +32,9 @@ export function Controller({ className }: { className?: string }) {
   );
   const speed = usePlaybackSpeedStore.getState();
   const buttons = useMemo(() => [
-    ...(learningControls.previousCue.enabled
-      ? [{ title: t('v2_previous_learning_cue'), Icon: SkipBackIcon, onClick: () => void videoController.execute('previous') }]
-      : []),
-    ...(learningControls.nextCue.enabled
-      ? [{ title: t('v2_next_learning_cue'), Icon: SkipForwardIcon, onClick: () => void videoController.execute('next') }]
-      : []),
-    ...(learningControls.repeatCurrentCue.enabled
-      ? [{ title: t('v2_repeat_current_learning_cue'), Icon: Repeat1Icon, onClick: () => void videoController.execute('repeat-current') }]
-      : []),
+    { title: t('v2_previous_learning_cue'), Icon: SkipBackIcon, onClick: () => void videoController.execute('previous') },
+    { title: t('v2_next_learning_cue'), Icon: SkipForwardIcon, onClick: () => void videoController.execute('next') },
+    { title: t('v2_repeat_current_learning_cue'), Icon: Repeat1Icon, onClick: () => void videoController.execute('repeat-current') },
     { title: t('v2_save_learning_card'), Icon: BookmarkPlusIcon, onClick: () => void videoController.execute('save') },
     {
       title:
@@ -61,7 +54,7 @@ export function Controller({ className }: { className?: string }) {
           { title: t('reset_speed'), Icon: RotateCcwIcon, onClick: speed.resetSpeed },
         ]
       : []),
-  ], [learningControls, playbackSpeed.enabled, speed.decreaseSpeed, speed.increaseSpeed, speed.resetSpeed, supportLanguage, supportVisibility]);
+  ], [playbackSpeed.enabled, speed.decreaseSpeed, speed.increaseSpeed, speed.resetSpeed, supportLanguage, supportVisibility]);
 
   if (!ready) return null;
   return (

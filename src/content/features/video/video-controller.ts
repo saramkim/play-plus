@@ -12,7 +12,7 @@ import { LearningCueCommand, resolveLearningCueCommand } from '@/content/feature
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { selectSubtitleTrack, useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
-type VideoControlSettings = Pick<V2SyncStorage, 'learningControls' | 'playbackSpeed' | 'shortcuts'>;
+type VideoControlSettings = Pick<V2SyncStorage, 'playbackSpeed' | 'shortcuts'>;
 type UserLearningCommand = LearningCueCommand;
 
 interface VideoControlState extends VideoControlSettings {
@@ -22,7 +22,6 @@ interface VideoControlState extends VideoControlSettings {
 }
 
 const defaultSettings: VideoControlSettings = {
-  learningControls: structuredClone(DEFAULT_V2_SYNC_STORAGE.learningControls),
   playbackSpeed: structuredClone(DEFAULT_V2_SYNC_STORAGE.playbackSpeed),
   shortcuts: structuredClone(DEFAULT_V2_SYNC_STORAGE.shortcuts),
 };
@@ -84,8 +83,6 @@ export class VideoController {
       return;
     }
 
-    const settings = useVideoControlStore.getState();
-    if (!isCommandEnabled(command, settings.learningControls)) return;
     const subtitleState = useSubtitleStore.getState();
     const learning = selectSubtitleTrack(subtitleState, 'learning');
 
@@ -170,7 +167,6 @@ export class VideoController {
         }
         const current = useVideoControlStore.getState();
         this.applySettings({
-          learningControls: changes.learningControls?.newValue ?? current.learningControls,
           playbackSpeed: changes.playbackSpeed?.newValue ?? current.playbackSpeed,
           shortcuts: changes.shortcuts?.newValue ?? current.shortcuts,
         });
@@ -214,11 +210,9 @@ const createBindings = (settings: VideoControlSettings, execute: (command: UserL
   };
   if (settings.shortcuts.enabled) {
     bind(settings.shortcuts.saveCard, () => execute('save'));
-    if (settings.learningControls.previousCue.enabled) bind(settings.shortcuts.previousCue, () => execute('previous'));
-    if (settings.learningControls.nextCue.enabled) bind(settings.shortcuts.nextCue, () => execute('next'));
-    if (settings.learningControls.repeatCurrentCue.enabled) {
-      bind(settings.shortcuts.repeatCurrentCue, () => execute('repeat-current'));
-    }
+    bind(settings.shortcuts.previousCue, () => execute('previous'));
+    bind(settings.shortcuts.nextCue, () => execute('next'));
+    bind(settings.shortcuts.repeatCurrentCue, () => execute('repeat-current'));
   }
   if (settings.playbackSpeed.enabled) {
     bind(settings.playbackSpeed.increase, () => usePlaybackSpeedStore.getState().increaseSpeed());
@@ -228,18 +222,7 @@ const createBindings = (settings: VideoControlSettings, execute: (command: UserL
   return bindings;
 };
 
-const isCommandEnabled = (
-  command: UserLearningCommand,
-  controls: V2SyncStorage['learningControls']
-) => {
-  if (command === 'previous') return controls.previousCue.enabled;
-  if (command === 'next') return controls.nextCue.enabled;
-  if (command === 'repeat-current') return controls.repeatCurrentCue.enabled;
-  return true;
-};
-
 const hasRemovedControlValue = (changes: V2SyncStorageChanges) =>
-  (changes.learningControls !== undefined && changes.learningControls.newValue === undefined) ||
   (changes.shortcuts !== undefined && changes.shortcuts.newValue === undefined) ||
   (changes.playbackSpeed !== undefined && changes.playbackSpeed.newValue === undefined);
 

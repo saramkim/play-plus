@@ -17,7 +17,10 @@ describe('v2 sync storage', () => {
   });
 
   it('returns clones of strict canonical values', async () => {
-    const storage = new FakeSyncStorage({ ...DEFAULT_V2_SYNC_STORAGE });
+    const storage = new FakeSyncStorage({
+      ...DEFAULT_V2_SYNC_STORAGE,
+      learningControls: { previousCue: { enabled: false } },
+    });
     const api = createV2SyncStorage(storage);
 
     const learningProfile = await api.get('learningProfile');
@@ -27,6 +30,7 @@ describe('v2 sync storage', () => {
 
     expect(storage.values.learningProfile).toEqual(DEFAULT_V2_SYNC_STORAGE.learningProfile);
     expect(storage.values.subtitleDisplay).toEqual(DEFAULT_V2_SYNC_STORAGE.subtitleDisplay);
+    expect(all).not.toHaveProperty('learningControls');
   });
 
   it('fails closed when a persisted canonical value is invalid', async () => {
@@ -67,14 +71,12 @@ describe('v2 sync storage', () => {
     const api = createV2SyncStorage(storage);
 
     await api.setMany({
-      learningControls: DEFAULT_V2_SYNC_STORAGE.learningControls,
       shortcuts: DEFAULT_V2_SYNC_STORAGE.shortcuts,
       playbackSpeed: DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
     });
 
     expect(storage.setCalls).toEqual([
       {
-        learningControls: DEFAULT_V2_SYNC_STORAGE.learningControls,
         shortcuts: DEFAULT_V2_SYNC_STORAGE.shortcuts,
         playbackSpeed: DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
       },

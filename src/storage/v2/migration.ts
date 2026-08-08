@@ -162,7 +162,7 @@ const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
     speedReset: legacy.playbackSpeed.reset,
   };
   const candidates = new Map<ShortcutField, ShortcutCandidate[]>();
-  const confirmations: V2ShortcutConfirmation[] = [];
+  const confirmations = new Map<ShortcutField, V2ShortcutConfirmation>();
   const setCandidate = (field: ShortcutField, candidate: ShortcutCandidate) => {
     candidates.set(field, [candidate]);
     assignments[field] = candidate.shortcut;
@@ -173,8 +173,9 @@ const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
     reason: V2ShortcutConfirmation['reason'],
     conflictingFields?: ShortcutField[]
   ) => {
+    candidates.set(field, fieldCandidates);
     assignments[field] = '';
-    confirmations.push({
+    confirmations.set(field, {
       field,
       candidates: fieldCandidates,
       reason,
@@ -223,25 +224,40 @@ const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
     candidates.set('speedReset', [{ source: 'playbackSpeed.reset', shortcut: legacy.playbackSpeed.reset }]);
   }
 
-  const groups = new Map<string, ShortcutField[]>();
+  const groups = new Map<string, Set<ShortcutField>>();
   for (const field of SHORTCUT_FIELDS) {
-    const shortcut = assignments[field];
-    if (!shortcut) continue;
-    groups.set(shortcut, [...(groups.get(shortcut) ?? []), field]);
-  }
-  for (const fields of groups.values()) {
-    if (fields.length < 2) continue;
-    for (const field of fields) {
-      requireConfirmation(
-        field,
-        candidates.get(field) ?? [],
-        'conflict',
-        fields.filter((candidate) => candidate !== field)
-      );
+    for (const { shortcut } of candidates.get(field) ?? []) {
+      if (!shortcut) continue;
+      const fields = groups.get(shortcut) ?? new Set<ShortcutField>();
+      fields.add(field);
+      groups.set(shortcut, fields);
     }
   }
+  const conflicts = new Map<ShortcutField, Set<ShortcutField>>();
+  for (const fields of groups.values()) {
+    if (fields.size < 2) continue;
+    for (const field of fields) {
+      const conflictingFields = conflicts.get(field) ?? new Set<ShortcutField>();
+      for (const candidate of fields) {
+        if (candidate !== field) conflictingFields.add(candidate);
+      }
+      conflicts.set(field, conflictingFields);
+    }
+  }
+  for (const field of SHORTCUT_FIELDS) {
+    const conflictingFields = conflicts.get(field);
+    if (!conflictingFields) continue;
+    requireConfirmation(
+      field,
+      candidates.get(field) ?? [],
+      'conflict',
+      SHORTCUT_FIELDS.filter((candidate) => conflictingFields.has(candidate))
+    );
+  }
 
-  const hasConfirmation = (field: ShortcutField) => confirmations.some((item) => item.field === field);
+  const retainsCueCandidate =
+    (candidates.get('previousCue')?.length ?? 0) > 0 || (candidates.get('nextCue')?.length ?? 0) > 0;
+  const retainsRepeatCandidate = (candidates.get('repeatCurrentCue')?.length ?? 0) > 0;
   return {
     sync: {
       learningProfile: {
@@ -258,19 +274,13 @@ const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
           appearance: pickAppearance(legacy.secondarySubtitle),
         },
       },
-      learningControls: {
-        previousCue: {
-          enabled: legacy.videoSkip.enabled && cueSemanticsAreExact && !hasConfirmation('previousCue'),
-        },
-        nextCue: {
-          enabled: legacy.videoSkip.enabled && cueSemanticsAreExact && !hasConfirmation('nextCue'),
-        },
-        repeatCurrentCue: {
-          enabled: legacy.loop.enabled && Boolean(assignments.repeatCurrentCue),
-        },
-      },
       shortcuts: {
-        enabled: legacy.shortcuts.enabled,
+        enabled:
+          legacy.shortcuts.enabled ||
+          (legacy.videoSkip.enabled &&
+            legacy.videoSkip.skipTimeUnit === 'subtitles' &&
+            retainsCueCandidate) ||
+          (legacy.loop.enabled && retainsRepeatCandidate),
         saveCard: assignments.saveCard,
         previousCue: assignments.previousCue,
         nextCue: assignments.nextCue,
@@ -283,7 +293,10 @@ const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
         reset: assignments.speedReset,
       },
     },
-    confirmations,
+    confirmations: SHORTCUT_FIELDS.flatMap((field) => {
+      const confirmation = confirmations.get(field);
+      return confirmation ? [confirmation] : [];
+    }),
   };
 };
 

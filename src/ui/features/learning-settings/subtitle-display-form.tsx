@@ -1,10 +1,10 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { subtitleDisplaySchema } from '@storage/v2/schema';
 import { V2SyncStorage } from '@storage/v2/type';
 import { t } from '@utils/i18n';
-import { WrapTextIcon } from 'lucide-react';
+import { LoaderCircleIcon, WrapTextIcon } from 'lucide-react';
 import { FieldPath, useForm, UseFormReturn } from 'react-hook-form';
 
 import { Button } from '@/ui/components/button';
@@ -29,33 +29,116 @@ type SubtitleDisplay = V2SyncStorage['subtitleDisplay'];
 type SubtitleRole = keyof SubtitleDisplay;
 
 interface SubtitleDisplayFormProps {
+  className?: string;
   learningProfile: V2SyncStorage['learningProfile'];
-  onSubmit: (value: SubtitleDisplay) => void | Promise<void>;
+  onSubmit: (value: SubtitleDisplay, event?: React.BaseSyntheticEvent) => void | Promise<void>;
   value: SubtitleDisplay;
 }
 
-export function SubtitleDisplayForm({ learningProfile, onSubmit, value }: SubtitleDisplayFormProps) {
+export function SubtitleDisplayForm({ className, learningProfile, onSubmit, value }: SubtitleDisplayFormProps) {
+  const [baseline, setBaseline] = useState(value);
+  const [submitError, setSubmitError] = useState(false);
+  const currentExternalValueRef = useRef(value);
+  const lastExternalValueRef = useRef(value);
+  const submittedValueRef = useRef<SubtitleDisplay | null>(null);
+  const titleId = useId();
   const form = useForm<SubtitleDisplay>({
     defaultValues: value,
     mode: 'onChange',
     resolver: zodResolver(subtitleDisplaySchema),
   });
+  currentExternalValueRef.current = value;
 
-  useEffect(() => form.reset(value), [form, value]);
+  useEffect(() => {
+    if (subtitleDisplaysEqual(lastExternalValueRef.current, value)) return;
+    lastExternalValueRef.current = value;
+    const submittedValue = submittedValueRef.current;
+    const preserveCurrentDraft = submittedValue !== null && subtitleDisplaysEqual(submittedValue, value);
+    if (preserveCurrentDraft) {
+      resetSubtitleDisplayBaseline(form, value);
+    } else {
+      form.reset(value);
+    }
+    setBaseline(value);
+    submittedValueRef.current = null;
+    setSubmitError(false);
+  }, [form, value]);
+
+  useEffect(() => {
+    void form.trigger();
+  }, [form]);
+
+  const draft = form.watch();
+  const isDirty = !subtitleDisplaysEqual(draft, baseline);
+
+  const handleSubmit = async (nextValue: SubtitleDisplay, event?: React.BaseSyntheticEvent) => {
+    if (!isDirty) return;
+
+    const externalValueAtSubmit = currentExternalValueRef.current;
+    const submittedValue = structuredClone(nextValue);
+    setSubmitError(false);
+    submittedValueRef.current = submittedValue;
+    try {
+      await onSubmit(submittedValue, event);
+      const currentExternalValue = currentExternalValueRef.current;
+      const supersededByExternalValue =
+        !subtitleDisplaysEqual(currentExternalValue, externalValueAtSubmit) &&
+        !subtitleDisplaysEqual(currentExternalValue, submittedValue);
+      if (supersededByExternalValue) return;
+
+      setBaseline(submittedValue);
+      resetSubtitleDisplayBaseline(form, submittedValue);
+    } catch {
+      const currentExternalValue = currentExternalValueRef.current;
+      const supersededByExternalValue =
+        !subtitleDisplaysEqual(currentExternalValue, externalValueAtSubmit) &&
+        !subtitleDisplaysEqual(currentExternalValue, submittedValue);
+      if (supersededByExternalValue) return;
+
+      submittedValueRef.current = null;
+      setSubmitError(true);
+    }
+  };
+
+  const isSubmitting = form.formState.isSubmitting;
+  const isValid = form.formState.isValid;
 
   return (
-    <Form form={form} onSubmit={onSubmit}>
+    <Form
+      aria-busy={isSubmitting || undefined}
+      aria-labelledby={titleId}
+      className={className}
+      form={form}
+      onSubmit={handleSubmit}
+    >
       <FormHeader>
-        <FormTitle>{t('subtitle_display')}</FormTitle>
+        <FormTitle id={titleId}>{t('subtitle_display')}</FormTitle>
       </FormHeader>
       <RoleDisplayFields form={form} role='learning' />
       <RoleDisplayFields form={form} role='support' disabled={learningProfile.supportLanguage === null} />
-      <Button type='submit' disabled={!form.formState.isValid || form.formState.isSubmitting}>
-        {t('save')}
+      {submitError && <p role='alert' className='text-wrap text-sm text-destructive'>{t('error_try_later')}</p>}
+      <Button
+        aria-busy={isSubmitting || undefined}
+        className='min-w-24 self-end'
+        disabled={!isDirty || !isValid || isSubmitting}
+        size='sm'
+        type='submit'
+        variant={isSubmitting || (isDirty && isValid) ? 'default' : 'outline'}
+      >
+        {isSubmitting && <LoaderCircleIcon className='animate-spin' />}
+        {isSubmitting ? t('saving') : t('save')}
       </Button>
     </Form>
   );
 }
+
+const subtitleDisplaysEqual = (left: SubtitleDisplay, right: SubtitleDisplay) =>
+  JSON.stringify(left) === JSON.stringify(right);
+
+const resetSubtitleDisplayBaseline = (form: UseFormReturn<SubtitleDisplay>, baseline: SubtitleDisplay) => {
+  form.reset(baseline, { keepValues: true });
+  void form.trigger();
+};
 
 interface RoleDisplayFieldsProps {
   disabled?: boolean;

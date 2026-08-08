@@ -6,6 +6,8 @@ import {
   V2FirstEntryConfirmation,
   V2FirstEntryStorageArea,
 } from './first-entry-storage';
+import { createV1_11Fixture } from './fixtures/v1-11';
+import { createV1_11MigrationPlan } from './migration';
 import type { V2MigrationState, V2ShortcutConfirmation, V2SyncStorage } from './type';
 
 describe('v2 first-entry storage', () => {
@@ -14,7 +16,7 @@ describe('v2 first-entry storage', () => {
     expectTypeOf(chrome.storage.local).toMatchTypeOf<V2FirstEntryStorageArea>();
   });
 
-  it('writes explicit choices together, verifies them, and clears only confirmations', async () => {
+  it('writes explicit choices without per-action state, verifies them, and clears only confirmations', async () => {
     const confirmations = createAllConfirmations();
     const syncData = createSyncData();
     syncData.shortcuts.enabled = true;
@@ -43,11 +45,6 @@ describe('v2 first-entry storage', () => {
     expect(sync.setCalls).toEqual([
       {
         learningProfile,
-        learningControls: {
-          previousCue: { enabled: true },
-          nextCue: { enabled: false },
-          repeatCurrentCue: { enabled: true },
-        },
         shortcuts: {
           enabled: true,
           saveCard: 'KeyS',
@@ -63,6 +60,7 @@ describe('v2 first-entry storage', () => {
         },
       },
     ]);
+    expect(sync.setCalls[0]).not.toHaveProperty('learningControls');
     expect(local.setCalls).toEqual([
       {
         migrationState: {
@@ -115,6 +113,29 @@ describe('v2 first-entry storage', () => {
     ).rejects.toThrow();
     expect(sync.setCalls).toEqual([]);
     expect(local.setCalls).toEqual([]);
+  });
+
+  it('resolves a planned candidate-to-assigned conflict when one candidate is rejected', async () => {
+    const fixture = createV1_11Fixture();
+    fixture.sync.videoSkip.skipTime = 2;
+    fixture.sync.videoSkip.backward = 'KeyS';
+    fixture.sync.videoSkip.forward = '';
+    const plan = await createV1_11MigrationPlan(fixture);
+    const sync = new FakeStorageArea(plan.sync);
+    const local = new FakeStorageArea({ migrationState: plan.local.migrationState });
+    const storage = createV2FirstEntryStorage({ local, sync });
+
+    await storage.confirm({
+      learningProfile: plan.sync.learningProfile,
+      shortcutChoices: { saveCard: 'KeyS', previousCue: null },
+    });
+
+    expect(sync.values.shortcuts).toMatchObject({
+      enabled: true,
+      saveCard: 'KeyS',
+      previousCue: '',
+    });
+    expect(local.values.migrationState).toMatchObject({ shortcutConfirmations: [] });
   });
 
   it('fails closed when the current canonical snapshot is incomplete', async () => {

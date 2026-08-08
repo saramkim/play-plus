@@ -26,7 +26,6 @@ const V2_LOCAL_DATA_KEYS = ['learningCards', 'registeredSubtitles', 'migrationSt
 const V2_SYNC_STORAGE_KEYS = [
   'learningProfile',
   'subtitleDisplay',
-  'learningControls',
   'shortcuts',
   'playbackSpeed',
 ] as const;

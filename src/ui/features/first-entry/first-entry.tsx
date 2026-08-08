@@ -4,6 +4,7 @@ import { createV2FirstEntryStorage, V2FirstEntryShortcutChoices } from '@storage
 import { learningProfileSchema, migrationStateSchema } from '@storage/v2/schema';
 import type { V2MigrationState, V2SyncStorage } from '@storage/v2/type';
 import { t } from '@utils/i18n';
+import { formatShortcutCode } from '@utils/shortcut-code';
 
 import { Button } from '@/ui/components/button';
 import { LearningProfileConfirmation } from '@/ui/features/learning-settings/learning-profile-confirmation';
@@ -28,6 +29,7 @@ export function FirstEntry({ onComplete }: FirstEntryProps) {
   const [data, setData] = useState<FirstEntryData | null>(null);
   const [choices, setChoices] = useState<V2FirstEntryShortcutChoices>({});
   const [error, setError] = useState(false);
+  const shortcutDisplayLocale = chrome.i18n.getUILanguage?.() ?? 'en';
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +105,9 @@ export function FirstEntry({ onComplete }: FirstEntryProps) {
                       checked={choices[confirmation.field] === candidate.shortcut}
                       onChange={() => setChoices((current) => ({ ...current, [confirmation.field]: candidate.shortcut }))}
                     />
-                    <kbd className='rounded border px-1.5 py-0.5'>{candidate.shortcut}</kbd>
+                    <kbd className='rounded border px-1.5 py-0.5'>
+                      {formatShortcutCode(candidate.shortcut, shortcutDisplayLocale)}
+                    </kbd>
                   </label>
                 ))}
                 <label className='flex items-center gap-2 text-sm'>

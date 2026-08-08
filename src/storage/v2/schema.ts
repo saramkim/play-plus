@@ -2,7 +2,19 @@ import { z } from 'zod';
 
 import { LANGUAGES, Language } from '@utils/constants';
 
-const RESERVED_SHORTCUTS = ['ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape', 'KeyF', 'KeyM'];
+export const V2_RESERVED_SHORTCUTS = [
+  'ArrowUp',
+  'ArrowDown',
+  'Enter',
+  'Space',
+  'Escape',
+  'KeyF',
+  'KeyM',
+] as const;
+
+const reservedShortcutSet = new Set<string>(V2_RESERVED_SHORTCUTS);
+
+export const isReservedV2Shortcut = (shortcut: string) => reservedShortcutSet.has(shortcut);
 
 export const languageSchema = z.custom<Language>(
   (value) => typeof value === 'string' && Object.prototype.hasOwnProperty.call(LANGUAGES, value)
@@ -10,7 +22,7 @@ export const languageSchema = z.custom<Language>(
 
 export const v2ShortcutSchema = z
   .string()
-  .refine((shortcut) => !RESERVED_SHORTCUTS.includes(shortcut), { message: 'Reserved shortcut' });
+  .refine((shortcut) => !isReservedV2Shortcut(shortcut), { message: 'Reserved shortcut' });
 
 export const subtitleAppearanceSchema = z
   .object({
@@ -42,16 +54,6 @@ export const subtitleDisplaySchema = z
   .object({
     learning: subtitleRoleDisplaySchema,
     support: subtitleRoleDisplaySchema,
-  })
-  .strict();
-
-const learningControlSchema = z.object({ enabled: z.boolean() }).strict();
-
-export const learningControlsSchema = z
-  .object({
-    previousCue: learningControlSchema,
-    nextCue: learningControlSchema,
-    repeatCurrentCue: learningControlSchema,
   })
   .strict();
 
@@ -219,7 +221,6 @@ export const v2SyncStorageSchema = z
   .object({
     learningProfile: learningProfileSchema,
     subtitleDisplay: subtitleDisplaySchema,
-    learningControls: learningControlsSchema,
     shortcuts: v2ShortcutsSchema,
     playbackSpeed: v2PlaybackSpeedSchema,
   })

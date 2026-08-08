@@ -80,7 +80,9 @@ describe('canonical video controller lifecycle', () => {
     const shortcuts = {
       ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
       enabled: true,
+      previousCue: 'KeyP',
       nextCue: 'KeyN',
+      repeatCurrentCue: 'KeyT',
     };
     const playbackSpeed = {
       enabled: true,
@@ -90,8 +92,14 @@ describe('canonical video controller lifecycle', () => {
     };
     storage.emit({ shortcuts: { newValue: shortcuts }, playbackSpeed: { newValue: playbackSpeed } });
 
+    dispatchKey('KeyP');
     dispatchKey('KeyN');
-    expect(execute).toHaveBeenCalledWith('next');
+    dispatchKey('KeyT');
+    expect(execute.mock.calls.map(([command]) => command)).toEqual([
+      'previous',
+      'next',
+      'repeat-current',
+    ]);
     dispatchKey('KeyU');
     expect(usePlaybackSpeedStore.getState().currentSpeed).toBe(1.1);
     dispatchKey('KeyD');
@@ -103,6 +111,28 @@ describe('canonical video controller lifecycle', () => {
     execute.mockClear();
     dispatchKey('KeyN');
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('does not bind learning commands while the shortcuts master is off', async () => {
+    const storage = new FakeSyncStorage({
+      shortcuts: {
+        ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
+        enabled: false,
+        previousCue: 'KeyP',
+        nextCue: 'KeyN',
+        repeatCurrentCue: 'KeyT',
+      },
+    });
+    const controller = new VideoController(createDependencies(storage));
+    const execute = vi.spyOn(controller, 'execute').mockResolvedValue();
+    await controller.start();
+
+    dispatchKey('KeyP');
+    dispatchKey('KeyN');
+    dispatchKey('KeyT');
+
+    expect(execute).not.toHaveBeenCalled();
+    controller.stop();
   });
 
   it('fails closed without attaching when initial canonical settings are unavailable', async () => {
@@ -134,12 +164,7 @@ describe('canonical learning commands', () => {
   beforeEach(resetStores);
 
   it('does not seek when previous has no target or repeat has no current cue', async () => {
-    const storage = new FakeSyncStorage({
-      learningControls: {
-        ...DEFAULT_V2_SYNC_STORAGE.learningControls,
-        repeatCurrentCue: { enabled: true },
-      },
-    });
+    const storage = new FakeSyncStorage();
     const controller = new VideoController(createDependencies(storage));
     await controller.start();
     const observedVideo = createObservedVideo(0);
@@ -156,11 +181,11 @@ describe('canonical learning commands', () => {
     controller.stop();
   });
 
-  it('seeks previous, next, and repeat to their exact delay-adjusted starts', async () => {
+  it('executes previous, next, and repeat directly while the shortcuts master is off', async () => {
     const storage = new FakeSyncStorage({
-      learningControls: {
-        ...DEFAULT_V2_SYNC_STORAGE.learningControls,
-        repeatCurrentCue: { enabled: true },
+      shortcuts: {
+        ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
+        enabled: false,
       },
     });
     const controller = new VideoController(createDependencies(storage));

@@ -948,6 +948,37 @@
     "v2_no_learning_cue_in_direction":  {
                                             "message":  "해당 방향에 학습 자막이 없습니다."
                                         },
+    "saving":  {
+                   "message":  "저장 중…"
+               },
+    "v2_shortcut_capture_hint":  {
+                                          "message":  "지정할 키를 누르세요. Backspace 또는 Delete를 누르면 지워집니다."
+                                      },
+    "v2_shortcut_capture_label":  {
+                                           "message":  "$1 단축키: $2",
+                                           "placeholders":  {
+                                                                 "action":  {
+                                                                                "content":  "$1"
+                                                                            },
+                                                                 "value":  {
+                                                                               "content":  "$2"
+                                                                           }
+                                                             }
+                                       },
+    "v2_shortcut_unassigned":  {
+                                         "message":  "지정 안 됨"
+                                     },
+    "v2_shortcut_reserved_error":  {
+                                         "message":  "이 키는 사용할 수 없습니다."
+                                     },
+    "v2_shortcut_conflict_error":  {
+                                         "message":  "$1에서 이미 사용 중입니다.",
+                                         "placeholders":  {
+                                                               "action":  {
+                                                                              "content":  "$1"
+                                                                          }
+                                                           }
+                                     },
     "v2_content_action_failed":  {
                                      "message":  "콘텐츠 동작을 완료하지 못했습니다."
                                  }
