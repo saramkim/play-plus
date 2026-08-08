@@ -305,6 +305,12 @@ describe('v2 learning settings components', () => {
 
     const learning = getRoleFieldset(container, 'learning');
     const support = getRoleFieldset(container, 'support');
+    expect(learning.parentElement?.classList.contains('divide-y')).toBe(true);
+    for (const role of [learning, support]) {
+      expect(role.classList.contains('py-3')).toBe(true);
+      expect(role.classList.contains('border')).toBe(false);
+      expect(role.classList.contains('rounded-lg')).toBe(false);
+    }
     expect(learning.disabled).toBe(false);
     expect(support.disabled).toBe(true);
     expect(support.getAttribute('aria-disabled')).toBe('true');
@@ -326,6 +332,21 @@ describe('v2 learning settings components', () => {
     ).toBe(true);
     expect(container.textContent).not.toContain('primary');
     expect(container.textContent).not.toContain('secondary');
+
+    const learningDisclosure = learning.querySelector<HTMLButtonElement>('button[aria-expanded]');
+    const learningContent = learning.querySelector<HTMLElement>('[role=region]');
+    expect(learningDisclosure?.getAttribute('aria-expanded')).toBe('false');
+    expect(learningDisclosure?.getAttribute('aria-controls')).toBe(learningContent?.id);
+    expect(learningContent?.hidden).toBe(true);
+    act(() => learningDisclosure?.click());
+    expect(learningDisclosure?.getAttribute('aria-expanded')).toBe('true');
+    expect(learningContent?.hidden).toBe(false);
+    expect(learningContent?.classList.contains('mt-2')).toBe(true);
+    expect(learningContent?.classList.contains('flex')).toBe(true);
+    expect(learningContent?.classList.contains('flex-col')).toBe(true);
+    expect(learningContent?.classList.contains('gap-2')).toBe(true);
+    expect(learningContent?.classList.contains('divide-y')).toBe(false);
+    expect(learningContent?.querySelector('.divide-y')).toBeNull();
 
     expect(getSubmitButton(container).disabled).toBe(true);
     const learningVisibility = learning.querySelector<HTMLButtonElement>("button[role='switch']");

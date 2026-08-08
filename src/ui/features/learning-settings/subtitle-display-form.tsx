@@ -114,8 +114,10 @@ export function SubtitleDisplayForm({ className, learningProfile, onSubmit, valu
       <FormHeader>
         <FormTitle id={titleId}>{t('subtitle_display')}</FormTitle>
       </FormHeader>
-      <RoleDisplayFields form={form} role='learning' />
-      <RoleDisplayFields form={form} role='support' disabled={learningProfile.supportLanguage === null} />
+      <div className='divide-y'>
+        <RoleDisplayFields form={form} role='learning' />
+        <RoleDisplayFields form={form} role='support' disabled={learningProfile.supportLanguage === null} />
+      </div>
       {submitError && <p role='alert' className='text-wrap text-sm text-destructive'>{t('error_try_later')}</p>}
       <Button
         aria-busy={isSubmitting || undefined}
@@ -158,7 +160,7 @@ function RoleDisplayFields({ disabled = false, form, role }: RoleDisplayFieldsPr
   return (
     <fieldset
       aria-disabled={disabled || undefined}
-      className='flex flex-col gap-1 rounded-lg border p-3 disabled:opacity-50'
+      className='flex flex-col gap-1 py-3 disabled:opacity-50'
       data-subtitle-role={role}
       disabled={disabled}
     >
@@ -182,7 +184,13 @@ function RoleDisplayFields({ disabled = false, form, role }: RoleDisplayFieldsPr
           )}
         />
       </FormHeader>
-      <FormContent id={contentId} aria-label={title} disabled={disabled} expanded={expanded}>
+      <FormContent
+        id={contentId}
+        aria-label={title}
+        className='mt-2 flex flex-col gap-2'
+        disabled={disabled}
+        expanded={expanded}
+      >
         <FormField
           control={form.control}
           name={appearanceName('positionReference')}
