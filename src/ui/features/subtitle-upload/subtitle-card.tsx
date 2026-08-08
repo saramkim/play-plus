@@ -86,7 +86,7 @@ export function SubtitleCard({
       aria-labelledby={titleId}
       aria-busy={isCardPending || undefined}
       className={cn(
-        'min-w-0 shrink-0 rounded-xl border bg-background shadow-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50',
+        'min-w-0 shrink-0 rounded-xl border bg-background outline-none transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50',
         (isLearning || isSupport) && 'border-primary/40 bg-primary/5'
       )}
     >
@@ -154,8 +154,21 @@ export function SubtitleCard({
               showAddedDate
             />
 
+            <Button
+              ref={previewButtonRef}
+              variant='outline'
+              size='sm'
+              className='min-h-9 w-full'
+              data-subtitle-preview-id={data.id}
+              disabled={isCardPending || previewDisabled}
+              onClick={() => onPreview(data.id)}
+            >
+              <EyeIcon />
+              {t('v2_local_subtitles_preview')}
+            </Button>
+
             <fieldset className='min-w-0'>
-              <legend className='mb-1.5 text-[12px] font-medium text-gray-600'>
+              <legend className='sr-only'>
                 {t('v2_local_subtitles_current_tab_use')}
               </legend>
               <div className='grid gap-2 min-[360px]:grid-cols-2'>
@@ -176,12 +189,12 @@ export function SubtitleCard({
               </div>
             </fieldset>
 
-            <div className='grid grid-cols-2 gap-2'>
+            <div className='flex items-center gap-1'>
               <Button
                 ref={syncButtonRef}
-                variant='outline'
+                variant='ghost'
                 size='sm'
-                className='min-h-9'
+                className='min-h-9 min-w-0 px-2 text-xs'
                 disabled={isCardPending}
                 onClick={() => openMode('sync')}
               >
@@ -190,10 +203,10 @@ export function SubtitleCard({
               </Button>
               <Button
                 ref={editButtonRef}
-                variant='outline'
+                variant='ghost'
                 size='sm'
                 aria-label={t('v2_local_subtitles_edit_details')}
-                className='min-h-9'
+                className='min-h-9 min-w-0 px-2 text-xs'
                 disabled={isCardPending}
                 onClick={() => openMode('edit')}
               >
@@ -201,21 +214,9 @@ export function SubtitleCard({
                 {t('v2_local_subtitles_edit')}
               </Button>
               <Button
-                ref={previewButtonRef}
-                variant='outline'
+                variant='ghost'
                 size='sm'
-                className='min-h-9'
-                data-subtitle-preview-id={data.id}
-                disabled={isCardPending || previewDisabled}
-                onClick={() => onPreview(data.id)}
-              >
-                <EyeIcon />
-                {t('v2_local_subtitles_preview')}
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                className='min-h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                className='ml-auto min-h-9 min-w-0 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive'
                 disabled={isCardPending}
                 onClick={() => onDelete(data.id)}
               >
@@ -251,29 +252,33 @@ function SubtitleIdentityHeader({
 }: SubtitleIdentityHeaderProps) {
   return (
     <header className='min-w-0'>
-      <div className='flex flex-wrap items-center gap-1.5'>
-        <span className='rounded-full bg-gray-100 px-2 py-0.5 text-[12px] text-gray-600'>
-          {t(LANGUAGES[data.language])}
-        </span>
-        {showRoleBadges && isLearning && <RoleBadge>{t('learning_subtitle')}</RoleBadge>}
-        {showRoleBadges && isSupport && <RoleBadge>{t('support_subtitle')}</RoleBadge>}
-      </div>
       <h3
         id={titleId}
-        className='mt-1.5 line-clamp-2 min-w-0 text-wrap text-[15px] font-semibold [overflow-wrap:anywhere]'
+        className='line-clamp-2 min-w-0 text-wrap text-[15px] font-semibold leading-5 [overflow-wrap:anywhere]'
       >
         {data.title}
       </h3>
-      <p className='mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-500'>
-        <span>{t('v2_local_subtitles_sync_value', formatDelay(data.delay))}</span>
-        {showAddedDate && <span>{t('v2_local_subtitles_added_date', formatSavedAt(data.savedAt))}</span>}
-      </p>
+      <div className='mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-gray-500'>
+        <span className='whitespace-nowrap'>{t(LANGUAGES[data.language])}</span>
+        {showRoleBadges && isLearning && <RoleBadge>{t('learning_subtitle')}</RoleBadge>}
+        {showRoleBadges && isSupport && <RoleBadge>{t('support_subtitle')}</RoleBadge>}
+        <span className='whitespace-nowrap'>
+          <span aria-hidden='true'>· </span>
+          {t('v2_local_subtitles_sync_value', formatDelay(data.delay))}
+        </span>
+        {showAddedDate && (
+          <span className='whitespace-nowrap'>
+            <span aria-hidden='true'>· </span>
+            {t('v2_local_subtitles_added_date', formatSavedAt(data.savedAt))}
+          </span>
+        )}
+      </div>
     </header>
   );
 }
 
 function RoleBadge({ children }: { children: React.ReactNode }) {
-  return <span className='rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary'>{children}</span>;
+  return <span className='rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary'>{children}</span>;
 }
 
 interface RoleButtonProps {
@@ -286,6 +291,11 @@ interface RoleButtonProps {
 
 function RoleButton({ role, selected, available, pending, onClick }: RoleButtonProps) {
   const roleTitle = t(role === 'learning' ? 'learning_subtitle' : 'support_subtitle');
+  const accessibleName = pending
+    ? `${roleTitle}: ${t('v2_local_subtitles_applying')}`
+    : selected
+      ? `${roleTitle}: ${t('v2_local_subtitles_default_short')}`
+      : roleTitle;
 
   return (
     <Button
@@ -293,7 +303,7 @@ function RoleButton({ role, selected, available, pending, onClick }: RoleButtonP
       variant={selected ? 'secondary' : 'outline'}
       className='min-h-11 h-auto min-w-0 whitespace-normal px-2 py-2 text-left'
       aria-pressed={selected}
-      aria-label={selected ? `${roleTitle}: ${t('v2_local_subtitles_default_short')}` : roleTitle}
+      aria-label={accessibleName}
       disabled={pending || !available}
       onClick={onClick}
     >
