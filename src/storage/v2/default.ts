@@ -31,11 +31,6 @@ export const DEFAULT_V2_SYNC_STORAGE: V2SyncStorage = {
       },
     },
   },
-  learningControls: {
-    previousCue: { enabled: true },
-    nextCue: { enabled: true },
-    repeatCurrentCue: { enabled: false },
-  },
   shortcuts: {
     enabled: false,
     saveCard: '',

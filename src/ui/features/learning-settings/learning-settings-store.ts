@@ -10,7 +10,7 @@ interface LearningSettingsState extends V2SyncStorage {
   initialize: () => Promise<{ remove: () => void }>;
   setLearningProfile: (value: V2SyncStorage['learningProfile']) => Promise<void>;
   setSubtitleDisplay: (value: V2SyncStorage['subtitleDisplay']) => Promise<void>;
-  setLearningControls: (value: Pick<V2SyncStorage, 'learningControls' | 'playbackSpeed' | 'shortcuts'>) => Promise<void>;
+  setShortcutSettings: (value: Pick<V2SyncStorage, 'playbackSpeed' | 'shortcuts'>) => Promise<void>;
 }
 
 export type LearningSettingsStore = ReturnType<typeof createLearningSettingsStore>;
@@ -54,7 +54,7 @@ export const createLearningSettingsStore = (storage: V2SyncStorageApi) =>
       set({ subtitleDisplay: value });
     },
 
-    setLearningControls: async (value) => {
+    setShortcutSettings: async (value) => {
       if (get().error) throw new Error('Learning settings are unavailable');
       const parsed = v2SyncStorageSchema.parse({
         learningProfile: get().learningProfile,
@@ -62,7 +62,6 @@ export const createLearningSettingsStore = (storage: V2SyncStorageApi) =>
         ...value,
       });
       await storage.setMany({
-        learningControls: parsed.learningControls,
         shortcuts: parsed.shortcuts,
         playbackSpeed: parsed.playbackSpeed,
       });

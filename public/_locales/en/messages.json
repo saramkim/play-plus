@@ -948,6 +948,37 @@
     "v2_no_learning_cue_in_direction":  {
                                             "message":  "There is no learning cue in that direction."
                                         },
+    "saving":  {
+                   "message":  "Saving…"
+               },
+    "v2_shortcut_capture_hint":  {
+                                          "message":  "Press a key to assign it. Press Backspace or Delete to clear."
+                                      },
+    "v2_shortcut_capture_label":  {
+                                           "message":  "Shortcut for $1: $2",
+                                           "placeholders":  {
+                                                                 "action":  {
+                                                                                "content":  "$1"
+                                                                            },
+                                                                 "value":  {
+                                                                               "content":  "$2"
+                                                                           }
+                                                             }
+                                       },
+    "v2_shortcut_unassigned":  {
+                                         "message":  "Unassigned"
+                                     },
+    "v2_shortcut_reserved_error":  {
+                                         "message":  "This key is reserved."
+                                     },
+    "v2_shortcut_conflict_error":  {
+                                         "message":  "Already used by $1.",
+                                         "placeholders":  {
+                                                               "action":  {
+                                                                              "content":  "$1"
+                                                                          }
+                                                           }
+                                     },
     "v2_content_action_failed":  {
                                      "message":  "Content action failed."
                                  }

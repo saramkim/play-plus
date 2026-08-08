@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { learningCardSchema, v2LocalDataSchema, v2SyncStorageSchema } from './schema';
+import { DEFAULT_V2_SYNC_STORAGE } from './default';
+import {
+  isReservedV2Shortcut,
+  learningCardSchema,
+  V2_RESERVED_SHORTCUTS,
+  v2LocalDataSchema,
+  v2SyncStorageSchema,
+} from './schema';
 
 const assignedCard = {
   id: 'card-00000000-0000-4000-8000-000000000001',
@@ -47,6 +54,17 @@ describe('v2 storage schemas', () => {
   it('rejects noncanonical local and sync fields', () => {
     expect(
       v2SyncStorageSchema.safeParse({
+        ...DEFAULT_V2_SYNC_STORAGE,
+        learningControls: {
+          previousCue: { enabled: true },
+          nextCue: { enabled: true },
+          repeatCurrentCue: { enabled: false },
+        },
+      }).success
+    ).toBe(false);
+
+    expect(
+      v2SyncStorageSchema.safeParse({
         learningProfile: { learningLanguage: 'en', supportLanguage: 'ko' },
         subtitleDisplay: {
           learning: {
@@ -73,11 +91,6 @@ describe('v2 storage schemas', () => {
               lineBreak: false,
             },
           },
-        },
-        learningControls: {
-          previousCue: { enabled: true },
-          nextCue: { enabled: true },
-          repeatCurrentCue: { enabled: false },
         },
         shortcuts: {
           enabled: true,
@@ -135,11 +148,6 @@ describe('v2 storage schemas', () => {
           },
         },
       },
-      learningControls: {
-        previousCue: { enabled: true },
-        nextCue: { enabled: true },
-        repeatCurrentCue: { enabled: false },
-      },
       shortcuts: {
         enabled: true,
         saveCard: 'KeyS',
@@ -162,5 +170,11 @@ describe('v2 storage schemas', () => {
         playbackSpeed: { ...valid.playbackSpeed, increase: valid.shortcuts.previousCue },
       }).success
     ).toBe(false);
+  });
+
+  it('uses the exported reserved-shortcut contract for canonical validation', () => {
+    expect(V2_RESERVED_SHORTCUTS).toContain('Space');
+    expect(isReservedV2Shortcut('Space')).toBe(true);
+    expect(isReservedV2Shortcut('KeyS')).toBe(false);
   });
 });

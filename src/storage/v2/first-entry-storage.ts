@@ -27,7 +27,6 @@ interface V2FirstEntryStorageAreas {
 const V2_SYNC_STORAGE_KEYS = [
   'learningProfile',
   'subtitleDisplay',
-  'learningControls',
   'shortcuts',
   'playbackSpeed',
 ] as const satisfies readonly (keyof V2SyncStorage)[];
@@ -45,7 +44,6 @@ export const createV2FirstEntryStorage = ({
 
     await sync.set({
       learningProfile: nextSync.learningProfile,
-      learningControls: nextSync.learningControls,
       shortcuts: nextSync.shortcuts,
       playbackSpeed: nextSync.playbackSpeed,
     });
@@ -82,7 +80,6 @@ const createConfirmedSync = (
   confirmation: V2FirstEntryConfirmation
 ) => {
   const choices = validateChoices(migrationState.shortcutConfirmations, confirmation.shortcutChoices);
-  const learningControls = structuredClone(current.learningControls);
   const shortcuts = structuredClone(current.shortcuts);
   const playbackSpeed = structuredClone(current.playbackSpeed);
 
@@ -96,15 +93,12 @@ const createConfirmedSync = (
         break;
       case 'previousCue':
         shortcuts.previousCue = shortcut;
-        learningControls.previousCue.enabled = choice !== null;
         break;
       case 'nextCue':
         shortcuts.nextCue = shortcut;
-        learningControls.nextCue.enabled = choice !== null;
         break;
       case 'repeatCurrentCue':
         shortcuts.repeatCurrentCue = shortcut;
-        learningControls.repeatCurrentCue.enabled = choice !== null;
         break;
       case 'speedIncrease':
         playbackSpeed.increase = shortcut;
@@ -121,7 +115,6 @@ const createConfirmedSync = (
   const next = v2SyncStorageSchema.parse({
     ...current,
     learningProfile: confirmation.learningProfile,
-    learningControls,
     shortcuts,
     playbackSpeed,
   });
