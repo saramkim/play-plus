@@ -4,6 +4,7 @@ import { DEFAULT_V2_SYNC_STORAGE } from '@storage/v2/default';
 import { createRoot, Root } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { useVideoControlStore } from '@/content/features/video/video-controller';
 
@@ -16,6 +17,7 @@ describe('Controller', () => {
   beforeAll(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
 
   beforeEach(() => {
+    useListeningMissionActiveStore.getState().setActive(false);
     useVideoControlStore.getState().reset();
     useVideoControlStore.getState().setSettings({
       playbackSpeed: structuredClone(DEFAULT_V2_SYNC_STORAGE.playbackSpeed),
@@ -60,5 +62,16 @@ describe('Controller', () => {
     expect(
       container.querySelector('button[title="v2_repeat_current_learning_cue"]')
     ).not.toBeNull();
+  });
+
+  it('removes every on-video Controller action while a mission owns media', () => {
+    act(() => root.render(<Controller />));
+    expect(container.querySelector('button')).not.toBeNull();
+
+    act(() => useListeningMissionActiveStore.getState().setActive(true));
+    expect(container.querySelector('button')).toBeNull();
+
+    act(() => useListeningMissionActiveStore.getState().setActive(false));
+    expect(container.querySelector('button')).not.toBeNull();
   });
 });

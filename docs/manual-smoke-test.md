@@ -139,6 +139,36 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Save pending/error | Inject write delay/failure | Duplicate saves are blocked; failure creates no partial card and leaves a truthful recoverable state | NOT RUN | |
 | Shortcut enforcement | Both routes | Disabled shortcuts, reserved keys and conflicts do not execute actions | NOT RUN | |
 
+## Listening Mission side-panel integration (#65 / #66)
+
+| Area | Route / setup | Check | Result | Evidence / notes |
+| --- | --- | --- | --- | --- |
+| Four destinations | Automated 320px fixture and actual side panel near ~360px / ~390px | Exactly Learning, Subtitles, Library and Review remain; Listening Mission is inside Learning and does not add a fifth destination | NOT RUN | |
+| Connected-video truth | No active tab, connecting content, disconnected content, detecting video and no detected video | Each state is distinct and truthful; no direct content request is sent without the exact connected active tab | NOT RUN | |
+| Catalog unavailable truth | Detected page fixtures | Verify identity unavailable, no learning track, no effective segments and transport/storage error states; Retry never reuses stale ready counts | NOT RUN | |
+| Native and registered learning tracks | Native and each registered subtitle type | Landing and mission use only the currently selected learning track, its effective delay and canonical source order | NOT RUN | |
+| Optional support | Reliable, unreliable and absent support alignment | Support guidance appears only for reliable aligned support; learning-only practice remains fully usable | NOT RUN | |
+| Continue selection | Fresh, attempted, cleared and mixed exact-source progress | Continue chooses the earliest unrecorded segment, then the earliest attempted segment, otherwise the first; selection is refreshed at click time and capped at 10 | NOT RUN | |
+| Current-position selection | Inside overlap, boundary, gap, before first, after last and track tail | Current Position uses a fresh player time, chooses the canonical containing/next segment and returns fewer than 10 only at the end | NOT RUN | |
+| First-use and source isolation | Same video with two learning subtitle selections | First use starts at the first segment; progress and summaries never cross the exact video/source/version namespace | NOT RUN | |
+| Mission playback | Playing and paused starts at 1x and non-1x | Each newly entered first/retry line auto-plays exactly once; Play, Replay and Slow play only the current selected segment and preserve bounded controls | NOT RUN | |
+| Answer states | Exact, normalized almost, wrong, hint, reveal and Try Later paths | Authored feedback, attempts, hints, reveal, combo and star facts match the submitted outcome without sending typed or answer text to background | NOT RUN | |
+| Next within mission | Mission with 10 selected segments | Next advances only within the frozen snapshot, stops at the final selected segment and cannot silently append new source text | NOT RUN | |
+| Progress durability | Complete, partial attempt, Later, Reveal, close/reopen panel and restart worker | Only committed result facts persist; Later/Reveal may persist `attempted` with 0 submitted attempts; landing counts, last practiced and best combo survive restart | NOT RUN | |
+| Normal exit restoration | Start paused, playing and at non-1x playback rate | Mid-mission exit restores the captured start time, paused/playing state and rate before releasing navigation ownership | NOT RUN | |
+| Results end modes | Complete a mission | Entering Results sends no end; close/discard uses `complete-stay`, Continue Watching uses `continue-watching`, and Next 10 uses `complete-stay` before refreshing catalog/progress; only mid-mission exit/discard uses `restore-start` | NOT RUN | |
+| End retry ownership | Inject end transport error, rejection and delayed response | Learning settings stay hidden, navigation stays locked, heartbeat continues, Retry Ending receives focus, and ownership releases only after ended/already-ended/stale/no-video | NOT RUN | |
+| Heartbeat lease | Active session, Side Panel close/reload/crash and delayed or missing heartbeat | Heartbeat runs every 5 seconds; after more than 15 seconds without a valid heartbeat content restores the captured state and releases suppression | NOT RUN | |
+| Route/tab/source invalidation | Change active tab, route/video, native language, registered source, delay or subtitle revision during catalog/begin/mission | Late responses never mount old text; the owned session is ended or expires safely and the landing reloads authoritative truth | NOT RUN | |
+| Platform caption ownership | Platform captions initially on and off | Mission suppresses only Play Plus learning/support rendering while owned; it neither reads nor changes the platform caption preference and always shows the reminder | NOT RUN | |
+| Difficult-segment save | No selection, selected segments, retryable card write and terminal stale/no-video response | Only explicitly selected difficult segments invoke the canonical card builder; retryable failures remain retryable and terminal failure stops remaining saves | NOT RUN | |
+| Progress failure choices | Inject local progress read/write failure during landing, mission, results and reset | Reads fail closed; Retry or discard choices are explicit; no fabricated success, partial mutation or raw storage error is shown | NOT RUN | |
+| Separate resets | Exact-video and all-progress confirmations | Dialogs are separate, trap focus, close with Escape, cancel on tab/source/video change, preserve cards/subtitles/settings, and restore trigger focus after success | NOT RUN | |
+| Keyboard, IME and announcements | Keyboard-only with Korean IME composition | No submit occurs during composition; focus order, 44px targets, alert/status announcements and stable labels work without pointer input | NOT RUN | |
+| Compact geometry | Automated 320px fixture, then actual Chrome near its attainable minimum (~360px) and at ~390px | Exactly one vertical scroll owner is active, no horizontal clipping occurs, settings are hidden during an owned mission and long EN/KO copy wraps; if Chrome clamps 320px, record it as NOT RUN rather than simulated | NOT RUN | |
+| Privacy boundary | DevTools Network, message inspection and storage inspection | Progress/reset messages contain only strict facts/scope and never typed or raw text; the sole allowed background/local-persistence exception is a user-selected canonical LearningCard with its sentence and source URL, which is never sent to the network | NOT RUN | |
+| Latest-main integration (#66) | Clean profile and representative upgraded profile on latest `main` | Run the full automated gate plus this real-Chrome matrix; verify no permission, host, manifest, release-version or existing Learning/Subtitles/Library/Review regression | NOT RUN | |
+
 ## Registered subtitle management
 
 | Area | Route / setup | Check | Result | Evidence / notes |

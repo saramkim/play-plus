@@ -9,6 +9,7 @@ import { videoManager } from '@/content/core/video/video-manager';
 import { buildLearningCard } from '@/content/features/learning-playback/learning-card-builder';
 import { saveLearningCard } from '@/content/features/learning-playback/learning-card-save-coordinator';
 import { LearningCueCommand, resolveLearningCueCommand } from '@/content/features/learning-playback/learning-playback';
+import { isListeningMissionActive } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { selectSubtitleTrack, useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
@@ -77,6 +78,8 @@ export class VideoController {
   }
 
   async execute(command: UserLearningCommand) {
+    if (isListeningMissionActive()) return;
+
     const video = videoManager.get();
     if (!video) {
       showFeedback(t('v2_no_video_available'));
@@ -136,6 +139,8 @@ export class VideoController {
   }
 
   async toggleSupportSubtitleVisibility(): Promise<boolean> {
+    if (isListeningMissionActive()) return false;
+
     const state = useSubtitleStore.getState();
     if (state.learningProfile.supportLanguage === null) return false;
     const visibility: V2SyncStorage['subtitleDisplay']['support']['visibility'] =
@@ -189,6 +194,8 @@ export class VideoController {
   }
 
   private handleKeyDown = (event: KeyboardEvent) => {
+    if (isListeningMissionActive()) return;
+
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {
       return;

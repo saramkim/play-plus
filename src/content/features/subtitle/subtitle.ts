@@ -4,6 +4,7 @@ import { findSubtitle } from '@utils/helper';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
+import { isListeningMissionActive } from '@/content/features/listening-session/mission-active-store';
 import {
   selectSubtitleTrack,
   SUBTITLE_ROLES,
@@ -66,6 +67,15 @@ export async function initializeSubtitleSync() {
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
   const state = useSubtitleStore.getState();
+
+  if (isListeningMissionActive()) {
+    for (const role of SUBTITLE_ROLES) {
+      const subtitleElement = elementStore.getSubtitleElement(role);
+      if (hasStyleChanged) applySubtitleStyles(subtitleElement, state.subtitleDisplay[role]);
+      subtitleElement.textContent = '';
+    }
+    return;
+  }
 
   for (const role of SUBTITLE_ROLES) {
     const subtitleElement = elementStore.getSubtitleElement(role);

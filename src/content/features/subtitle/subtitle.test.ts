@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 
 import { initializeSubtitleSync, syncSubtitles } from './subtitle';
 import { useSubtitleStore } from './subtitle-store';
@@ -12,6 +13,7 @@ const registeredSubtitleId = 'subtitle-00000000-0000-4000-8000-000000000001';
 describe('canonical subtitle presentation', () => {
   beforeEach(() => {
     useSubtitleStore.getState().clearCaches();
+    useListeningMissionActiveStore.getState().setActive(false);
     useSubtitleStore.getState().setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
     useVideoStore.setState({ currentTime: 0 });
     elementStore.getSubtitleElement('learning').textContent = '';
@@ -56,6 +58,34 @@ describe('canonical subtitle presentation', () => {
     store.setSettings({ learningProfile: DEFAULT_V2_SYNC_STORAGE.learningProfile, subtitleDisplay });
     syncSubtitles(3, true);
     expect(elementStore.getSubtitleElement('learning').textContent).toBe('');
+  });
+
+  it('blanks both Play Plus roles during a mission and resyncs canonical text after release', () => {
+    const store = useSubtitleStore.getState();
+    store.setSettings({
+      learningProfile: { learningLanguage: 'en', supportLanguage: 'ko' },
+      subtitleDisplay: DEFAULT_V2_SYNC_STORAGE.subtitleDisplay,
+    });
+    store.setNativeCues('en', [{ start: 1, end: 2, text: 'Learning' }]);
+    store.setNativeCues('ko', [{ start: 1, end: 2, text: 'Support' }]);
+
+    syncSubtitles(1.5);
+    expect(elementStore.getSubtitleElement('learning').textContent).toBe('Learning');
+    expect(elementStore.getSubtitleElement('support').textContent).toBe('Support');
+
+    useListeningMissionActiveStore.getState().setActive(true);
+    syncSubtitles(1.5);
+    expect(elementStore.getSubtitleElement('learning').textContent).toBe('');
+    expect(elementStore.getSubtitleElement('support').textContent).toBe('');
+
+    store.setNativeCues('en', [{ start: 1, end: 2, text: 'Changed while active' }]);
+    syncSubtitles(1.5);
+    expect(elementStore.getSubtitleElement('learning').textContent).toBe('');
+
+    useListeningMissionActiveStore.getState().setActive(false);
+    syncSubtitles(1.5);
+    expect(elementStore.getSubtitleElement('learning').textContent).toBe('Changed while active');
+    expect(elementStore.getSubtitleElement('support').textContent).toBe('Support');
   });
 
   it('strictly loads canonical settings and follows validated storage and video changes', async () => {

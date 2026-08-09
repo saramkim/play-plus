@@ -2,6 +2,7 @@ import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getTabInfo, updateTabInfo } from '@storage/tab';
 import { runV2Migration } from '@storage/v2/chrome-storage-adapter';
 import { createV2LearningCardStorage } from '@storage/v2/learning-card-storage';
+import { createV2ListeningProgressStorage } from '@storage/v2/listening-progress-storage';
 import { createV2SyncStorage } from '@storage/v2/sync-storage';
 import { sendMessageToTab } from '@utils/message';
 
@@ -31,6 +32,7 @@ const awaitReady = async () => {
 };
 const handleViewVideo = createViewVideoHandler();
 const learningCards = createV2LearningCardStorage(chrome.storage.local);
+const listeningProgress = createV2ListeningProgressStorage(chrome.storage.local);
 const openSubtitles = createOpenSubtitlesClient({
   apiKey: __OPENSUBTITLES_API_KEY__,
   userAgent: __OPENSUBTITLES_USER_AGENT__,
@@ -64,6 +66,7 @@ registerBackgroundMessageHandler({
   handleViewVideo,
   handleSubtitleContentStatus: subtitleRequests.handleContentStatus,
   learningCards,
+  listeningProgress,
   searchOpenSubtitles: openSubtitles.search,
   updateConnectedStatus: connectionStatus.updateConnectedStatus,
 });

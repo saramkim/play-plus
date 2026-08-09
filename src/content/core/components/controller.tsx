@@ -16,6 +16,7 @@ import {
   SlidersVerticalIcon,
 } from 'lucide-react';
 
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { useVideoControlStore, videoController } from '@/content/features/video/video-controller';
@@ -24,6 +25,7 @@ const BUTTON_SIZE = 40;
 
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const missionActive = useListeningMissionActiveStore((state) => state.active);
   const playbackSpeed = useVideoControlStore((state) => state.playbackSpeed);
   const ready = useVideoControlStore((state) => state.ready);
   const supportLanguage = useSubtitleStore((state) => state.learningProfile.supportLanguage);
@@ -56,7 +58,7 @@ export function Controller({ className }: { className?: string }) {
       : []),
   ], [playbackSpeed.enabled, speed.decreaseSpeed, speed.increaseSpeed, speed.resetSpeed, supportLanguage, supportVisibility]);
 
-  if (!ready) return null;
+  if (!ready || missionActive) return null;
   return (
     <div className={cn('absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-lg bg-black/50 shadow-lg transition-all hover:bg-black/80 pointer-events-auto', className)}>
       {isExpanded && buttons.map((button) => <IconButton key={button.title} {...button} />)}

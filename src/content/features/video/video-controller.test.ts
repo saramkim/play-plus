@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useToastStore } from '@/content/core/store/toast-store';
 import { videoManager } from '@/content/core/video/video-manager';
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
@@ -135,6 +136,37 @@ describe('canonical video controller lifecycle', () => {
     controller.stop();
   });
 
+  it('makes every shortcut binding inert only while a mission owns media', async () => {
+    const storage = new FakeSyncStorage({
+      shortcuts: {
+        ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
+        enabled: true,
+        previousCue: 'KeyP',
+      },
+      playbackSpeed: {
+        ...DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
+        enabled: true,
+        increase: 'KeyU',
+      },
+    });
+    const controller = new VideoController(createDependencies(storage));
+    const execute = vi.spyOn(controller, 'execute').mockResolvedValue();
+    await controller.start();
+
+    useListeningMissionActiveStore.getState().setActive(true);
+    dispatchKey('KeyP');
+    dispatchKey('KeyU');
+    expect(execute).not.toHaveBeenCalled();
+    expect(usePlaybackSpeedStore.getState().currentSpeed).toBe(1);
+
+    useListeningMissionActiveStore.getState().setActive(false);
+    dispatchKey('KeyP');
+    dispatchKey('KeyU');
+    expect(execute).toHaveBeenCalledWith('previous');
+    expect(usePlaybackSpeedStore.getState().currentSpeed).toBe(1.1);
+    controller.stop();
+  });
+
   it('fails closed without attaching when initial canonical settings are unavailable', async () => {
     const storage = new FakeSyncStorage();
     storage.getAll.mockRejectedValueOnce(new Error('missing canonical settings'));
@@ -179,6 +211,30 @@ describe('canonical learning commands', () => {
 
     expect(observedVideo.seek).not.toHaveBeenCalled();
     controller.stop();
+  });
+
+  it('makes direct Controller actions inert during a mission and restores them on release', async () => {
+    const storage = new FakeSyncStorage();
+    const controller = new VideoController(createDependencies(storage));
+    const set = vi.spyOn(storage, 'set');
+    const observedVideo = createObservedVideo(3.5);
+    vi.spyOn(videoManager, 'get').mockReturnValue(observedVideo.video);
+    useSubtitleStore.getState().setNativeCues('en', learningCues);
+
+    useListeningMissionActiveStore.getState().setActive(true);
+    await controller.execute('repeat-current');
+    await expect(controller.toggleSupportSubtitleVisibility()).resolves.toBe(false);
+    expect(observedVideo.seek).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+
+    useListeningMissionActiveStore.getState().setActive(false);
+    await controller.execute('repeat-current');
+    await expect(controller.toggleSupportSubtitleVisibility()).resolves.toBe(true);
+    expect(observedVideo.seek).toHaveBeenCalledWith(3);
+    expect(set).toHaveBeenCalledWith(
+      'subtitleDisplay',
+      expect.objectContaining({ support: expect.objectContaining({ visibility: 'hidden' }) })
+    );
   });
 
   it('executes previous, next, and repeat directly while the shortcuts master is off', async () => {
@@ -340,6 +396,7 @@ const lastToastMessage = () => {
 };
 
 const resetStores = () => {
+  useListeningMissionActiveStore.getState().setActive(false);
   useVideoControlStore.getState().reset();
   usePlaybackSpeedStore.getState().resetSpeed();
   useToastStore.getState().clearToasts();

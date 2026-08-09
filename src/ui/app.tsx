@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { learningCardSchema } from '@storage/v2/schema';
+import { learningCardSchema, listeningProgressSchema } from '@storage/v2/schema';
 import { createV2SyncStorage } from '@storage/v2/sync-storage';
 import { t } from '@utils/i18n';
 import { sendMessage } from '@utils/message';
@@ -11,10 +11,10 @@ import { FirstEntry, V2_ONBOARDING_COMPLETE_KEY } from '@/ui/features/first-entr
 import { FocusedReview } from '@/ui/features/focused-review/focused-review';
 import { LearningCardLibrary } from '@/ui/features/learning-library/learning-card-library';
 import { createLearningSettingsStore } from '@/ui/features/learning-settings/learning-settings-store';
+import { ListeningLearningPage } from '@/ui/features/listening-flow/listening-flow';
 import { ConnectionStatus } from '@/ui/layout/connection-status';
 import { Footer } from '@/ui/layout/footer';
 import { Header } from '@/ui/layout/header';
-import { LearningSettingsPage } from '@/ui/pages/learning-settings-page';
 import { SubtitleUploadPage } from '@/ui/pages/subtitle-upload-page';
 import { usePageStore } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
@@ -28,6 +28,7 @@ type BootState = 'checking' | 'error' | 'first-entry' | 'ready';
 export function App() {
   const [bootState, setBootState] = useState<BootState>('checking');
   const [cardRevision, setCardRevision] = useState(0);
+  const [progressRevision, setProgressRevision] = useState(0);
   const currentPage = usePageStore((state) => state.currentPage);
   const setPage = usePageStore((state) => state.setPage);
   const learningProfile = useLearningSettingsStore((state) => state.learningProfile);
@@ -82,15 +83,23 @@ export function App() {
   useEffect(() => {
     if (bootState !== 'ready') return;
     const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
-      const change = changes.learningCards;
-      if (!change) return;
-      const value = change.newValue;
-      if (value === undefined || !learningCardSchema.array().safeParse(value).success) {
+      const cardChange = changes.learningCards;
+      const progressChange = changes.listeningProgress;
+      if (!cardChange && !progressChange) return;
+      if (
+        (cardChange &&
+          (cardChange.newValue === undefined ||
+            !learningCardSchema.array().safeParse(cardChange.newValue).success)) ||
+        (progressChange &&
+          (progressChange.newValue === undefined ||
+            !listeningProgressSchema.safeParse(progressChange.newValue).success))
+      ) {
         stopNormalConsumers();
         setBootState('error');
         return;
       }
-      setCardRevision((revision) => revision + 1);
+      if (cardChange) setCardRevision((revision) => revision + 1);
+      if (progressChange) setProgressRevision((revision) => revision + 1);
     };
     chrome.storage.local.onChanged.addListener(listener);
     return () => chrome.storage.local.onChanged.removeListener(listener);
@@ -113,7 +122,14 @@ export function App() {
   }
 
   const page = (() => {
-    if (currentPage === 'learning') return <LearningSettingsPage store={useLearningSettingsStore} />;
+    if (currentPage === 'learning') {
+      return (
+        <ListeningLearningPage
+          progressRevision={progressRevision}
+          settingsStore={useLearningSettingsStore}
+        />
+      );
+    }
     if (currentPage === 'subtitles') {
       return (
         <SubtitleUploadPage

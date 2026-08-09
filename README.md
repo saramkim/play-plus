@@ -9,11 +9,12 @@
 1. 첫 진입에서 학습 언어와 선택적인 도움 언어를 확인합니다.
 2. Coupang Play 자막, 로컬 파일 또는 사용자가 명시적으로 검색·추가한 OpenSubtitles 자막을 학습·도움 역할에 지정합니다.
 3. 현재 선택한 학습·도움 자막의 전체 문장을 함께 또는 역할별로 탐색하고, 원하는 장면으로 이동하거나 학습 문장을 바로 카드로 저장합니다.
-4. 이전/다음 학습 문장으로 이동하거나 현재 학습 문장을 반복하며 시청합니다.
-5. 한 번의 저장 동작으로 현재 학습 문장을 카드로 저장합니다. 시간 정렬 신뢰도가 충분할 때만 도움 문장이 함께 저장됩니다.
-6. Library에서 카드를 검색·정렬·필터링하고, 문장과 역할을 편집하거나 상태를 바꾸고 삭제·실행 취소합니다.
-7. Focused Review에서 도움 문장을 필요할 때 공개하고 카드를 `active` 또는 `completed`로 정리합니다.
-8. 카드에 기록된 정확한 원본 URL과 재생 시점으로 돌아갑니다.
+4. Learning에서 현재 위치 또는 저장된 진행 상황부터 Listening Mission을 시작해 이어지는 학습 문장을 최대 10개까지 듣고 입력합니다.
+5. 이전/다음 학습 문장으로 이동하거나 현재 학습 문장을 반복하며 시청합니다.
+6. 한 번의 저장 동작으로 현재 학습 문장을 카드로 저장합니다. 시간 정렬 신뢰도가 충분할 때만 도움 문장이 함께 저장됩니다.
+7. Library에서 카드를 검색·정렬·필터링하고, 문장과 역할을 편집하거나 상태를 바꾸고 삭제·실행 취소합니다.
+8. Focused Review에서 도움 문장을 필요할 때 공개하고 카드를 `active` 또는 `completed`로 정리합니다.
+9. 카드에 기록된 정확한 원본 URL과 재생 시점으로 돌아갑니다.
 
 ## 주요 기능
 
@@ -57,6 +58,17 @@
 - 현재 문장이 없거나 이동 대상이 없을 때 임의의 seek·repeat·save를 하지 않는 명시적 no-op
 - 같은 문장을 반복 저장해도 각각의 학습 맥락을 가진 별도 카드로 보존
 
+### Listening Mission
+
+- 기존 네 destination 중 `Learning` 안에서만 제공하며 별도 화면이나 다섯 번째 destination을 만들지 않음
+- 현재 영상·학습 자막 조합의 완료/첫 시도 완료 수, 최근 연습 시각과 최고 콤보를 현재 문장 목록 기준으로 표시
+- `계속하기` 또는 `현재 위치에서 시작`으로 자막 순서의 연속 문장을 최대 10개 선택하고 자막 끝에서는 남은 문장만 연습
+- 1.0× 자동·반복 재생과 0.75× 느린 재생, 다국어 입력, 단계별 힌트, 정답 공개, 나중에, 한 번의 선택적 재도전과 결과 제공
+- 활성 미션 동안에만 Play Plus 자막과 영상 위 control을 일시적으로 억제하고, 종료 모드에 맞춰 원래 재생 상태 또는 마지막 연습 위치를 안전하게 복원
+- side panel이 닫히거나 연결을 잃을 때 5초 heartbeat와 content 소유 15초 lease로 재생 속도·억제 상태를 긴급 복원
+- 진행 상황 저장 실패 뒤 명시적 재시도와 저장하지 않고 나가기 제공; 현재 영상 진행 상황과 전체 듣기 진행 상황은 서로 다른 확인을 거쳐서만 삭제
+- 결과에서 사용자가 직접 선택한 어려운 문장만 기존 canonical LearningCard 경계로 저장하며 반복 저장은 서로 다른 카드로 유지
+
 ### Library와 Focused Review
 
 - `active`, `completed`, `unassigned` 카드 검색·정렬·필터
@@ -87,6 +99,8 @@
 - 사용자 계정·JWT, BYOK, Play Plus proxy/backend, 원격 번역과 telemetry를 사용하지 않습니다.
 - 오류와 진단 정보에는 실제 자막 문장, 등록 자막 본문 또는 전체 시청 URL을 기록하지 않습니다.
 - 전체 자막 snapshot과 현재 재생 시각은 활성 탭의 content script에서 side panel로 직접 전달해 일시적으로만 사용합니다. 등록 자막 확인은 이미 로컬에 저장된 cue를 strict하게 읽을 뿐이며, 어느 경로도 본문을 추가 Storage, background, 외부 네트워크나 로그에 복제하지 않습니다.
+- Listening Mission의 문장 목록, 정답 문장과 입력 중인 답은 활성 탭 content script와 side panel 메모리에만 일시적으로 존재합니다. 진행·초기화 메시지에는 문장 본문이나 입력 답을 넣지 않으며, `listeningProgress`에는 문장 key, 상태, 제출 횟수, 시각과 최고 콤보 사실만 저장합니다.
+- 문장 본문과 원본 URL이 background·로컬 저장 경계를 지나는 유일한 예외는 결과에서 사용자가 명시적으로 선택한 어려운 문장을 content script가 현재 세션과 자막을 다시 검증해 canonical LearningCard로 만든 경우입니다. 이 카드도 외부 네트워크로 보내지 않습니다.
 - 로컬 데이터는 장치 간 동기화나 복구를 보장하지 않습니다.
 
 ## Manifest 권한
@@ -160,9 +174,9 @@ yarn test:run     # Vitest 1회 실행
 
 Play Plus는 Chrome Extension Manifest V3의 세 실행 컨텍스트를 분리합니다.
 
-- `src/ui/`: side panel React 앱. 학습 설정, 로컬·OpenSubtitles 자막 추가와 읽기 전용 확인, 현재 학습·도움 자막의 함께/역할별 탐색·행 저장·저장 표시, Library와 Focused Review를 제공합니다.
-- `src/background/`: service worker. v2 준비 상태, 탭 생명주기, OpenSubtitles 네트워크·session cache와 컨텍스트 간 메시지를 조정합니다.
-- `src/content/`: Coupang Play 페이지의 DOM·video·cue 접근, 자막 렌더링, 재생 제어와 저장 anchor를 담당합니다.
+- `src/ui/`: side panel React 앱. Listening Mission 진입·세션 UI, 학습 설정, 로컬·OpenSubtitles 자막 추가와 읽기 전용 확인, 현재 학습·도움 자막의 함께/역할별 탐색·행 저장·저장 표시, Library와 Focused Review를 제공합니다.
+- `src/background/`: service worker. v2 준비 상태, strict Listening Progress, 탭 생명주기, OpenSubtitles 네트워크·session cache와 컨텍스트 간 메시지를 조정합니다.
+- `src/content/`: Coupang Play 페이지의 DOM·video·cue 접근, Listening Mission media session·lease·복원, 자막 렌더링, 재생 제어와 저장 anchor를 담당합니다.
 - `src/storage/`: Chrome Storage의 strict schema, v1.11.0 one-shot decoder, v2 migration과 canonical API를 제공합니다.
 - `src/utils/`: 타입이 지정된 메시지·OpenSubtitles 계약, i18n과 공통 유틸리티를 제공합니다.
 

@@ -17,6 +17,7 @@ import { useSubtitleSettings } from '@/ui/features/subtitle/use-subtitle-setting
 import { useTabStore } from '@/ui/store/tab-store';
 
 interface LearningSettingsPageProps {
+  embedded?: boolean;
   store: LearningSettingsStore;
 }
 
@@ -34,7 +35,7 @@ type ShortcutValidationError =
   | { type: 'reserved' }
   | { conflictPath: ShortcutFieldPath; type: 'conflict' };
 
-export function LearningSettingsPage({ store }: LearningSettingsPageProps) {
+export function LearningSettingsPage({ embedded = false, store }: LearningSettingsPageProps) {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
   const learningProfile = store((state) => state.learningProfile);
@@ -73,25 +74,32 @@ export function LearningSettingsPage({ store }: LearningSettingsPageProps) {
     return <p role='alert' className='p-4 text-wrap text-sm text-destructive'>{t('error_try_later')}</p>;
   }
 
+  const settings = (
+    <>
+      <LearningProfileForm
+        settingsPresentation
+        submitRequiresDirty
+        value={learningProfile}
+        onSubmit={saveLearningProfile}
+      />
+      <SubtitleDisplayForm
+        learningProfile={learningProfile}
+        value={subtitleDisplay}
+        onSubmit={setSubtitleDisplay}
+      />
+      <ShortcutSettingsForm
+        validationContext={{ learningProfile, subtitleDisplay }}
+        value={{ playbackSpeed, shortcuts }}
+        onSubmit={setShortcutSettings}
+      />
+    </>
+  );
+
+  if (embedded) return <div className='space-y-4'>{settings}</div>;
   return (
     <section aria-label={t('v2_nav_learning')} className='h-full min-h-0'>
       <div className='h-full min-h-0 space-y-4 overflow-y-auto p-4' data-scroll-owner='learning-settings'>
-        <LearningProfileForm
-          settingsPresentation
-          submitRequiresDirty
-          value={learningProfile}
-          onSubmit={saveLearningProfile}
-        />
-        <SubtitleDisplayForm
-          learningProfile={learningProfile}
-          value={subtitleDisplay}
-          onSubmit={setSubtitleDisplay}
-        />
-        <ShortcutSettingsForm
-          validationContext={{ learningProfile, subtitleDisplay }}
-          value={{ playbackSpeed, shortcuts }}
-          onSubmit={setShortcutSettings}
-        />
+        {settings}
       </div>
     </section>
   );

@@ -38,6 +38,82 @@ describe('message transport', () => {
     });
   });
 
+  it('preserves the direct listening boundary and sends only progress facts to background', async () => {
+    const identity = {
+      contentInstanceId: 'content-listening',
+      routeChangedAt: 1_000,
+      videoId: 'video-listening',
+      videoRevision: 2,
+    };
+    const segmentKey = `segment-v1-${'a'.repeat(64)}` as const;
+    const result = {
+      videoId: 'video-listening',
+      learningSourceKey: 'native:en' as const,
+      segmenterVersion: 1 as const,
+      practicedAt: '2026-08-09T00:00:00.000Z',
+      bestCombo: 0,
+      items: [
+        {
+          segmentKey,
+          achievedState: 'attempted' as const,
+          submittedAttemptIncrement: 0,
+        },
+      ],
+    };
+
+    await sendMessageToTab(7, 'getListeningCatalog');
+    await sendMessageToTab(7, 'beginListeningSession', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: 3,
+      segmentKeys: [segmentKey],
+    });
+    await sendMessageToTab(7, 'heartbeatListeningSession', {
+      sessionId: 'session-listening',
+      expectedIdentity: identity,
+      expectedSubtitleRevision: 3,
+    });
+    await sendMessageToTab(7, 'playListeningSegment', {
+      sessionId: 'session-listening',
+      segmentKey,
+      rate: 0.75,
+    });
+    await sendMessageToTab(7, 'saveListeningSegment', {
+      sessionId: 'session-listening',
+      segmentKey,
+    });
+    await sendMessageToTab(7, 'endListeningSession', {
+      sessionId: 'session-listening',
+      mode: 'restore-start',
+    });
+    await sendMessage('getListeningProgress');
+    await sendMessage('recordListeningMissionResult', { result });
+    await sendMessage('clearListeningVideoProgress', { videoId: 'video-listening' });
+    await sendMessage('clearAllListeningProgress');
+
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, {
+      message: 'getListeningCatalog',
+    });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, {
+      message: 'beginListeningSession',
+      params: {
+        expectedIdentity: identity,
+        expectedSubtitleRevision: 3,
+        segmentKeys: [segmentKey],
+      },
+    });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, {
+      message: 'playListeningSegment',
+      params: { sessionId: 'session-listening', segmentKey, rate: 0.75 },
+    });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      message: 'recordListeningMissionResult',
+      params: { result },
+    });
+    expect(JSON.stringify(vi.mocked(chrome.runtime.sendMessage).mock.calls)).not.toMatch(
+      /answer|draft|text|url/i
+    );
+  });
+
   it('forwards the keepalive return and removes the registered listener', () => {
     const callback = vi.fn(() => true as const);
     const registration = onMessage(callback);

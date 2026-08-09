@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 
 export function PlaybackSpeedDisplay() {
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const missionActive = useListeningMissionActiveStore((state) => state.active);
   const currentSpeed = usePlaybackSpeedStore((state) => state.currentSpeed);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function PlaybackSpeedDisplay() {
     };
   }, [currentSpeed]);
 
-  if (!isVisible) return null;
+  if (!isVisible || missionActive) return null;
 
   return (
     <div className='absolute top-4 left-4 text-white font-bold bg-black/80 backdrop-blur-sm rounded py-2 px-3'>
