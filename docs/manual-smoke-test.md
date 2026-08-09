@@ -139,6 +139,16 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Save pending/error | Inject write delay/failure | Duplicate saves are blocked; failure creates no partial card and leaves a truthful recoverable state | NOT RUN | |
 | Shortcut enforcement | Both routes | Disabled shortcuts, reserved keys and conflicts do not execute actions | NOT RUN | |
 
+## Registered subtitle management
+
+| Area | Route / setup | Check | Result | Evidence / notes |
+| --- | --- | --- | --- | --- |
+| Edit pending and retry | Registered subtitle, injected delayed write then failure | One submit starts; the form is busy and all controls are disabled; failure preserves the draft and mode, releases navigation, announces an inline error and focuses the re-enabled Save; retry succeeds and restores focus to Edit | NOT RUN | |
+| Sync pending and retry | Registered subtitle, injected delayed write then storage failure | One submit starts; the form is busy, all controls are disabled and no press-and-hold step remains active; failure preserves the delay and mode, releases navigation, announces an inline error and focuses the re-enabled Save; retry succeeds and restores focus to Sync | NOT RUN | |
+| Sync refresh partial success | Connected video, delay storage succeeds and refresh fails | The saved delay is retained without rollback; the editor stays open with the specific inline refresh error, no duplicate modal appears, navigation unlocks and Save can retry the refresh path | NOT RUN | |
+| Manage no results | Non-empty registered list and unmatched explicit search | Show a factual no-results state; Clear search removes both the visible input and committed query, preserves sort, restores the full list and returns focus to the search input | NOT RUN | |
+| Concurrent mutations | Two registered cards with delayed Edit and Sync writes | Different cards may remain concurrently pending; the subview/search/Add navigation lock remains until both tokens settle, while duplicate submit on either form creates no extra mutation or token | NOT RUN | |
+
 ## Current subtitle overview
 
 | Area | Route / setup | Check | Result | Evidence / notes |

@@ -308,6 +308,49 @@ describe('SubtitleUploadPage', () => {
     expect(container.querySelector("[data-testid='subtitle-overview']")).toBeNull();
   });
 
+  it('locks Manage search, sorting, and Add while a subtitle mutation is pending', () => {
+    testState.subtitles = [existingSubtitle];
+    testState.navigationLocked = true;
+    act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
+
+    const searchInput = container.querySelector<HTMLInputElement>("input[aria-label='search']");
+    if (!searchInput) throw new Error('Expected the registered-subtitle search input');
+
+    expect(searchInput.disabled).toBe(true);
+    expect(getButton(container, 'search').disabled).toBe(true);
+    expect(getButton(container, 'latest').disabled).toBe(true);
+    expect(getButton(container, 'oldest').disabled).toBe(true);
+    expect(getButton(container, 'v2_local_subtitles_add').disabled).toBe(true);
+  });
+
+  it('shows a recoverable no-results state and truly clears the registered-subtitle search', () => {
+    testState.subtitles = [existingSubtitle, addedSubtitle];
+    act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
+
+    const searchInput = container.querySelector<HTMLInputElement>("input[aria-label='search']");
+    if (!searchInput) throw new Error('Expected the registered-subtitle search input');
+    act(() => getButton(container, 'oldest').click());
+    act(() => {
+      setInputValue(searchInput, 'missing subtitle');
+      getButton(container, 'search').click();
+    });
+
+    expect(container.querySelector("[role='status']")?.textContent).toBe('no_search_results');
+    expect(container.querySelectorAll('li')).toHaveLength(0);
+    expect(container.querySelectorAll("[data-scroll-owner='local-subtitles']")).toHaveLength(1);
+
+    const clearButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'clear_search'
+    );
+    if (!clearButton) throw new Error('Expected the no-results Clear search action');
+    act(() => clearButton.click());
+
+    expect(searchInput.value).toBe('');
+    expect(document.activeElement).toBe(searchInput);
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+    expect(getButton(container, 'oldest').getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('does not persist the selected subview across page mounts', () => {
     act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
     act(() => getButton(container, 'v2_subtitles_overview_tab').click());
@@ -447,6 +490,49 @@ describe('SubtitleUploadPage', () => {
     expect(getButton(container, 'v2_subtitles_add_tab').disabled).toBe(false);
     expect(getButton(container, 'v2_subtitles_overview_tab').disabled).toBe(false);
     consoleError.mockRestore();
+  });
+
+  it('creates one navigation token for a duplicate Edit submit and supports retry after failure', async () => {
+    const editDeferred = createDeferred<void>();
+    testState.subtitles = [existingSubtitle];
+    testState.editSubtitle.mockImplementationOnce(() => editDeferred.promise).mockResolvedValueOnce(undefined);
+    act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
+
+    const card = container.querySelector('li');
+    if (!card) throw new Error('Expected the registered-subtitle card');
+    act(() => getButton(card, 'v2_local_subtitles_edit_details').click());
+
+    const initialSave = getButton(card, 'save');
+    act(() => {
+      initialSave.click();
+      initialSave.click();
+    });
+
+    expect(testState.editSubtitle).toHaveBeenCalledOnce();
+    expect(testState.acquireNavigationLock).toHaveBeenCalledOnce();
+    expect(testState.navigationLockTokens.size).toBe(1);
+    expect(card.querySelector('form')?.getAttribute('aria-busy')).toBe('true');
+    expect(getButton(card, 'saving').disabled).toBe(true);
+
+    await act(async () => {
+      editDeferred.reject(new Error('Injected edit failure'));
+      await editDeferred.promise.catch(() => undefined);
+      await Promise.resolve();
+    });
+
+    expect(testState.navigationLockTokens.size).toBe(0);
+    expect(card.querySelector("[role='alert']")?.textContent).toBe('error_try_later');
+    expect(document.activeElement).toBe(getButton(card, 'save'));
+
+    await act(async () => {
+      getButton(card, 'save').click();
+      await Promise.resolve();
+    });
+
+    expect(testState.editSubtitle).toHaveBeenCalledTimes(2);
+    expect(testState.acquireNavigationLock).toHaveBeenCalledTimes(2);
+    expect(testState.navigationLockTokens.size).toBe(0);
+    expect(document.activeElement).toBe(getButton(card, 'v2_local_subtitles_edit_details'));
   });
 
   it('returns to the list and focuses a newly added subtitle', () => {
@@ -641,4 +727,10 @@ function findButton(container: HTMLElement, accessibleName: string) {
   return Array.from(container.querySelectorAll('button')).find(
     (candidate) => candidate.getAttribute('aria-label') === accessibleName || candidate.textContent === accessibleName
   );
+}
+
+function setInputValue(input: HTMLInputElement, value: string) {
+  const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  valueSetter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }

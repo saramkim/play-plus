@@ -15,6 +15,8 @@ import { sendMessageToTab } from '@utils/message';
 
 import { modal } from '@/ui/components/modal';
 
+import { RegisteredSubtitleRefreshError } from './subtitle-mutation-error';
+
 type SubtitleMutationRollback = () => void | Promise<void>;
 type BeforeSubtitleDelete = (
   id: SubtitleId
@@ -81,10 +83,10 @@ export function useUploadedSubtitles(
       const response = await sendMessageToTab(tabId, 'refreshRegisteredSubtitle', {
         subtitleId: id,
       });
-      if (!response.success) throw new Error(t('v2_local_subtitles_refresh_error'));
-    } catch {
-      modal.alert({ title: t('error'), message: t('v2_local_subtitles_refresh_error') });
-      throw new Error(t('v2_local_subtitles_refresh_error'));
+      if (!response.success) throw new RegisteredSubtitleRefreshError();
+    } catch (error) {
+      if (error instanceof RegisteredSubtitleRefreshError) throw error;
+      throw new RegisteredSubtitleRefreshError(error);
     }
   };
 
