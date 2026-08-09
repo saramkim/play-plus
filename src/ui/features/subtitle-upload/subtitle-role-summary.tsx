@@ -115,7 +115,7 @@ function RoleSummary({
       aria-labelledby={`${labelId} ${valueId}`}
       aria-busy={pending || undefined}
       data-subtitle-role={role}
-      className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 py-1.5 text-[12px] outline-none focus-visible:ring-1 focus-visible:ring-ring/50'
+      className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 py-1 text-[12px] outline-none focus-visible:ring-1 focus-visible:ring-ring/50'
     >
       <dt id={labelId} className='font-medium text-gray-600'>
         {roleTitle}

@@ -90,7 +90,7 @@ export function SubtitleCard({
         (isLearning || isSupport) && 'border-primary/40 bg-primary/5'
       )}
     >
-      <div className='flex min-w-0 flex-col gap-2.5 p-3'>
+      <div className='flex min-w-0 flex-col gap-2 p-2.5'>
         {mode === 'edit' && (
           <section className='flex min-w-0 flex-col gap-2' aria-labelledby={titleId}>
             <div className='flex items-center gap-2'>

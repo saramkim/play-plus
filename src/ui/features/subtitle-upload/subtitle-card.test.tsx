@@ -82,6 +82,12 @@ describe('SubtitleCard', () => {
     expect(title.classList.contains('line-clamp-2')).toBe(true);
     expect(card.classList.contains('shadow-sm')).toBe(false);
 
+    const content = card.firstElementChild;
+    expect(content?.classList.contains('gap-2')).toBe(true);
+    expect(content?.classList.contains('p-2.5')).toBe(true);
+    expect(content?.classList.contains('gap-2.5')).toBe(false);
+    expect(content?.classList.contains('p-3')).toBe(false);
+
     expect(Array.from(header.children[1].children).map((item) => item.textContent)).toEqual([
       'english',
       'learning_subtitle',
@@ -110,6 +116,60 @@ describe('SubtitleCard', () => {
       'true'
     );
     expect(getButton(container, 'support_subtitle').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps long identity and both selected-role semantics while one role is pending', () => {
+    const longTitle =
+      'A deliberately long registered subtitle title that must retain its two-line identity treatment';
+    renderCard(root, {
+      data: { ...subtitle, title: longTitle },
+      isAvailable: true,
+      isRoleAvailable: () => true,
+      pendingRoles: { learning: true, support: false },
+      tabInfo: {
+        learningSubtitleId: SUBTITLE_ID,
+        supportSubtitleId: SUBTITLE_ID,
+      },
+    });
+
+    const card = container.querySelector('li');
+    const title = card?.querySelector('h3');
+    if (!(card instanceof HTMLLIElement) || !(title instanceof HTMLHeadingElement)) {
+      throw new Error('Expected a compact selected subtitle card');
+    }
+
+    expect(title.textContent).toBe(longTitle);
+    expect(title.classList.contains('line-clamp-2')).toBe(true);
+    expect(card.getAttribute('aria-labelledby')).toBe(title.id);
+    expect(card.getAttribute('aria-busy')).toBe('true');
+    expect(card.classList.contains('border-primary/40')).toBe(true);
+    expect(card.classList.contains('bg-primary/5')).toBe(true);
+
+    const metadata = title.nextElementSibling;
+    expect(Array.from(metadata?.children ?? []).map((item) => item.textContent)).toEqual([
+      'english',
+      'learning_subtitle',
+      'support_subtitle',
+      '· v2_local_subtitles_sync_value',
+      '· v2_local_subtitles_added_date',
+    ]);
+
+    const pendingLearning = getButton(
+      card,
+      'learning_subtitle: v2_local_subtitles_applying'
+    );
+    const selectedSupport = getButton(
+      card,
+      'support_subtitle: v2_local_subtitles_default_short'
+    );
+    expect(pendingLearning.getAttribute('aria-pressed')).toBe('true');
+    expect(pendingLearning.disabled).toBe(true);
+    expect(selectedSupport.getAttribute('aria-pressed')).toBe('true');
+    expect(selectedSupport.disabled).toBe(false);
+    expect(getButton(card, 'v2_local_subtitles_preview').disabled).toBe(true);
+    expect(getButton(card, 'v2_local_subtitles_sync').disabled).toBe(true);
+    expect(getButton(card, 'v2_local_subtitles_edit_details').disabled).toBe(true);
+    expect(getButton(card, 'delete').disabled).toBe(true);
   });
 
   it('preserves the existing pending-action policy and exposes pending state', () => {

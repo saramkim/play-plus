@@ -323,6 +323,59 @@ describe('SubtitleUploadPage', () => {
     expect(getButton(container, 'v2_local_subtitles_add').disabled).toBe(true);
   });
 
+  it('keeps fixed Manage regions around one compact list scroll owner', () => {
+    testState.subtitles = [existingSubtitle, addedSubtitle];
+    act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
+
+    const scrollOwners = container.querySelectorAll("[data-scroll-owner='local-subtitles']");
+    expect(scrollOwners).toHaveLength(1);
+
+    const scrollOwner = scrollOwners[0];
+    const listMode = scrollOwner.parentElement;
+    const roleSummary = container.querySelector("[aria-labelledby='current-tab-subtitles-heading']");
+    const listHeader = container.querySelector("input[aria-label='search']")?.closest('header');
+    const headerWrapper = listHeader?.parentElement;
+    const footer = getButton(container, 'v2_local_subtitles_add').closest('footer');
+    const list = scrollOwner.querySelector('ul');
+    if (!listMode || !roleSummary || !listHeader || !headerWrapper || !footer || !list) {
+      throw new Error('Expected the complete Manage list structure');
+    }
+
+    expect(Array.from(listMode.children)).toEqual([
+      roleSummary,
+      headerWrapper,
+      scrollOwner,
+      footer,
+    ]);
+    expect(listMode.classList.contains('p-3')).toBe(true);
+    expect(headerWrapper.classList.contains('pt-1.5')).toBe(true);
+    expect(scrollOwner.classList.contains('px-1')).toBe(true);
+    expect(scrollOwner.classList.contains('py-1.5')).toBe(true);
+    expect(list.classList.contains('gap-2')).toBe(true);
+    expect(footer.classList.contains('pt-2')).toBe(true);
+  });
+
+  it('keeps the role summary mounted while an explicit search shows one matching card', () => {
+    testState.subtitles = [existingSubtitle, addedSubtitle];
+    act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));
+
+    const searchInput = container.querySelector<HTMLInputElement>("input[aria-label='search']");
+    if (!searchInput) throw new Error('Expected the registered-subtitle search input');
+
+    act(() => {
+      setInputValue(searchInput, 'Existing');
+      getButton(container, 'search').click();
+    });
+
+    const cards = container.querySelectorAll("[data-scroll-owner='local-subtitles'] li");
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain(existingSubtitle.title);
+    expect(cards[0].textContent).not.toContain(addedSubtitle.title);
+    expect(container.querySelectorAll('[data-subtitle-role]')).toHaveLength(2);
+    expect(container.querySelectorAll("[data-scroll-owner='local-subtitles']")).toHaveLength(1);
+    expect(getButton(container, 'clear_search')).toBeDefined();
+  });
+
   it('shows a recoverable no-results state and truly clears the registered-subtitle search', () => {
     testState.subtitles = [existingSubtitle, addedSubtitle];
     act(() => root.render(<SubtitleUploadPage learningProfile={learningProfile} />));

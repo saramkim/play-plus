@@ -317,7 +317,7 @@ export function SubtitleUploadPage({
     }
 
     return (
-      <div ref={listModeRef} tabIndex={-1} className='flex h-full min-h-0 flex-col overflow-hidden p-4 outline-none'>
+      <div ref={listModeRef} tabIndex={-1} className='flex h-full min-h-0 flex-col overflow-hidden p-3 outline-none'>
         <SubtitleRoleSummary
           subtitles={subtitles}
           tabInfo={tabInfo}
@@ -328,7 +328,7 @@ export function SubtitleUploadPage({
             useAsSubtitle({ role, subtitleId: null, previousSubtitleId })
           }
         />
-        <div className='shrink-0 pt-2'>
+        <div className='shrink-0 pt-1.5'>
           <ListHeader
             originalList={subtitles}
             onFilteredListChange={setFilteredSubtitles}
@@ -339,7 +339,7 @@ export function SubtitleUploadPage({
           />
         </div>
         <div
-          className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-2'
+          className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-1.5'
           data-scroll-owner='local-subtitles'
         >
           <UnavailableSubtitleNotice subtitles={unavailableSubtitles} />
@@ -359,7 +359,7 @@ export function SubtitleUploadPage({
               </Button>
             </div>
           ) : (
-            <ul className='flex flex-col gap-2.5'>
+            <ul className='flex flex-col gap-2'>
               {filteredSubtitles.map((item) => (
                 <SubtitleCard
                   key={item.id}
@@ -391,7 +391,7 @@ export function SubtitleUploadPage({
             </ul>
           )}
         </div>
-        <footer className='shrink-0 border-t pt-3'>
+        <footer className='shrink-0 border-t pt-2'>
           <Button
             ref={listAddButtonRef}
             className='w-full'
