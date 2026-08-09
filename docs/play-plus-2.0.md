@@ -379,7 +379,9 @@ End mode와 결과는 다음처럼 고정한다.
 - `complete-stay`: 마지막 practiced endpoint에 paused 상태로 남고 original rate/visibility를 복원한다.
 - `continue-watching`: 마지막 endpoint에서 original rate/visibility로 재생을 계속한다.
 - end 결과는 `ended | already-ended | stale | no-video | error`를 구분한다. exact session의 end는 idempotent하고 replacement/new-route video를 old position으로 seek하지 않는다.
-- normal mid-mission exit는 completed progress만 저장한 뒤 `restore-start`를 사용한다. normal completion이 Results에 들어갈 때 `complete-stay`로 original rate/visibility를 복원하고 last practiced endpoint에 paused 상태로 남는다. 이후 Results close는 idle로 돌아가고, Continue Watching은 `continue-watching`으로 그 endpoint에서 original rate로 재생한다. `Next 10`은 cleaned-up old session 뒤 current truth를 refresh해 새 consecutive session을 시작한다.
+- normal mid-mission exit는 completed progress만 저장한 뒤 `restore-start`를 사용한다.
+- normal completion이 Results에 들어가는 것만으로 content-owned session을 끝내거나 어떤 end mode도 호출하지 않는다. video는 last practiced endpoint에 paused 상태로 남고 session, heartbeat, navigation ownership과 immutable snapshot은 사용자가 end action을 선택할 때까지 유효하다.
+- normal Results close는 `complete-stay`, Continue Watching은 `continue-watching`을 사용한다. `Next 10`은 old session을 `complete-stay`로 끝낸 뒤 current catalog, identity와 revision을 refresh하고 새 consecutive session을 시작한다.
 
 Progress commit은 `saved | error`를 구분한다. difficult save는 successful segment key를 보존하고 `busy | error`만 retryable로 다룬다. `stale | no-video | segment-unavailable`은 terminal이며 failing key와 아직 시도하지 않은 later key를 구분해 보고하고 이후 save를 중지한다.
 
