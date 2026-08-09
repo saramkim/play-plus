@@ -2,6 +2,16 @@ import { z } from 'zod';
 
 import { LANGUAGES, Language } from '@utils/constants';
 
+import {
+  listeningSegmentKeySchema,
+  listeningSourceKeySchema,
+} from '@/listening/domain/source-identity';
+
+export {
+  listeningSegmentKeySchema,
+  listeningSourceKeySchema,
+} from '@/listening/domain/source-identity';
+
 export const V2_RESERVED_SHORTCUTS = [
   'ArrowUp',
   'ArrowDown',
@@ -133,6 +143,48 @@ export const registeredSubtitleIdSchema = z
   .string()
   .regex(/^subtitle-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
+export const listeningVideoIdSchema = z.string().min(1);
+
+export const listeningProgressStateSchema = z.enum(['attempted', 'cleared', 'mastered']);
+
+export const nonnegativeSafeIntegerSchema = z
+  .number()
+  .int()
+  .nonnegative()
+  .refine(Number.isSafeInteger, { message: 'Expected a nonnegative safe integer' });
+
+export const offsetDateTimeSchema = z.string().datetime({ offset: true });
+
+const listeningProgressItemSchema = z
+  .object({
+    state: listeningProgressStateSchema,
+    totalAttempts: nonnegativeSafeIntegerSchema,
+    lastPracticedAt: offsetDateTimeSchema,
+  })
+  .strict();
+
+const listeningProgressSourceSchema = z
+  .object({
+    segmenterVersion: z.literal(1),
+    bestCombo: nonnegativeSafeIntegerSchema,
+    lastPracticedAt: offsetDateTimeSchema,
+    items: z.record(listeningSegmentKeySchema, listeningProgressItemSchema),
+  })
+  .strict();
+
+const listeningProgressVideoSchema = z
+  .object({
+    sources: z.record(listeningSourceKeySchema, listeningProgressSourceSchema),
+  })
+  .strict();
+
+export const listeningProgressSchema = z
+  .object({
+    version: z.literal(1),
+    videos: z.record(listeningVideoIdSchema, listeningProgressVideoSchema),
+  })
+  .strict();
+
 export const registeredSubtitleMetadataSchema = z
   .object({
     id: registeredSubtitleIdSchema,
@@ -255,6 +307,7 @@ export const v2SyncStorageSchema = z
 export const v2LocalDataSchema = z
   .object({
     learningCards: z.array(learningCardSchema),
+    listeningProgress: listeningProgressSchema,
     registeredSubtitles: z.array(registeredSubtitleMetadataSchema),
     subtitleBodies: subtitleBodiesSchema,
     migrationState: migrationStateSchema,

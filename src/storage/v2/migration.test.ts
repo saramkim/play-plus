@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createDefaultListeningProgress } from './default';
 import { createV1_11Fixture } from './fixtures/v1-11';
 import {
   createFreshV2MigrationPlan,
@@ -33,6 +34,7 @@ describe('v1.11 migration plan', () => {
     });
     expect(first.local.learningCards[1].content).toEqual(first.local.learningCards[0].content);
     expect(first.local.learningCards[1].source).toEqual(first.local.learningCards[0].source);
+    expect(first.local.listeningProgress).toEqual(createDefaultListeningProgress());
   });
 
   it('maps language roles, appearance, approved shortcuts, and valid registered subtitles exactly', async () => {
@@ -342,7 +344,21 @@ describe('v2 migration coordinator', () => {
     expect(harness.dependencies.preserveSource).not.toHaveBeenCalled();
     expect(harness.dependencies.cleanupSource).not.toHaveBeenCalled();
     expect(harness.local()?.learningCards).toEqual([]);
+    expect(harness.local()?.listeningProgress).toEqual(createDefaultListeningProgress());
     expect(harness.sync()).toEqual(createFreshV2MigrationPlan().sync);
+  });
+
+  it('fails readiness closed when marked v2 data is missing required listening progress', async () => {
+    const harness = createCoordinatorHarness({ kind: 'fresh' });
+    await ensureV2Ready(harness.dependencies);
+    const local = harness.local() as Partial<V2LocalData>;
+    delete local.listeningProgress;
+    vi.mocked(harness.dependencies.readLocal).mockResolvedValue(local);
+    vi.mocked(harness.dependencies.writeCompletionState).mockClear();
+
+    await expect(ensureV2Ready(harness.dependencies)).rejects.toThrow();
+
+    expect(harness.dependencies.writeCompletionState).not.toHaveBeenCalled();
   });
 
   it('does not write or clean when strict source decoding fails', async () => {

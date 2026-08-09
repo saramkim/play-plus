@@ -1,4 +1,9 @@
-import { V2LocalData, V2SyncStorage } from './type';
+import { ListeningProgressV1, V2LocalData, V2SyncStorage } from './type';
+
+export const createDefaultListeningProgress = (): ListeningProgressV1 => ({
+  version: 1,
+  videos: {},
+});
 
 export const DEFAULT_V2_SYNC_STORAGE: V2SyncStorage = {
   learningProfile: {
@@ -48,6 +53,7 @@ export const DEFAULT_V2_SYNC_STORAGE: V2SyncStorage = {
 
 export const createDefaultV2LocalData = (): V2LocalData => ({
   learningCards: [],
+  listeningProgress: createDefaultListeningProgress(),
   registeredSubtitles: [],
   subtitleBodies: {},
   migrationState: {

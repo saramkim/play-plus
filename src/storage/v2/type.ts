@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 import {
   learningCardSchema,
+  listeningProgressSchema,
+  listeningProgressStateSchema,
+  listeningSegmentKeySchema,
+  listeningSourceKeySchema,
+  listeningVideoIdSchema,
   migrationStateSchema,
   registeredSubtitleMetadataSchema,
   shortcutConfirmationSchema,
@@ -13,6 +18,11 @@ import {
 } from './schema';
 
 export type LearningCard = z.infer<typeof learningCardSchema>;
+export type ListeningProgressState = z.infer<typeof listeningProgressStateSchema>;
+export type ListeningProgressV1 = z.infer<typeof listeningProgressSchema>;
+export type ListeningSegmentKey = z.infer<typeof listeningSegmentKeySchema>;
+export type ListeningSourceKey = z.infer<typeof listeningSourceKeySchema>;
+export type ListeningVideoId = z.infer<typeof listeningVideoIdSchema>;
 export type V2MigrationState = z.infer<typeof migrationStateSchema>;
 export type V2RegisteredSubtitleMetadata = z.infer<typeof registeredSubtitleMetadataSchema>;
 export type V2ShortcutConfirmation = z.infer<typeof shortcutConfirmationSchema>;

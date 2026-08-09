@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { runV2Migration } from './chrome-storage-adapter';
+import { createDefaultListeningProgress } from './default';
 import { createV1_11Fixture } from './fixtures/v1-11';
 
 const SNAPSHOT_KEY = 'v1MigrationSource';
@@ -27,6 +28,7 @@ describe('v2 Chrome Storage migration adapter', () => {
 
     expect(storage.local.values.dataSchemaVersion).toBe(2);
     expect(storage.local.values.learningCards).toHaveLength(fixture.local.savedSubtitles.length);
+    expect(storage.local.values.listeningProgress).toEqual(createDefaultListeningProgress());
     expect(storage.local.values.registeredSubtitles).toEqual(fixture.local.registeredSubtitles);
     expect(storage.local.values[FIRST_SUBTITLE_ID]).toEqual(fixture.local.subtitleBodies[FIRST_SUBTITLE_ID]);
     expect(storage.local.values[ORPHAN_SUBTITLE_ID]).toEqual(orphanBody);
@@ -59,6 +61,7 @@ describe('v2 Chrome Storage migration adapter', () => {
       local: fixture.local,
     });
     expect(storage.local.values).toHaveProperty('learningCards');
+    expect(storage.local.values.listeningProgress).toEqual(createDefaultListeningProgress());
     expect(storage.local.values).not.toHaveProperty('dataSchemaVersion');
 
     storage.local.values.savedSubtitles = [{ id: 'partially-overwritten-live-value' }];
@@ -135,6 +138,7 @@ describe('v2 Chrome Storage migration adapter', () => {
 
     expect(storage.local.values.dataSchemaVersion).toBe(2);
     expect(storage.local.values.learningCards).toEqual([]);
+    expect(storage.local.values.listeningProgress).toEqual(createDefaultListeningProgress());
     expect(storage.local.values).not.toHaveProperty(SNAPSHOT_KEY);
     expect(storage.local.removeCalls).toEqual([]);
     expect(storage.sync.removeCalls).toEqual([]);
@@ -147,6 +151,7 @@ describe('v2 Chrome Storage migration adapter', () => {
 
     expect(storage.local.values.migrationState).toMatchObject({ status: 'writing', sourceVersion: null });
     expect(storage.local.values.registeredSubtitles).toEqual([]);
+    expect(storage.local.values.listeningProgress).toEqual(createDefaultListeningProgress());
     expect(storage.local.values).not.toHaveProperty(SNAPSHOT_KEY);
     expect(storage.local.values).not.toHaveProperty('dataSchemaVersion');
 
@@ -161,6 +166,7 @@ describe('v2 Chrome Storage migration adapter', () => {
   it('fails closed for an invalid unmarked v2 state instead of falling back to v1', async () => {
     storage.local.values = {
       learningCards: [{ invalid: true }],
+      listeningProgress: createDefaultListeningProgress(),
       registeredSubtitles: [],
       migrationState: {
         status: 'writing',
@@ -176,6 +182,31 @@ describe('v2 Chrome Storage migration adapter', () => {
     expect(storage.sync.setCalls).toEqual([]);
     expect(storage.local.removeCalls).toEqual([]);
     expect(storage.sync.removeCalls).toEqual([]);
+  });
+
+  it('fails marked readiness closed when the required physical progress key is missing', async () => {
+    await runV2Migration(storage);
+    delete storage.local.values.listeningProgress;
+    storage.local.setCalls = [];
+    storage.sync.setCalls = [];
+
+    await expect(runV2Migration(storage)).rejects.toThrow();
+
+    expect(storage.local.setCalls).toEqual([]);
+    expect(storage.sync.setCalls).toEqual([]);
+  });
+
+  it('does not write the marker when progress readback is corrupted', async () => {
+    storage.local.afterSet = (items, values) => {
+      if (!('listeningProgress' in items)) return;
+      values.listeningProgress = { version: 1, videos: {}, history: [] };
+    };
+
+    await expect(runV2Migration(storage)).rejects.toThrow();
+
+    expect(storage.local.values).not.toHaveProperty('dataSchemaVersion');
+    expect(storage.local.setCalls.filter((items) => 'listeningProgress' in items)).toHaveLength(1);
+    expect(storage.sync.setCalls.filter((items) => 'learningProfile' in items)).toHaveLength(1);
   });
 });
 
