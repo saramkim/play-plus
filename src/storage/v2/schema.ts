@@ -161,7 +161,16 @@ const listeningProgressItemSchema = z
     totalAttempts: nonnegativeSafeIntegerSchema,
     lastPracticedAt: offsetDateTimeSchema,
   })
-  .strict();
+  .strict()
+  .superRefine(({ state, totalAttempts }, context) => {
+    if (state !== 'attempted' && totalAttempts === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Cleared or mastered progress requires a submitted attempt',
+        path: ['totalAttempts'],
+      });
+    }
+  });
 
 const listeningProgressSourceSchema = z
   .object({

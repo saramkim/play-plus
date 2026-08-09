@@ -1,5 +1,6 @@
 import { normalizeListeningAnswer } from './answer';
 import { splitListeningGraphemes } from './grapheme';
+import { cleanListeningSpokenText } from './spoken-text';
 
 export const LISTENING_HINT_MASK = '＿';
 
@@ -26,7 +27,7 @@ export const createListeningHint = (
   if (level === 2) return { level, text: createFirstGraphemesHint(normalizedExpected) };
   if (level === 3) return hasSupport(input.support) ? { level, text: input.support } : undefined;
 
-  return { level, text: normalizedExpected };
+  return { level, text: cleanListeningSpokenText(input.expected) };
 };
 
 export const createListeningHintSequence = (input: ListeningHintInput): ListeningHint[] => {

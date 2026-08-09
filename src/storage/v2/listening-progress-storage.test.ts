@@ -65,6 +65,37 @@ describe('v2 listening progress storage', () => {
     expect(storage.setCalls[0]).toEqual({ listeningProgress: progress });
   });
 
+  it('accepts only valid mission-state and submitted-attempt combinations', async () => {
+    const cases = [
+      ['attempted', 0, true],
+      ['attempted', 1, true],
+      ['cleared', 0, false],
+      ['cleared', 1, true],
+      ['mastered', 0, false],
+      ['mastered', 1, true],
+    ] as const;
+
+    for (const [achievedState, submittedAttemptIncrement, accepted] of cases) {
+      const storage = storageWithEmptyProgress();
+      const api = createV2ListeningProgressStorage(storage);
+      const operation = api.recordMissionResult(
+        missionResult({
+          items: [missionItem(SEGMENT_A, achievedState, submittedAttemptIncrement)],
+        })
+      );
+
+      if (accepted) {
+        await expect(operation).resolves.toBeDefined();
+        expect(storage.getCalls).toEqual(['listeningProgress']);
+        expect(storage.setCalls).toHaveLength(1);
+      } else {
+        await expect(operation).rejects.toThrow();
+        expect(storage.getCalls).toEqual([]);
+        expect(storage.setCalls).toEqual([]);
+      }
+    }
+  });
+
   it('records every segment in one full-object write', async () => {
     const storage = storageWithEmptyProgress();
     const api = createV2ListeningProgressStorage(storage);
@@ -124,6 +155,25 @@ describe('v2 listening progress storage', () => {
       },
     });
     expect(storage.setCalls).toHaveLength(3);
+  });
+
+  it('keeps an existing higher state and attempt count for attempted visits without submissions', async () => {
+    for (const state of ['cleared', 'mastered'] as const) {
+      const storage = new FakeLocalStorage({
+        listeningProgress: progressWithItem({ state, totalAttempts: 2 }),
+      });
+      const api = createV2ListeningProgressStorage(storage);
+
+      const progress = await api.recordMissionResult(
+        missionResult({ items: [missionItem(SEGMENT_A, 'attempted', 0)] })
+      );
+
+      expect(progress.videos[VIDEO_A].sources[SOURCE_A]!.items[SEGMENT_A]).toMatchObject({
+        state,
+        totalAttempts: 2,
+      });
+      expect(storage.setCalls).toHaveLength(1);
+    }
   });
 
   it('serializes concurrent mutations in invocation order', async () => {

@@ -204,7 +204,7 @@ describe('v2 listening progress schema', () => {
             items: {
               [listeningSegment]: {
                 state: 'mastered' as const,
-                totalAttempts: 0,
+                totalAttempts: 1,
                 lastPracticedAt: practicedAt,
               },
             },
@@ -227,6 +227,23 @@ describe('v2 listening progress schema', () => {
     ).toBe(true);
     expect(listeningSegmentKeySchema.safeParse(listeningSegment).success).toBe(true);
     expect(listeningProgressSchema.safeParse(validProgress()).success).toBe(true);
+  });
+
+  it('accepts only valid progress-state and attempt-count combinations', () => {
+    const cases = [
+      ['attempted', 0, true],
+      ['attempted', 1, true],
+      ['cleared', 0, false],
+      ['cleared', 1, true],
+      ['mastered', 0, false],
+      ['mastered', 1, true],
+    ] as const;
+
+    for (const [state, totalAttempts, accepted] of cases) {
+      expect(
+        listeningProgressSchema.safeParse(progressWithItemField({ state, totalAttempts })).success
+      ).toBe(accepted);
+    }
   });
 
   it('requires the progress key in canonical local data', () => {

@@ -48,12 +48,12 @@ describe('Listening Mission text hints', () => {
     expect(createListeningHint(3, { expected: 'Hello', learningLanguage: 'en' })).toBeUndefined();
   });
 
-  it('reveals the full normalized learning answer at Level 4', () => {
+  it('reveals the cleaned full learning answer at Level 4 without markup or wrapper leakage', () => {
     expect(
       createListeningHint(4, {
-        expected: '<b>Hello, WORLD!</b>',
+        expected: '<b>[noise] Hello, WORLD!</b>',
         learningLanguage: 'en',
       })
-    ).toEqual({ level: 4, text: 'hello world' });
+    ).toEqual({ level: 4, text: 'Hello, WORLD!' });
   });
 });

@@ -23,7 +23,16 @@ const missionProgressItemSchema = z
     achievedState: listeningProgressStateSchema,
     submittedAttemptIncrement: nonnegativeSafeIntegerSchema,
   })
-  .strict();
+  .strict()
+  .superRefine(({ achievedState, submittedAttemptIncrement }, context) => {
+    if (achievedState !== 'attempted' && submittedAttemptIncrement === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Cleared or mastered progress requires a submitted attempt',
+        path: ['submittedAttemptIncrement'],
+      });
+    }
+  });
 
 export const listeningMissionResultSchema = z
   .object({
