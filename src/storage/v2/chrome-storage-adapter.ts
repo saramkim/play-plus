@@ -22,7 +22,12 @@ interface MigrationStorage {
 }
 
 const V1_SOURCE_SNAPSHOT_KEY = 'v1MigrationSource';
-const V2_LOCAL_DATA_KEYS = ['learningCards', 'registeredSubtitles', 'migrationState'] as const;
+const V2_LOCAL_DATA_KEYS = [
+  'learningCards',
+  'listeningProgress',
+  'registeredSubtitles',
+  'migrationState',
+] as const;
 const V2_SYNC_STORAGE_KEYS = [
   'learningProfile',
   'subtitleDisplay',
@@ -89,6 +94,7 @@ export const createV2MigrationDependencies = (
   writeLocal: async (data) => {
     const physical: Record<string, unknown> = {
       learningCards: data.learningCards,
+      listeningProgress: data.listeningProgress,
       registeredSubtitles: data.registeredSubtitles,
       migrationState: data.migrationState,
     };
@@ -106,6 +112,7 @@ export const createV2MigrationDependencies = (
     const subtitleBodies = Object.fromEntries(bodyIds.map((id) => [id, physicalBodies[id]]));
     return {
       learningCards: fixed.learningCards,
+      listeningProgress: fixed.listeningProgress,
       registeredSubtitles: fixed.registeredSubtitles,
       migrationState: fixed.migrationState,
       subtitleBodies,
@@ -169,14 +176,16 @@ const isFreshInitializationRetry = (
 
   const localResult = v2LocalDataSchema.safeParse({
     learningCards: localValues.learningCards,
+    listeningProgress: localValues.listeningProgress,
     registeredSubtitles: localValues.registeredSubtitles,
     migrationState: localValues.migrationState,
     subtitleBodies: {},
   });
   if (!localResult.success) return false;
-  const { learningCards, migrationState, registeredSubtitles } = localResult.data;
+  const { learningCards, listeningProgress, migrationState, registeredSubtitles } = localResult.data;
   if (
     learningCards.length > 0 ||
+    Object.keys(listeningProgress.videos).length > 0 ||
     registeredSubtitles.length > 0 ||
     migrationState.status !== 'writing' ||
     migrationState.sourceVersion !== null ||

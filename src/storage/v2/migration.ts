@@ -1,4 +1,8 @@
-import { createDefaultV2LocalData, DEFAULT_V2_SYNC_STORAGE } from './default';
+import {
+  createDefaultListeningProgress,
+  createDefaultV2LocalData,
+  DEFAULT_V2_SYNC_STORAGE,
+} from './default';
 import {
   dataSchemaVersionSchema,
   registeredSubtitleMetadataSchema,
@@ -98,6 +102,7 @@ export const createV1_11MigrationPlan = async ({ local: localValue, sync: syncVa
     sync: v2SyncStorageSchema.parse(mappedSettings.sync),
     local: v2LocalDataSchema.parse({
       learningCards,
+      listeningProgress: createDefaultListeningProgress(),
       registeredSubtitles: registered.metadata,
       subtitleBodies: registered.bodies,
       migrationState: {
