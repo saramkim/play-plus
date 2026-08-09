@@ -981,5 +981,148 @@
                                      },
     "v2_content_action_failed":  {
                                      "message":  "콘텐츠 동작을 완료하지 못했습니다."
-                                 }
+                                 },
+    "v2_listening_mission_title": { "message": "듣기 미션" },
+    "v2_listening_mission_exit": { "message": "나가기" },
+    "v2_listening_mission_first_round": { "message": "첫 번째 라운드" },
+    "v2_listening_mission_retry_round": { "message": "다시 풀기" },
+    "v2_listening_mission_round_progress": {
+      "message": "$2문장 중 $1번째",
+      "placeholders": {
+        "current": { "content": "$1" },
+        "total": { "content": "$2" }
+      }
+    },
+    "v2_listening_mission_combo": {
+      "message": "$1 콤보",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_line_current": { "message": "현재 문장" },
+    "v2_listening_mission_line_completed": { "message": "완료한 문장" },
+    "v2_listening_mission_line_retry": { "message": "다시 풀 문장" },
+    "v2_listening_mission_instruction": { "message": "듣고 난 뒤 들은 문장을 입력하세요." },
+    "v2_listening_mission_listen_again": { "message": "다시 듣기" },
+    "v2_listening_mission_listen_slow": { "message": "느리게 0.75×" },
+    "v2_listening_mission_answer_label": { "message": "내 답" },
+    "v2_listening_mission_answer_placeholder": { "message": "들은 내용을 입력하세요" },
+    "v2_listening_mission_submit": { "message": "제출" },
+    "v2_listening_mission_hint": { "message": "힌트" },
+    "v2_listening_mission_hint_level": {
+      "message": "$1단계 힌트",
+      "placeholders": { "level": { "content": "$1" } }
+    },
+    "v2_listening_mission_reveal": { "message": "정답 보기" },
+    "v2_listening_mission_later": { "message": "나중에" },
+    "v2_listening_mission_playing": { "message": "현재 문장을 재생하고 있습니다…" },
+    "v2_listening_mission_played": { "message": "재생이 끝났습니다. 답을 입력할 수 있습니다." },
+    "v2_listening_mission_playback_error": { "message": "이 문장을 재생하지 못했습니다. 다시 듣기를 시도할 수 있습니다." },
+    "v2_listening_mission_correct": { "message": "정답이에요" },
+    "v2_listening_mission_almost": { "message": "거의 맞았어요. 차이가 작으니 답을 고쳐 보세요." },
+    "v2_listening_mission_try_again": { "message": "다시 시도해 보세요. 답을 고치거나 힌트를 사용할 수 있습니다." },
+    "v2_listening_mission_answer_heading": { "message": "정답" },
+    "v2_listening_mission_support_heading": { "message": "도움 문장" },
+    "v2_listening_mission_next": { "message": "다음" },
+    "v2_listening_mission_summary_title": { "message": "첫 번째 라운드 완료" },
+    "v2_listening_mission_summary_exact": {
+      "message": "첫 제출 정답 $1개",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_summary_retry": {
+      "message": "다시 풀 수 있는 문장 $1개",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_best_combo": {
+      "message": "최고 콤보: $1",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_retry_lines": {
+      "message": "$1문장 다시 풀기",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_view_results": { "message": "바로 결과 보기" },
+    "v2_listening_mission_results_title": { "message": "결과" },
+    "v2_listening_mission_stars": {
+      "message": "별 $1개",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_perfect": { "message": "퍼펙트" },
+    "v2_listening_mission_results_cleared": {
+      "message": "완료: $2개 중 $1개",
+      "placeholders": {
+        "cleared": { "content": "$1" },
+        "total": { "content": "$2" }
+      }
+    },
+    "v2_listening_mission_results_first_exact": {
+      "message": "첫 제출 정답: $1개",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_results_hint_free": {
+      "message": "힌트 없이 맞힌 문장: $1개",
+      "placeholders": { "count": { "content": "$1" } }
+    },
+    "v2_listening_mission_results_retry": {
+      "message": "다시 풀기 성공: 시도한 $2개 중 $1개",
+      "placeholders": {
+        "success": { "content": "$1" },
+        "attempted": { "content": "$2" }
+      }
+    },
+    "v2_listening_mission_progress_saving": { "message": "진행 상황을 저장하고 있습니다…" },
+    "v2_listening_mission_progress_saved": { "message": "진행 상황을 저장했습니다." },
+    "v2_listening_mission_progress_unsaved": { "message": "진행 상황이 저장되지 않았습니다." },
+    "v2_listening_mission_next_10": { "message": "다음 10개" },
+    "v2_listening_mission_continue_watching": { "message": "이어서 시청" },
+    "v2_listening_mission_close": { "message": "결과 닫기" },
+    "v2_listening_mission_exit_dialog_title": { "message": "듣기 미션에서 나갈까요?" },
+    "v2_listening_mission_exit_dialog_description": { "message": "완료한 문장에 대한 진행 정보는 저장하지만 현재 작성 중인 답은 저장하지 않습니다." },
+    "v2_listening_mission_continue_mission": { "message": "미션 계속하기" },
+    "v2_listening_mission_save_and_exit": { "message": "저장하고 나가기" },
+    "v2_listening_mission_ending": { "message": "미션을 종료하고 있습니다…" },
+    "v2_listening_mission_end_error": { "message": "미션을 안전하게 종료하지 못했습니다. 다시 시도하세요." },
+    "v2_listening_mission_retry_ending": { "message": "미션 종료 다시 시도" },
+    "v2_listening_mission_progress_failed_title": { "message": "진행 상황을 저장하지 못했습니다" },
+    "v2_listening_mission_progress_failed_description": { "message": "이번 미션에서 완료한 내용은 이 화면에 남아 있으므로 저장을 다시 시도할 수 있습니다." },
+    "v2_listening_mission_retry_saving": { "message": "진행 상황 저장 다시 시도" },
+    "v2_listening_mission_exit_without_saving": { "message": "이 진행 상황을 저장하지 않고 나가기" },
+    "v2_listening_mission_unsaved_lost": { "message": "이번 미션의 저장되지 않은 진행 상황은 사라집니다. 이전에 저장한 진행 상황은 그대로 남습니다." },
+    "v2_listening_mission_terminal_title": { "message": "이 미션을 더 이상 진행할 수 없습니다" },
+    "v2_listening_mission_terminal_stale": { "message": "영상이나 자막이 바뀌어 이 미션을 계속할 수 없습니다." },
+    "v2_listening_mission_terminal_no_video": { "message": "미션 영상을 더 이상 사용할 수 없습니다." },
+    "v2_listening_mission_terminal_segment_unavailable": { "message": "이 문장을 더 이상 사용할 수 없습니다." },
+    "v2_listening_mission_safe_exit": { "message": "안전하게 나가기" },
+    "v2_listening_mission_difficult_title": { "message": "어려운 문장 저장" },
+    "v2_listening_mission_difficult_description": { "message": "학습 보관함에 추가할 문장만 선택하세요." },
+    "v2_listening_mission_difficult_checkbox": {
+      "message": "$1번째 어려운 문장 선택",
+      "placeholders": { "number": { "content": "$1" } }
+    },
+    "v2_listening_mission_save_selected": { "message": "선택한 문장 저장" },
+    "v2_listening_mission_difficult_saving": { "message": "선택한 문장을 저장하고 있습니다…" },
+    "v2_listening_mission_difficult_saved": { "message": "저장된 문장은 아래에 표시했습니다." },
+    "v2_listening_mission_difficult_busy": { "message": "일부 선택 문장을 지금 처리할 수 없습니다. 다시 시도할 수 있도록 선택 상태를 유지했습니다." },
+    "v2_listening_mission_difficult_error": { "message": "일부 선택 문장을 저장하지 못했습니다. 다시 시도할 수 있도록 선택 상태를 유지했습니다." },
+    "v2_listening_mission_difficult_row_busy": { "message": "처리 중입니다. 이 문장은 선택된 상태로 유지됩니다." },
+    "v2_listening_mission_difficult_row_error": { "message": "저장하지 못했습니다. 이 문장은 선택된 상태로 유지됩니다." },
+    "v2_listening_mission_difficult_row_saved": { "message": "저장했습니다." },
+    "v2_listening_mission_difficult_terminal_saved_line": {
+      "message": "$LINE$번 문장을 저장했습니다.",
+      "placeholders": { "line": { "content": "$1" } }
+    },
+    "v2_listening_mission_difficult_terminal_busy_line": {
+      "message": "$LINE$번 문장은 처리 중이어서 저장하지 못했습니다.",
+      "placeholders": { "line": { "content": "$1" } }
+    },
+    "v2_listening_mission_difficult_terminal_error_line": {
+      "message": "$LINE$번 문장을 저장하지 못했습니다.",
+      "placeholders": { "line": { "content": "$1" } }
+    },
+    "v2_listening_mission_difficult_terminal_unattempted_line": {
+      "message": "$LINE$번 문장은 시도하지 못했습니다.",
+      "placeholders": { "line": { "content": "$1" } }
+    },
+    "v2_listening_mission_difficult_terminal_failed": {
+      "message": "$1번째 어려운 문장에서 미션 변경을 확인해 저장을 중단했습니다. 이미 저장한 문장은 그대로 유지됩니다.",
+      "placeholders": { "number": { "content": "$1" } }
+    }
 }
