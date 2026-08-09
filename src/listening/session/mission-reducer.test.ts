@@ -521,7 +521,7 @@ describe('Listening Mission progress and privacy', () => {
       learningSourceKey: SOURCE_KEY,
       practicedAt: PRACTICED_AT,
       segmenterVersion: 1,
-      videoId: 'video-1',
+      videoId: '123e4567-e89b-12d3-a456-426614174010',
     });
     expect(Object.keys(result!)).toEqual([
       'videoId',
@@ -808,7 +808,7 @@ const snapshot = (
     sourceKey: SOURCE_KEY,
   })),
   sourceKey: SOURCE_KEY,
-  videoId: 'video-1',
+  videoId: '123e4567-e89b-12d3-a456-426614174010',
 });
 
 const reduce = (

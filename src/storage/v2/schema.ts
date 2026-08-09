@@ -143,7 +143,9 @@ export const registeredSubtitleIdSchema = z
   .string()
   .regex(/^subtitle-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
-export const listeningVideoIdSchema = z.string().min(1);
+export const listeningVideoIdSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
 export const listeningProgressStateSchema = z.enum(['attempted', 'cleared', 'mastered']);
 

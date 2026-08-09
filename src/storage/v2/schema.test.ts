@@ -11,6 +11,7 @@ import {
   listeningProgressSchema,
   listeningSegmentKeySchema,
   listeningSourceKeySchema,
+  listeningVideoIdSchema,
   V2_RESERVED_SHORTCUTS,
   v2LocalDataSchema,
   v2SyncStorageSchema,
@@ -29,6 +30,7 @@ const assignedCard = {
 
 const listeningSource = 'native:en';
 const listeningSegment = `segment-v1-${'a'.repeat(64)}`;
+const listeningVideoId = '123e4567-e89b-12d3-a456-426614174000';
 const practicedAt = '2026-08-09T02:00:00.000+12:00';
 
 describe('v2 learning card schema', () => {
@@ -195,7 +197,7 @@ describe('v2 listening progress schema', () => {
   const validProgress = () => ({
     version: 1 as const,
     videos: {
-      'video-one': {
+      [listeningVideoId]: {
         sources: {
           [listeningSource]: {
             segmenterVersion: 1 as const,
@@ -214,7 +216,7 @@ describe('v2 listening progress schema', () => {
     },
   });
 
-  it('accepts strict empty progress and both approved source-key formats', () => {
+  it('accepts strict empty progress and approved video and source identities', () => {
     expect(listeningProgressSchema.parse(createDefaultListeningProgress())).toEqual({
       version: 1,
       videos: {},
@@ -226,6 +228,8 @@ describe('v2 listening progress schema', () => {
       ).success
     ).toBe(true);
     expect(listeningSegmentKeySchema.safeParse(listeningSegment).success).toBe(true);
+    expect(listeningVideoIdSchema.safeParse(listeningVideoId).success).toBe(true);
+    expect(listeningVideoIdSchema.safeParse(listeningVideoId.toUpperCase()).success).toBe(true);
     expect(listeningProgressSchema.safeParse(validProgress()).success).toBe(true);
   });
 
@@ -254,9 +258,17 @@ describe('v2 listening progress schema', () => {
   });
 
   it('rejects invalid identities, counters, timestamps, versions, and states', () => {
+    const validVideo = validProgress().videos[listeningVideoId];
+    const invalidVideoIds = [
+      '',
+      ' ',
+      'video-one',
+      `https://www.coupangplay.com/play/${listeningVideoId}`,
+      '123e4567-e89b-12d3-a456-42661417400z',
+    ];
     const invalidValues = [
       { ...validProgress(), version: 2 },
-      { ...validProgress(), videos: { '': validProgress().videos['video-one'] } },
+      ...invalidVideoIds.map((videoId) => ({ ...validProgress(), videos: { [videoId]: validVideo } })),
       progressWithSource('native:invalid'),
       progressWithSource('registered:invalid'),
       progressWithSegment('segment-v1-A'.padEnd('segment-v1-'.length + 64, 'A')),
@@ -272,6 +284,9 @@ describe('v2 listening progress schema', () => {
       progressWithItemField({ lastPracticedAt: 'not-a-date' }),
     ];
 
+    for (const videoId of invalidVideoIds) {
+      expect(listeningVideoIdSchema.safeParse(videoId).success).toBe(false);
+    }
     for (const value of invalidValues) {
       expect(listeningProgressSchema.safeParse(value).success).toBe(false);
     }
@@ -304,8 +319,8 @@ describe('v2 listening progress schema', () => {
   const progressWithSource = (sourceKey: string) => ({
     ...validProgress(),
     videos: {
-      'video-one': {
-        sources: { [sourceKey]: validProgress().videos['video-one'].sources[listeningSource] },
+      [listeningVideoId]: {
+        sources: { [sourceKey]: validProgress().videos[listeningVideoId].sources[listeningSource] },
       },
     },
   });
@@ -313,13 +328,13 @@ describe('v2 listening progress schema', () => {
   const progressWithSegment = (segmentKey: string) => ({
     ...validProgress(),
     videos: {
-      'video-one': {
+      [listeningVideoId]: {
         sources: {
           [listeningSource]: {
-            ...validProgress().videos['video-one'].sources[listeningSource],
+            ...validProgress().videos[listeningVideoId].sources[listeningSource],
             items: {
               [segmentKey]:
-                validProgress().videos['video-one'].sources[listeningSource].items[listeningSegment],
+                validProgress().videos[listeningVideoId].sources[listeningSource].items[listeningSegment],
             },
           },
         },
@@ -330,10 +345,10 @@ describe('v2 listening progress schema', () => {
   const progressWithSourceField = (field: Record<string, unknown>) => ({
     ...validProgress(),
     videos: {
-      'video-one': {
+      [listeningVideoId]: {
         sources: {
           [listeningSource]: {
-            ...validProgress().videos['video-one'].sources[listeningSource],
+            ...validProgress().videos[listeningVideoId].sources[listeningSource],
             ...field,
           },
         },
@@ -344,13 +359,13 @@ describe('v2 listening progress schema', () => {
   const progressWithItemField = (field: Record<string, unknown>) => ({
     ...validProgress(),
     videos: {
-      'video-one': {
+      [listeningVideoId]: {
         sources: {
           [listeningSource]: {
-            ...validProgress().videos['video-one'].sources[listeningSource],
+            ...validProgress().videos[listeningVideoId].sources[listeningSource],
             items: {
               [listeningSegment]: {
-                ...validProgress().videos['video-one'].sources[listeningSource].items[
+                ...validProgress().videos[listeningVideoId].sources[listeningSource].items[
                   listeningSegment
                 ],
                 ...field,

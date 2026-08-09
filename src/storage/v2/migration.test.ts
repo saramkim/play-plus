@@ -324,6 +324,29 @@ describe('v2 migration coordinator', () => {
     expect(harness.local()?.migrationState.status).toBe('complete');
   });
 
+  it('retries cleanup after the final completion-state write fails', async () => {
+    const harness = createCoordinatorHarness();
+    vi.mocked(harness.dependencies.writeCompletionState).mockRejectedValueOnce(
+      new Error('completion state interrupted')
+    );
+
+    await expect(ensureV2Ready(harness.dependencies)).rejects.toThrow(
+      'completion state interrupted'
+    );
+    expect(harness.version()).toBe(2);
+    expect(harness.local()?.migrationState.status).toBe('cleanup-pending');
+    expect(harness.dependencies.cleanupSource).toHaveBeenCalledOnce();
+
+    await expect(ensureV2Ready(harness.dependencies)).resolves.toEqual({ kind: 'ready', version: 2 });
+
+    expect(harness.dependencies.readSource).toHaveBeenCalledOnce();
+    expect(harness.dependencies.preserveSource).toHaveBeenCalledOnce();
+    expect(harness.dependencies.writeMarker).toHaveBeenCalledOnce();
+    expect(harness.dependencies.cleanupSource).toHaveBeenCalledTimes(2);
+    expect(harness.dependencies.writeCompletionState).toHaveBeenCalledTimes(2);
+    expect(harness.local()?.migrationState.status).toBe('complete');
+  });
+
   it('does not repeat cleanup after migration state is complete', async () => {
     const harness = createCoordinatorHarness();
     await ensureV2Ready(harness.dependencies);
