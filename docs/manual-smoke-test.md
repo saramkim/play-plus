@@ -16,18 +16,21 @@
 | Field | Value |
 | --- | --- |
 | Candidate version | `1.11.0` manifest/package value; Play Plus 2.0은 아직 출시되었다고 간주하지 않음 |
-| Commit SHA | 커밋 전 후보; exact-head CI는 아직 실행하지 않음 |
+| Planning baseline | `7ec060d08ca716de78d26468289459f1b41435f3` |
+| Integrated latest-main baseline | `b69dbea54a525266db1d9ed9ecb195d1a6313344` (#62–#65 통합) |
+| Code candidate commit | `4cd259f61c10a578302b032b54a50796476630a5` |
+| Final certification PR head | 문서 커밋은 자신의 SHA를 기록할 수 없으므로 PR 본문과 exact-head CI에 기록 |
 | Build command | `yarn build` |
-| Chrome version | UNKNOWN — 외부 Chrome 연결은 성공했지만 버전은 수집하지 않음 |
+| Chrome version | `151.0.0.0` (`chrome-devtools-kr` persistent profile) |
 | OS | Windows |
-| Tester / date | Codex / 2026-08-07 (자동 게이트, provider 사전 실증, Chrome 접속 시도 수행) |
-| Coupang Play account / region | UNKNOWN — 현재 연결 환경에서 홈페이지가 `/not-available`로 이동해 signed-in 재생 경로를 열 수 없었음 |
+| Tester / date | Codex / 2026-08-09 |
+| Coupang Play account / region | UNKNOWN — 전용 KR relay 3개가 각각 preflight를 통과했지만 실제 login 문서는 모두 Akamai `Access Denied`; persistent profile은 인증되지 않았고 credential은 입력·수집하지 않음 |
 | Korean test route | `https://www.coupangplay.com/play/<video-id>` |
 | English test route | `https://www.coupangplay.com/en/play/<video-id>` |
-| v1.11.0 upgrade profile | 실제 배포 v1.11.0에서 대표 데이터를 만든 별도 signed-in profile 필요 |
-| Fresh-install profile | 확장 Storage와 Web Storage가 없는 별도 clean profile 필요 |
-| OpenSubtitles Consumer / plan | UNKNOWN — 기존 Consumer로 login/JWT-free direct qualification은 통과했으나 production plan·attribution 승인은 별도 확인 필요; key 값은 기록하지 않음 |
-| OpenSubtitles build environment | PASS — ignored `.env.local`의 key 존재와 package-version 기본 User-Agent 사용을 값 노출 없이 확인 |
+| v1.11.0 upgrade profile | NOT RUN — 별도 actual-v1.11 signed-in profile을 준비하지 못함 |
+| Fresh-install profile | NOT RUN — 별도 clean profile을 준비하지 못함 |
+| OpenSubtitles Consumer / plan | NOT RUN — #66 exact candidate에서 production provider gate를 다시 실행하지 않음 |
+| OpenSubtitles build environment | NOT RUN — production build 완료만으로 Consumer key injection을 증명하지 않으며 #66 exact candidate에서 별도 확인하지 않음 |
 
 ## Automated preconditions
 
@@ -37,13 +40,62 @@
 | --- | --- | --- |
 | `yarn type-check` | PASS | `yarn.cmd type-check` |
 | `yarn lint` | PASS | `yarn.cmd lint` |
-| `yarn test:run` | PASS | `yarn.cmd test:run`: 62 files, 424 tests |
+| Focused latest-main matrices | PASS | integrated baseline `b69dbea`에서 86 unique files, 822 tests; exact code candidate의 영향 범위는 아래 11/166 matrix와 full 97/889 suite로 다시 검증 |
+| Storage/migration correction matrix | PASS | 11 files, 166 tests; UUID-only video namespace, URL rejection, record/reset serialization and recovery, final completion-state write recovery |
+| `yarn test:run` | PASS | `yarn.cmd test:run`: 97 files, 889 tests |
 | `yarn build` | PASS | Production Webpack build completed; 기존 bundle-size warning 3건 |
 | `git diff --check` | PASS | Whitespace errors 없음; Windows line-ending 안내만 출력 |
 | GitHub CI on exact head SHA | NOT RUN | |
-| Production bundle contains no retired/deferred runtime module | NOT RUN | 이번 구현 후보에서 전체 legacy reachability audit는 아직 실행하지 않음 |
-| Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | built manifest에 `https://api.opensubtitles.com/*`, `https://www.opensubtitles.com/*`만 optional로 존재; required host는 Coupang Play 하나 |
-| Reload unpacked `dist/` and run signed-in Chrome smoke | NOT RUN | 연결된 Chrome의 보안 정책상 `chrome://extensions` 조작이 차단되었고 Coupang Play는 `/not-available`로 이동함; 최신 후보가 로드됐다고 간주하지 않음 |
+| Production bundle/static reachability audit | PASS | 정확히 네 destination만 존재; retired/deferred route와 새 network/permission/telemetry 경로 없음; background bundle에 Mission `answerText`, `draft`, `alignedSupport`, `missionSnapshot`, `catalogBody`, `rawCue`, `sourceUrl` token 없음 |
+| EN/KO locale audit | PASS | EN 455 keys / KO 455 keys, exact parity; Listening Mission 129/129, empty/missing/placeholder mismatch 없음 |
+| Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
+| Reload unpacked `dist/` and run signed-in Chrome smoke | NOT RUN | exact code candidate `dist/` reload와 public-page Side Panel shell은 수행했지만 실제 login 문서가 세 KR relay에서 모두 `Access Denied`여서 supported `/play` player smoke는 시작하지 못함 |
+
+## Issue #66 final integration certification record
+
+이 절은 Batch Relay #67의 마지막 통합 후보를 최신 `main`에서 다시 검증한 증거다. 아래에서 명시적으로 `PASS`로 적은 subset 외의 기존 matrix 행은 계속 `NOT RUN`이며, automated fixture나 이전 PR의 Chrome 관찰을 이번 후보의 real-Chrome `PASS`로 승계하지 않는다.
+
+### Integrated commits and candidate scope
+
+| Scope | Commit | Result / notes |
+| --- | --- | --- |
+| Planning contract baseline | `7ec060d08ca716de78d26468289459f1b41435f3` | PASS — 비교 기준 고정 |
+| #62 canonical contract | `c6f3db0ce6ef6e5b6469a2ba83c83ff18d57b43f` | PASS — merged baseline 확인 |
+| #63 domain/storage foundation | `138d9e011aad6ace75a301a62c1c8e267843f17d` | PASS — merged baseline 확인 |
+| #64 isolated session UI | `1f727858907ed4b24e34dabfd4222ab94829d194` | PASS — merged baseline 확인 |
+| #65 integrated runtime | `b69dbea54a525266db1d9ed9ecb195d1a6313344` | PASS — latest-main baseline 확인 |
+| #66 minimum correction | `4cd259f61c10a578302b032b54a50796476630a5` | PASS — progress namespace와 clear boundary에서 full URL·공백·malformed video ID를 strict reject; 새 public field/permission/version 없음 |
+
+### Automated, static and privacy evidence
+
+| Check | Result | Evidence / notes |
+| --- | --- | --- |
+| Full local gates | PASS | type-check, lint, 97 files / 889 tests, production build, diff-check |
+| Deterministic/failure matrices | PASS | segment/key/answer/hint/result, session reducer/UI races, content lease/media restoration, progress initialization/monotonic merge/attempt 0/reset/write recovery를 focused suites로 검증 |
+| Four-destination and activation boundary | PASS | source와 built UI 모두 `Learning`, `Subtitles`, `Library`, `Review`만 존재; Listening Mission은 Learning 내부에만 존재 |
+| Progress/privacy schema | PASS | progress/reset은 strict factual data와 reset scope만 허용; typed answer/raw transient Mission text/full URL을 거부; 명시 선택한 canonical LearningCard만 transient Listening Mission data에 허용된 기존 background/local persistence 경로의 유일한 text-bearing exception |
+| Bundle/network/config boundary | PASS | 새 permission, host, CSP, dependency, entry, network primitive, telemetry, speech/mic/AI/account/payment surface 없음 |
+
+### Actual Chrome observations on the exact code candidate
+
+| Check | Result | Evidence / notes |
+| --- | --- | --- |
+| Dedicated KR route setup | PASS | `PlayPlusVPN` gateway의 KR egress와 host Windows route 비변경을 확인; 검증 후 gateway `active: false` 확인 |
+| Real Coupang Play login document | UNKNOWN | preflight를 통과한 서로 다른 KR volunteer relay 3개에서 실제 login 문서가 모두 Akamai `Access Denied`; credential은 입력하지 않았고 product-code 변경이나 mock route로 우회하지 않음 |
+| Production extension reload | PASS | code candidate production `dist/`를 extension ID를 동적으로 확인한 persistent `chrome-devtools-kr` profile에 reload |
+| Actual 360px Side Panel shell | PASS | actual Extension Page target에서 viewport/document width 360px, horizontal overflow 없음, Learning scroll owner 정확히 1개, 네 destination만 존재, Listening Mission은 Learning 내부에 표시 |
+| Public-page no-video truth | PASS | `Connected / Waiting`, `No video is ready`, supported Coupang Play video를 시작하라는 recoverable 안내와 Mission 외 Learning settings 접근을 확인 |
+| Existing destination shell | PASS | Subtitles, Library, Review와 Learning 복귀를 실제 Side Panel에서 순서대로 열고 각 empty/entry state를 확인 |
+| Side Panel/service-worker diagnostics | PASS | 두 console 모두 새 오류·sentence/answer 로그 없음; Side Panel network request 0건 |
+| Current ready-v2 storage shape | PASS | sanitized inspection에서 local required keys와 sync settings를 확인; `dataSchemaVersion: 2`, migration complete, `listeningProgress {version: 1, videos: {}}`, forbidden path 없음; 이는 clean/upgrade profile 증거를 대신하지 않음 |
+| Actual Side Panel approximately 390px | NOT RUN | 연결된 Side Panel target에 적용 가능한 resize control이 없어 실제 390px 관찰을 만들지 못함 |
+| Actual Side Panel 320px | NOT RUN | Chrome의 attainable minimum이 360px이며 automated 320px coverage와 구분 |
+| Signed-in supported `/play` player and Mission matrix | NOT RUN | actual login document가 세 KR relay에서 모두 `Access Denied`여서 player/DRM/native subtitle/video element/session을 만들 수 없었음 |
+| Clean-install and actual-v1.11 profiles | NOT RUN | 별도 prepared profiles가 없고 signed-in supported route도 열 수 없었음 |
+
+### Acceptance disposition
+
+Entry/source truth, deterministic real-player segmentation and hints, one complete Mission, controller/result failures, lease/restoration/invalidation, progress/reset behavior, active-session accessibility and existing player regression은 모두 supported `/play` prerequisite가 없어 `NOT RUN`이다. 따라서 #66의 현재 증거 결론은 **INSUFFICIENT EVIDENCE**다. 이는 자동 검증에서 발견된 product mismatch가 아니라 외부 login 환경 때문에 필수 real-Chrome 행을 수행하지 못한 상태이며, 사용자가 필수 환경을 제공하거나 계약 결정을 내리기 전에는 merge 또는 다음 릴리스 판단으로 해석하지 않는다.
 
 ## Fresh install and readiness
 
@@ -141,9 +193,11 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 
 ## Listening Mission side-panel integration (#65 / #66)
 
+이번 #66 candidate에서 actual 360px public-page Side Panel shell subset은 위 certification record에 `PASS`로 기록했다. 그러나 이 표의 compound 행은 automated 320px, actual 390px, signed-in supported `/play` 또는 active Mission 조건을 함께 요구하므로 해당 조건을 모두 실행하기 전까지 `NOT RUN`으로 유지한다.
+
 | Area | Route / setup | Check | Result | Evidence / notes |
 | --- | --- | --- | --- | --- |
-| Four destinations | Automated 320px fixture and actual side panel near ~360px / ~390px | Exactly Learning, Subtitles, Library and Review remain; Listening Mission is inside Learning and does not add a fifth destination | NOT RUN | |
+| Four destinations | Automated 320px fixture and actual side panel near ~360px / ~390px | Exactly Learning, Subtitles, Library and Review remain; Listening Mission is inside Learning and does not add a fifth destination | NOT RUN | #66 actual 360px subset PASS; actual ~390px NOT RUN |
 | Connected-video truth | No active tab, connecting content, disconnected content, detecting video and no detected video | Each state is distinct and truthful; no direct content request is sent without the exact connected active tab | NOT RUN | |
 | Catalog unavailable truth | Detected page fixtures | Verify identity unavailable, no learning track, no effective segments and transport/storage error states; Retry never reuses stale ready counts | NOT RUN | |
 | Native and registered learning tracks | Native and each registered subtitle type | Landing and mission use only the currently selected learning track, its effective delay and canonical source order | NOT RUN | |
@@ -165,9 +219,9 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Progress failure choices | Inject local progress read/write failure during landing, mission, results and reset | Reads fail closed; Retry or discard choices are explicit; no fabricated success, partial mutation or raw storage error is shown | NOT RUN | |
 | Separate resets | Exact-video and all-progress confirmations | Dialogs are separate, trap focus, close with Escape, cancel on tab/source/video change, preserve cards/subtitles/settings, and restore trigger focus after success | NOT RUN | |
 | Keyboard, IME and announcements | Keyboard-only with Korean IME composition | No submit occurs during composition; focus order, 44px targets, alert/status announcements and stable labels work without pointer input | NOT RUN | |
-| Compact geometry | Automated 320px fixture, then actual Chrome near its attainable minimum (~360px) and at ~390px | Exactly one vertical scroll owner is active, no horizontal clipping occurs, settings are hidden during an owned mission and long EN/KO copy wraps; if Chrome clamps 320px, record it as NOT RUN rather than simulated | NOT RUN | |
-| Privacy boundary | DevTools Network, message inspection and storage inspection | Progress/reset messages contain only strict facts/scope and never typed or raw text; the sole allowed background/local-persistence exception is a user-selected canonical LearningCard with its sentence and source URL, which is never sent to the network | NOT RUN | |
-| Latest-main integration (#66) | Clean profile and representative upgraded profile on latest `main` | Run the full automated gate plus this real-Chrome matrix; verify no permission, host, manifest, release-version or existing Learning/Subtitles/Library/Review regression | NOT RUN | |
+| Compact geometry | Automated 320px fixture, then actual Chrome near its attainable minimum (~360px) and at ~390px | Exactly one vertical scroll owner is active, no horizontal clipping occurs, settings are hidden during an owned mission and long EN/KO copy wraps; if Chrome clamps 320px, record it as NOT RUN rather than simulated | NOT RUN | #66 actual 360px idle shell had one scroll owner and no horizontal overflow; active Mission and actual ~390px NOT RUN |
+| Privacy boundary | DevTools Network, message inspection and storage inspection | Progress/reset messages contain only strict facts/scope and never typed or raw text; the sole allowed background/local-persistence exception is a user-selected canonical LearningCard with its sentence and source URL, which is never sent to the network | NOT RUN | #66 public idle shell console/network/sanitized storage subset PASS; active Mission message/card exception path NOT RUN |
+| Latest-main integration (#66) | Clean profile and representative upgraded profile on latest `main` | Run the full automated gate plus this real-Chrome matrix; verify no permission, host, manifest, release-version or existing Learning/Subtitles/Library/Review regression | NOT RUN | Automated/static gates and actual 360px shell subset PASS; clean/upgrade profiles and signed-in real-player matrix NOT RUN |
 
 ## Registered subtitle management
 
@@ -314,3 +368,5 @@ Use actual Chrome for the browser's attainable minimum side-panel width (current
 ## Release decision
 
 Do not authorize a release, tag, store submission or deployment while any required automated or manual row is `FAIL`, `NOT RUN`, or `UNKNOWN`. The signed-in v1.11.0 upgrade and clean-profile fresh-install checks require actual Chrome profiles and cannot be replaced by unit, integration, build or CI results.
+
+Issue #66 certification status on 2026-08-09: **INSUFFICIENT EVIDENCE**. The exact candidate passed automated/static gates and the actual 360px public-page Side Panel shell subset, but the required signed-in `/play`, clean-install, actual-v1.11 and approximately 390px Chrome rows remain `NOT RUN`; the attempted real login surface is `UNKNOWN` after Akamai `Access Denied` on three bounded KR relay attempts. Release, tag, deployment, Store submission and direct `main` push were not performed.
