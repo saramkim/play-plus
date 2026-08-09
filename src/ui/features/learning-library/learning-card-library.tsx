@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
 import {
   DeletedLearningCard,
@@ -6,6 +6,7 @@ import {
 } from '@storage/v2/learning-card-storage';
 import { LearningCard } from '@storage/v2/type';
 import { t } from '@utils/i18n';
+import { XIcon } from 'lucide-react';
 
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
@@ -69,6 +70,7 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handledRefreshRevisionRef = useRef(refreshRevision);
   const mutationReleaseRef = useRef<(() => void) | undefined>(undefined);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const undoRef = useRef<HTMLButtonElement>(null);
 
   const beginMutation = useCallback(
@@ -149,6 +151,12 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
     query.role !== 'all';
   const mutationPending = pendingCardId !== undefined;
 
+  const handleClearQuery = useCallback(() => {
+    if (mutationReleaseRef.current) return;
+    setQuery(DEFAULT_QUERY);
+    searchInputRef.current?.focus();
+  }, []);
+
   const replaceCard = (updated: LearningCard) => {
     setCards((current) =>
       current?.map((card) => (card.id === updated.id ? updated : card))
@@ -222,10 +230,10 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
 
   return (
     <section
-      className='flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 py-4'
+      className='flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-3 py-3'
       aria-labelledby='v2-learning-library-title'
     >
-      <header className='flex shrink-0 flex-col gap-3 border-b pb-3'>
+      <header className='flex shrink-0 flex-col gap-2 border-b pb-2'>
         <div className='flex items-center justify-between gap-2'>
           <h1
             ref={headingRef}
@@ -242,8 +250,9 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
             disabled={mutationPending}
             query={query}
             canClear={hasActiveQuery}
+            searchInputRef={searchInputRef}
             onChange={setQuery}
-            onClear={() => setQuery(DEFAULT_QUERY)}
+            onClear={handleClearQuery}
           />
         )}
       </header>
@@ -286,7 +295,7 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
       {cards.length === 0 ? (
         <LibraryEmpty />
       ) : visibleCards.length === 0 ? (
-        <LibraryFilteredEmpty onClear={() => setQuery(DEFAULT_QUERY)} />
+        <LibraryFilteredEmpty disabled={mutationPending} onClear={handleClearQuery} />
       ) : (
         <ul
           className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-2'
@@ -296,18 +305,15 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
             const pending = pendingCardId === card.id;
             const editing = editingId === card.id;
             return (
-              <li key={card.id} className='min-w-0 border-b py-3'>
+              <li key={card.id} className='min-w-0 border-b py-2'>
                 <article
-                  className='flex min-w-0 flex-col gap-3'
+                  className='flex min-w-0 flex-col gap-2'
                   aria-busy={pending}
                   aria-labelledby={`${card.id}-library-card-title`}
                 >
                   <h2 id={`${card.id}-library-card-title`} className='sr-only'>
                     {getLearningCardSearchText(card)}
                   </h2>
-                  <LearningCardContent card={card} />
-                  <LearningCardProvenance card={card} />
-
                   {editing ? (
                     <LearningCardEditor
                       card={card}
@@ -321,6 +327,12 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
                       onSave={handleSave}
                     />
                   ) : (
+                    <LearningCardContent card={card} />
+                  )}
+
+                  <LearningCardProvenance card={card} />
+
+                  {!editing && (
                     <div className='flex min-w-0 flex-wrap items-center gap-2'>
                       <label className='min-w-0 flex-1 text-xs font-medium'>
                         <span className='sr-only'>{t('v2_library_state_change')}</span>
@@ -388,22 +400,46 @@ interface LibraryControlsProps {
   canClear: boolean;
   disabled: boolean;
   query: LearningCardLibraryQuery;
+  searchInputRef: RefObject<HTMLInputElement | null>;
   onChange: (query: LearningCardLibraryQuery) => void;
   onClear: () => void;
 }
 
-function LibraryControls({ canClear, disabled, query, onChange, onClear }: LibraryControlsProps) {
+function LibraryControls({
+  canClear,
+  disabled,
+  query,
+  searchInputRef,
+  onChange,
+  onClear,
+}: LibraryControlsProps) {
   return (
     <div className='flex min-w-0 flex-col gap-2'>
-      <Input
-        type='search'
-        aria-label={t('v2_library_search_label')}
-        disabled={disabled}
-        value={query.searchText}
-        onChange={(event) => {
-          if (!disabled) onChange({ ...query, searchText: event.target.value });
-        }}
-      />
+      <div className='flex min-w-0 gap-2'>
+        <Input
+          ref={searchInputRef}
+          type='search'
+          className='flex-1'
+          aria-label={t('v2_library_search_label')}
+          disabled={disabled}
+          value={query.searchText}
+          onChange={(event) => {
+            if (!disabled) onChange({ ...query, searchText: event.target.value });
+          }}
+        />
+        <Button
+          type='button'
+          variant='outline'
+          size='icon'
+          className='size-8 shrink-0'
+          aria-label={t('clear_filters')}
+          tooltip={t('clear_filters')}
+          disabled={disabled || !canClear}
+          onClick={onClear}
+        >
+          <XIcon />
+        </Button>
+      </div>
       <div className='grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 min-[390px]:grid-cols-3'>
         <label className='min-w-0 text-xs font-medium'>
           <span className='sr-only'>{t('v2_library_sort_label')}</span>
@@ -456,15 +492,6 @@ function LibraryControls({ canClear, disabled, query, onChange, onClear }: Libra
           </select>
         </label>
       </div>
-      <Button
-        type='button'
-        variant='outline'
-        size='sm'
-        disabled={disabled || !canClear}
-        onClick={onClear}
-      >
-        {t('clear_filters')}
-      </Button>
     </div>
   );
 }
@@ -519,11 +546,11 @@ function LibraryEmpty() {
   );
 }
 
-function LibraryFilteredEmpty({ onClear }: { onClear: () => void }) {
+function LibraryFilteredEmpty({ disabled, onClear }: { disabled: boolean; onClear: () => void }) {
   return (
     <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-4 text-center'>
       <p className='text-wrap text-sm text-muted-foreground'>{t('v2_library_filtered_empty')}</p>
-      <Button type='button' variant='outline' size='sm' onClick={onClear}>
+      <Button type='button' variant='outline' size='sm' disabled={disabled} onClick={onClear}>
         {t('clear_filters')}
       </Button>
     </div>

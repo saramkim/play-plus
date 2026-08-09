@@ -124,6 +124,66 @@ describe('v2 learning card Library component', () => {
     expect(container.querySelector("[aria-label='v2_library_sort_label']")).not.toBeNull();
   });
 
+  it('keeps a stable compact header while Clear resets every query dimension and focuses search', async () => {
+    const harness = createStorageHarness([
+      assignedCard('active'),
+      assignedCard('completed', 'completed'),
+      unassignedCard('legacy', 'completed'),
+    ]);
+    await renderLibrary(root, harness.storage);
+
+    const section = container.querySelector<HTMLElement>(
+      "section[aria-labelledby='v2-learning-library-title']"
+    );
+    const header = section?.querySelector<HTMLElement>('header');
+    const search = getInput(container, 'v2_library_search_label');
+    const clear = getButton(container, 'clear_filters');
+    if (!section || !header) throw new Error('Expected compact Library shell');
+
+    expect(Array.from(section.classList)).toEqual(expect.arrayContaining(['px-3', 'py-3']));
+    expect(Array.from(header.classList)).toEqual(expect.arrayContaining(['gap-2', 'pb-2']));
+    expect(search.parentElement).toBe(clear.parentElement);
+    expect(clear.classList.contains('size-8')).toBe(true);
+    expect(clear.getAttribute('aria-label')).toBe('clear_filters');
+    expect(clear.hasAttribute('title')).toBe(false);
+    expect(clear.disabled).toBe(true);
+
+    const expectReset = () => {
+      expect(getButton(container, 'clear_filters')).toBe(clear);
+      expect(clear.disabled).toBe(false);
+      act(() => clear.click());
+      expect(getInput(container, 'v2_library_search_label').value).toBe('');
+      expect(getSelect(container, 'v2_library_sort_label').value).toBe('latest');
+      expect(getSelect(container, 'v2_library_state_filter').value).toBe('all');
+      expect(getSelect(container, 'v2_library_role_filter').value).toBe('all');
+      expect(document.activeElement).toBe(search);
+      expect(clear.disabled).toBe(true);
+    };
+
+    changeInput(search, 'support');
+    expectReset();
+    changeSelect(getSelect(container, 'v2_library_sort_label'), 'oldest');
+    expectReset();
+    changeSelect(getSelect(container, 'v2_library_state_filter'), 'completed');
+    expectReset();
+    changeSelect(getSelect(container, 'v2_library_role_filter'), 'unassigned');
+    expectReset();
+  });
+
+  it('uses compact feature-local card spacing without changing the scroll owner', async () => {
+    const harness = createStorageHarness([assignedCard('spacing')]);
+    await renderLibrary(root, harness.storage);
+
+    const scrollOwner = container.querySelector("[data-scroll-owner='learning-library']");
+    const listItem = scrollOwner?.querySelector('li');
+    const article = listItem?.querySelector('article');
+    if (!scrollOwner || !listItem || !article) throw new Error('Expected populated Library card');
+
+    expect(container.querySelectorAll("[data-scroll-owner='learning-library']")).toHaveLength(1);
+    expect(listItem.classList.contains('py-2')).toBe(true);
+    expect(article.classList.contains('gap-2')).toBe(true);
+  });
+
   it('preserves and clears composed search, sort, state, and role controls', async () => {
     const harness = createStorageHarness([
       assignedCard('active'),
@@ -132,20 +192,26 @@ describe('v2 learning card Library component', () => {
     ]);
     await renderLibrary(root, harness.storage);
 
-    changeInput(getInput(container, 'v2_library_search_label'), 'support');
+    const search = getInput(container, 'v2_library_search_label');
+    changeInput(search, 'support');
     changeSelect(getSelect(container, 'v2_library_state_filter'), 'completed');
     changeSelect(getSelect(container, 'v2_library_role_filter'), 'unassigned');
     changeSelect(getSelect(container, 'v2_library_sort_label'), 'oldest');
 
     expect(container.textContent).toContain('v2_library_filtered_empty');
-    act(() => getButton(container, 'clear_filters').click());
+    const filteredEmptyClear = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'clear_filters'
+    );
+    if (!filteredEmptyClear) throw new Error('Expected filtered-empty Clear action');
+    act(() => filteredEmptyClear.click());
 
-    expect(getInput(container, 'v2_library_search_label').value).toBe('');
+    expect(search.value).toBe('');
     expect(getSelect(container, 'v2_library_state_filter').value).toBe('all');
     expect(getSelect(container, 'v2_library_role_filter').value).toBe('all');
     expect(getSelect(container, 'v2_library_sort_label').value).toBe('latest');
     expect(container.textContent).toContain('Learning active');
     expect(container.textContent).toContain('Unassigned legacy');
+    expect(document.activeElement).toBe(search);
   });
 
   it('awaits a direct state change, disables duplicate mutations, and restores focus', async () => {
@@ -154,6 +220,9 @@ describe('v2 learning card Library component', () => {
     const deferred = createDeferred<LearningCard>();
     harness.storage.update = vi.fn(() => deferred.promise);
     await renderLibrary(root, harness.storage);
+    changeSelect(getSelect(container, 'v2_library_sort_label'), 'oldest');
+    const clear = getButton(container, 'clear_filters');
+    expect(clear.disabled).toBe(false);
     const stateSelect = getCard(container, 'Learning pending').querySelector<HTMLSelectElement>(
       "select[aria-label='v2_library_state_change']"
     );
@@ -171,6 +240,7 @@ describe('v2 learning card Library component', () => {
     });
     expect(getCard(container, 'Learning pending').getAttribute('aria-busy')).toBe('true');
     expect(usePageStore.getState().navigationLocked).toBe(true);
+    expect(clear.disabled).toBe(true);
     expect(Array.from(container.querySelectorAll('button, select')).every((control) => {
       if (control.getAttribute('aria-label')?.includes('filter')) return true;
       if (control.getAttribute('aria-label')?.includes('sort')) return true;
@@ -183,6 +253,50 @@ describe('v2 learning card Library component', () => {
     expect(stateSelect.value).toBe('completed');
     expect(document.activeElement).toBe(stateSelect);
     expect(usePageStore.getState().navigationLocked).toBe(false);
+    expect(clear.disabled).toBe(false);
+  });
+
+  it('keeps filtered-empty Clear locked when an external refresh intersects a mutation', async () => {
+    const card = assignedCard('refresh-pending');
+    const completed = { ...card, studyState: 'completed' as const };
+    const harness = createStorageHarness([card]);
+    const deferred = createDeferred<LearningCard>();
+    harness.storage.update = vi.fn(() => deferred.promise);
+    await act(async () => {
+      root.render(<LearningCardLibrary refreshRevision={0} storage={harness.storage} />);
+      await Promise.resolve();
+    });
+    const search = getInput(container, 'v2_library_search_label');
+    changeSelect(getSelect(container, 'v2_library_state_filter'), 'active');
+    const stateSelect = getCard(container, 'Learning refresh-pending').querySelector<HTMLSelectElement>(
+      "select[aria-label='v2_library_state_change']"
+    );
+    if (!stateSelect) throw new Error('Expected state select');
+
+    await act(async () => {
+      changeSelect(stateSelect, 'completed');
+      await Promise.resolve();
+    });
+    harness.storage.get = vi.fn(async () => [completed]);
+    await act(async () => {
+      root.render(<LearningCardLibrary refreshRevision={1} storage={harness.storage} />);
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('v2_library_filtered_empty');
+    const filteredEmptyClear = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'clear_filters'
+    );
+    if (!filteredEmptyClear) throw new Error('Expected filtered-empty Clear action');
+    expect(filteredEmptyClear.disabled).toBe(true);
+    act(() => filteredEmptyClear.click());
+    expect(getSelect(container, 'v2_library_state_filter').value).toBe('active');
+
+    await act(async () => deferred.resolve(completed));
+    expect(filteredEmptyClear.disabled).toBe(false);
+    act(() => filteredEmptyClear.click());
+    expect(getSelect(container, 'v2_library_state_filter').value).toBe('all');
+    expect(document.activeElement).toBe(search);
   });
 
   it('keeps persisted state unchanged and reports a recoverable direct-update failure', async () => {
@@ -227,6 +341,49 @@ describe('v2 learning card Library component', () => {
     });
     expect(container.querySelector(`#${card.id}-learning-text`)).toBeNull();
     expect(document.activeElement?.textContent).toBe('edit');
+  });
+
+  it('renders the editor first without duplicate visible content and keeps provenance below once', async () => {
+    const card = assignedCard('edit-layout');
+    const harness = createStorageHarness([card]);
+    await renderLibrary(root, harness.storage);
+    const article = getCard(container, 'Learning edit-layout');
+
+    expect(
+      Array.from(article.querySelectorAll('p')).filter(
+        (paragraph) => paragraph.textContent === 'Learning edit-layout'
+      )
+    ).toHaveLength(1);
+    expect(
+      Array.from(article.querySelectorAll('p')).filter(
+        (paragraph) => paragraph.textContent === 'Support edit-layout'
+      )
+    ).toHaveLength(1);
+
+    act(() => getButton(article, 'edit').click());
+
+    const editedArticle = getCard(container, 'Learning edit-layout');
+    const accessibleHeading = editedArticle.querySelector('h2.sr-only');
+    const visibleChildren = Array.from(editedArticle.children).filter(
+      (element) => !element.classList.contains('sr-only')
+    );
+    expect(accessibleHeading?.id).toBe(`${card.id}-library-card-title`);
+    expect(editedArticle.getAttribute('aria-labelledby')).toBe(accessibleHeading?.id);
+    expect(visibleChildren[0]?.tagName).toBe('FORM');
+    expect(visibleChildren[1]?.tagName).toBe('DL');
+    expect(editedArticle.querySelectorAll('dl')).toHaveLength(1);
+    expect(
+      Array.from(editedArticle.querySelectorAll('dt')).filter(
+        (term) => term.textContent === 'v2_library_source'
+      )
+    ).toHaveLength(1);
+    expect(
+      Array.from(editedArticle.querySelectorAll('p')).filter(
+        (paragraph) =>
+          paragraph.textContent === 'Learning edit-layout' ||
+          paragraph.textContent === 'Support edit-layout'
+      )
+    ).toHaveLength(0);
   });
 
   it('keeps an editor draft and focus context after a failed save', async () => {
