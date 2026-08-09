@@ -74,7 +74,7 @@ export function LearningCardEditor({
 
   return (
     <form
-      className='flex min-w-0 flex-col gap-3 rounded-lg border bg-muted/20 p-3'
+      className='flex min-w-0 flex-col gap-2'
       aria-busy={pending}
       aria-describedby={error ? errorId : undefined}
       onSubmit={(event) => void handleSubmit(event)}
@@ -83,7 +83,7 @@ export function LearningCardEditor({
         {t('unassigned' in card.content ? 'v2_library_editor_assign_title' : 'v2_library_editor_title')}
       </h3>
 
-      <fieldset className='flex min-w-0 flex-col gap-3' disabled={disabled}>
+      <fieldset className='flex min-w-0 flex-col gap-2' disabled={disabled}>
         <EditorLine
           idPrefix={`${card.id}-learning`}
           textLabel={t('v2_library_learning_text')}
@@ -97,7 +97,7 @@ export function LearningCardEditor({
         />
 
         {draft.supportEnabled ? (
-          <div className='flex min-w-0 flex-col gap-2 rounded-md border bg-background p-2'>
+          <div className='flex min-w-0 flex-col gap-2'>
             <EditorLine
               idPrefix={`${card.id}-support`}
               textLabel={t('v2_library_support_text')}

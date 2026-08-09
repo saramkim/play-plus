@@ -1,9 +1,13 @@
+import { act, createElement } from 'react';
+
 import { LearningCard } from '@storage/v2/type';
+import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 
 import {
   createEditedLearningCard,
   createLearningCardEditorDraft,
+  LearningCardEditor,
   LearningCardEditorDraft,
 } from './learning-card-editor';
 
@@ -117,6 +121,69 @@ describe('v2 learning card editor model', () => {
     };
 
     expect(() => createEditedLearningCard(assignedCard('invalid'), draft)).toThrow();
+  });
+});
+
+describe('v2 learning card editor presentation', () => {
+  it('uses a flat compact hierarchy while preserving field and feedback order', async () => {
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    document.body.append(container);
+    const card = assignedCard('presentation');
+    const onSave = async () => {
+      throw new Error('Injected update failure');
+    };
+    const renderEditor = (pending: boolean) =>
+      root.render(
+        createElement(LearningCardEditor, {
+          card,
+          disabled: false,
+          pending,
+          onCancel: () => undefined,
+          onSave,
+        })
+      );
+
+    try {
+      act(() => renderEditor(false));
+
+      const form = container.querySelector('form');
+      const fieldset = container.querySelector('fieldset');
+      const learningText = container.querySelector<HTMLTextAreaElement>(
+        `#${card.id}-learning-text`
+      );
+      const learningLanguage = container.querySelector<HTMLSelectElement>(
+        `#${card.id}-learning-language`
+      );
+      const supportText = container.querySelector<HTMLTextAreaElement>(
+        `#${card.id}-support-text`
+      );
+      const supportGroup = supportText?.parentElement?.parentElement?.parentElement;
+
+      expect(form?.className).toBe('flex min-w-0 flex-col gap-2');
+      expect(fieldset?.className).toBe('flex min-w-0 flex-col gap-2');
+      expect(supportGroup?.className).toBe('flex min-w-0 flex-col gap-2');
+      expect(learningText?.classList.contains('min-h-20')).toBe(true);
+      expect(learningLanguage?.classList.contains('h-8')).toBe(true);
+
+      await act(async () => {
+        form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await Promise.resolve();
+      });
+      act(() => renderEditor(true));
+
+      const orderedChildren = Array.from(form?.children ?? []);
+      expect(orderedChildren[0]?.tagName).toBe('H3');
+      expect(orderedChildren[1]?.tagName).toBe('FIELDSET');
+      expect(orderedChildren[2]?.getAttribute('role')).toBe('alert');
+      expect(orderedChildren[3]?.getAttribute('role')).toBe('status');
+      expect(Array.from(orderedChildren[4]?.querySelectorAll('button') ?? []).map((button) =>
+        button.textContent
+      )).toEqual(['cancel', 'save']);
+    } finally {
+      act(() => root.unmount());
+      container.remove();
+    }
   });
 });
 
