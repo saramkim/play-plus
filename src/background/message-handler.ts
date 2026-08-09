@@ -1,4 +1,11 @@
+import { z } from 'zod';
+
 import type { V2LearningCardStorageApi } from '@storage/v2/learning-card-storage';
+import {
+  listeningMissionResultSchema,
+  type V2ListeningProgressStorageApi,
+} from '@storage/v2/listening-progress-storage';
+import { listeningVideoIdSchema } from '@storage/v2/schema';
 import { onMessage } from '@utils/message';
 import type { ContentBootstrap, MessageSchema, V2ReadinessStatus } from '@utils/message/type';
 
@@ -30,6 +37,7 @@ type BackgroundMessageHandlerDependencies = {
     }
   ) => Promise<void>;
   learningCards: V2LearningCardStorageApi;
+  listeningProgress: V2ListeningProgressStorageApi;
   updateConnectedStatus: (
     tabId: number,
     status: {
@@ -45,7 +53,15 @@ type BackgroundMessageHandlerDependencies = {
 };
 
 const CARD_OPERATION_ERROR = 'Unable to access the learning library';
+const LISTENING_PROGRESS_OPERATION_ERROR = 'Unable to access listening progress';
 const BACKGROUND_OPERATION_ERROR = 'Unable to complete the Play Plus action';
+const noMessageParamsSchema = z.undefined();
+const recordListeningMissionResultParamsSchema = z
+  .object({ result: listeningMissionResultSchema })
+  .strict();
+const clearListeningVideoProgressParamsSchema = z
+  .object({ videoId: listeningVideoIdSchema })
+  .strict();
 
 export const registerBackgroundMessageHandler = (
   dependencies: BackgroundMessageHandlerDependencies
@@ -168,6 +184,34 @@ export const registerBackgroundMessageHandler = (
         return respondToAsyncMessage(request.sendResponse, () =>
           runCardOperation(dependencies, () => dependencies.learningCards.restore(request.params.deleted))
         );
+      case 'getListeningProgress':
+        return respondToAsyncMessage(request.sendResponse, () =>
+          runListeningProgressOperation(dependencies, () => {
+            noMessageParamsSchema.parse(request.params);
+            return dependencies.listeningProgress.get();
+          })
+        );
+      case 'recordListeningMissionResult':
+        return respondToAsyncMessage(request.sendResponse, () =>
+          runListeningProgressOperation(dependencies, () => {
+            const { result } = recordListeningMissionResultParamsSchema.parse(request.params);
+            return dependencies.listeningProgress.recordMissionResult(result);
+          })
+        );
+      case 'clearListeningVideoProgress':
+        return respondToAsyncMessage(request.sendResponse, () =>
+          runListeningProgressOperation(dependencies, () => {
+            const { videoId } = clearListeningVideoProgressParamsSchema.parse(request.params);
+            return dependencies.listeningProgress.clearVideo(videoId);
+          })
+        );
+      case 'clearAllListeningProgress':
+        return respondToAsyncMessage(request.sendResponse, () =>
+          runListeningProgressOperation(dependencies, () => {
+            noMessageParamsSchema.parse(request.params);
+            return dependencies.listeningProgress.clearAll();
+          })
+        );
     }
   });
 };
@@ -189,5 +233,17 @@ const runBackgroundOperation = async <T>(operation: () => Promise<T>) => {
     return await operation();
   } catch {
     throw new Error(BACKGROUND_OPERATION_ERROR);
+  }
+};
+
+const runListeningProgressOperation = async <T>(
+  dependencies: Pick<BackgroundMessageHandlerDependencies, 'awaitReady'>,
+  operation: () => Promise<T>
+) => {
+  try {
+    await dependencies.awaitReady();
+    return await operation();
+  } catch {
+    throw new Error(LISTENING_PROGRESS_OPERATION_ERROR);
   }
 };

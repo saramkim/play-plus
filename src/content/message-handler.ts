@@ -15,6 +15,11 @@ import type {
   VideoTimeResponse,
 } from '@utils/message/type';
 
+import {
+  createNativeListeningSourceKey,
+  createRegisteredListeningSourceKey,
+} from '@/listening/domain/source-identity';
+
 import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
@@ -22,6 +27,12 @@ import { coupangStrategy } from './coupang-play';
 import { buildLearningCardFromResolvedCue } from './features/learning-playback/learning-card-builder';
 import { saveLearningCard } from './features/learning-playback/learning-card-save-coordinator';
 import { resolveCue } from './features/learning-playback/learning-playback';
+import {
+  createListeningSessionCoordinator,
+  type ListeningSessionContext,
+  type ListeningSessionCoordinator,
+} from './features/listening-session/listening-session-coordinator';
+import { isListeningMissionActive } from './features/listening-session/mission-active-store';
 import {
   createLearningSubtitleOverviewCues,
   createSubtitleOverviewCues,
@@ -79,6 +90,7 @@ export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependen
 
 type MessageListenerDependencies = {
   createVideoLifecycleMonitor: () => VideoLifecycleMonitor;
+  listeningSessionCoordinator?: ListeningSessionCoordinator;
   registerMessageListener: typeof onMessage;
 };
 
@@ -93,8 +105,17 @@ let activeRouteVideoId = getCoupangPlayVideoId(window.location.href);
 let activeVideoRevision = 0;
 const contentInstanceId = crypto.randomUUID();
 let latestNativeSubtitleRequestId: string | null = null;
+const listeningSessionCoordinator = createListeningSessionCoordinator({
+  readContext: createListeningSessionContext,
+  isIdentityCurrent: (identity) =>
+    isLiveVideoIdentityCurrent(identity) &&
+    isSameContentVideoIdentity(identity, createContentVideoIdentity()),
+  isCurrentVideo: (video) => videoManager.isCurrent(video),
+});
 
 export function initializeMessageListener(dependencies = defaultMessageListenerDependencies) {
+  const sessionCoordinator =
+    dependencies.listeningSessionCoordinator ?? listeningSessionCoordinator;
   const currentVideoId = getCoupangPlayVideoId(window.location.href);
   if (currentVideoId !== activeRouteVideoId) {
     activeRouteChangedAt = Date.now();
@@ -126,6 +147,22 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
       case 'getVideoTime':
         sendResponse({ success: true, data: handleGetVideoTime() });
         break;
+      case 'getListeningCatalog':
+        if (params !== undefined) {
+          sendResponse({ success: true, data: { status: 'error' } });
+          break;
+        }
+        return respond(sendResponse, () => sessionCoordinator.getCatalog());
+      case 'beginListeningSession':
+        return respond(sendResponse, () => sessionCoordinator.begin(params));
+      case 'heartbeatListeningSession':
+        return respond(sendResponse, () => sessionCoordinator.heartbeat(params));
+      case 'playListeningSegment':
+        return respond(sendResponse, () => sessionCoordinator.play(params));
+      case 'saveListeningSegment':
+        return respond(sendResponse, () => sessionCoordinator.save(params));
+      case 'endListeningSession':
+        return respond(sendResponse, () => sessionCoordinator.end(params));
       case 'pingContent':
         sendResponse({
           success: true,
@@ -144,6 +181,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
   } catch (error) {
     registration.remove();
     videoLifecycleMonitor.stop();
+    sessionCoordinator.dispose();
     throw error;
   }
 
@@ -153,6 +191,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
     active = false;
     registration.remove();
     videoLifecycleMonitor.stop();
+    sessionCoordinator.dispose();
     if (activeVideoLifecycleMonitor === videoLifecycleMonitor) activeVideoLifecycleMonitor = null;
   };
 }
@@ -205,6 +244,7 @@ const handlePlayVideo = ({
   expectedSubtitleRevision,
   startTime,
 }: MessageSchema['playVideo']['params']): MessageSchema['playVideo']['response'] => {
+  if (isListeningMissionActive()) return { status: 'stale' };
   if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) return { status: 'stale' };
 
   const video = videoManager.get();
@@ -216,9 +256,10 @@ const handlePlayVideo = ({
       () => {
         const guarded = expectedIdentity !== undefined || expectedSubtitleRevision !== undefined;
         if (
-          guarded &&
-          (videoManager.get() !== video ||
-            isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision))
+          isListeningMissionActive() ||
+          (guarded &&
+            (videoManager.get() !== video ||
+              isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)))
         ) {
           return;
         }
@@ -388,6 +429,41 @@ const handleSaveSubtitleOverviewCue = async ({
   if (result.status === 'card-unavailable') return { status: unavailableStatus };
   return { status: supportIncluded ? 'saved-with-support' : 'saved-learning-only' };
 };
+
+function createListeningSessionContext(): ListeningSessionContext {
+  const state = useSubtitleStore.getState();
+  const learningLanguage = state.learningProfile.learningLanguage;
+  const learningTrack = selectSubtitleTrack(state, 'learning');
+  const supportLanguage = state.learningProfile.supportLanguage;
+  const supportTrack = selectSubtitleTrack(state, 'support');
+  const learningSelection = state.registeredSelections.learning;
+
+  return {
+    identity: createContentVideoIdentity(),
+    learning:
+      learningLanguage === null || learningTrack.cues.length === 0
+        ? null
+        : {
+            cues: learningTrack.cues,
+            delaySeconds: learningTrack.delay,
+            language: learningLanguage,
+            sourceKey: learningSelection
+              ? createRegisteredListeningSourceKey(learningSelection.subtitleId)
+              : createNativeListeningSourceKey(learningLanguage),
+          },
+    subtitleRevision: state.subtitleRevision,
+    support:
+      supportLanguage === null || supportTrack.cues.length === 0
+        ? null
+        : {
+            cues: supportTrack.cues,
+            delaySeconds: supportTrack.delay,
+            language: supportLanguage,
+          },
+    video: videoManager.get(),
+    watchedUrl: window.location.href,
+  };
+}
 
 const createContentVideoIdentity = (): ContentVideoIdentity => ({
   contentInstanceId,

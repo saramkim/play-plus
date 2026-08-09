@@ -1,5 +1,6 @@
 import type { DeletedLearningCard } from '@storage/v2/learning-card-storage';
-import type { LearningCard } from '@storage/v2/type';
+import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
+import type { LearningCard, ListeningProgressV1 } from '@storage/v2/type';
 import type { Language } from '@utils/constants';
 import type {
   OpenSubtitlesDownloadedSubtitle,
@@ -7,6 +8,12 @@ import type {
   OpenSubtitlesSearchQuery,
   OpenSubtitlesSearchResult,
 } from '@utils/opensubtitles/type';
+
+import type {
+  ListeningSegmentKey,
+  ListeningSourceKey,
+} from '@/listening/domain/source-identity';
+import type { EndSessionResult, PlaySegmentResult } from '@/listening/session/mission-controller';
 
 export type SubtitleRole = 'learning' | 'support';
 
@@ -92,6 +99,76 @@ export type V2ReadinessStatus =
   | { status: 'ready' }
   | { status: 'error'; code: 'migration-failed' };
 
+export type ListeningCatalogSegmentSummary = Readonly<{
+  segmentKey: ListeningSegmentKey;
+  startMs: number;
+  endMs: number;
+}>;
+
+export type ListeningCatalogResponse =
+  | {
+      status: 'ready';
+      identity: ContentVideoIdentity;
+      subtitleRevision: number;
+      videoId: string;
+      sourceKey: ListeningSourceKey;
+      currentTime: number;
+      segmenterVersion: 1;
+      supportAvailable: boolean;
+      segments: readonly ListeningCatalogSegmentSummary[];
+    }
+  | {
+      status:
+        | 'no-video'
+        | 'video-identity-unavailable'
+        | 'no-learning-track'
+        | 'no-segments'
+        | 'error';
+    };
+
+export type ListeningSessionSnapshotSegment = Readonly<{
+  segmentKey: ListeningSegmentKey;
+  sourceKey: ListeningSourceKey;
+  sourceIndices: readonly number[];
+  startMs: number;
+  endMs: number;
+  answerText: string;
+  alignedSupport?: Readonly<{
+    sourceIndices: readonly number[];
+    text: string;
+  }>;
+}>;
+
+export type ListeningSessionSnapshot = Readonly<{
+  learningLanguage: Language;
+  videoId: string;
+  sourceKey: ListeningSourceKey;
+  segmenterVersion: 1;
+  segments: readonly ListeningSessionSnapshotSegment[];
+}>;
+
+export type BeginListeningSessionResponse =
+  | {
+      status: 'ready';
+      sessionId: string;
+      identity: ContentVideoIdentity;
+      subtitleRevision: number;
+      snapshot: ListeningSessionSnapshot;
+    }
+  | { status: 'busy' | 'stale' | 'no-video' | 'segment-unavailable' | 'error' };
+
+export type HeartbeatListeningSessionResponse =
+  | { status: 'alive' }
+  | { status: 'stale' | 'no-video' | 'segment-unavailable' | 'error' };
+
+export type PlayListeningSegmentResponse = PlaySegmentResult;
+
+export type SaveListeningSegmentResponse =
+  | { status: 'saved-with-support' | 'saved-learning-only' }
+  | { status: 'busy' | 'stale' | 'no-video' | 'segment-unavailable' | 'error' };
+
+export type EndListeningSessionResponse = EndSessionResult;
+
 export type MessageSchema = {
   getV2Readiness: {
     response: V2ReadinessStatus;
@@ -143,6 +220,47 @@ export type MessageSchema = {
   getVideoTime: {
     response: VideoTimeResponse;
   };
+  getListeningCatalog: {
+    response: ListeningCatalogResponse;
+  };
+  beginListeningSession: {
+    params: {
+      expectedIdentity: ContentVideoIdentity;
+      expectedSubtitleRevision: number;
+      segmentKeys: readonly ListeningSegmentKey[];
+    };
+    response: BeginListeningSessionResponse;
+  };
+  heartbeatListeningSession: {
+    params: {
+      sessionId: string;
+      expectedIdentity: ContentVideoIdentity;
+      expectedSubtitleRevision: number;
+    };
+    response: HeartbeatListeningSessionResponse;
+  };
+  playListeningSegment: {
+    params: {
+      sessionId: string;
+      segmentKey: ListeningSegmentKey;
+      rate: 1 | 0.75;
+    };
+    response: PlayListeningSegmentResponse;
+  };
+  saveListeningSegment: {
+    params: {
+      sessionId: string;
+      segmentKey: ListeningSegmentKey;
+    };
+    response: SaveListeningSegmentResponse;
+  };
+  endListeningSession: {
+    params: {
+      sessionId: string;
+      mode: 'restore-start' | 'complete-stay' | 'continue-watching';
+    };
+    response: EndListeningSessionResponse;
+  };
   pingContent: {
     response: ContentVideoIdentity & {
       hasVideo: boolean;
@@ -186,5 +304,19 @@ export type MessageSchema = {
   restoreLearningCard: {
     params: { deleted: DeletedLearningCard };
     response: LearningCard;
+  };
+  getListeningProgress: {
+    response: ListeningProgressV1;
+  };
+  recordListeningMissionResult: {
+    params: { result: ListeningMissionResult };
+    response: ListeningProgressV1;
+  };
+  clearListeningVideoProgress: {
+    params: { videoId: string };
+    response: ListeningProgressV1;
+  };
+  clearAllListeningProgress: {
+    response: ListeningProgressV1;
   };
 };

@@ -8,6 +8,8 @@ import type { MessageSchema } from '@utils/message/type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { videoManager } from '@/content/core/video/video-manager';
+import type { ListeningSessionCoordinator } from '@/content/features/listening-session/listening-session-coordinator';
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
 import { coupangStrategy } from './coupang-play';
@@ -141,6 +143,7 @@ describe('canonical video lifecycle handler', () => {
 describe('canonical content messages', () => {
   beforeEach(() => {
     videoManager.clear();
+    useListeningMissionActiveStore.getState().setActive(false);
     document.body.replaceChildren();
     vi.mocked(getRegisteredSubtitles).mockReset().mockResolvedValue([]);
     vi.mocked(getLocalSubtitle).mockReset();
@@ -780,6 +783,26 @@ describe('canonical content messages', () => {
     expect(revisionVideo.currentTime).toBe(11);
   });
 
+  it('keeps legacy and deferred seeks inert while a Listening Mission owns media', () => {
+    const video = attachVideo(10, 0);
+    const { dispatch } = createMessageHarness();
+    const deferred = dispatch('playVideo', { startTime: 20 });
+    expect(deferred.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'played' },
+    });
+
+    useListeningMissionActiveStore.getState().setActive(true);
+    const blocked = dispatch('playVideo', { startTime: 30 });
+    expect(blocked.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'stale' },
+    });
+
+    video.dispatchEvent(new Event('canplay'));
+    expect(video.currentTime).toBe(10);
+  });
+
   it('acquires raw native cues for every supported language and ignores unsupported tracks', async () => {
     const languages = Object.keys(LANGUAGES) as Language[];
     const tracks = languages.map((language, index) => ({
@@ -955,6 +978,83 @@ describe('canonical content messages', () => {
     }
   });
 
+  it('routes every Listening Mission request directly to the owning content coordinator', async () => {
+    const coordinator = createListeningSessionCoordinatorMock();
+    const { dispatch, dispose } = createMessageHarness(coordinator);
+    const identity = {
+      contentInstanceId: 'content-listening',
+      routeChangedAt: 1,
+      videoId: VIDEO_ID,
+      videoRevision: 2,
+    };
+    const segmentKey = `segment-v1-${'a'.repeat(64)}` as MessageSchema['beginListeningSession']['params']['segmentKeys'][number];
+    const beginParams: MessageSchema['beginListeningSession']['params'] = {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: 3,
+      segmentKeys: [segmentKey],
+    };
+    const heartbeatParams: MessageSchema['heartbeatListeningSession']['params'] = {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: 3,
+      sessionId: 'session-listening',
+    };
+    const playParams: MessageSchema['playListeningSegment']['params'] = {
+      rate: 0.75,
+      segmentKey,
+      sessionId: 'session-listening',
+    };
+    const saveParams: MessageSchema['saveListeningSegment']['params'] = {
+      segmentKey,
+      sessionId: 'session-listening',
+    };
+    const endParams: MessageSchema['endListeningSession']['params'] = {
+      mode: 'restore-start',
+      sessionId: 'session-listening',
+    };
+
+    const requests = [
+      dispatch('getListeningCatalog', undefined),
+      dispatch('beginListeningSession', beginParams),
+      dispatch('heartbeatListeningSession', heartbeatParams),
+      dispatch('playListeningSegment', playParams),
+      dispatch('saveListeningSegment', saveParams),
+      dispatch('endListeningSession', endParams),
+    ];
+
+    await Promise.all([
+      expectResponse(requests[0].sendResponse, { success: true, data: { status: 'no-video' } }),
+      expectResponse(requests[1].sendResponse, { success: true, data: { status: 'busy' } }),
+      expectResponse(requests[2].sendResponse, { success: true, data: { status: 'alive' } }),
+      expectResponse(requests[3].sendResponse, { success: true, data: { status: 'played' } }),
+      expectResponse(requests[4].sendResponse, { success: true, data: { status: 'busy' } }),
+      expectResponse(requests[5].sendResponse, { success: true, data: { status: 'already-ended' } }),
+    ]);
+    for (const request of requests) expect(request.result).toBe(true);
+    expect(coordinator.getCatalog).toHaveBeenCalledOnce();
+    expect(coordinator.begin).toHaveBeenCalledWith(beginParams);
+    expect(coordinator.heartbeat).toHaveBeenCalledWith(heartbeatParams);
+    expect(coordinator.play).toHaveBeenCalledWith(playParams);
+    expect(coordinator.save).toHaveBeenCalledWith(saveParams);
+    expect(coordinator.end).toHaveBeenCalledWith(endParams);
+
+    dispose();
+    expect(coordinator.dispose).toHaveBeenCalledOnce();
+  });
+
+  it('rejects extra catalog params without exposing content state', () => {
+    const coordinator = createListeningSessionCoordinatorMock();
+    const { dispatch } = createMessageHarness(coordinator);
+
+    const request = dispatch('getListeningCatalog', { unexpected: true });
+
+    expect(request.result).toBeUndefined();
+    expect(request.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: { status: 'error' },
+    });
+    expect(coordinator.getCatalog).not.toHaveBeenCalled();
+  });
+
   it('removes its listener and monitor exactly once', () => {
     const { dispose, monitor, remove } = createMessageHarness();
 
@@ -977,7 +1077,9 @@ type FetchedSubtitles = Awaited<ReturnType<typeof coupangStrategy.fetchSubtitles
 
 type CapturedListener = (request: CapturedRequest) => true | void;
 
-const createMessageHarness = () => {
+const createMessageHarness = (
+  listeningSessionCoordinator = createListeningSessionCoordinatorMock()
+) => {
   let listener: CapturedListener | undefined;
   const remove = vi.fn();
   const monitor = { refresh: vi.fn(), start: vi.fn(), stop: vi.fn() };
@@ -987,6 +1089,7 @@ const createMessageHarness = () => {
   });
   const dispose = initializeMessageListener({
     createVideoLifecycleMonitor: () => monitor as never,
+    listeningSessionCoordinator,
     registerMessageListener: registerMessageListener as never,
   });
 
@@ -1001,6 +1104,16 @@ const createMessageHarness = () => {
     },
   };
 };
+
+const createListeningSessionCoordinatorMock = (): ListeningSessionCoordinator => ({
+  begin: vi.fn(async () => ({ status: 'busy' as const })),
+  dispose: vi.fn(),
+  end: vi.fn(async () => ({ status: 'already-ended' as const })),
+  getCatalog: vi.fn(async () => ({ status: 'no-video' as const })),
+  heartbeat: vi.fn(async () => ({ status: 'alive' as const })),
+  play: vi.fn(async () => ({ status: 'played' as const })),
+  save: vi.fn(async () => ({ status: 'busy' as const })),
+});
 
 const expectResponse = async (sendResponse: ReturnType<typeof vi.fn>, response: unknown) => {
   await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith(response));

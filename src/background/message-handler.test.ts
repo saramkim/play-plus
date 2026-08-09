@@ -1,11 +1,29 @@
-
-import { LearningCard } from '@storage/v2/type';
+import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
+import type { LearningCard, ListeningProgressV1 } from '@storage/v2/type';
 import type { V2ReadinessStatus } from '@utils/message/type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { registerBackgroundMessageHandler } from './message-handler';
 
 const VIDEO_ID = '123e4567-e89b-12d3-a456-426614174000';
+const SEGMENT_KEY = `segment-v1-${'a'.repeat(64)}` as const;
+
+const emptyProgress: ListeningProgressV1 = { version: 1, videos: {} };
+
+const attemptedWithoutSubmission: ListeningMissionResult = {
+  videoId: VIDEO_ID,
+  learningSourceKey: 'native:en',
+  segmenterVersion: 1,
+  practicedAt: '2026-08-09T00:00:00.000Z',
+  bestCombo: 0,
+  items: [
+    {
+      segmentKey: SEGMENT_KEY,
+      achievedState: 'attempted',
+      submittedAttemptIncrement: 0,
+    },
+  ],
+};
 
 const card: LearningCard = {
   id: 'card-one',
@@ -43,6 +61,12 @@ const createDependencies = () => ({
     update: vi.fn(async () => card),
     delete: vi.fn(async () => ({ card, index: 0 })),
     restore: vi.fn(async () => card),
+  },
+  listeningProgress: {
+    get: vi.fn(async () => emptyProgress),
+    recordMissionResult: vi.fn(async () => emptyProgress),
+    clearVideo: vi.fn(async () => emptyProgress),
+    clearAll: vi.fn(async () => emptyProgress),
   },
   updateConnectedStatus: vi.fn(async () => true),
 });
@@ -245,6 +269,130 @@ describe('background message handler', () => {
       videoId: VIDEO_ID,
       videoRevision: 2,
     });
+  });
+
+  it('readiness-gates and routes strict listening progress operations, including zero attempts', async () => {
+    const dependencies = createDependencies();
+    const positiveResult: ListeningMissionResult = {
+      ...attemptedWithoutSubmission,
+      bestCombo: 2,
+      items: [
+        {
+          ...attemptedWithoutSubmission.items[0],
+          achievedState: 'cleared',
+          submittedAttemptIncrement: 2,
+        },
+      ],
+    };
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    const responses = Array.from({ length: 6 }, () => vi.fn());
+
+    expect(listener?.({ message: 'getListeningProgress' }, {}, responses[0])).toBe(true);
+    expect(listener?.(
+      {
+        message: 'recordListeningMissionResult',
+        params: { result: attemptedWithoutSubmission },
+      },
+      {},
+      responses[1]
+    )).toBe(true);
+    expect(listener?.(
+      { message: 'recordListeningMissionResult', params: { result: positiveResult } },
+      {},
+      responses[2]
+    )).toBe(true);
+    expect(listener?.(
+      { message: 'clearListeningVideoProgress', params: { videoId: VIDEO_ID } },
+      {},
+      responses[3]
+    )).toBe(true);
+    expect(listener?.({ message: 'clearAllListeningProgress' }, {}, responses[4])).toBe(true);
+    expect(listener?.({ message: 'getListeningProgress' }, {}, responses[5])).toBe(true);
+
+    await vi.waitFor(() => {
+      for (const response of responses) {
+        expect(response).toHaveBeenCalledWith({ success: true, data: emptyProgress });
+      }
+    });
+
+    expect(dependencies.awaitReady).toHaveBeenCalledTimes(6);
+    expect(dependencies.listeningProgress.get).toHaveBeenCalledTimes(2);
+    expect(dependencies.listeningProgress.recordMissionResult).toHaveBeenNthCalledWith(
+      1,
+      attemptedWithoutSubmission
+    );
+    expect(dependencies.listeningProgress.recordMissionResult).toHaveBeenNthCalledWith(
+      2,
+      positiveResult
+    );
+    expect(dependencies.listeningProgress.clearVideo).toHaveBeenCalledOnce();
+    expect(dependencies.listeningProgress.clearVideo).toHaveBeenCalledWith(VIDEO_ID);
+    expect(dependencies.listeningProgress.clearAll).toHaveBeenCalledOnce();
+    expect(JSON.stringify(dependencies.listeningProgress.recordMissionResult.mock.calls)).not.toMatch(
+      /answer|draft|text|url/i
+    );
+  });
+
+  it('rejects malformed or extra listening progress params before touching storage', async () => {
+    const dependencies = createDependencies();
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+    const malformedRequests = [
+      { message: 'getListeningProgress', params: {} },
+      {
+        message: 'recordListeningMissionResult',
+        params: { result: { ...attemptedWithoutSubmission, answerText: 'forbidden fixture' } },
+      },
+      {
+        message: 'clearListeningVideoProgress',
+        params: { videoId: VIDEO_ID, unexpected: true },
+      },
+      { message: 'clearAllListeningProgress', params: {} },
+    ];
+
+    for (const request of malformedRequests) {
+      const sendResponse = vi.fn();
+      expect(listener?.(request, {}, sendResponse)).toBe(true);
+      await vi.waitFor(() =>
+        expect(sendResponse).toHaveBeenCalledWith({
+          success: false,
+          message: 'Unable to access listening progress',
+        })
+      );
+    }
+
+    expect(dependencies.awaitReady).toHaveBeenCalledTimes(malformedRequests.length);
+    expect(dependencies.listeningProgress.get).not.toHaveBeenCalled();
+    expect(dependencies.listeningProgress.recordMissionResult).not.toHaveBeenCalled();
+    expect(dependencies.listeningProgress.clearVideo).not.toHaveBeenCalled();
+    expect(dependencies.listeningProgress.clearAll).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes progress failures and allows the next request to retry', async () => {
+    const dependencies = createDependencies();
+    dependencies.awaitReady.mockRejectedValueOnce(new Error('private migration state'));
+    dependencies.listeningProgress.get.mockRejectedValueOnce(new Error('private persisted value'));
+
+    registerBackgroundMessageHandler(dependencies);
+    const listener = getRegisteredListener();
+
+    for (const expectedSuccess of [false, false, true]) {
+      const sendResponse = vi.fn();
+      expect(listener?.({ message: 'getListeningProgress' }, {}, sendResponse)).toBe(true);
+      await vi.waitFor(() =>
+        expect(sendResponse).toHaveBeenCalledWith(
+          expectedSuccess
+            ? { success: true, data: emptyProgress }
+            : { success: false, message: 'Unable to access listening progress' }
+        )
+      );
+    }
+
+    expect(dependencies.awaitReady).toHaveBeenCalledTimes(3);
+    expect(dependencies.listeningProgress.get).toHaveBeenCalledTimes(2);
   });
 
   it('gates OpenSubtitles requests and returns typed provider data', async () => {

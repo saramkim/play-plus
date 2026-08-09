@@ -10,6 +10,9 @@ const harness = vi.hoisted(() => ({
     | ((changes: Record<string, chrome.storage.StorageChange>) => void)
     | undefined,
   learningCardStorage: {},
+  listeningPageProps: undefined as
+    | { progressRevision: number; settingsStore: unknown }
+    | undefined,
   openOriginalVideo: undefined as
     | ((source: { startTime: number; url: string }) => Promise<void>)
     | undefined,
@@ -47,6 +50,12 @@ vi.mock('@/ui/features/learning-settings/learning-settings-store', () => ({
     return store;
   },
 }));
+vi.mock('@/ui/features/listening-flow/listening-flow', () => ({
+  ListeningLearningPage: (props: { progressRevision: number; settingsStore: unknown }) => {
+    harness.listeningPageProps = props;
+    return <div data-testid='listening-learning' data-revision={props.progressRevision}>learning</div>;
+  },
+}));
 vi.mock('@/ui/features/learning-library/learning-card-library', () => ({
   LearningCardLibrary: ({ refreshRevision }: { refreshRevision: number }) => (
     <div data-testid='library' data-revision={refreshRevision}>library</div>
@@ -65,7 +74,6 @@ vi.mock('@/ui/features/focused-review/focused-review', () => ({
 vi.mock('@/ui/layout/connection-status', () => ({ ConnectionStatus: () => null }));
 vi.mock('@/ui/layout/footer', () => ({ Footer: () => null }));
 vi.mock('@/ui/layout/header', () => ({ Header: () => null }));
-vi.mock('@/ui/pages/learning-settings-page', () => ({ LearningSettingsPage: () => <div>learning</div> }));
 vi.mock('@/ui/pages/subtitle-upload-page', () => ({
   SubtitleUploadPage: (props: { cardRevision: number; learningCardStorage: unknown }) => {
     harness.subtitlePageProps = props;
@@ -96,6 +104,7 @@ describe('v2 side-panel boot boundary', () => {
     harness.currentPage = 'library';
     harness.firstEntryComplete = undefined;
     harness.localListener = undefined;
+    harness.listeningPageProps = undefined;
     harness.openOriginalVideo = undefined;
     harness.subtitlePageProps = undefined;
     harness.settingsInitialize.mockResolvedValue({ remove: harness.settingsRemove });
@@ -215,6 +224,26 @@ describe('v2 side-panel boot boundary', () => {
       cardRevision: 1,
       learningCardStorage: harness.learningCardStorage,
     });
+  });
+
+  it('refreshes idle listening progress on valid external changes and fails closed on invalid data', async () => {
+    localStorage.setItem('v2OnboardingComplete', 'true');
+    harness.currentPage = 'learning';
+    harness.sendMessage.mockResolvedValue({ success: true, data: { status: 'ready' } });
+
+    await act(async () => {
+      root.render(<App />);
+      await Promise.resolve();
+    });
+    expect(harness.listeningPageProps?.progressRevision).toBe(0);
+
+    act(() => harness.localListener?.({ listeningProgress: { newValue: { version: 1, videos: {} } } }));
+    expect(harness.listeningPageProps?.progressRevision).toBe(1);
+
+    act(() => harness.localListener?.({ listeningProgress: { newValue: { version: 1, videos: [], extra: true } } }));
+    expect(container.textContent).toContain('v2_readiness_unavailable_title');
+    expect(harness.settingsRemove).toHaveBeenCalledOnce();
+    expect(harness.tabRemove).toHaveBeenCalledOnce();
   });
 
   it('removes a partial settings subscription when tab initialization fails', async () => {

@@ -47,19 +47,16 @@ export function sendMessageToTab(
   return chrome.tabs.sendMessage(tabId, params === undefined ? { message } : { message, params });
 }
 
-type MessageCallback = <M extends Message>({
-  message,
-  params,
-  sender,
-  sendResponse,
-}: M extends M
-  ? {
-      message: M;
-      params: Params<M>;
-      sender: chrome.runtime.MessageSender;
-      sendResponse: (response: MessageResponse<M>) => void;
-    }
-  : never) => true | void;
+type MessageRequest = {
+  [M in Message]: {
+    message: M;
+    params: Params<M>;
+    sender: chrome.runtime.MessageSender;
+    sendResponse: (response: MessageResponse<M>) => void;
+  };
+}[Message];
+
+type MessageCallback = (request: MessageRequest) => true | void;
 
 export const onMessage = (callback: MessageCallback) => {
   const { onMessage } = chrome.runtime;
@@ -69,7 +66,7 @@ export const onMessage = (callback: MessageCallback) => {
     sendResponse: (response: MessageResponse<Message>) => void
   ) => {
     const { message, params } = request;
-    return callback({ message, params, sender, sendResponse });
+    return callback({ message, params, sender, sendResponse } as MessageRequest);
   };
   onMessage.addListener(listener);
   return { remove: () => onMessage.removeListener(listener) };

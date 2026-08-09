@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildLearningCard,
+  buildLearningCardFromListeningSegment,
   buildLearningCardFromResolvedCue,
 } from '@/content/features/learning-playback/learning-card-builder';
 import { resolveCue } from '@/content/features/learning-playback/learning-playback';
@@ -187,6 +188,65 @@ describe('learning card builder', () => {
 
     expect(create()).toMatchObject({ status: 'created', card: { id: 'card-exact-repeat-0' } });
     expect(create()).toMatchObject({ status: 'created', card: { id: 'card-exact-repeat-1' } });
+  });
+
+  it('creates a canonical assigned card from one validated combined mission segment', () => {
+    const result = buildLearningCardFromListeningSegment({
+      answerText: 'Combined learning line',
+      supportText: '결합된 도움 문장',
+      startMs: 1_250,
+      endMs: 3_750,
+      learningLanguage: 'en',
+      supportLanguage: 'ko',
+      url: URL,
+      idFactory: () => 'card-listening-segment',
+      createdAtFactory: () => CREATED_AT,
+    });
+
+    expect(result).toEqual({
+      status: 'created',
+      card: {
+        id: 'card-listening-segment',
+        content: {
+          learning: { text: 'Combined learning line', language: 'en' },
+          support: { text: '결합된 도움 문장', language: 'ko' },
+        },
+        source: { url: URL, startTime: 1.25, endTime: 3.75 },
+        studyState: 'active',
+        createdAt: CREATED_AT,
+      },
+    });
+  });
+
+  it('omits unavailable support and rejects an empty combined mission segment', () => {
+    const learningOnly = buildLearningCardFromListeningSegment({
+      answerText: 'Learning only',
+      supportText: 'Ignored without a support language',
+      startMs: 0,
+      endMs: 800,
+      learningLanguage: 'en',
+      supportLanguage: null,
+      url: URL,
+      idFactory: () => 'card-listening-only',
+      createdAtFactory: () => CREATED_AT,
+    });
+    const unavailable = buildLearningCardFromListeningSegment({
+      answerText: '   ',
+      startMs: 0,
+      endMs: 800,
+      learningLanguage: 'en',
+      supportLanguage: null,
+      url: URL,
+    });
+
+    expect(learningOnly).toMatchObject({
+      status: 'created',
+      card: { content: { learning: { text: 'Learning only' } } },
+    });
+    if (learningOnly.status === 'created') {
+      expect(learningOnly.card.content).not.toHaveProperty('support');
+    }
+    expect(unavailable).toEqual({ status: 'no-current-cue' });
   });
 });
 
