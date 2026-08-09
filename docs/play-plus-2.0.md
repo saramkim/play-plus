@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-08 — 학습 재생 제어를 항상 제공하는 핵심 동작으로 고정하고, `shortcuts`를 키보드 바인딩 전용 설정으로 단순화
+최종 개정 승인일: 2026-08-09 — 네 개 destination 안의 로컬 Listening Mission과 진행도·재생 복원·명시적 Library 저장 계약 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -18,16 +18,21 @@
 
 Play Plus 2.0은 Coupang Play를 위한 범용 편의 기능 모음이 아니라 **영상 시청과 문장 복습을 연결하는 언어 학습 도구**다.
 
+Top-level destination은 **Learning, Subtitles, Library, Review** 네 개만 유지한다. Listening Mission의 entry, factual progress summary와 active session은 모두 Learning 안에 둔다.
+
 핵심 사용자 흐름은 다음과 같다.
 
 1. 사용자가 학습 언어와 도움 언어를 확인한다.
 2. Coupang Play 자막, 로컬 파일 또는 명시적으로 검색·추가한 OpenSubtitles 자막을 학습/도움 역할로 선택해 영상을 시청한다.
-3. 한 번의 저장 동작으로 현재 학습 문장과, 신뢰할 수 있을 때만 대응 도움 문장을 카드로 저장한다.
-4. Library에서 저장한 카드를 확인·수정한다.
-5. Review에서 한 카드에 집중하고 도움 문장을 필요할 때 공개한다.
-6. 카드를 `active` 또는 `completed`로 정리한 뒤 원래 영상 시점으로 돌아갈 수 있다.
+3. Learning에서 현재 장면 또는 로컬 진행도부터 짧은 Listening Mission을 시작해 최대 10개 문장을 듣고 입력하며 필요할 때 단계별 힌트를 사용한다.
+4. 한 번의 저장 동작으로 현재 학습 문장과, 신뢰할 수 있을 때만 대응 도움 문장을 카드로 저장한다.
+5. Library에서 저장한 카드를 확인·수정한다.
+6. Review에서 한 카드에 집중하고 도움 문장을 필요할 때 공개한다.
+7. 카드를 `active` 또는 `completed`로 정리한 뒤 원래 영상 시점으로 돌아갈 수 있다.
 
 시청 중에는 현재 선택한 학습·도움 자막의 전체 문장을 함께 또는 역할별로 한눈에 탐색하고, 원하는 장면으로 이동하거나 학습 문장을 바로 카드로 저장할 수 있다. 이는 별도의 분석 workflow가 아니라 시청과 문장 학습을 돕는 자막 기능이다.
+
+Listening Mission은 범용 quiz platform이 아니라 현재 Coupang Play 영상의 선택된 학습 자막에서 source 순서대로 만든 짧은 듣기 활동이다. 문장 듣기, 입력, 단계별 힌트, 한 번의 선택적 재도전, 로컬 진행도와 사용자가 명시적으로 고른 어려운 문장의 Library 저장만 제공한다.
 
 2.0의 성공 기준은 많은 기능 수가 아니다. 저장이 빠르고, 학습/도움 역할이 명확하며, 저장한 문장을 잃지 않고, 복습이 시청으로 다시 이어지는지가 기준이다.
 
@@ -68,6 +73,7 @@ v2의 정상 코드가 사용하는 영속 데이터는 다음처럼 소유한�
 | `chrome.storage.local` | `dataSchemaVersion` | 정상 데이터가 v2임을 나타내는 완료 표식. 값은 `2` |
 | `chrome.storage.local` | `migrationState` | 마이그레이션 단계, 오류와 정리 재시도를 관리하는 내부 상태 |
 | `chrome.storage.local` | `learningCards` | 사용자가 저장한 학습 카드 |
+| `chrome.storage.local` | `listeningProgress` | 영상·학습 source·segmenter version별 Listening Mission 최선 진행도 |
 | `chrome.storage.local` | `registeredSubtitles` | 사용자가 등록한 자막 메타데이터 |
 | `chrome.storage.local` | `subtitle-<uuid>` | 등록 자막 cue 본문 |
 | `chrome.storage.sync` | `learningProfile` | 학습 언어와 도움 언어 |
@@ -152,6 +158,35 @@ Line
 
 노트, 태그, 폴더, 덱, source URL·시간·제목 편집, 자동 병합, 자막 cue 전문 편집과 편집 이력은 포함하지 않는다.
 
+### 3.5 Listening progress
+
+`listeningProgress`는 `chrome.storage.local`의 하나의 필수 strict v2 key다. `dataSchemaVersion`은 계속 `2`이며, 공개 v1.11.0 이전과 fresh install은 완료 표식 전에 다음 의미의 빈 version 1 진행도를 초기화한다. 아직 공개되지 않은 interim v2 profile에 missing-key fallback이나 별도 compatibility branch를 추가하지 않는다.
+
+```text
+ListeningProgressV1
+  version: 1
+  videos[videoId]
+    sources[learningSourceKey]
+      segmenterVersion: 1
+      bestCombo: nonnegative safe integer
+      lastPracticedAt: offset-aware ISO-8601 string
+      items[segmentKey]
+        state: "attempted" | "cleared" | "mastered"
+        totalAttempts: nonnegative safe integer
+        lastPracticedAt: offset-aware ISO-8601 string
+```
+
+- `videoId`는 비어 있지 않은 지원 Coupang Play video identity이고, source key는 실제 선택한 `native:<language>` 또는 `registered:<subtitleId>`다.
+- progress namespace는 `videoId + learningSourceKey + segmenterVersion`이다. 전체 시청 URL은 namespace나 progress field가 아니다.
+- 상태 순서는 `attempted < cleared < mastered`이며 저장은 best-ever evidence만 단조롭게 합친다. 이후 실패가 이미 얻은 상태를 낮추지 않는다.
+- source `bestCombo`는 maximum으로, factual last-practiced timestamp는 latest valid value로 합친다.
+- `mastered`는 한 mission에서 첫 제출이 exact이고 text hint를 사용하지 않은 문장이다. audio replay는 허용한다.
+- `totalAttempts`는 제출한 답변 수만 세며 `0`을 허용한다. `Later` 또는 Answer Reveal만으로 방문을 끝냈다면 제출이 없을 수 있고, hint와 audio replay는 attempt를 만들지 않는다.
+- 현재 분모와 완료율은 저장된 과거 목록이 아니라 현재 deterministic segment catalog에서 계산한다.
+- typed answer, 미완성 draft, chronological mission history, per-attempt text, source URL, subtitle body, support text, mission snapshot, star, 정확도 history, streak, audio와 microphone data는 저장하지 않는다.
+- `attempted`/`cleared`/`mastered`, 최근 연습 시각과 best combo는 사실 기반 로컬 진행도일 뿐 SRS schedule이나 장기 기억을 주장하지 않는다.
+- 진행도 API는 strict get, 하나의 serialized mission-result batch 기록, 현재 video 삭제와 전체 Listening Progress 삭제만 제공한다. mutation은 queue 안에서 다시 읽고 전체 값을 한 번만 쓰며 overflow, invalid input/persisted value와 write failure에 fail closed하고 다음 요청은 다시 시도할 수 있어야 한다.
+
 ## 4. v1.11 to v2 Migration Contract
 
 ### 4.1 구조 원칙
@@ -163,6 +198,7 @@ Line
 - 정상 컴포넌트에 `oldKey ?? newKey`, 구버전 union, 이중 쓰기 또는 장기 fallback을 남기지 않는다.
 - background 시작 시 `ensureV2Ready()`에 해당하는 준비 게이트를 통과하기 전에는 정상 v2 읽기·쓰기를 시작하지 않는다.
 - fresh install은 v2 기본 데이터와 완료 표식을 직접 만들며 v1 decoder를 거치지 않는다.
+- fresh install과 actual v1.11 migration plan은 strict empty `listeningProgress`를 다른 required v2 local key와 함께 쓰고 다시 읽어 검증한 뒤에만 완료 표식을 기록한다. `dataSchemaVersion`은 `2`를 유지하며 interim unreleased v2 profile용 missing-key default를 두지 않는다.
 
 ### 4.2 비원자 저장소에서의 안전 절차
 
@@ -240,11 +276,123 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 - 도움 자막 보이기/숨기기
 - 현재 학습 문장을 저장하는 하나의 명령과 하나의 사용자 단축키
 
-이전·다음·반복은 항상 제공하는 핵심 재생 동작이며 사용자가 설정에서 개별적으로 숨기거나 비활성화하지 않는다. `shortcuts.enabled`는 저장·이전·다음·반복의 **키보드 바인딩만** 한꺼번에 켜고 끈다. master가 꺼져도 영상 위 재생 control과 직접 명령은 유지하고, master가 켜졌을 때 비어 있지 않은 바인딩만 동작한다. 재생 속도는 자체 master를 유지한다.
+이전·다음·반복은 항상 제공하는 핵심 재생 동작이며 사용자가 설정에서 개별적으로 숨기거나 비활성화하지 않는다. `shortcuts.enabled`는 저장·이전·다음·반복의 **키보드 바인딩만** 한꺼번에 켜고 끈다. master가 꺼져도 영상 위 재생 control과 직접 명령은 유지하고, master가 켜졌을 때 비어 있지 않은 바인딩만 동작한다. 단, active Listening Mission이 content media state를 소유하는 동안에는 충돌하는 Play Plus overlay와 on-video Controller를 persistent setting 변경 없이 transiently 숨기고 비활성화한다. 재생 속도는 자체 master를 유지한다.
 
 설정에는 `Learning playback controls`나 개별 enabled checkbox를 두지 않는다. 저장·이전·다음·반복과 재생 속도의 raw `KeyboardEvent.code`는 저장·검증·runtime 비교에만 사용하고, 사용자에게는 같은 code를 일관된 읽기 쉬운 키 이름으로 변환해 표시한다. 같은 키 충돌과 예약 키 검증은 계속 필요하며 저장할 수 없는 입력에는 해당 필드와 연결된 이유를 즉시 표시한다.
 
 두 개의 저장 명령, 자막 복사 단축키, primary/secondary 토글이라는 이름은 남기지 않는다.
+
+#### Listening Mission
+
+Listening Mission은 초기 Play Plus 2.0의 flagship 학습 흐름이다. 기존 **Learning** destination 안에 진입, 현재 source 진행도와 active mission을 두고 기존 Learning settings는 mission 밖에서 계속 제공한다. 다섯 번째 destination이나 범용 quiz framework를 만들지 않는다.
+
+##### Mission entry and order
+
+- 사용자에게는 하나의 연습 단위를 `문장` 또는 `line`으로 말한다. 내부에서는 인접한 학습 cue를 합칠 수 있는 deterministic practice segment를 사용한다.
+- `Start from current position`은 기존 closed-interval containment rule로 현재 시각을 포함하는 segment에서 시작한다. 겹치면 가장 늦게 시작한 segment, 같은 시작이면 가장 작은 source index를 고르고, gap에서는 다음 segment를 고른다.
+- `Continue`는 현재 catalog에서 progress가 없는 가장 이른 segment, 그다음 `cleared` 미만인 가장 이른 segment, 모두 cleared이면 첫 segment에서 시작한다.
+- 한 mission은 선택한 시작점부터 source 순서의 연속 segment를 최대 10개 사용해 보통 몇 분 안에 끝낸다. track 끝에서는 더 적을 수 있고 shuffle하지 않는다.
+- entry와 progress summary는 정확한 `videoId + learningSourceKey + segmenterVersion`만 결합한다. source가 달라지면 다른 진행도다.
+
+##### Practice segmenter version 1
+
+선택한 학습 track이 answer source다. 선택한 도움 track은 optional support일 뿐 learning segment의 존재나 identity를 결정하지 않는다.
+
+Spoken-text cleanup은 다음 순서를 고정한다.
+
+1. 현재 safe plain-text helper로 기존 subtitle markup을 제거한다.
+2. Unicode-aware whitespace를 정규화한다.
+3. `[]`, `()`, `［］`, `（）`, `【】`만 지원 wrapper pair로 인식한다.
+4. 지원 wrapper의 nesting을 stack으로 parse하고 완전한 outermost span을 통째로 제거한다. 여러 완전한 span은 왼쪽부터 각각 제거하고 mixed content의 나머지 unwrapped text는 보존한다.
+5. mismatched, crossed 또는 unclosed wrapper는 의미를 추측하지 않고 일반 text로 보존한다.
+6. cleanup 뒤 Unicode letter나 number가 하나도 없으면 empty, punctuation-only, music-symbol-only cue를 포함해 ineligible separator로 처리한다.
+
+dictionary, translation, language model, network request 또는 semantic classifier로 spoken 여부를 판정하지 않는다.
+
+Greedy grouping은 learning cue를 source 순서로 한 번 scan한다.
+
+- 각 eligible cue에서 accumulator를 시작하고 바로 다음 source cue만 검토한다. accumulator가 800ms minimum에 도달한 뒤에도 아래 조건이 모두 true이면 계속 append한다.
+- accumulated cleaned text가 `.`, `?`, `!`, `。`, `？`, `！` 중 하나로 끝나면 append하지 않는다.
+- 두 cue 사이에 ineligible separator가 있거나 다음 cleaned cue가 trim 뒤 `-`, `–`, `—`와 spoken text로 시작하면 append하지 않는다.
+- uncovered effective gap은 700ms 이하여야 한다.
+- combined effective duration은 9000ms 이하이고 joined answer는 120 grapheme 이하여야 한다.
+- 다음 cue를 append할 수 없거나 source가 끝나면 accumulator를 emit한다. cleaned part는 ordered source index와 함께 유지하고 answer text는 한 개의 normalized ASCII space로 잇는다.
+- 유효한 emitted segment는 2–120 grapheme, effective duration 800–9000ms를 inclusive하게 만족한다. emit 시 minimum 또는 maximum boundary를 만족하지 않으면 이미 소비한 source position과 함께 omit하고 이후 group이 그 cue를 bridge하거나 재사용하지 않는다.
+- 하나의 source cue를 split하지 않는다. 9000ms 또는 120 grapheme을 넘는 단일 cue는 나누지 않고 omit한다.
+- learning role delay는 effective playback timing에 정확히 한 번 적용한다. 모든 learning cue에 동일하게 적용되는 delay만으로 grouping이나 segment identity가 바뀌면 안 된다.
+- optional support는 final segment interval에 대해 기존 deterministic support-alignment policy를 정확히 한 번 사용한다. low confidence 또는 unavailable support는 support만 생략하며 learning segment를 제외하지 않는다.
+
+`LISTENING_SEGMENTER_VERSION`은 `1`이다. `ListeningSourceKey`는 `native:<learning-language>` 또는 `registered:<registered-subtitle-id>`이며, `segmentKey`는 다음 순서의 값을 담은 canonical JSON에서 derive한 deterministic, source-specific, versioned key다.
+
+1. segmenter version
+2. 실제 learning source key
+3. ordered constituent learning source indices
+4. join 전 ordered cleaned spoken-text parts
+
+`videoId`는 segment key 밖에서 progress namespace를 만든다. support source/text와 learning/support delay는 key에서 제외한다. timing만 달라진 경우 identity를 유지하고 source index 또는 cleaned spoken text가 달라지면 해당 segment key만 달라지며 unrelated unchanged key는 유효하다.
+
+##### Answer, hints, rounds, and results
+
+Answer comparison은 markup과 complete supported wrapper span을 제거한 뒤 Unicode NFKC, configured learning language에 따른 deterministic case folding과 stable fallback, quote/apostrophe/hyphen canonicalization, Unicode punctuation 제거와 whitespace normalization을 적용한다. 사람이 읽을 수 있는 normalized form과 whitespace를 제거한 compact comparison form을 함께 제공하며 실제 letter와 number는 semantic하게 바꾸지 않는다.
+
+모든 length, mask와 distance 계산은 Unicode grapheme 단위를 사용하고 supported Chrome의 `Intl.Segmenter` 동작과 deterministic fallback을 fixture로 고정한다.
+
+- expected 또는 actual compact form이 비어 있으면 `correct`가 아니다.
+- compact exact equality만 `correct`다.
+- punctuation과 spacing 차이만으로는 answer가 틀리지 않는다.
+- non-exact 답은 grapheme-level Levenshtein distance가 `max(1, floor(max(expectedLength, actualLength) × 0.15))` 이하일 때만 `almost`, 그 밖에는 `try again`이다.
+- `almost`와 `try again`은 이후 exact 제출 전에는 문장을 clear하지 않는다. contraction, synonym, translation, semantic similarity 또는 AI 판정은 사용하지 않는다.
+
+Text hint는 typed draft와 무관하게 normalized expected answer만 사용하고, single mask glyph `＿`를 쓴다.
+
+1. **Shape**: whitespace position은 보존하고 모든 non-whitespace grapheme을 `＿`로 바꾼다.
+2. **First graphemes**: token이 둘 이상이면 각 whitespace-delimited token의 첫 grapheme만 보이고 나머지를 mask한다. token이 하나뿐인 no-space text는 grapheme index `0, 4, 8, ...`만 보인다.
+3. **Support**: accepted aligned support가 있을 때만 보여 준다. 없으면 이 level을 건너뛴다.
+4. **Answer Reveal**: full learning answer를 보여 준다.
+
+Hint는 draft와 token을 맞춰 `resolved` portion을 추론하지 않는다. text hint는 즉시 사용할 수 있고 judgment feedback도 현재 opened hint level을 넘는 expected grapheme을 누설하지 않는다. audio control은 text hint가 아니며 즉시 사용할 수 있고 횟수 제한이나 score penalty가 없다.
+
+- first round는 모든 선택 segment를 source 순서로 한 번 방문한다.
+- 첫 제출이 non-exact이거나 text hint, `Later` 또는 Answer Reveal을 사용한 line은 retry candidate다.
+- round와 관계없이 incorrect submission, text hint, `Later` 또는 Answer Reveal은 current combo를 끊는다.
+- exact first submission에 text hint가 없으면 combo를 올리고 그 mission의 mastered evidence를 얻는다. 그 전에 submission 또는 hint가 있었다면 이후 exact는 cleared만 얻는다.
+- correct 또는 Reveal 뒤에는 full learning text와 accepted support를 보여 주고 explicit Next 전에는 자동 이동하지 않는다.
+- retry candidate에는 original video order의 optional retry round를 정확히 한 번 제안한다. retry는 모든 text와 transient draft를 다시 숨기며 exact가 clear할 수 있지만 first-try/mastered를 소급해 만들지 않는다. 두 번째 retry는 없다.
+- 1 star는 first round 완료, 2 stars는 Results 전 모든 line cleared, 3 stars는 모두 cleared이면서 first-submission exact가 80% 이상이고 Answer Reveal이 없는 경우다.
+- `Perfect`는 모든 line이 text hint 없이 첫 제출 exact인 경우다.
+- difficult candidate는 첫 non-exact 제출, text hint, Reveal, `Later` 또는 retry failure가 있었던 segment다.
+- timer, life, game over, wait penalty, leaderboard와 sharing은 없다.
+
+##### Playback session and controller boundary
+
+Mission 시작은 current video element, position, playback rate, paused/playing state와 Play Plus subtitle/controller의 transient visibility를 capture한다. active mission 동안 Play Plus learning/support overlay와 on-video Controller를 storage setting 변경 없이 숨기고 비활성화한다. Coupang Play player 자체 caption DOM은 inspect, click, hide 또는 detected라고 주장하지 않으며, entry copy로 보이면 사용자가 끄도록 안내한다.
+
+- 새 line은 한 번 자동 재생한다. clip은 가능하면 segment 250ms 전부터 시작하고 350ms 뒤에 pause하되 다음 spoken segment를 침범하지 않는다.
+- `Listen again`은 1.0×, `Slow`는 0.75×다. 새 clip은 이전 observer를 supersede하고 media event와 generation guard로 정확히 pause한 뒤 완료한다.
+- play 결과는 `played | stale | no-video | segment-unavailable | error`를 구분한다.
+- video, SPA route, content instance, active learning source 또는 subtitle revision 변경은 old session을 invalidate한다. 이미 completed progress는 저장할 수 있지만 stale media command나 text가 새로운 video/source를 제어하거나 표시하면 안 된다.
+- active Side Panel은 direct UI-content heartbeat를 약 5초마다 보내고 content-owned lease는 마지막 valid heartbeat 뒤 15초에 만료한다. captured video가 아직 current이면 expiry가 captured position/rate/play state를 `restore-start`로 복원하고, replacement/new-route video라면 seek하지 않는다. 어느 경우든 observer, session text와 transient Play Plus subtitle/controller suppression을 정리한다. 정상 exit는 heartbeat, observer, timer와 suppression을 즉시 정리하며 expiry는 Side Panel close/reload/crash를 위한 emergency safety다.
+
+End mode와 결과는 다음처럼 고정한다.
+
+- `restore-start`: captured position/rate/play state와 Play Plus transient visibility를 복원한다.
+- `complete-stay`: 마지막 practiced endpoint에 paused 상태로 남고 original rate/visibility를 복원한다.
+- `continue-watching`: 마지막 endpoint에서 original rate/visibility로 재생을 계속한다.
+- end 결과는 `ended | already-ended | stale | no-video | error`를 구분한다. exact session의 end는 idempotent하고 replacement/new-route video를 old position으로 seek하지 않는다.
+- normal mid-mission exit는 completed progress만 저장한 뒤 `restore-start`를 사용한다. normal completion이 Results에 들어갈 때 `complete-stay`로 original rate/visibility를 복원하고 last practiced endpoint에 paused 상태로 남는다. 이후 Results close는 idle로 돌아가고, Continue Watching은 `continue-watching`으로 그 endpoint에서 original rate로 재생한다. `Next 10`은 cleaned-up old session 뒤 current truth를 refresh해 새 consecutive session을 시작한다.
+
+Progress commit은 `saved | error`를 구분한다. difficult save는 successful segment key를 보존하고 `busy | error`만 retryable로 다룬다. `stale | no-video | segment-unavailable`은 terminal이며 failing key와 아직 시도하지 않은 later key를 구분해 보고하고 이후 save를 중지한다.
+
+##### Progress failure, reset, and explicit Library save
+
+Mission은 completed visit마다 approved state와 submitted-answer count만 합쳐 한 번의 progress result를 만든다. `Later` 또는 Reveal만으로 완료한 visit은 `attempted`와 submitted-answer increment `0`을 기록할 수 있다. typed answer나 chronological attempt history는 controller, message 또는 storage payload에 포함하지 않는다.
+
+- `Clear current video progress`는 exact current video의 모든 source progress만, `Clear all listening progress`는 Listening Progress만 지운다. 각각 별도의 destructive confirmation을 사용하고 cards, subtitles, settings와 migration data는 건드리지 않는다.
+- progress write failure 뒤에는 `Retry saving progress`를 primary action으로 제공하고, failure가 확인된 뒤에만 `Exit without saving this progress`를 secondary action으로 제공한다.
+- discard warning은 이번 session의 저장되지 않은 progress가 사라지며 이전에 저장된 progress는 남는다고 정확히 설명한다.
+- mid-mission discard는 `restore-start`, Results discard는 `complete-stay`를 사용한다. successful 또는 terminal cleanup은 navigation lock, heartbeat, media observer, 0.75× rate와 subtitle/controller suppression을 lease expiry를 기다리지 않고 즉시 해제한다. end `error`는 사실대로 retryable하게 보여 주고 즉시 다시 cleanup할 수 있게 하며, lease expiry를 정상 exit 방법으로 의도적으로 기다리게 하지 않는다.
+
+Difficult line은 자동으로 Library에 넣지 않는다. Results의 모든 checkbox는 처음에 clear 상태이고, 사용자가 명시적으로 선택한 segment key만 current content session이 다시 검증한다. content가 combined learning text, current canonical watched URL, effective time range와 accepted support를 기존 canonical card builder로 하나의 assigned `LearningCard`로 변환하고 기존 validated card-storage path를 사용한다. repeated save는 distinct card다.
 
 #### Current subtitle overview
 
@@ -262,9 +410,9 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 - 학습 행의 저장 표시는 canonical `learningCards`에서 같은 Coupang Play video ID, 학습 언어, 정제된 학습 문장과 1ms로 반올림한 시작·종료 시각이 모두 일치하는 assigned 카드가 있는지 파생한다. 이는 자막 provenance를 완전히 증명하지 않는 best-effort 표시이며 toggle, dedupe, 저장 차단이나 삭제 control이 아니다. 성공 직후 표시하고 storage revision으로 다시 조정하되 새 provenance schema나 cue 사본을 만들지 않는다. 진행 중인 현재 cue 저장과 행별 저장은 하나의 pending lock을 공유하며, 완료 뒤 같은 문장을 다시 저장하면 기존 카드 계약대로 별도 카드가 추가된다.
 - UI는 cue 본문을 Storage나 background에 복제하지 않는다. 활성 tab의 content script에서 직접 받은 일시 snapshot과 재생 시각만 사용하고, tab·SPA route·content instance·video·자막 revision 변경과 늦은 응답을 격리한다. 행 seek와 저장은 content 경계에서 snapshot identity와 자막 revision을 원자적으로 다시 검증한 뒤에만 실행한다.
 
-#### Save and multi-cue alignment
+#### Ordinary viewing save and multi-cue alignment
 
-- 저장의 anchor는 현재 재생 중인 학습 cue다.
+- active Listening Mission 밖의 ordinary viewing save는 현재 재생 중인 학습 cue를 anchor로 사용한다. mission Results의 combined-segment save는 위 Listening Mission 계약을 따른다.
 - 도움 자막의 delay를 적용한 뒤, 시간적으로 연속된 하나 이상의 도움 cue 그룹을 후보로 비교한다.
 - 시간 겹침, 중심점 거리와 cue 사이 gap을 함께 사용해 가장 신뢰할 수 있는 그룹을 선택한다.
 - 신뢰도가 기준보다 낮으면 도움 문장을 생략하되 학습 문장 저장은 성공시킨다.
@@ -316,8 +464,8 @@ OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함�
 - 사용자가 시작·끝을 정하는 수동 A/B 루프와 일반 루프 설정
 - primary/secondary별 저장·복사·표시 단축키
 - 이전/다음/반복을 개별적으로 숨기거나 막는 `learningControls` enabled 모델
-- `new | learning | mastered` 복습 상태와 이를 전제로 한 필터·문구·세션 override
-- 하이라이트, 추천, 대시보드, 퀴즈, 공유와 밝기 조절 같은 범용 확장 기능
+- 과거 LearningCard/Review용 `new | learning | mastered` 복습 상태와 이를 전제로 한 필터·문구·세션 override. 이는 §3.5 Listening Progress의 별도 `attempted | cleared | mastered` best-evidence state를 제거한다는 뜻이 아니다.
+- 하이라이트, 추천, broad dashboard, Listening Mission 밖의 범용 퀴즈, 공유와 밝기 조절 같은 범용 확장 기능. Learning의 exact current-source progress summary는 broad dashboard가 아니다.
 
 제거는 UI를 숨기는 것으로 끝나지 않는다. 정상 schema, 기본값, store, message, content/background handler, locale, 테스트와 죽은 코드까지 제거한다. 단, v1.11 입력을 읽는 데 필요한 최소 decoder는 migration 모듈 안에만 남긴다.
 
@@ -333,7 +481,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 ### 5.4 확정 — 초기 2.0에서 연기
 
 - 자동 번역
-- SRS, 오늘의 복습, 일정, 학습 이력, 정답률, streak와 알림
+- SRS, 오늘의 복습, 일정, chronological 학습 이력, historical 정답률, streak와 알림. §3.5의 factual Listening Progress는 이 연기 항목이 아니다.
 - 계정, 장치 간 동기화, 결제와 유료 등급
 - 영상 제목 자동 수집·표시, 영상별 그룹과 검색
 - 자동 언어 감지와 일괄 역할 지정
@@ -345,6 +493,18 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 ## 6. UX Contract
 
 - 제품 용어는 `학습 자막/문장`과 `도움 자막/문장`을 사용한다. 정상 v2 UI에서 `메인/서브`, `primary/secondary`를 사용자 역할명으로 노출하지 않는다.
+- Listening Mission에서도 사용자는 연습 단위를 `문장` 또는 `line`으로만 본다. internal `practice segment`, source index와 hash identity를 UI jargon으로 노출하지 않는다.
+- Learning idle 화면은 Listening Mission entry와 exact current video/source progress를 기존 settings 앞에 보여 준다. no video, stable video identity unavailable, no learning track, no eligible segment, first use, existing progress, loading과 recoverable error를 사실대로 구분한다.
+- mission entry는 `Continue`와 `Start from current position`, current catalog 기준 cleared/mastered 수, 최근 practice와 best combo를 제공한다. aligned support가 있을 때만 support availability를 말하고 Coupang Play caption이 보이면 사용자가 끄도록 안내하되 자동 감지·조작을 주장하지 않는다.
+- active mission은 기존 네 destination의 Header를 유지하되 one navigation token으로 destination 이동을 잠그고, idle Learning settings 대신 하나의 mission scroll owner만 보여 준다. 명시적 Exit는 항상 접근 가능해야 하며 terminal cleanup 뒤 exact token을 해제한다.
+- active line은 round와 `current / total`, positive combo, non-color-only state, listen instruction, `Listen again`, `Slow 0.75×`, real multiline answer field, Submit, next Hint, Later, feedback/status, correct/Reveal 뒤 answer/support와 explicit Next를 제공한다.
+- Enter는 submit, Shift+Enter는 line break이며 IME composition 중 Enter는 submit하지 않는다. non-exact draft는 transient memory에서 수정 가능하게 유지하고 new line의 successful automatic playback 뒤 answer field에 focus한다.
+- hint와 judgment, playback, progress error, unsaved warning, stale/fatal state와 difficult-save result는 screen reader에 사실대로 announce한다. correct/Reveal은 자동 advance하지 않고 phase, dialog와 error 뒤 안정된 focus target을 제공한다.
+- first-round summary는 first-submission exact 수, retry candidate 수와 best combo를 보여 주고 optional one retry와 `View results now`를 제공한다. Results는 1–3 stars, optional Perfect, cleared/total, first-submission exact, retry outcome, best combo와 progress-save state만 보여 주며 history, streak, daily total, rank와 share를 만들지 않는다.
+- difficult candidate checkbox는 모두 처음에 선택되지 않는다. selected-only save, no-selection no-op, retryable partial failure와 terminal partial failure를 구분하고 이미 저장한 성공을 잃었다고 표시하지 않는다.
+- progress write failure 뒤 primary `Retry saving progress`와 secondary `Exit without saving this progress`를 정확한 순서로 제공한다. discard는 이번 unsaved progress만 잃고 이전 persisted progress는 남는다는 문구, mid-mission `restore-start`와 Results `complete-stay`를 사용한다.
+- `Clear current video progress`와 `Clear all listening progress`는 서로 다른 confirmation과 focus recovery를 사용하며 실패 시 data를 지웠다고 표시하지 않는다.
+- 320, 360, 390 CSS px에서 active mission은 horizontal overflow, overlap, clipped focus ring 또는 nested idle-settings scroll이 없어야 한다. Chrome이 실제로 제공하지 않는 320px는 deterministic fixture로 검증하고 실제 Chrome에서는 browser constraint를 기록한다. long English, Korean과 no-space text가 primary action을 막지 않아야 한다.
 - 첫 2.0 진입은 학습 언어와 도움 언어 확인에 집중한다. v1 카드를 모두 고치도록 강제하지 않는다.
 - 미분류 이전 카드는 “언어/역할 지정 필요”처럼 사실만 말한다. 자동 감지했다고 주장하지 않는다.
 - 도움 문장이 정렬되지 않아 저장되지 않은 경우에도 학습 문장은 저장되며, 실패가 아니라 도움 문장 생략으로 이해할 수 있어야 한다.
@@ -360,14 +520,20 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 ## 7. Privacy and Permissions
 
 - 학습 카드와 등록 자막은 사용자의 브라우저에 로컬로 저장한다.
+- Listening Mission의 segmenting, answer comparison, hint, score와 transient session state는 모두 로컬에서 처리한다.
+- raw cue array, catalog body, immutable mission snapshot, 아직 저장하지 않은 segment text와 typed answer는 active tab의 direct UI-content transient boundary에만 존재한다. background message, tab store, `listeningProgress`, 추가 Storage, network, telemetry, diagnostics, log, error, URL, DOM attribute 또는 committed evidence payload로 보내거나 복제하지 않는다.
+- typed answer text는 current component/reducer memory와 input/draft-update/submit action 안에서 judgment에 필요한 동안만 존재한다. external/serialized/controller/message/storage payload와 chronological attempt history에는 포함하지 않는다.
+- sole text-bearing 예외는 사용자가 Results에서 명시적으로 선택한 segment다. content가 current session/source/revision을 다시 검증해 canonical `LearningCard`로 변환한 뒤에만 기존 validated card-storage message와 `chrome.storage.local`의 `learningCards` path를 사용할 수 있다. 이 예외는 raw cue/catalog relay, mission snapshot persistence 또는 typed-answer 전송을 허용하지 않는다.
+- `listeningProgress`는 §3.5의 numeric/state/timestamp identity facts만 저장한다. full watched URL, subtitle/support text, answer draft, history, star와 per-attempt text는 허용하지 않는다.
 - 2.0 핵심 흐름은 계정과 외부 자막 공급자 없이 작동해야 한다. OpenSubtitles는 사용자가 명시적으로 검색·추가할 때만 사용하는 승인된 예외다.
 - 원격 번역, 외부 분석, telemetry, BYOK와 클라우드 저장을 추가하지 않는다.
 - 전체 자막 snapshot과 현재 재생 시각은 활성 tab의 UI-content 직접 메시지에서만 일시적으로 사용한다. 등록 자막 읽기 전용 확인은 이미 canonical 로컬 저장소에 있는 해당 cue 본문을 UI에서 strict하게 읽을 뿐 새 사본을 만들지 않는다. cue 본문을 background, 추가 Storage, network, telemetry 또는 진단 로그로 복제하지 않는다.
 - 필수 host access는 Coupang Play로 제한한다. OpenSubtitles에는 pre-implementation qualification으로 증명한 API base와 download origin 각각만 exact optional permission으로 선언하고 첫 명시적 검색에서 요청한다. 후보 host 전체나 wildcard를 선언하지 않는다.
 - OpenSubtitles에는 사용자가 제출한 제목/query, 언어, 선택 필터와 page만 전송한다. query, 결과 metadata, `file_id`, quota, 임시 URL과 다운로드 원문은 provider-specific persistent storage에 남기지 않고, 성공적으로 등록한 자막 metadata와 cue만 기존 로컬 저장소에 보존한다.
 - build-time consumer credential과 app/version `User-Agent`는 OpenSubtitles가 배포 가능한 public client 사용을 승인하고 로그인/JWT 없이 동작하는 경우에만 모든 API 요청에 사용한다. credential은 보안 secret으로 주장하지 않으며 실제 값은 source, fixture와 로그에 commit하지 않고 build 환경에서 주입한다. confidential secret이 필요해지면 현재 범위를 중단한다.
-- migration 오류 로그, 테스트 fixture와 진단 정보에 실제 사용자의 자막 본문, 전체 시청 URL 또는 등록 자막 본문을 기록하지 않는다.
+- migration/mission 오류 log, 테스트 fixture와 진단 정보에 실제 사용자의 자막 본문, 전체 시청 URL, 등록 자막 본문, typed answer 또는 unsaved mission text를 기록하지 않는다.
 - 위에서 승인한 범위를 벗어나는 새 host, redirect, 전송 필드, 계정·JWT, proxy 또는 개인정보 계약은 별도 ChatGPT 검토와 사용자 승인을 받는다.
+- Listening Mission은 새 Chrome permission, host, CSP, network request, external service, microphone, speech recognition, AI/semantic evaluation, telemetry, account, sync 또는 payment를 추가하지 않는다.
 
 ## 8. Implementation Program
 
@@ -381,7 +547,14 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 6. **Scope cleanup**: backup, 독립 분석 화면과 통계, preset, 구 상태 모델, 제거된 재생 설정과 관련 locale·테스트 삭제.
 7. **OpenSubtitles acquisition**: 명시적 검색·선택·등록, exact optional permission, background network, session-only cache, provider qualification과 개인정보 proof.
 8. **Current subtitle overview restoration**: 현재 학습·도움 역할의 원자적 일시 cue snapshot, 함께/역할별 가상 목록, 검색, follow, 키보드 seek, 학습 행 직접 저장과 stale identity 격리.
-9. **Legacy audit and release validation**: v1 정상 경로 참조 제거 증명, 전체 자동 검증과 실제 Chrome upgrade/fresh-install/provider smoke.
+9. **Legacy audit and baseline validation**: v1 정상 경로 참조 제거 증명과 기존 2.0 baseline의 자동 검증·실제 Chrome upgrade/fresh-install/provider smoke.
+
+Listening Mission executable work는 이 canonical amendment가 reviewed·merged된 뒤에만 시작한다. 위 baseline program 뒤에 다음 네 slice를 순서대로 수행하며, 각 slice는 직전 merge를 포함한 latest `main`에서 시작한다.
+
+10. **Listening Mission domain and progress foundation**: deterministic segment/source identity, answer·hint·result pure rules, strict progress schema, storage API와 fresh/v1.11 initialization.
+11. **Isolated Listening Mission session UI**: immutable 1–10 segment reducer, transient typed draft, injected controller union, retry·Results·failure escape와 narrow Side Panel accessibility를 production에서 unmounted 상태로 검증.
+12. **Active-video Listening Mission integration**: direct UI-content catalog/session, content-owned playback·restore·lease, Learning entry/progress, background progress API와 explicit canonical Library save를 연결.
+13. **Listening Mission latest-main certification**: combined automated, privacy/permission/storage/migration audit와 actual Chrome mission·failure-discard·restoration·lease·Side Panel regression을 evidence로 기록.
 
 기능을 먼저 제거해 v1.11 사용자의 데이터를 읽지 못하게 만들면 안 된다. migration decoder와 fixture를 먼저 고정하고, 제거 작업과 정상 v2 경로 전환이 같은 릴리스에서 일관되게 완료돼야 한다.
 
@@ -404,21 +577,24 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 유효한 등록 자막 metadata와 cue body가 byte-for-byte 또는 구조적으로 동등하게 보존된다.
 - 변환, 쓰기, 재읽기, 표식과 정리 각 단계의 실패를 주입해 원본 비삭제, 무표식, 재시도와 오류 UI를 증명한다.
 - 손상된 등록 자막 한 항목이 정상 카드와 다른 등록 자막의 이전을 막지 않고 격리된다.
-- fresh install은 v1 키 없이 canonical v2 데이터만 만든다.
+- fresh install은 v1 키 없이 canonical v2 데이터와 strict empty `listeningProgress` version 1을 만든다.
+- actual v1.11 migration은 empty Listening Progress를 다른 required v2 key와 함께 쓰고 strict readback한 뒤에만 `dataSchemaVersion: 2`를 완료한다. 기존 public data 보존·cleanup 순서·실패 재시도 계약은 바뀌지 않는다.
+- missing/invalid progress, progress write/readback과 marker/cleanup failure injection이 fail closed·restart-safe하고 interim unreleased v2 missing-key fallback이 없음을 증명한다.
 
 ### 9.2 No-runtime-legacy proof
 
 - v1.11 decoder와 migration fixture 외에는 v1 key, v1 type, v1 status 또는 v1 fallback 참조가 없다.
 - 정상 UI/content/background가 `savedSubtitles`, `primarySubtitle`, `secondarySubtitle`, `videoSkip`, `subVideoSkip` 또는 구 `loop`를 읽거나 쓰지 않는다.
-- 미배포 backup v1과 `new | learning | mastered` 호환 분기가 없다.
+- 미배포 backup v1과 과거 LearningCard/Review용 `new | learning | mastered` status 호환 분기가 없다. Listening Progress의 별도 best-evidence state `attempted | cleared | mastered`는 §3.5 계약이다.
 - 제거한 feature의 route, UI, controller/store, schema/default, message handler, locale, test와 Chrome permission이 남지 않는다.
 - 정상 v2 schema, default, storage API, Settings, First Entry, content controller와 runtime에 `learningControls` 키나 개별 enabled 분기가 남지 않는다.
 - migration 완료 뒤 정리 대상 v1 키가 사라지고, 정리가 중단돼도 다음 시작에서 안전하게 끝난다.
+- interim v2 missing-progress fallback, persisted typed answer/draft/history/raw catalog/mission snapshot 또는 deferred Listening feature용 dormant schema·route·permission이 없다.
 
 ### 9.3 Product proof
 
 - 학습/도움 언어 확인 → 시청 → 한 번 저장 → Library 확인/수정 → 집중 Review → 영상 복귀의 전체 흐름이 작동한다.
-- 이전·다음·반복 control과 직접 명령은 Shortcuts master 상태와 관계없이 항상 제공되고, master는 저장·이전·다음·반복의 비어 있지 않은 키보드 바인딩만 제어한다. 저장된 raw code와 사용자 표시 label은 구분되며 예약·중복 키 오류는 충돌 대상을 포함해 접근 가능하게 설명된다.
+- 이전·다음·반복 control과 직접 명령은 Shortcuts master 상태와 관계없이 항상 제공되고, master는 저장·이전·다음·반복의 비어 있지 않은 키보드 바인딩만 제어한다. active Listening Mission의 content media ownership 동안만 persistent setting 변경 없이 Play Plus overlay와 on-video Controller를 transiently suppress한다. 저장된 raw code와 사용자 표시 label은 구분되며 예약·중복 키 오류는 충돌 대상을 포함해 접근 가능하게 설명된다.
 - 도움 자막이 한 cue 및 여러 연속 cue일 때 올바르게 pair되고, 낮은 신뢰도에서는 학습 문장만 저장된다.
 - `unassigned`는 Library에 남고 Review에서 제외되며 사용자가 정상 카드로 바꿀 수 있다.
 - `active`와 `completed`만으로 Review와 Library 동작이 일관된다.
@@ -433,6 +609,13 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 등록 자막은 학습·도움 역할이나 현재 영상 연결 없이도 `자막 확인`에서 제목·언어·delay와 전체 cue를 검색·탐색할 수 있다. 이 읽기 전용 화면은 active overview의 역할 보기, current/follow, seek와 저장 의미를 가장하지 않는다.
 - 수천 cue와 여러 줄·다국어 문장에서 가상 목록이 하나의 scroll owner를 유지하고 검색 전후에도 행이 겹치지 않으며, 늦은 native cue 도착과 tab·SPA route·content instance·video·자막 revision 변경이 자동 반영되고 이전 snapshot이 새 영상을 노출·제어·저장하지 않는다.
 - 전체 자막 snapshot과 재생 시각은 영속 저장·background relay·외부 전송·본문 logging 없이 활성 tab에서만 일시적으로 사용된다.
+- Learning은 정확히 네 destination 안에서 current video/source의 Listening Mission entry와 factual progress를 제공하고, current position 또는 Continue부터 source 순서의 최대 10 segment를 선택하며 마지막 mission은 더 짧을 수 있다.
+- wrapper cleanup, separator, greedy grouping, no-split/omission, timing/grapheme boundary와 versioned identity가 §5.1과 일치하고 delay/support 변화만으로 progress key가 바뀌지 않는다.
+- multilingual answer normalization, exact/almost threshold, draft-independent Shape/First-graphemes mask, support skip와 Reveal이 deterministic하고 typed draft에서 expected token을 추론하지 않는다.
+- first round, optional one retry, combo, 1–3 stars, Perfect와 difficult candidates가 계약과 일치한다. `Later`/Reveal-only visit은 `totalAttempts: 0`을 기록할 수 있고 retry clear는 mastered를 소급하지 않는다.
+- mission은 exact current video state를 capture하고 Play Plus overlay/controller만 transiently suppress한다. 1.0×/0.75× clip, pre/post-roll cap, 모든 end mode, 5초 heartbeat/15초 lease와 route/video/source/revision invalidation이 old text나 media command를 새 video에 적용하지 않고 정상·emergency cleanup을 수행한다.
+- progress는 exact namespace와 monotonic state만 저장하고 current catalog에서 denominator를 계산한다. record/reset failure는 기존 data를 보존하며 Retry와 truthful discard escape가 각각 `restore-start`/`complete-stay`로 lock, heartbeat, observer, rate와 suppression을 즉시 정리한다.
+- difficult segment는 처음에 선택되지 않고 explicit selected-only action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
 - 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
 
 ### 9.4 Verification gate
@@ -443,6 +626,11 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - `yarn lint`
 - `yarn test:run`
 - `yarn build`
+- deterministic wrapper/greedy segmenter, source/key identity, current/gap/Continue selection, answer threshold, exact hint mask, retry/result와 `totalAttempts: 0` focused suites
+- strict progress schema/default/migration/readback/serialized mutation/reset/failure-recovery suites와 production activation/import audit
+- mission reducer/component transient-draft, controller union, async race, IME, focus, accessibility, progress-failure/discard, difficult-save와 320/360/390 geometry suites
+- direct UI-content catalog/session, content playback/restore/lease/suppression, background progress readiness, Learning landing/lock/Next 10/reset/save와 external storage-change integration suites
+- source와 built output에서 typed answer persistence/logging, forbidden raw cue/catalog background relay, microphone/speech/AI, telemetry, account/payment, new network/permission/host/CSP, fifth destination와 release/version change가 없음을 audit한다. explicit canonical LearningCard save exception은 forbidden relay로 오탐하지 않는다.
 - `docs/manual-smoke-test.md`를 2.0 계약에 맞게 먼저 갱신한 뒤 전체 Chrome smoke matrix
 - exact optional permission grant·deny·cancel·revoke, 명시적 검색·pagination·empty/error/quota, 선택한 결과의 download·decode·parse·등록과 same-session cache를 provider mock과 실제 Chrome에서 검증
 - session cache의 최대 entry·총 byte·TTL 경계, 초과 시 결정론적 eviction, service-worker/extension-session restart와 persistent storage 미유입을 검증
@@ -453,7 +641,10 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 역할로 선택하지 않은 등록 자막의 읽기 전용 확인, 검색, delay 표시, late load·삭제 오류와 Back focus 복원을 검증하고 active overview의 seek/save/current/follow control이 섞이지 않는지 확인
 - v1.11.0을 설치하고 대표 데이터를 만든 실제 Chrome profile에서 2.0으로 update하는 upgrade smoke
 - 깨끗한 Chrome profile의 fresh-install smoke
-- 실제 Chrome에서는 해당 빌드가 허용하는 최소 side panel 폭(현재 환경 기준 360 CSS px)과 약 390 CSS px에서 전체 자막, Library, Review, 설정, migration 오류 상태의 키보드·스크롤·레이아웃을 확인한다. 320 CSS px는 자동 반응형 검증으로 유지하며, Chrome이 360px에서 폭을 고정하면 실제 Chrome의 320px 결과는 `FAIL`이 아니라 브라우저 제약이 기록된 `NOT RUN`이다.
+- 실제 Chrome에서는 해당 빌드가 허용하는 최소 side panel 폭(현재 환경 기준 360 CSS px)과 약 390 CSS px에서 Listening Mission, 전체 자막, Library, Review, 설정, migration 오류 상태의 키보드·스크롤·레이아웃을 확인한다. 320 CSS px는 자동 반응형 검증으로 유지하며, Chrome이 360px에서 폭을 고정하면 실제 Chrome의 320px 결과는 `FAIL`이 아니라 브라우저 제약이 기록된 `NOT RUN`이다.
+- 실제 Chrome의 rebuilt production `dist`에서 native/registered learning, learning-only/support, delay, no-video/identity/source/segment, current/Continue/fewer-than-10 entry와 exact segment/hint fixture를 확인한다.
+- 실제 Chrome에서 automatic/replay/slow playback, answer/IME/hint/Reveal/Later/retry/Results, difficult save, progress/reset, persistent write-failure discard, every end mode, Side Panel close/reload 뒤 15초 lease와 route/video/tab/source/revision invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
+- 실제 Chrome에서 mission 전후 기존 Learning playback, Subtitles, Library, Review, OpenSubtitles, readiness와 v1.11/fresh migration regression을 확인하고 navigation lock, 0.75× rate, hidden subtitle/controller 또는 media observer가 남지 않음을 확인한다.
 
 자동 테스트는 실제 Chrome upgrade smoke를 대신하지 않는다. 실행하지 않은 항목은 `NOT RUN`, 외부 환경 때문에 판정할 수 없는 항목은 `UNKNOWN`으로 기록한다.
 
@@ -462,7 +653,12 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 2.0 완료를 이유로 다음 작업을 함께 끼워 넣지 않는다.
 
 - 배포, 태그, Chrome Web Store 제출 또는 자동 업데이트 정책 변경
-- 계정·결제·서버 구축
+- 다섯 번째 destination, 다른 mission type, 범용 quiz framework 또는 broad Learning/Library/Review redesign
+- subtitle analysis, word frequency, key-expression extraction, independent vocabulary/expression mission 또는 shadowing
+- microphone, speech recognition, pronunciation grading, audio recording, AI/semantic grading, automatic translation 또는 external explanation service
+- chronological mission history, historical accuracy chart, SRS/due date, streak, reminder, leaderboard 또는 sharing
+- Listening Progress 밖의 새 personal data, telemetry, experiment, account, sync, payment, Pro 또는 daily quota
+- Play Plus backend/proxy 또는 다른 server 구축
 - OpenSubtitles 계정·JWT, Play Plus proxy/backend, BYOK, 자동 영상 제목 수집·검색·추천·역할 적용
 - broad optional host, download redirect 허용, provider provenance 영속 schema와 multi-file/CD 자동 병합
 - telemetry나 사용자 조사 수집 코드
