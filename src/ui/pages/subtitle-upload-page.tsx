@@ -44,6 +44,7 @@ export function SubtitleUploadPage({
   const [subview, setSubview] = useState<SubtitleSubview>('add');
   const [overviewTarget, setOverviewTarget] = useState<SubtitleOverviewTarget>({ kind: 'active' });
   const [filteredSubtitles, setFilteredSubtitles] = useState<V2RegisteredSubtitleMetadata[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [mode, setMode] = useState<SubtitleUploadMode>({ name: 'list' });
   const [isAddBusy, setIsAddBusy] = useState(false);
   const [pendingFocusId, setPendingFocusId] = useState<SubtitleId | null>(null);
@@ -225,7 +226,9 @@ export function SubtitleUploadPage({
     origin: AddModeOrigin,
     focusFirstControl: boolean
   ) => {
+    if (navigationLocked) return;
     restoreFocusOriginRef.current = origin;
+    setSearchQuery('');
     setIsAddBusy(false);
     setNavigationLocked(false);
     setMode({ name: 'add', initialSource, focusFirstControl });
@@ -326,48 +329,73 @@ export function SubtitleUploadPage({
           }
         />
         <div className='shrink-0 pt-2'>
-          <ListHeader originalList={subtitles} onFilteredListChange={setFilteredSubtitles} filterKey='title' />
+          <ListHeader
+            originalList={subtitles}
+            onFilteredListChange={setFilteredSubtitles}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            disabled={navigationLocked}
+            filterKey='title'
+          />
         </div>
         <div
           className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-2'
           data-scroll-owner='local-subtitles'
         >
           <UnavailableSubtitleNotice subtitles={unavailableSubtitles} />
-          <ul className='flex flex-col gap-2.5'>
-            {filteredSubtitles.map((item) => (
-              <SubtitleCard
-                key={item.id}
-                itemRef={(node) => {
-                  if (node) subtitleItemRefs.current.set(item.id, node);
-                  else subtitleItemRefs.current.delete(item.id);
-                }}
-                data={item}
-                tabInfo={tabInfo}
-                isAvailable={isAvailable}
-                isRoleAvailable={isRoleAvailable}
-                pendingRoles={pendingRoles}
-                previewButtonRef={(node) => {
-                  if (node) subtitlePreviewButtonRefs.current.set(item.id, node);
-                  else subtitlePreviewButtonRefs.current.delete(item.id);
-                }}
-                previewDisabled={navigationLocked}
-                onDelete={deleteSubtitle}
-                onEdit={handleEditSubtitle}
-                onPreview={(subtitleId) => {
-                  if (navigationLocked) return;
-                  setOverviewTarget({ kind: 'registered-preview', subtitleId });
-                  setSubview('overview');
-                }}
-                onUpdateDelay={handleUpdateDelay}
-                onRoleChange={handleRoleChange}
-              />
-            ))}
-          </ul>
+          {searchQuery && filteredSubtitles.length === 0 ? (
+            <div className='flex min-h-40 flex-col items-center justify-center gap-3 px-3 text-center'>
+              <p role='status' className='text-sm text-muted-foreground'>
+                {t('no_search_results')}
+              </p>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                disabled={navigationLocked}
+                onClick={() => setSearchQuery('')}
+              >
+                {t('clear_search')}
+              </Button>
+            </div>
+          ) : (
+            <ul className='flex flex-col gap-2.5'>
+              {filteredSubtitles.map((item) => (
+                <SubtitleCard
+                  key={item.id}
+                  itemRef={(node) => {
+                    if (node) subtitleItemRefs.current.set(item.id, node);
+                    else subtitleItemRefs.current.delete(item.id);
+                  }}
+                  data={item}
+                  tabInfo={tabInfo}
+                  isAvailable={isAvailable}
+                  isRoleAvailable={isRoleAvailable}
+                  pendingRoles={pendingRoles}
+                  previewButtonRef={(node) => {
+                    if (node) subtitlePreviewButtonRefs.current.set(item.id, node);
+                    else subtitlePreviewButtonRefs.current.delete(item.id);
+                  }}
+                  previewDisabled={navigationLocked}
+                  onDelete={deleteSubtitle}
+                  onEdit={handleEditSubtitle}
+                  onPreview={(subtitleId) => {
+                    if (navigationLocked) return;
+                    setOverviewTarget({ kind: 'registered-preview', subtitleId });
+                    setSubview('overview');
+                  }}
+                  onUpdateDelay={handleUpdateDelay}
+                  onRoleChange={handleRoleChange}
+                />
+              ))}
+            </ul>
+          )}
         </div>
         <footer className='shrink-0 border-t pt-3'>
           <Button
             ref={listAddButtonRef}
             className='w-full'
+            disabled={navigationLocked}
             onClick={() => openAddMode('file', 'list', false)}
           >
             {t('v2_local_subtitles_add')}
