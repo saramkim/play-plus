@@ -35,6 +35,22 @@ describe('ListHeader', () => {
 
   afterAll(() => vi.unstubAllGlobals());
 
+  it('keeps the compact two-row search and sort structure', () => {
+    renderControlledHeader(root, { onFilteredListChange: () => undefined });
+
+    const header = container.querySelector('header');
+    if (!header) throw new Error('Expected the list header');
+
+    expect(header.children).toHaveLength(2);
+    expect(header.classList.contains('gap-1.5')).toBe(true);
+    expect(header.classList.contains('pb-1.5')).toBe(true);
+    expect(header.classList.contains('gap-2')).toBe(false);
+    expect(header.classList.contains('pb-2')).toBe(false);
+    expect(header.firstElementChild?.querySelector('form')).not.toBeNull();
+    expect(header.lastElementChild?.contains(getButton(container, 'latest'))).toBe(true);
+    expect(header.lastElementChild?.contains(getButton(container, 'oldest'))).toBe(true);
+  });
+
   it('keeps the input draft separate until Search commits it', () => {
     const filteredLists: ListItem[][] = [];
     renderControlledHeader(root, {

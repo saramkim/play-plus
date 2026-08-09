@@ -73,7 +73,7 @@ export function ListHeader<T extends { savedAt: string }>({
   };
 
   return (
-    <header className='flex flex-col gap-2 pb-2 border-b'>
+    <header className='flex flex-col gap-1.5 border-b pb-1.5'>
       <div className='flex justify-between items-center gap-2'>
         <form className='flex items-center gap-2 w-full' onSubmit={search}>
           <Input
