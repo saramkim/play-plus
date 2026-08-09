@@ -199,6 +199,67 @@ describe('Listening Mission UI transport', () => {
     expect(terminal).not.toHaveBeenCalled();
   });
 
+  it.each(['stale', 'no-video', 'segment-unavailable'] as const)(
+    'keeps the lease after an obsolete replaced play and stops on current %s truth',
+    async (terminalStatus) => {
+      const obsoletePlay = deferred<{ success: true; data: { status: 'stale' } }>();
+      let playRequestCount = 0;
+      sendTabMessage.mockImplementation((_tabId, message) => {
+        if (message === 'heartbeatListeningSession') {
+          return Promise.resolve({ success: true, data: { status: 'alive' } });
+        }
+        if (message === 'playListeningSegment') {
+          playRequestCount += 1;
+          if (playRequestCount === 1) return obsoletePlay.promise;
+          return Promise.resolve({
+            success: true,
+            data: { status: playRequestCount <= 3 ? 'played' : terminalStatus },
+          });
+        }
+        throw new Error(`Unexpected message: ${message}`);
+      });
+      const controller = createController();
+      controller.startHeartbeat();
+
+      const obsoleteResult = controller.playSegment(SEGMENT_A, 1);
+      await expect(controller.playSegment(SEGMENT_B, 0.75)).resolves.toEqual({ status: 'played' });
+      obsoletePlay.resolve({ success: true, data: { status: 'stale' } });
+      await expect(obsoleteResult).resolves.toEqual({ status: 'stale' });
+
+      await vi.advanceTimersByTimeAsync(16_000);
+      const activeLeaseRenewals = sendTabMessage.mock.calls.filter(
+        ([, message]) => message === 'heartbeatListeningSession'
+      );
+      expect(activeLeaseRenewals).toHaveLength(3);
+
+      await expect(controller.playSegment(SEGMENT_C, 1)).resolves.toEqual({ status: 'played' });
+      await expect(controller.playSegment(SEGMENT_D, 0.75)).resolves.toEqual({
+        status: terminalStatus,
+      });
+      await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
+      expect(
+        sendTabMessage.mock.calls.filter(([, message]) => message === 'heartbeatListeningSession')
+      ).toHaveLength(activeLeaseRenewals.length);
+    }
+  );
+
+  it('does not let an invalid local play supersede an accepted in-flight request', async () => {
+    const currentPlay = deferred<{ success: true; data: { status: 'stale' } }>();
+    sendTabMessage.mockReturnValueOnce(currentPlay.promise);
+    const controller = createController();
+    controller.startHeartbeat();
+
+    const currentResult = controller.playSegment(SEGMENT_A, 1);
+    await expect(controller.playSegment('invalid-segment-key', 0.75)).resolves.toEqual({
+      status: 'error',
+    });
+    currentPlay.resolve({ success: true, data: { status: 'stale' } });
+    await expect(currentResult).resolves.toEqual({ status: 'stale' });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
+
+    expect(sendTabMessage).toHaveBeenCalledOnce();
+  });
+
   it('stops heartbeat after a terminal difficult-save result', async () => {
     const terminal = vi.fn();
     sendTabMessage.mockResolvedValueOnce({
@@ -263,6 +324,44 @@ describe('Listening Mission UI transport', () => {
       sendTabMessage.mock.calls.filter(([, message]) => message === 'heartbeatListeningSession')
     ).toHaveLength(3);
     await expect(controller.endSession('restore-start')).resolves.toEqual({ status: 'ended' });
+  });
+
+  it('ignores a late pre-end terminal play after a retryable end restarts the lease', async () => {
+    const pendingPlay = deferred<{ success: true; data: { status: 'stale' } }>();
+    let endAttempts = 0;
+    sendTabMessage.mockImplementation((_tabId, message) => {
+      if (message === 'playListeningSegment') return pendingPlay.promise;
+      if (message === 'endListeningSession') {
+        endAttempts += 1;
+        return Promise.resolve({
+          success: true,
+          data: { status: endAttempts === 1 ? 'error' : 'ended' },
+        });
+      }
+      if (message === 'heartbeatListeningSession') {
+        return Promise.resolve({ success: true, data: { status: 'alive' } });
+      }
+      throw new Error(`Unexpected message: ${message}`);
+    });
+    const controller = createController();
+    controller.startHeartbeat();
+
+    const playRequest = controller.playSegment(SEGMENT_A, 1);
+    await expect(controller.endSession('restore-start')).resolves.toEqual({ status: 'error' });
+    pendingPlay.resolve({ success: true, data: { status: 'stale' } });
+    await expect(playRequest).resolves.toEqual({ status: 'stale' });
+
+    await vi.advanceTimersByTimeAsync(16_000);
+    const activeLeaseRenewals = sendTabMessage.mock.calls.filter(
+      ([, message]) => message === 'heartbeatListeningSession'
+    );
+    expect(activeLeaseRenewals).toHaveLength(3);
+
+    await expect(controller.endSession('restore-start')).resolves.toEqual({ status: 'ended' });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
+    expect(
+      sendTabMessage.mock.calls.filter(([, message]) => message === 'heartbeatListeningSession')
+    ).toHaveLength(activeLeaseRenewals.length);
   });
 
   it('does not restart heartbeat when unmount disposal cannot end the session', async () => {

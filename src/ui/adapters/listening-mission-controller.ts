@@ -350,6 +350,7 @@ export const createListeningSessionController = ({
   let fatalReported = false;
   let heartbeatGeneration = 0;
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+  let playRequestGeneration = 0;
   let progressSaved = false;
   let progressRequest: Promise<{ status: 'saved' | 'error' }> | undefined;
 
@@ -397,6 +398,7 @@ export const createListeningSessionController = ({
     if (disposed || endCompleted || fatalReported) return { status: 'stale' };
     const parsedSegmentKey = listeningSegmentKeySchema.safeParse(segmentKey);
     if (!parsedSegmentKey.success) return { status: 'error' };
+    const requestGeneration = ++playRequestGeneration;
     try {
       const response = await sendTabMessage(tabId, 'playListeningSegment', {
         rate,
@@ -406,7 +408,12 @@ export const createListeningSessionController = ({
       if (!response.success) return { status: 'error' };
       const parsed = playListeningSegmentResponseSchema.safeParse(response.data);
       if (!parsed.success) return { status: 'error' };
-      if (isTerminalListeningStatus(parsed.data.status)) stopHeartbeat();
+      if (
+        requestGeneration === playRequestGeneration &&
+        isTerminalListeningStatus(parsed.data.status)
+      ) {
+        stopHeartbeat();
+      }
       return parsed.data;
     } catch {
       return { status: 'error' };
@@ -444,6 +451,7 @@ export const createListeningSessionController = ({
     restartHeartbeatOnError: boolean
   ): Promise<EndSessionResult> => {
     if (endCompleted) return { status: 'already-ended' };
+    playRequestGeneration += 1;
     stopHeartbeat();
     try {
       const response = await sendTabMessage(tabId, 'endListeningSession', { mode, sessionId });

@@ -270,13 +270,17 @@ export const createListeningSessionCoordinator = (
     }
   };
 
-  const cancelActiveClip = () => {
+  const settleActiveClip = (result: PlayListeningSegmentResponse) => {
     const clip = activeClip;
     if (!clip) return;
     activeClip = null;
     clip.cleanup();
-    clip.settle({ status: 'stale' });
+    clip.settle(result);
   };
+
+  const invalidateActiveClip = () => settleActiveClip({ status: 'stale' });
+
+  const supersedeActiveClip = () => settleActiveClip({ status: 'error' });
 
   const clearLease = (session: ActiveListeningSession) => {
     if (session.leaseTimer === null) return;
@@ -290,7 +294,7 @@ export const createListeningSessionCoordinator = (
 
   const releaseSession = (session: ActiveListeningSession) => {
     if (activeSession !== session) return;
-    cancelActiveClip();
+    invalidateActiveClip();
     clearLease(session);
     activeSession = null;
     safelyClearSuppression();
@@ -309,7 +313,7 @@ export const createListeningSessionCoordinator = (
       abandonSessionWithoutSeeking(session);
       return;
     }
-    cancelActiveClip();
+    invalidateActiveClip();
     try {
       session.video.pause();
     } catch {
@@ -348,7 +352,7 @@ export const createListeningSessionCoordinator = (
     mode: EndListeningSessionMode,
     retainForRetry: boolean
   ): Promise<EndListeningSessionResponse> => {
-    cancelActiveClip();
+    invalidateActiveClip();
     session.pendingEndMode = mode;
     session.endRetryRequired = false;
     session.lastHeartbeatAt = now();
@@ -376,7 +380,7 @@ export const createListeningSessionCoordinator = (
   };
 
   const emergencyRestoreAndRelease = (session: ActiveListeningSession) => {
-    cancelActiveClip();
+    invalidateActiveClip();
     clearLease(session);
     session.pendingEndMode = 'restore-start';
     const restoration = restorePlayback(session, 'restore-start');
@@ -491,7 +495,7 @@ export const createListeningSessionCoordinator = (
     captured: CapturedPlaybackState | null
   ) => {
     if (session) {
-      cancelActiveClip();
+      invalidateActiveClip();
       clearLease(session);
       if (activeSession === session) activeSession = null;
       rememberEndedSession(session.sessionId);
@@ -727,7 +731,7 @@ export const createListeningSessionCoordinator = (
       return { status: 'segment-unavailable' };
     }
 
-    cancelActiveClip();
+    supersedeActiveClip();
     return startClip(session, segment, request.rate);
   };
 

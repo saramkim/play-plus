@@ -350,7 +350,7 @@ describe('listening session coordinator', () => {
     expect(harness.media.getCurrentTime()).toBe(2);
   });
 
-  it('waits for media readiness, reports play rejection, and supersedes older observers', async () => {
+  it('keeps the session alive when a pending 1.0 clip is superseded by a 0.75 clip', async () => {
     const harness = create({ readyState: 0 });
     const catalog = await getReadyCatalog(harness.coordinator);
     const begun = await beginFirst(harness.coordinator, catalog, 3);
@@ -367,13 +367,22 @@ describe('listening session coordinator', () => {
     const replacement = harness.coordinator.play({
       sessionId: begun.sessionId,
       segmentKey: secondKey,
-      rate: 1,
+      rate: 0.75,
     });
-    await expect(waiting).resolves.toEqual({ status: 'stale' });
+    await expect(waiting).resolves.toEqual({ status: 'error' });
+    expect(harness.getMissionActive()).toBe(true);
+    expect(
+      await harness.coordinator.heartbeat({
+        sessionId: begun.sessionId,
+        expectedIdentity: catalog.identity,
+        expectedSubtitleRevision: catalog.subtitleRevision,
+      })
+    ).toEqual({ status: 'alive' });
     harness.media.setReadyState(1);
     harness.media.video.dispatchEvent(new Event('loadedmetadata'));
     await flushPromises();
     expect(harness.media.getCurrentTime()).toBe(2.75);
+    expect(harness.media.getPlaybackRate()).toBe(0.75);
     harness.media.setCurrentTime(4.35);
     harness.media.video.dispatchEvent(new Event('timeupdate'));
     await expect(replacement).resolves.toEqual({ status: 'played' });
@@ -386,6 +395,17 @@ describe('listening session coordinator', () => {
         rate: 1,
       })
     ).resolves.toEqual({ status: 'error' });
+    expect(harness.getMissionActive()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    await flushPromises();
+    expect(harness.getMissionActive()).toBe(false);
+    expect(
+      await harness.coordinator.end({
+        sessionId: begun.sessionId,
+        mode: 'restore-start',
+      })
+    ).toEqual({ status: 'already-ended' });
   });
 
   it('waits for the generation-guarded seek and ignores a late superseded seek event', async () => {
@@ -404,7 +424,7 @@ describe('listening session coordinator', () => {
       segmentKey: begun.snapshot.segments[1].segmentKey,
       rate: 0.75,
     });
-    await expect(first).resolves.toEqual({ status: 'stale' });
+    await expect(first).resolves.toEqual({ status: 'error' });
     harness.media.dispatchSeekedWhileSeeking();
     await flushPromises();
     expect(harness.media.play).not.toHaveBeenCalled();
@@ -416,6 +436,26 @@ describe('listening session coordinator', () => {
     harness.media.setCurrentTime(4.35);
     harness.media.video.dispatchEvent(new Event('timeupdate'));
     await expect(second).resolves.toEqual({ status: 'played' });
+  });
+
+  it('keeps an explicit end terminal when it invalidates a pending clip', async () => {
+    const harness = create({ readyState: 0 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    const pending = harness.coordinator.play({
+      sessionId: begun.sessionId,
+      segmentKey: begun.snapshot.segments[0].segmentKey,
+      rate: 1,
+    });
+
+    expect(
+      await harness.coordinator.end({
+        sessionId: begun.sessionId,
+        mode: 'restore-start',
+      })
+    ).toEqual({ status: 'ended' });
+    await expect(pending).resolves.toEqual({ status: 'stale' });
+    expect(harness.getMissionActive()).toBe(false);
   });
 
   it('abandons clip ownership immediately when a live route guard turns stale', async () => {
