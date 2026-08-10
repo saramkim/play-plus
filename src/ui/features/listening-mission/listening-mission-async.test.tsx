@@ -149,6 +149,29 @@ describe('ListeningMission asynchronous controller contract', () => {
       expect(document.activeElement).toBe(getTextarea(container));
     });
 
+    it('clears a pending line announcement when Summary replaces active line truth', async () => {
+      const pending = deferred<PlaySegmentResult>();
+      const harness = createHarness();
+      harness.playSegment.mockImplementationOnce(() => pending.promise);
+
+      await renderMission(root, harness, snapshot(1));
+      const playbackStatus = container.querySelector("p[role='status'].sr-only");
+      expect(playbackStatus?.textContent).toBe('v2_listening_mission_playing');
+
+      await click(getButton(container, 'v2_listening_mission_later'));
+      expect(container.textContent).toContain('v2_listening_mission_summary_title');
+      expect(playbackStatus?.textContent).toBe('');
+
+      await click(getButton(container, 'v2_listening_mission_view_results'));
+      expect(container.textContent).toContain('v2_listening_mission_results_title');
+      expect(playbackStatus?.textContent).toBe('');
+
+      await settle(pending, { status: 'played' });
+      expect(container.textContent).toContain('v2_listening_mission_results_title');
+      expect(playbackStatus?.textContent).toBe('');
+      expect(document.activeElement?.textContent).toBe('v2_listening_mission_results_title');
+    });
+
     it('rehearses ownership without replacing the single live autoplay under StrictMode', async () => {
       const live = deferred<PlaySegmentResult>();
       const harness = createHarness();

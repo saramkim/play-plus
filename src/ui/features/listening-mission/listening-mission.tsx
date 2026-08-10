@@ -249,7 +249,14 @@ export function ListeningMission({
 
   useEffect(() => {
     const segmentKey = view.activeSegment?.segmentKey;
-    if (!segmentKey || !view.activeRound || autoPlayedLineRef.current === view.activeLineId) return;
+    if (!segmentKey || !view.activeRound) {
+      activePlaybackGenerationRef.current += 1;
+      pendingReplayTokensRef.current.clear();
+      setPendingReplayRates(new Set());
+      setPlaybackStatus('idle');
+      return;
+    }
+    if (autoPlayedLineRef.current === view.activeLineId) return;
     autoPlayedLineRef.current = view.activeLineId;
     activePlaybackGenerationRef.current += 1;
     pendingReplayTokensRef.current.clear();
