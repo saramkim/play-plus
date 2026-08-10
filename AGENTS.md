@@ -200,3 +200,12 @@ yarn build:analyze    # 프로덕션 번들 분석
 - 코드 변경 기본 게이트: `yarn type-check && yarn lint && yarn test:run`.
 - 빌드/manifest/엔트리/의존성 변경: 기본 게이트에 `yarn build`를 추가하고 `dist/` 산출물과 Webpack 경고를 확인한다.
 - content/background/UI 통신 또는 Chrome API 변경: `docs/manual-smoke-test.md`의 관련 항목을 실제 Chrome의 unpacked `dist/`에서 확인한다. 릴리스 전에는 전체 smoke matrix를 수행한다.
+
+## Chrome DevTools MCP real-extension workflow
+
+- 실제 Chrome 검증의 기본 채널은 전역 `chrome-devtools` MCP다. `yarn build`로 저장소의 canonical stable unpacked output인 `dist/`에 빌드하고, 설치에는 해당 디렉터리의 absolute Windows path를 사용한다.
+- MCP-managed Chrome에서는 `list_extensions`로 manifest/name과 현재 extension ID를 매번 확인한다. Play Plus가 없을 때만 `install_extension`으로 `dist/`를 한 번 설치하고, 이미 설치되어 있으면 이후 빌드마다 `reload_extension`으로 갱신한다. machine-specific extension ID를 tracked file에 기록하지 않는다.
+- `trigger_extension_action` 또는 제품이 지원하는 실제 사용자 동작으로 패널을 열고, browser/extension surface 목록에서 Chrome의 실제 extension side panel을 선택해 검사한다. `chrome-extension://.../index.html`을 일반 탭으로 연 결과는 side-panel 검증 증거가 아니다.
+- 변경 범위에 맞게 실제 side panel과 활성 Coupang Play 탭의 DOM/accessibility snapshot, screenshot, console message, network request, pointer interaction, keyboard interaction과 tab communication 증거를 수집한다.
+- 필요한 MCP 도구가 동작하는 동안 사람에게 `chrome://extensions` 열기, unpacked load/reload, side-panel 열기를 요청하지 않는다. side-panel content 검사에 Windows Computer Use를 사용하지 않는다. Computer Use는 structured browser tools가 접근하지 못하는 browser chrome, OS dialog, authentication, DRM 또는 다른 surface에만 fallback으로 사용한다.
+- persistent shared MCP Chrome profile은 여러 독립 Codex task에서 동시에 사용하지 않는다. MCP server/tool/startup/profile/surface 실패는 정확한 오류와 함께 environment failure로 기록하고 product failure와 구분한다. 먼저 MCP configuration과 log를 조사하며 환경 실패를 숨기기 위해 product code를 변경하지 않는다.
