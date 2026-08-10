@@ -11,6 +11,18 @@
 
 `BLOCKED`나 이전 릴리스의 결과를 현재 결과처럼 복사하지 않는다. 실패·UNKNOWN에는 route, 정확한 동작, 관찰 결과와 관련 console 오류를 적는다. 실제 자막 문장, 등록 자막 본문 또는 전체 시청 URL은 기록하지 않는다.
 
+## Chrome DevTools MCP execution protocol
+
+이 matrix의 실제 Chrome 검증은 `AGENTS.md`의 Chrome DevTools MCP real-extension workflow를 따른다.
+
+1. 자동 gate를 실행한 뒤 `yarn build`로 stable unpacked output `dist/`를 만들고 absolute Windows path를 확인한다.
+2. `list_extensions`로 현재 설치 상태와 ID를 찾는다. 없으면 `install_extension`으로 한 번 설치하고, 있으면 새 build마다 `reload_extension`을 실행한다.
+3. `https://www.coupangplay.com/play/<video-uuid>` 또는 해당하는 `/en/play/<video-uuid>` route를 열고 `trigger_extension_action` 또는 실제 지원 user-action path로 패널을 연다.
+4. Chrome이 제공한 실제 extension side-panel surface를 선택해 DOM/accessibility snapshot, screenshot, console error/warning, relevant network failure, pointer, keyboard와 active-tab communication을 확인한다. side-panel document를 일반 extension tab으로 연 결과는 증거로 인정하지 않는다.
+5. shared MCP profile은 독립 task 간 직렬로 사용한다. MCP 연결·도구·startup·profile·surface 문제가 검증을 막으면 `UNKNOWN`에 정확한 environment error를 기록하고 product `FAIL`과 구분한다.
+
+Coupang authentication, DRM/player accessibility와 platform subtitle acquisition은 extension 설치·side-panel 동작과 별도 gate다. authentication이 필요하면 올바른 login page를 열고 최소한의 one-time human authentication만 요청한 뒤 persistent MCP profile을 재사용한다. 인증·DRM 한계를 product-code 변경으로 우회하지 않는다. 이 shared profile은 별도 준비 없이는 clean fresh-install profile이나 v1.11.0 upgrade profile의 증거가 아니며, 해당 row는 실제 전용 profile에서 수행하기 전까지 `NOT RUN`으로 남긴다.
+
 ## Test record
 
 | Field | Value |
