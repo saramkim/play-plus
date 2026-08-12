@@ -30,19 +30,19 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Candidate version | `1.11.0` manifest/package value; Play Plus 2.0은 아직 출시되었다고 간주하지 않음 |
 | Planning baseline | `7ec060d08ca716de78d26468289459f1b41435f3` |
 | Integrated latest-main baseline | `d3c8c775083e87fda972d30c910c691d0b5754e8` (#62–#65 통합과 #73 Chrome workflow) |
-| Code candidate commit | `0013f5a4ee8b77a25aadae1032caf18f4ada7927` |
-| Batch #67 verification head | `c0983b1d48fa16145e6672e106dbdbf80f075b15`; production code는 위 code candidate와 같고 이후 변경은 evidence documentation뿐 |
+| Code candidate commit | `626f792437b020b74147187f78859c3f3570b480` |
+| Production-code verification head | `626f792437b020b74147187f78859c3f3570b480`; actual v1.11 Chrome에서 발견한 Storage object-key order readback 결함의 최소 수정 포함 |
 | Final certification PR head | 문서 커밋은 자신의 SHA를 기록할 수 없으므로 PR 본문과 exact-head CI에 기록 |
 | Build command | `yarn build` |
 | Stable unpacked output | repository의 current `dist/` absolute Windows path를 사용했으며 machine-specific path는 committed evidence에서 생략 |
 | Chrome version | `151.0.0.0` (`chrome-devtools-kr` persistent profile) |
 | OS | Windows |
-| Tester / date | Codex / 2026-08-10 |
+| Tester / date | Codex / 2026-08-12 |
 | Coupang Play account / region | PASS — `chrome-devtools-kr` persistent profile의 기존 인증 세션 재사용; 전용 gateway의 KR egress, `hostUnchanged: true`, Coupang preflight 확인; credential 입력·수집 없음 |
 | Korean test route | `https://www.coupangplay.com/play/<video-id>` |
 | English test route | `https://www.coupangplay.com/en/play/<video-id>` |
-| v1.11.0 upgrade profile | NOT RUN — 노출된 유일한 KR MCP가 shared authenticated profile에 고정돼 있고 actual-v1.11 namespace, profile switch 또는 MCP restart tool이 없음; acceptance waiver가 아님 |
-| Fresh-install profile | NOT RUN — 노출된 유일한 KR MCP가 shared authenticated profile에 고정돼 있고 clean-profile namespace, profile switch 또는 MCP restart tool이 없음 |
+| v1.11.0 upgrade profile | PASS (storage/profile) — dedicated `chrome-devtools-kr-v111` profile에 actual v1.11.0 tag build를 설치하고 representative fixture의 v1.11 reload를 확인한 뒤 같은 stable absolute `dist` path에서 final candidate로 upgrade; signed-in v1.11 player setup은 별도 `NOT RUN` |
+| Fresh-install profile | PASS — initially extension-free dedicated `chrome-devtools-kr-clean` profile에 final candidate를 설치하고 fresh canonical v2 state와 recoverable readiness failures를 실제 Extension Pages Side Panel에서 확인 |
 | OpenSubtitles Consumer / plan | NOT RUN — #66 exact candidate에서 production provider gate를 다시 실행하지 않음 |
 | OpenSubtitles build environment | NOT RUN — production build 완료만으로 Consumer key injection을 증명하지 않으며 #66 exact candidate에서 별도 확인하지 않음 |
 
@@ -52,14 +52,14 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 
 | Gate | Result | Evidence / notes |
 | --- | --- | --- |
-| `yarn type-check` | PASS | Batch #67 verification head `c0983b1`에서 `yarn.cmd type-check` |
-| `yarn lint` | PASS | Batch #67 verification head `c0983b1`에서 `yarn.cmd lint` |
-| Focused latest-main matrices | PASS | storage/migration 11 files / 166 tests와 Listening Mission async 1 file / 26 tests; full suite로 다시 검증 |
-| Storage/migration correction matrix | PASS | 11 files, 166 tests; UUID-only video namespace, URL rejection, record/reset serialization and recovery, final completion-state write recovery |
-| `yarn test:run` | PASS | Batch #67 verification head `c0983b1`에서 `yarn.cmd test:run`: 97 files, 890 tests |
-| `yarn build` | PASS | Batch #67 verification head `c0983b1`의 production code에서 stable absolute repository `dist` path build 완료; 기존 bundle-size warning 3건 |
+| `yarn type-check` | PASS | production-code verification head `626f792`에서 `yarn.cmd type-check` |
+| `yarn lint` | PASS | production-code verification head `626f792`에서 `yarn.cmd lint` |
+| Focused latest-main matrices | PASS | migration adapter 1 file / 13 tests와 Listening Mission async 1 file / 26 tests; full suite로 다시 검증 |
+| Storage/migration correction matrix | PASS | raw v1.11 snapshot의 recursive object-key reorder를 수용하고 array order 변경은 계속 reject; UUID-only video namespace, record/reset serialization/recovery와 completion-state write recovery는 기존 focused/full matrix로 유지 |
+| `yarn test:run` | PASS | production-code verification head `626f792`에서 `yarn.cmd test:run`: 97 files, 892 tests |
+| `yarn build` | PASS | production-code verification head `626f792`에서 stable absolute repository `dist` path build 완료; 기존 bundle-size warning 3건 |
 | `git diff --check` | PASS | Whitespace errors 없음; Windows line-ending 안내만 출력 |
-| GitHub CI on production-code evidence head | PASS | recorded production-code head `c0983b1d48fa16145e6672e106dbdbf80f075b15`의 required checks terminal success 확인; final docs-only evidence head와 CI는 PR #72에 별도로 기록 |
+| GitHub CI on recorded evidence head | PASS | prior evidence head `c0983b1d48fa16145e6672e106dbdbf80f075b15`의 required checks terminal success 확인; final evidence head의 exact-head CI는 PR #72 checks/body에 별도로 기록 |
 | Production bundle/static reachability audit | PASS | 정확히 네 destination만 존재; retired/deferred route와 새 network/permission/telemetry 경로 없음; background bundle에 Mission `answerText`, `draft`, `alignedSupport`, `missionSnapshot`, `catalogBody`, `rawCue`, `sourceUrl` token 없음 |
 | EN/KO locale audit | PASS | EN 455 keys / KO 455 keys, exact parity; Listening Mission 129/129, empty/missing/placeholder mismatch 없음 |
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
@@ -83,12 +83,13 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Latest-main merge | `a678bddb2035f5525527106dc0ff836954a27ee7` | PASS — history rewrite 없이 #73 latest `main`을 certification branch에 통합 |
 | Chrome-found UI correction | `0013f5a4ee8b77a25aadae1032caf18f4ada7927` | PASS — active line 종료 시 pending playback announcement와 generation을 정리; 회귀 테스트와 동일 실제 Side Panel 재검증 |
 | Authenticated evidence baseline | `c0983b1d48fa16145e6672e106dbdbf80f075b15` | PASS — 위 production code의 기존 authenticated Chrome evidence documentation; 이번 Batch #67 검증의 stable build/head 기준 |
+| Chrome-found storage correction | `626f792437b020b74147187f78859c3f3570b480` | PASS — actual v1.11 upgrade의 nested object-key reorder를 semantic readback으로 수용하고 array order는 계속 strict reject; same-path upgrade와 세 KR profile final-build reload로 재검증 |
 
 ### Automated, static and privacy evidence
 
 | Check | Result | Evidence / notes |
 | --- | --- | --- |
-| Full local gates | PASS | type-check, lint, 97 files / 890 tests, production build, diff-check |
+| Full local gates | PASS | type-check, lint, 97 files / 892 tests, production build, diff-check |
 | Deterministic/failure matrices | PASS | segment/key/answer/hint/result, session reducer/UI races, content lease/media restoration, progress initialization/monotonic merge/attempt 0/reset/write recovery를 focused suites로 검증 |
 | Four-destination and activation boundary | PASS | source와 built UI 모두 `Learning`, `Subtitles`, `Library`, `Review`만 존재; Listening Mission은 Learning 내부에만 존재 |
 | Progress/privacy schema | PASS | progress/reset은 strict factual data와 reset scope만 허용; typed answer/raw transient Mission text/full URL을 거부; 명시 선택한 canonical LearningCard만 transient Listening Mission data에 허용된 기존 background/local persistence 경로의 유일한 text-bearing exception |
@@ -102,6 +103,9 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Real Coupang Play authentication | PASS | persistent profile의 기존 인증 세션으로 실제 supported `/en/play/<video-id>/episode` route 진입; login 요청이나 credential 입력 없음 |
 | DRM/player accessibility | PASS | 실제 episode video가 `readyState: 4`, media error 없음, content time 진행; preroll과 본편 전환 후 실제 본편 duration 확인 |
 | Production extension install/reconnect | PASS | 최초 `list_extensions` 결과 미설치여서 current absolute `dist`를 install하고 ID를 동적으로 확인; 한 MCP reconnect 뒤 다시 미설치 상태를 확인해 같은 stable build를 reinstall했으며 reconnect 자체를 product 실패로 분류하지 않음 |
+| Dedicated clean-profile install/readiness | PASS | initially extension-free dedicated profile에서 dynamic install과 action-triggered actual Extension Pages Side Panel을 확인; fresh marker 2/complete/sourceVersion null, empty required facts와 canonical local/sync keys가 reload 뒤 유지됨. required `listeningProgress` missing/invalid 각각 fail-closed 후 valid restore와 Retry로 회복 |
+| Dedicated actual-v1.11 storage/profile upgrade | PASS | actual v1.11.0 tag build와 representative v1.11 fixture를 same stable absolute `dist` path에서 reload한 뒤 final candidate로 upgrade; 3 cards와 duplicate/order facts, 2 valid registered metadata/bodies, 1 damaged-body isolation, non-default sync mapping, final marker/cleanup state와 Library/Review eligibility가 final reload 뒤 유지됨. dedicated profile의 Coupang authentication은 별도 `NOT RUN` |
+| Chrome Storage object-order correction | PASS | first final-candidate attempt가 Chrome의 nested object-key reordering을 strict byte-order mismatch로 거부해 marker/canonical write 없이 v1 source를 보존함을 실제 확인; semantic object-key comparison의 최소 수정 뒤 같은 source에서 migration 성공, array order strictness 회귀 테스트 유지 |
 | Actual 360px Side Panel identity/geometry | PASS | action trigger 후 Chrome의 Extension Pages에 나타난 실제 Side Panel target만 사용; 360×758 CSS px, DPR 1.25, horizontal overflow 0, active vertical scroll owner 정확히 1개, 관찰한 Mission action 높이 58–62px |
 | Four destinations and active-tab communication | PASS | Learning, Subtitles, Library, Review만 표시; 키보드로 Subtitles 진입 후 포인터로 Learning 복귀; `Connected / Detected`, 실제 catalog와 progress가 active player tab에서 갱신 |
 | Registered subtitle add and management subset | PASS | synthetic English SRT와 Korean VTT를 실제 file flow로 각각 등록; unassigned preview 12/12, unique-query 1/12, Clear/Back focus와 preview 전용 read-only control 경계 확인; SMI add는 MCP reconnect가 발생해 미등록이며 SRT/VTT 성공을 SMI 증거로 확장하지 않음 |
@@ -124,39 +128,39 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Actual Side Panel 320px | NOT RUN | Chrome의 attainable minimum이 360px이며 automated 320px coverage와 구분 |
 | Platform caption ownership | NOT RUN | Coupang Play caption DOM/preference의 on/off 상태를 inspect, click, hide 또는 변경하지 않았으며 이번 run은 platform-caption pair의 증거가 아님 |
 | Real Korean IME composition | NOT RUN | MCP synthetic input은 실제 OS Korean IME composition을 증명하지 못하며 Computer Use로 대체하지 않음 |
-| Clean-install and actual-v1.11 profiles | NOT RUN | `chrome-devtools-kr`는 존재하지만 clean 또는 actual-v1.11 user data directory에 연결된 KR MCP surface가 없고 현재 registry에 profile-switch/MCP-restart control이 없음; shared authenticated profile을 초기화하거나 clean/upgrade 증거로 재해석하지 않음 |
+| Clean-install and actual-v1.11 profiles | PASS (storage/profile) | dedicated clean profile의 final-candidate fresh install/readiness와 dedicated actual-v1.11 profile의 same-path storage upgrade를 직접 확인; signed-in v1.11 player setup은 별도 `NOT RUN`이며 shared authenticated profile을 clean/upgrade 증거로 재해석하지 않음 |
 
 ### Acceptance disposition
 
-실제 signed-in player, registered SRT/VTT add/role/delay/preview/overview subsets, current/Continue/gap/Next-10 entry, bounded exact/almost/wrong/hint/retry/Results/Perfect 흐름, strict progress facts, selected/repeated/terminal-partial card save, progress read/write retry·discard, end-error heartbeat, route-change invalidation subset과 bounded Library/Review 회귀는 이번 exact candidate에서 직접 확인했다. 그러나 clean-install, actual-v1.11 upgrade, actual ~390px, real Korean IME, platform-caption on/off pair와 나머지 compound row가 `NOT RUN`이므로 #66의 현재 증거 결론은 계속 **INSUFFICIENT EVIDENCE**다. 현재 KR MCP registry에는 clean/v1.11 namespace나 profile-switch/restart control이 없으며 이는 acceptance waiver가 아니다. merge 또는 다음 릴리스 판단으로 해석하지 않는다.
+실제 signed-in player, registered SRT/VTT 관리, native/registered catalog와 bounded Mission 흐름, dedicated clean fresh install/readiness, dedicated actual-v1.11 storage/profile upgrade, strict progress facts와 bounded Library/Review 회귀는 이번 exact candidate에서 직접 확인했다. 그러나 signed-in v1.11 player setup, actual ~390px, real Korean IME, platform-caption on/off pair와 나머지 compound row가 `NOT RUN`이므로 #66의 현재 증거 결론은 계속 **INSUFFICIENT EVIDENCE**다. 이는 acceptance waiver가 아니며 merge 또는 다음 릴리스 판단으로 해석하지 않는다.
 
 ## Fresh install and readiness
 
 | Area | Route / setup | Check | Result | Evidence / notes |
 | --- | --- | --- | --- | --- |
-| Unpacked load | Clean profile | Load production `dist/`; action opens the side panel without uncaught errors | NOT RUN | |
-| Fresh canonical state | Clean profile | First service-worker start creates complete canonical v2 local/sync data and `dataSchemaVersion: 2` | NOT RUN | |
-| Fresh decoder boundary | Clean profile | Confirm no v1 source snapshot, v1 decoder path, or legacy cleanup runs | NOT RUN | |
+| Unpacked load | Clean profile | Load production `dist/`; action opens the side panel without uncaught errors | PASS | Initial `list_extensions`에서 미설치를 확인한 뒤 stable absolute production `dist`를 install; action이 actual Extension Pages Side Panel의 First Entry를 열었고 console error/warn 없음 |
+| Fresh canonical state | Clean profile | First service-worker start creates complete canonical v2 local/sync data and `dataSchemaVersion: 2` | PASS | marker 2, migration complete/sourceVersion null, empty cards/registered/progress와 exact required canonical local/sync keys 확인 |
+| Fresh decoder boundary | Clean profile | Confirm no v1 source snapshot, v1 decoder path, or legacy cleanup runs | NOT RUN | preinstall extension storage empty, sourceVersion null, v1 snapshot·legacy key 부재의 final-state subset PASS; decoder/cleanup 미호출 runtime hook은 NOT RUN |
 | Startup gate | Clean profile | UI, content and storage-dependent background handlers do not read/write normal data before readiness succeeds | NOT RUN | |
 | Concurrent startup | Clean profile | Open panel and load a supported video during startup; all consumers share one readiness attempt | NOT RUN | |
-| Worker restart | Clean profile | Stop/restart the service worker after completion; canonical state is reread and normal UI recovers without reinitialization | NOT RUN | |
-| Missing canonical key | Prepared profile | Remove one required v2 key after marker; UI fails closed and does not substitute defaults | NOT RUN | |
-| Invalid canonical value | Prepared profile | Corrupt one required canonical value; UI shows a recoverable error and does not overwrite it | NOT RUN | |
+| Worker restart | Clean profile | Stop/restart the service worker after completion; canonical state is reread and normal UI recovers without reinitialization | NOT RUN | final candidate의 `reload_extension` 뒤 pre/post canonical digest와 normal UI recovery subset PASS; worker-only natural restart는 NOT RUN |
+| Missing canonical key | Prepared profile | Remove one required v2 key after marker; UI fails closed and does not substitute defaults | PASS | required `listeningProgress` 제거 후 migration/readiness error UI; 값 자동 대체·overwrite 없이 valid empty value 복원과 Retry로 회복 |
+| Invalid canonical value | Prepared profile | Corrupt one required canonical value; UI shows a recoverable error and does not overwrite it | PASS | forbidden extra field가 있는 strict-invalid `listeningProgress`에서 동일 fail-closed UI; overwrite 없이 복원 후 Retry 성공 |
 
 ## Signed-in v1.11.0 upgrade
 
 | Area | Route / setup | Check | Result | Evidence / notes |
 | --- | --- | --- | --- | --- |
 | Upgrade source | Signed-in v1.11.0 profile | Create representative settings, duplicate saved lines, and valid local registered subtitles before loading the candidate | NOT RUN | |
-| Card preservation | Upgrade profile | Preserve saved-card count, order, duplicates, text, source URL, start time and saved date; migrated cards are `unassigned` and `active` | NOT RUN | |
-| Appearance preservation | Upgrade profile | Preserve every valid learning/support visibility and appearance value exactly | NOT RUN | |
-| Registered metadata | Upgrade profile | Preserve valid registered-subtitle ID, title, language, saved time and delay | NOT RUN | |
-| Registered cue bodies | Upgrade profile | Preserve valid cue order and values and reload them after service-worker restart | NOT RUN | |
-| Isolated unavailable item | Upgrade profile with one damaged item | Keep valid data usable; show the damaged item factually as unavailable without deleting, repairing or relinking its source | NOT RUN | |
-| Migration completion | Upgrade profile | Completion marker is written only after canonical local/sync readback succeeds | NOT RUN | |
+| Card preservation | Upgrade profile | Preserve saved-card count, order, duplicates, text, source URL, start time and saved date; migrated cards are `unassigned` and `active` | PASS | sanitized count/order/equality digest로 3/3과 duplicate relation, source/start/savedAt preservation 확인; Library에서 모두 unassigned/active, 실제 text/full URL은 기록하지 않음 |
+| Appearance preservation | Upgrade profile | Preserve every valid learning/support visibility and appearance value exactly | PASS | synthetic v1.11 fixture의 모든 learning/support visibility·position·color·font·background·line-break non-default 값이 exact canonical sync mapping으로 이동하고 reload 뒤 유지됨 |
+| Registered metadata | Upgrade profile | Preserve valid registered-subtitle ID, title, language, saved time and delay | PASS | 두 valid item의 ID/title/language/savedAt/delay equality digest와 count를 확인; 본문·title은 committed evidence에 기록하지 않음 |
+| Registered cue bodies | Upgrade profile | Preserve valid cue order and values and reload them after service-worker restart | NOT RUN | 두 valid body의 cue count/order/value digest가 candidate와 final `reload_extension` 뒤 동일한 subset PASS; worker-only natural restart는 NOT RUN, cue text는 기록하지 않음 |
+| Isolated unavailable item | Upgrade profile with one damaged item | Keep valid data usable; show the damaged item factually as unavailable without deleting, repairing or relinking its source | PASS | actual Subtitles/Add surface가 generic invalid-data 1건과 kept-as-is/no-repair-or-delete copy를 표시하고 두 valid source를 계속 제공; damaged physical body도 보존 |
+| Migration completion | Upgrade profile | Completion marker is written only after canonical local/sync readback succeeds | NOT RUN | first source-snapshot readback failure에서 marker/canonical write 없이 v1 source 보존하고 final success에서 marker 2/complete/sourceVersion 1.11.0을 확인한 subset PASS; canonical local/sync readback과 marker 사이 temporal hook은 NOT RUN |
 | Legacy normal reads | Upgrade profile | After completion, normal UI/content/background never reads remaining v1 keys | NOT RUN | |
-| Cleanup | Upgrade profile | Approved v1 keys and internal source snapshot are removed only after the completion marker | NOT RUN | |
-| Library eligibility | Upgrade profile | Migrated `unassigned` cards remain visible/editable in Library and are excluded from Focused Review | NOT RUN | |
+| Cleanup | Upgrade profile | Approved v1 keys and internal source snapshot are removed only after the completion marker | NOT RUN | failed first attempt에는 모든 v1 key/snapshot을 보존하고 successful final state에서는 complete marker와 approved v1 key/snapshot cleanup을 확인한 subset PASS; marker-write와 cleanup 사이 temporal hook은 NOT RUN |
+| Library eligibility | Upgrade profile | Migrated `unassigned` cards remain visible/editable in Library and are excluded from Focused Review | PASS | actual Library에서 migrated cards 3/3이 distinct unassigned items와 enabled Edit/state controls로 표시되고 Review는 active assigned card가 없어 empty state를 표시 |
 
 ## Migration failure and restart injection
 
@@ -196,7 +200,7 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Worker restart resume | Partially confirmed profile | Restart service worker; unresolved choices remain and no candidate is silently selected | NOT RUN | |
 | Interrupted sync write | Inject interruption | Retry writes the same canonical result and clears confirmations only after strict readback | NOT RUN | |
 | Completion marker order | Any first entry | New v2 onboarding Web Storage marker appears only after profile and all shortcut confirmations succeed | NOT RUN | |
-| Old Web Storage cleanup | Upgrade profile | `isOnboardingComplete` and obsolete `page-store` are removed only after successful v2 confirmation | NOT RUN | |
+| Old Web Storage cleanup | Upgrade profile | `isOnboardingComplete` and obsolete `page-store` are removed only after successful v2 confirmation | PASS | v1.11 reload와 failed migration 동안 두 legacy key를 보존하고, successful v2 language confirmation 뒤에만 제거; `v2OnboardingComplete`와 valid theme은 reload 뒤 유지 |
 | Theme preservation | Light, dark and system | A valid `vite-ui-theme` survives migration/confirmation/reload; invalid values are not treated as valid themes | NOT RUN | |
 
 ## Learning/support subtitles and playback
@@ -239,9 +243,9 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Current-position selection | Inside overlap, boundary, gap, before first, after last and track tail | Current Position uses a fresh player time, chooses the canonical containing/next segment and returns fewer than 10 only at the end | NOT RUN | Actual segment containment은 해당 위치부터 3개, 다음 segment 전 gap은 next 위치부터 2개를 선택; boundary/before-first/after-last prepared fixtures는 NOT RUN |
 | First-use and source isolation | Same video with two learning subtitle selections | First use starts at the first segment; progress and summaries never cross the exact video/source/version namespace | NOT RUN | Registered exact source first use 0/12와 Line 1/10, registered source/version progress isolation subset PASS; prepared two-learning-source switch matrix는 NOT RUN |
 | Mission playback | Playing and paused starts at 1x and non-1x | Each newly entered first/retry line auto-plays exactly once; Play, Replay and Slow play only the current selected segment and preserve bounded controls | NOT RUN | Actual playing 1×와 paused non-1× starts, new-line/retry autoplay, bounded Replay 1×와 Slow 0.75× endpoint subset PASS; every-line exactly-once count의 actual 전수 관찰은 하지 않음 |
-| Answer states | Exact, normalized almost, wrong, hint, reveal and Try Later paths | Authored feedback, attempts, hints, reveal, combo and star facts match the submitted outcome without sending typed or answer text to background | PASS | Actual registered 10-line mission에서 exact, case/spacing/punctuation-normalized exact, one-grapheme almost, far-wrong, Shape/First/Support/Reveal, Later, retry, combo/stars와 typed-text privacy를 확인; 별도 상위 acceptance의 exact 15% cutoff 직상단 actual boundary는 NOT RUN |
+| Answer states | Exact, normalized almost, wrong, hint, reveal and Try Later paths | Authored feedback, attempts, hints, reveal, combo and star facts match the submitted outcome without sending typed or answer text to background | PASS | Actual registered Mission에서 답안/기대 문장을 기록하지 않은 채 exact 15% boundary를 직접 확인: edit distance 4는 Almost, 5는 Try again; exact·case/spacing/punctuation normalization, Shape/First/Support/Reveal/Later, retry, combo/stars와 typed-text privacy도 확인 |
 | Next within mission | Mission with 10 selected segments | Next advances only within the frozen snapshot, stops at the final selected segment and cannot silently append new source text | PASS | Actual 10-line first round와 5-line original-order retry가 frozen registered snapshot 안에서 explicit Next로 진행하고 final에서 Summary/Results로 끝나며 새 source text를 append하지 않음 |
-| Progress durability | Complete, partial attempt, Later, Reveal, close/reopen panel and restart worker | Only committed result facts persist; Later/Reveal may persist `attempted` with 0 submitted attempts; landing counts, last practiced and best combo survive restart | NOT RUN | Actual complete/partial/Reveal/Later facts, attempt 0, landing counts와 best combo의 sanitized storage subset PASS; progress를 보유한 별도 worker-restart durability isolation은 NOT RUN |
+| Progress durability | Complete, partial attempt, Later, Reveal, close/reopen panel and restart worker | Only committed result facts persist; Later/Reveal may persist `attempted` with 0 submitted attempts; landing counts, last practiced and best combo survive restart | NOT RUN | Actual complete/partial/Reveal/Later, attempted+0, landing summary와 final-candidate `reload_extension` 뒤 12 registered segment/total attempts 18/best combo 3/forbidden text token 0 subset PASS; worker-only natural restart는 NOT RUN |
 | Normal exit restoration | Start paused, playing and at non-1x playback rate | Mid-mission exit restores the captured start time, paused/playing state and rate before releasing navigation ownership | PASS | 기존 playing restore-start evidence와 이번 paused 1.25×/1.3× zero-completed exits에서 exact captured position/state/rate 복원과 navigation unlock 확인 |
 | Results end modes | Complete a mission | Entering Results sends no end; close/discard uses `complete-stay`, Continue Watching uses `continue-watching`, and Next 10 uses `complete-stay` before refreshing catalog/progress; only mid-mission exit/discard uses `restore-start` | PASS | Actual Results close는 paused endpoint/captured rate, Continue Watching은 endpoint/captured rate playing, Next 10은 old session을 끝내고 refreshed 2-line tail 시작, mid-mission exit/discard는 restore-start를 사용 |
 | End retry ownership | Inject end transport error, rejection and delayed response | Learning settings stay hidden, navigation stays locked, heartbeat continues, Retry Ending receives focus, and ownership releases only after ended/already-ended/stale/no-video | NOT RUN | Direct end `error` actual subset에서 authored alert, Retry Ending only, 16초 lock/ownership/heartbeat 유지와 retry-ended cleanup PASS; rejection과 delayed-response variants는 NOT RUN |
@@ -254,7 +258,7 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Keyboard, IME and announcements | Keyboard-only with Korean IME composition | No submit occurs during composition; focus order, 44px targets, alert/status announcements and stable labels work without pointer input | NOT RUN | Keyboard destination navigation, Enter/Shift+Enter, dialog/retry/title focus, 58–62px actions와 authored alerts subset PASS; MCP synthetic input은 real Korean OS IME composition 증거가 아니므로 IME는 NOT RUN |
 | Compact geometry | Automated 320px fixture, then actual Chrome near its attainable minimum (~360px) and at ~390px | Exactly one vertical scroll owner is active, no horizontal clipping occurs, settings are hidden during an owned mission and long EN/KO copy wraps; if Chrome clamps 320px, record it as NOT RUN rather than simulated | NOT RUN | Actual 360×758 idle/active Mission은 one scroll owner, overflow 0와 hidden settings를 확인; actual ~390px는 exact protocol error, automated 320px는 별도 NOT RUN |
 | Privacy boundary | DevTools Network, message inspection and storage inspection | Progress/reset messages contain only strict facts/scope and never typed or raw text; the sole allowed background/local-persistence exception is a user-selected canonical LearningCard with its sentence and source URL, which is never sent to the network | NOT RUN | Active Mission sanitized local/sync/session과 Side Panel network 0건에서 draft/wrong/almost/route-stale/raw mission text 부재 및 canonical card exception만 확인; direct message-payload capture는 NOT RUN |
-| Latest-main integration (#66) | Clean profile and representative upgraded profile on latest `main` | Run the full automated gate plus this real-Chrome matrix; verify no permission, host, manifest, release-version or existing Learning/Subtitles/Library/Review regression | NOT RUN | Exact latest-main gates와 shared-auth signed-in player/registered Mission/Library/Review subset PASS; clean/actual-v1.11 profile tooling이 없어 두 profile row는 NOT RUN |
+| Latest-main integration (#66) | Clean profile and representative upgraded profile on latest `main` | Run the full automated gate plus this real-Chrome matrix; verify no permission, host, manifest, release-version or existing Learning/Subtitles/Library/Review regression | NOT RUN | Exact latest-main gates, dedicated clean/profile upgrade와 shared-auth signed-in player/registered Mission/Library/Review subset PASS; signed-in v1.11 player setup과 full compound matrix는 NOT RUN |
 
 ## Registered subtitle management
 
@@ -402,4 +406,4 @@ Use actual Chrome for the browser's attainable minimum side-panel width (current
 
 Do not authorize a release, tag, store submission or deployment while any required automated or manual row is `FAIL`, `NOT RUN`, or `UNKNOWN`. The signed-in v1.11.0 upgrade and clean-profile fresh-install checks require actual Chrome profiles and cannot be replaced by unit, integration, build or CI results.
 
-Issue #66 certification status on 2026-08-10: **INSUFFICIENT EVIDENCE**. Batch #67 production-code verification head `c0983b1`의 exact candidate는 automated/static gates와 bounded actual signed-in `/en/play/<video-id>/episode`, DRM/player, registered SRT/VTT management, 360px Mission answer/results/progress, failure retry·discard, terminal-partial card-save, end heartbeat, route-change invalidation 및 Library/Review subsets을 통과했다. Clean-install과 actual-v1.11에는 연결된 KR MCP namespace/profile-switch/restart surface가 없고, approximately 390px는 exact protocol error로 `NOT RUN`이다. Real Korean IME, platform-caption on/off pair와 나머지 compound rows도 `NOT RUN`이며 waiver가 아니다. Release, tag, deployment, Store submission, merge와 direct `main` push는 수행하지 않았다.
+Issue #66 certification status on 2026-08-12: **INSUFFICIENT EVIDENCE**. Batch #67 production-code verification head `626f792`의 exact candidate는 automated/static gates, dedicated clean fresh install/readiness, dedicated actual-v1.11 storage/profile upgrade, bounded actual signed-in `/en/play/<video-id>/episode`, DRM/player, native/registered subtitle와 360px Mission/Library/Review subsets을 통과했다. 그러나 signed-in v1.11 player setup, worker-only restart variants, approximately 390px의 exact protocol error, real Korean IME, platform-caption on/off pair와 나머지 compound rows는 계속 `NOT RUN`이며 waiver가 아니다. 상세 matrix는 `PASS 17 / NOT RUN 176 / FAIL 0 / UNKNOWN 0`이다. Release, tag, deployment, Store submission, merge와 direct `main` push는 수행하지 않았다.
