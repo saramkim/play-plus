@@ -196,6 +196,36 @@ describe('v2 Chrome Storage migration adapter', () => {
     expect(storage.sync.setCalls).toEqual([]);
   });
 
+  it('accepts Chrome Storage object-key reordering in the raw snapshot readback', async () => {
+    const fixture = createV1_11Fixture();
+    seedV1Fixture(storage, fixture);
+    storage.local.afterSet = (items, values) => {
+      if (!(SNAPSHOT_KEY in items)) return;
+      values[SNAPSHOT_KEY] = reorderObjectKeys(values[SNAPSHOT_KEY]);
+    };
+
+    await expect(runV2Migration(storage)).resolves.toEqual({ kind: 'migrated', version: 2 });
+
+    expect(storage.local.values.dataSchemaVersion).toBe(2);
+    expect(storage.local.values.learningCards).toHaveLength(fixture.local.savedSubtitles.length);
+    expect(storage.local.values).not.toHaveProperty(SNAPSHOT_KEY);
+  });
+
+  it('still rejects array reordering in the raw snapshot readback', async () => {
+    const fixture = createV1_11Fixture();
+    seedV1Fixture(storage, fixture);
+    storage.local.afterSet = (items, values) => {
+      if (!(SNAPSHOT_KEY in items)) return;
+      const snapshot = values[SNAPSHOT_KEY] as ReturnType<typeof createV1_11Fixture>;
+      snapshot.local.savedSubtitles.reverse();
+    };
+
+    await expect(runV2Migration(storage)).rejects.toThrow('source snapshot readback');
+
+    expect(storage.local.values).not.toHaveProperty('learningCards');
+    expect(storage.local.values).not.toHaveProperty('dataSchemaVersion');
+  });
+
   it('does not write the marker when progress readback is corrupted', async () => {
     storage.local.afterSet = (items, values) => {
       if (!('listeningProgress' in items)) return;
@@ -228,6 +258,17 @@ const createFakeStorage = () => ({
   local: new FakeStorageArea(),
   sync: new FakeStorageArea(),
 });
+
+const reorderObjectKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(reorderObjectKeys);
+  if (typeof value !== 'object' || value === null) return value;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => (left < right ? 1 : left > right ? -1 : 0))
+      .map(([key, entry]) => [key, reorderObjectKeys(entry)])
+  );
+};
 
 class FakeStorageArea {
   values: Record<string, unknown> = {};
