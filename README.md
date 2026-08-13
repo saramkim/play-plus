@@ -47,6 +47,8 @@
 - 접근 가능한 결과 목록과 명시적인 pagination을 제공하고, 사용자가 **추가**를 실행한 하나의 `file_id`만 다운로드
 - 다운로드한 자막을 엄격하게 decode·parse한 뒤 기존 등록 자막과 같은 로컬 형식으로 저장하며, 학습·도움 역할은 자동 지정하지 않음
 - 선택적 권한 거부·취소·회수, provider 오류 또는 quota 제한 뒤에도 Coupang Play 자막과 로컬 파일 경로를 계속 사용
+- 로그인/JWT 없는 익명 다운로드를 지원하며, OpenSubtitles 정책상 사용자당 하루 5회로 제한
+- 자막 제공: [OpenSubtitles.com](https://www.opensubtitles.com/)
 
 ### 재생과 저장
 
@@ -141,7 +143,7 @@ yarn install
 yarn build
 ```
 
-OpenSubtitles 개발 빌드를 검증하려면 `.env.example`을 `.env.local`로 복사하고 승인된 Consumer 값을 설정합니다.
+OpenSubtitles 개발 빌드를 검증하려면 `.env.example`을 `.env.local`로 복사하고 본인 OpenSubtitles 계정에 Play Plus용으로 등록한 Consumer 값을 설정합니다.
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -154,7 +156,26 @@ Copy-Item .env.example .env.local
 
 `.env.local`과 실제 key는 commit하지 않습니다. 배포 가능한 public client용 Consumer key이므로 보안 secret이라고 주장하지 않으며, 최종 사용자에게 API key·계정·JWT 입력을 요구하지 않습니다. key가 없거나 provider가 거부하면 온라인 기능만 실패하고 로컬 자막 경로는 유지되어야 합니다.
 
-이 설정만으로 production 사용이 승인되지는 않습니다. 릴리스 전에는 승인된 Play Plus Consumer로 로그인/JWT 없이 trailing-slash search·download와 반환된 임시 URL이 redirect 없이 exact optional origin에서 동작하는지 실제 Chrome에서 확인하고, plan·quota·attribution 조건을 OpenSubtitles와 다시 확인해야 합니다.
+2026-07-25 수신한 OpenSubtitles 공식 지원 답변(`support@opensubtitles.org`)과 사용자의 Consumer 확인에 따라 현재 production 조건은 다음과 같습니다.
+
+- 현재 로컬 `OPENSUBTITLES_API_KEY`는 사용자가 본인 OpenSubtitles 계정에 Play Plus용으로 등록한 Consumer key입니다. 실제 값은 문서·source·fixture·log에 기록하지 않습니다.
+- 별도 사전 승인 절차 없이 자체 Consumer를 등록해 게시할 수 있습니다. API 남용 시 Consumer가 제한되거나 비활성화될 수 있습니다.
+- 무료이고 유료 기능이 없는 현재 Play Plus에는 standard free Consumer가 적합합니다. 사용량이 크게 늘거나 수익화하면 OpenSubtitles와 tier를 다시 협의해야 합니다.
+- 로그인/JWT 없는 익명 다운로드가 허용되며 사용자당 하루 5회로 제한됩니다. 계정/JWT flow 권고는 현재 릴리스의 필수 조건이 아니며 이 확인은 Play Plus account, JWT 또는 backend/proxy를 범위에 추가하지 않습니다.
+- 확장 프로그램 package에 public Consumer key를 포함할 수 있습니다. 이 key는 앱 식별자이며 남용되면 교체되거나 차단될 수 있지만, server-side proxy는 현재 launch 필수 조건이 아닙니다.
+- 확장 프로그램 UI와 Chrome Web Store listing에서 [OpenSubtitles.com](https://www.opensubtitles.com/)을 자막 출처로 표시해야 합니다.
+
+### Chrome Web Store 제출 전 공개 체크리스트
+
+다음 항목은 **Store 제출 전에 별도로 완료해야 하며, 이 README에 기록했다고 Chrome Web Store 설정이 갱신된 것으로 간주하지 않습니다.**
+
+- Chrome Web Store listing에 `Subtitles provided by OpenSubtitles.com — https://www.opensubtitles.com/` attribution과 링크를 추가합니다.
+- Chrome Web Store Privacy Practices와 적용되는 개인정보 공개 문구에 명시적 검색, 전송 필드, 선택 다운로드, session cache, 로컬 저장과 익명 다운로드 한도를 사실대로 반영합니다.
+- 계정/JWT, 사용자 제공 API key, Play Plus backend/proxy, telemetry 또는 판매·광고·분석 목적의 데이터 사용이 없다는 현재 범위를 유지합니다.
+
+권장 공개 문구:
+
+> When you choose Search, Play Plus sends only the title or query, language, optional type, year, season, episode, and page you submit to OpenSubtitles.com. It does not send the Coupang Play URL or video ID, playback position, learning cards, subtitle cue text, or registered subtitle bodies. Only the result you choose to Add is downloaded. Search inputs, results, temporary links, and quota data are not stored persistently; successfully added subtitle metadata and cues are stored locally. A selected download may be cached in extension session storage for up to 6 hours, with a maximum of 8 entries and 4 MiB. Anonymous downloads are limited by OpenSubtitles to 5 per user per day.
 
 Chrome의 `chrome://extensions/`에서 개발자 모드를 켜고 **압축해제된 확장 프로그램을 로드합니다**를 선택한 뒤 `dist/`를 지정합니다.
 

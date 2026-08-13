@@ -119,7 +119,9 @@ export function ListeningMission({
   const endGenerationRef = useRef(0);
   const endPendingRef = useRef(false);
   const exitOriginRef = useRef<ProgressFailureOrigin>('mid-mission');
+  const compositionGuardGenerationRef = useRef(0);
   const isComposingRef = useRef(false);
+  const suppressNextCompositionEnterRef = useRef(false);
   const mountedRef = useRef(true);
   const ownershipReleasedRef = useRef(false);
   const pendingReplayTokensRef = useRef(new Map<1 | 0.75, number>());
@@ -249,10 +251,23 @@ export function ListeningMission({
 
   useEffect(() => {
     const segmentKey = view.activeSegment?.segmentKey;
-    if (!segmentKey || !view.activeRound || autoPlayedLineRef.current === view.activeLineId) return;
+    if (!segmentKey || !view.activeRound) {
+      activePlaybackGenerationRef.current += 1;
+      compositionGuardGenerationRef.current += 1;
+      isComposingRef.current = false;
+      pendingReplayTokensRef.current.clear();
+      suppressNextCompositionEnterRef.current = false;
+      setPendingReplayRates(new Set());
+      setPlaybackStatus('idle');
+      return;
+    }
+    if (autoPlayedLineRef.current === view.activeLineId) return;
     autoPlayedLineRef.current = view.activeLineId;
     activePlaybackGenerationRef.current += 1;
+    compositionGuardGenerationRef.current += 1;
+    isComposingRef.current = false;
     pendingReplayTokensRef.current.clear();
+    suppressNextCompositionEnterRef.current = false;
     setPendingReplayRates(new Set());
     setPlaybackStatus('idle');
     void playSegment(1);
@@ -752,9 +767,20 @@ export function ListeningMission({
           onNext={() => dispatch({ type: 'next-chosen' })}
           onSubmit={submitAnswer}
           onCompositionChange={(composing) => {
+            const generation = compositionGuardGenerationRef.current + 1;
+            compositionGuardGenerationRef.current = generation;
             isComposingRef.current = composing;
+            suppressNextCompositionEnterRef.current = !composing;
+            if (!composing) {
+              requestAnimationFrame(() => {
+                if (compositionGuardGenerationRef.current === generation) {
+                  suppressNextCompositionEnterRef.current = false;
+                }
+              });
+            }
           }}
           isComposingRef={isComposingRef}
+          suppressNextCompositionEnterRef={suppressNextCompositionEnterRef}
         />
       ) : view.phase === 'first-round-summary' ? (
         <section className='flex min-w-0 flex-col gap-4' aria-labelledby='mission-summary-title'>
@@ -856,6 +882,7 @@ interface ActiveLineProps {
   currentCombo: number;
   draft: string;
   isComposingRef: React.RefObject<boolean>;
+  suppressNextCompositionEnterRef: React.RefObject<boolean>;
   judgment?: 'correct' | 'almost' | 'try-again';
   lineState: 'answering' | 'correct' | 'revealed';
   linePosition: number;
@@ -886,6 +913,7 @@ function ActiveLine({
   currentCombo,
   draft,
   isComposingRef,
+  suppressNextCompositionEnterRef,
   judgment,
   lineState,
   linePosition,
@@ -997,16 +1025,31 @@ function ActiveLine({
             onCompositionStart={() => onCompositionChange(true)}
             onCompositionEnd={() => onCompositionChange(false)}
             onKeyDown={(event) => {
+              if (event.key !== 'Enter' || event.shiftKey) {
+                if (event.key !== 'Enter') suppressNextCompositionEnterRef.current = false;
+                return;
+              }
               if (
-                event.key !== 'Enter' ||
-                event.shiftKey ||
                 event.nativeEvent.isComposing ||
+                event.nativeEvent.keyCode === 229 ||
                 isComposingRef.current
               ) {
                 return;
               }
+              if (suppressNextCompositionEnterRef.current) {
+                suppressNextCompositionEnterRef.current = false;
+                event.preventDefault();
+                return;
+              }
               event.preventDefault();
               onSubmit();
+            }}
+            onKeyUp={() => {
+              suppressNextCompositionEnterRef.current = false;
+            }}
+            onBlur={() => {
+              isComposingRef.current = false;
+              suppressNextCompositionEnterRef.current = false;
             }}
           />
           <Button type='submit' className={ACTION_CLASS}>

@@ -453,7 +453,7 @@ const catalog = {
   identity: {
     contentInstanceId: 'content-a',
     routeChangedAt: 1,
-    videoId: 'video-a',
+    videoId: '123e4567-e89b-12d3-a456-426614174020',
     videoRevision: 2,
   },
   segmenterVersion: 1,
@@ -462,7 +462,7 @@ const catalog = {
   status: 'ready',
   subtitleRevision: 3,
   supportAvailable: true,
-  videoId: 'video-a',
+  videoId: '123e4567-e89b-12d3-a456-426614174020',
 } as const;
 
 const readySession = {
@@ -482,7 +482,7 @@ const readySession = {
       },
     ],
     sourceKey: 'native:en',
-    videoId: 'video-a',
+    videoId: '123e4567-e89b-12d3-a456-426614174020',
   },
   status: 'ready',
   subtitleRevision: 3,
@@ -508,7 +508,7 @@ const PROGRESS_RESULT: ListeningMissionResult = {
   learningSourceKey: 'native:en',
   practicedAt: '2026-08-09T12:00:00+00:00',
   segmenterVersion: 1,
-  videoId: 'video-a',
+  videoId: '123e4567-e89b-12d3-a456-426614174020',
 };
 
 const EMPTY_PROGRESS = { version: 1, videos: {} } as const;

@@ -219,7 +219,18 @@ const pickPresent = <K extends string>(values: Record<string, unknown>, keys: re
 const hasOwn = (value: object, key: PropertyKey) => Object.prototype.hasOwnProperty.call(value, key);
 
 const assertEquivalent = (actual: unknown, expected: unknown, area: string) => {
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+  if (JSON.stringify(sortObjectKeys(actual)) !== JSON.stringify(sortObjectKeys(expected))) {
     throw new Error(`V2 ${area} readback did not match the written data`);
   }
+};
+
+const sortObjectKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (typeof value !== 'object' || value === null) return value;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([key, entry]) => [key, sortObjectKeys(entry)])
+  );
 };

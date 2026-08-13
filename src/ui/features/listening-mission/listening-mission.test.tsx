@@ -124,22 +124,27 @@ describe('ListeningMission isolated UI', () => {
     expect(container.textContent).toContain('v2_listening_mission_hint_level:1');
   });
 
-  it('submits Enter only outside IME composition and keeps Shift+Enter multiline', async () => {
+  it('keeps the standard composition Enter sequence from submitting', async () => {
     const harness = createHarness();
     await renderMission(root, harness, snapshot(1, { support: true }));
 
     const textarea = getTextarea(container);
     changeTextarea(textarea, 'Answer 1');
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
-    const composingEnter = dispatchKey(textarea, 'Enter');
-    expect(composingEnter.defaultPrevented).toBe(false);
-    expect(getTextarea(container)).toBe(textarea);
-    expect(container.textContent).not.toContain('v2_listening_mission_answer_heading');
-
     const shiftedEnter = dispatchKey(textarea, 'Enter', { shiftKey: true });
     expect(shiftedEnter.defaultPrevented).toBe(false);
     expect(getTextarea(container)).toBe(textarea);
+
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+    const composingEnter = dispatchKey(textarea, 'Enter', {
+      isComposing: true,
+      keyCode: 229,
+    });
+    expect(composingEnter.defaultPrevented).toBe(false);
+    expect(getTextarea(container)).toBe(textarea);
+    expect(container.textContent).not.toContain('v2_listening_mission_answer_heading');
     act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+    dispatchKeyUp(textarea, 'Enter');
+
     const submitEnter = dispatchKey(textarea, 'Enter');
     expect(submitEnter.defaultPrevented).toBe(true);
     await flush();
@@ -149,6 +154,66 @@ describe('ListeningMission isolated UI', () => {
     expect(container.textContent).toContain('Answer 1');
     expect(container.textContent).toContain('도움 1');
     expect(document.activeElement).toBe(getButton(container, 'v2_listening_mission_next'));
+  });
+
+  it('suppresses an Enter delivered immediately after compositionend', async () => {
+    const harness = createHarness();
+    await renderMission(root, harness, snapshot(1));
+
+    const textarea = getTextarea(container);
+    changeTextarea(textarea, 'Answer 1');
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+
+    const commitEnter = dispatchKey(textarea, 'Enter');
+    expect(commitEnter.defaultPrevented).toBe(true);
+    expect(getTextarea(container)).toBe(textarea);
+    expect(container.textContent).not.toContain('v2_listening_mission_answer_heading');
+
+    dispatchKeyUp(textarea, 'Enter');
+    const submitEnter = dispatchKey(textarea, 'Enter');
+    expect(submitEnter.defaultPrevented).toBe(true);
+    await flush();
+
+    expect(container.querySelector('textarea')).toBeNull();
+    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
+  });
+
+  it('submits Enter after the post-composition guard expires', async () => {
+    const harness = createHarness();
+    await renderMission(root, harness, snapshot(1));
+
+    const textarea = getTextarea(container);
+    changeTextarea(textarea, 'Answer 1');
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+    await flush();
+
+    const submitEnter = dispatchKey(textarea, 'Enter');
+    expect(submitEnter.defaultPrevented).toBe(true);
+    await flush();
+
+    expect(container.querySelector('textarea')).toBeNull();
+    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
+  });
+
+  it('does not suppress Enter after a non-Enter composition end key completes', async () => {
+    const harness = createHarness();
+    await renderMission(root, harness, snapshot(1));
+
+    const textarea = getTextarea(container);
+    changeTextarea(textarea, 'Answer 1');
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+    dispatchKey(textarea, 'Escape', { isComposing: true, keyCode: 229 });
+    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+    dispatchKeyUp(textarea, 'Escape');
+
+    const submitEnter = dispatchKey(textarea, 'Enter');
+    expect(submitEnter.defaultPrevented).toBe(true);
+    await flush();
+
+    expect(container.querySelector('textarea')).toBeNull();
+    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
   });
 
   it('renders cumulative authored hints and never labels Reveal as cleared', async () => {
@@ -415,7 +480,7 @@ const snapshot = (
     sourceKey: SOURCE_KEY,
   })),
   sourceKey: SOURCE_KEY,
-  videoId: 'video-1',
+  videoId: '123e4567-e89b-12d3-a456-426614174050',
 });
 
 function getTextarea(scope: ParentNode) {
@@ -444,9 +509,22 @@ function changeTextarea(textarea: HTMLTextAreaElement, value: string) {
 function dispatchKey(
   target: Element,
   keyValue: string,
-  options: Pick<KeyboardEventInit, 'shiftKey'> = {}
+  options: KeyboardEventInit = {}
 ) {
   const event = new KeyboardEvent('keydown', {
+    bubbles: true,
+    cancelable: true,
+    key: keyValue,
+    ...options,
+  });
+  act(() => {
+    target.dispatchEvent(event);
+  });
+  return event;
+}
+
+function dispatchKeyUp(target: Element, keyValue: string, options: KeyboardEventInit = {}) {
+  const event = new KeyboardEvent('keyup', {
     bubbles: true,
     cancelable: true,
     key: keyValue,

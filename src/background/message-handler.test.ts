@@ -337,6 +337,12 @@ describe('background message handler', () => {
 
   it('rejects malformed or extra listening progress params before touching storage', async () => {
     const dependencies = createDependencies();
+    const invalidVideoIds = [
+      ' ',
+      'video-listening',
+      `https://www.coupangplay.com/play/${VIDEO_ID}`,
+      '123e4567-e89b-12d3-a456-42661417400z',
+    ];
 
     registerBackgroundMessageHandler(dependencies);
     const listener = getRegisteredListener();
@@ -350,6 +356,13 @@ describe('background message handler', () => {
         message: 'clearListeningVideoProgress',
         params: { videoId: VIDEO_ID, unexpected: true },
       },
+      ...invalidVideoIds.flatMap((videoId) => [
+        {
+          message: 'recordListeningMissionResult',
+          params: { result: { ...attemptedWithoutSubmission, videoId } },
+        },
+        { message: 'clearListeningVideoProgress', params: { videoId } },
+      ]),
       { message: 'clearAllListeningProgress', params: {} },
     ];
 

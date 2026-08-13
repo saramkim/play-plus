@@ -103,7 +103,7 @@ const createCatalog = (count: number): ReadyListeningCatalog => ({
   identity: {
     contentInstanceId: 'content-a',
     routeChangedAt: 1,
-    videoId: 'video-a',
+    videoId: '123e4567-e89b-12d3-a456-426614174030',
     videoRevision: 1,
   },
   segmenterVersion: 1,
@@ -116,7 +116,7 @@ const createCatalog = (count: number): ReadyListeningCatalog => ({
   status: 'ready',
   subtitleRevision: 2,
   supportAvailable: true,
-  videoId: 'video-a',
+  videoId: '123e4567-e89b-12d3-a456-426614174030',
 });
 
 const segmentKeys = (start: number, count: number) =>
@@ -128,7 +128,7 @@ const segmentKey = (index: number) =>
 const progressWith = (states: Record<string, 'attempted' | 'cleared' | 'mastered'>): ListeningProgressV1 => listeningProgressSchema.parse({
   version: 1,
   videos: {
-    'video-a': {
+    '123e4567-e89b-12d3-a456-426614174030': {
       sources: {
         'native:en': {
           bestCombo: 7,

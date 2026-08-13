@@ -13,8 +13,8 @@ import {
   ListeningSourceKey,
 } from './type';
 
-const VIDEO_A = 'video-a';
-const VIDEO_B = 'video-b';
+const VIDEO_A = '123e4567-e89b-12d3-a456-426614174000';
+const VIDEO_B = '123e4567-e89b-12d3-a456-426614174001';
 const SOURCE_A: ListeningSourceKey = 'native:en';
 const SOURCE_B: ListeningSourceKey =
   'registered:subtitle-11111111-1111-4111-8111-111111111111';
@@ -203,13 +203,50 @@ describe('v2 listening progress storage', () => {
     expect(storage.getCalls).toEqual(['listeningProgress', 'listeningProgress', 'listeningProgress']);
   });
 
+  it('serializes record, clear-video, and clear-all operations in invocation order', async () => {
+    const storage = storageWithEmptyProgress();
+    const api = createV2ListeningProgressStorage(storage);
+
+    const [recorded, clearedVideo, recordedOther, clearedAll] = await Promise.all([
+      api.recordMissionResult(missionResult()),
+      api.clearVideo(VIDEO_A),
+      api.recordMissionResult(
+        missionResult({
+          videoId: VIDEO_B,
+          learningSourceKey: SOURCE_B,
+          items: [missionItem(SEGMENT_B, 'cleared', 1)],
+        })
+      ),
+      api.clearAll(),
+    ]);
+
+    expect(recorded.videos).toHaveProperty(VIDEO_A);
+    expect(clearedVideo).toEqual(createDefaultListeningProgress());
+    expect(recordedOther.videos).toHaveProperty(VIDEO_B);
+    expect(clearedAll).toEqual(createDefaultListeningProgress());
+    expect(storage.values.listeningProgress).toEqual(createDefaultListeningProgress());
+    expect(storage.getCalls).toEqual([
+      'listeningProgress',
+      'listeningProgress',
+      'listeningProgress',
+      'listeningProgress',
+    ]);
+  });
+
   it('rejects invalid input without reading or writing', async () => {
+    const invalidVideoIds = [
+      '',
+      ' ',
+      'video-a',
+      `https://www.coupangplay.com/play/${VIDEO_A}`,
+      '123e4567-e89b-12d3-a456-42661417400z',
+    ];
     const invalidResults: unknown[] = [
       missionResult({ items: [missionItem(SEGMENT_A, 'attempted', -1)] }),
       missionResult({ items: [missionItem(SEGMENT_A, 'attempted', 1.5)] }),
       missionResult({ items: [missionItem(SEGMENT_A, 'attempted', Number.MAX_SAFE_INTEGER + 1)] }),
       missionResult({ practicedAt: '2026-08-09T02:00:00' }),
-      missionResult({ videoId: '' }),
+      ...invalidVideoIds.map((videoId) => missionResult({ videoId })),
       missionResult({ learningSourceKey: 'native:invalid' as ListeningSourceKey }),
       missionResult({
         items: [missionItem('segment-v1-invalid' as ListeningSegmentKey, 'attempted', 0)],
@@ -289,6 +326,29 @@ describe('v2 listening progress storage', () => {
     expect(storage.getCalls).toEqual(['listeningProgress', 'listeningProgress']);
   });
 
+  it('allows clear-video and clear-all to retry after their writes fail', async () => {
+    const storage = storageWithEmptyProgress();
+    const api = createV2ListeningProgressStorage(storage);
+    await api.recordMissionResult(missionResult());
+
+    storage.failNextWrite = true;
+    await expect(api.clearVideo(VIDEO_A)).rejects.toThrow('Injected write failure');
+    expect(storage.values.listeningProgress).toHaveProperty(`videos.${VIDEO_A}`);
+    await expect(api.clearVideo(VIDEO_A)).resolves.toEqual(createDefaultListeningProgress());
+
+    await api.recordMissionResult(
+      missionResult({
+        videoId: VIDEO_B,
+        learningSourceKey: SOURCE_B,
+        items: [missionItem(SEGMENT_B, 'cleared', 1)],
+      })
+    );
+    storage.failNextWrite = true;
+    await expect(api.clearAll()).rejects.toThrow('Injected write failure');
+    expect(storage.values.listeningProgress).toHaveProperty(`videos.${VIDEO_B}`);
+    await expect(api.clearAll()).resolves.toEqual(createDefaultListeningProgress());
+  });
+
   it('clears only the exact video namespace and then clears all progress', async () => {
     const storage = storageWithEmptyProgress();
     const api = createV2ListeningProgressStorage(storage);
@@ -311,14 +371,23 @@ describe('v2 listening progress storage', () => {
     expect(storage.setCalls).toHaveLength(4);
   });
 
-  it('strictly validates a clear-video identity before reading or writing', async () => {
-    const storage = storageWithEmptyProgress();
-    const api = createV2ListeningProgressStorage(storage);
+  it('strictly validates clear-video identities before reading or writing', async () => {
+    const invalidVideoIds = [
+      '',
+      ' ',
+      'video-a',
+      `https://www.coupangplay.com/play/${VIDEO_A}`,
+      '123e4567-e89b-12d3-a456-42661417400z',
+    ];
 
-    await expect(api.clearVideo('')).rejects.toThrow();
+    for (const videoId of invalidVideoIds) {
+      const storage = storageWithEmptyProgress();
+      const api = createV2ListeningProgressStorage(storage);
 
-    expect(storage.getCalls).toEqual([]);
-    expect(storage.setCalls).toEqual([]);
+      await expect(api.clearVideo(videoId)).rejects.toThrow();
+      expect(storage.getCalls).toEqual([]);
+      expect(storage.setCalls).toEqual([]);
+    }
   });
 });
 
