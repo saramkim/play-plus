@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-09 — 네 개 destination 안의 로컬 Listening Mission과 진행도·재생 복원·명시적 Library 저장 계약 추가
+최종 개정 승인일: 2026-08-13 — OpenSubtitles 공식 지원 답변과 revision 3 릴리스 후보 증거 등급 계약 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -445,18 +445,20 @@ OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함�
 - 첫 검색 동작에서는 pre-implementation qualification으로 증명하고 구현 Issue에 기록한 API base와 download origin 각각의 exact optional permission만 한 번에 요청한다. wildcard, 추정 host 또는 아직 반환되지 않은 후보를 미리 허용하지 않는다. 권한을 거부하거나 취소하면 외부 요청을 보내지 않고 로컬 파일과 플랫폼 자막 흐름을 계속 사용할 수 있어야 한다.
 - 검색 요청에는 사용자가 입력한 제목 또는 query, 언어, 선택한 유형·연도·시즌·회차와 page만 보낼 수 있다. 시청 URL, Coupang Play video ID, 재생 시각, 카드·cue·등록 자막 본문을 전송하거나 자동으로 영상 metadata를 수집해 채우지 않는다.
 - 모든 provider 요청은 background service worker가 typed message 경계 뒤에서 수행한다. 검색 결과는 접근 가능한 목록과 명시적 pagination으로 보여 주며, 선택하지 않은 결과를 다운로드하지 않는다.
-- 사용자가 `추가`를 실행한 하나의 file-level `file_id`만 다운로드한다. HTTPS API 응답과 반환된 임시 `/download/` URL의 origin·path·credential·redirect, 실제 byte 크기, decode, parse와 non-empty cue를 엄격히 검증하고 실패 시 부분 등록을 남기지 않는다. 요청은 redirect를 자동 추적하지 않으며, 승인된 Consumer로 direct search와 download가 이 조건에서 성공한다는 증거가 나오기 전에는 구현 Issue를 시작하지 않는다.
+- 사용자가 `추가`를 실행한 하나의 file-level `file_id`만 다운로드한다. HTTPS API 응답과 반환된 임시 `/download/` URL의 origin·path·credential·redirect, 실제 byte 크기, decode, parse와 non-empty cue를 엄격히 검증하고 실패 시 부분 등록을 남기지 않는다. 요청은 redirect를 자동 추적하지 않으며, Play Plus용으로 등록한 Consumer로 direct search와 download가 이 조건에서 성공한다는 증거가 나오기 전에는 구현 Issue를 시작하지 않는다.
 - 성공한 자막은 기존 strict 등록 경계인 `registeredSubtitles`와 `subtitle-<uuid>`에 일반 로컬 v2 자막과 같은 형태로 저장한다. 추가 직후 학습/도움 역할을 자동 지정하거나 기존 역할 선택을 덮어쓰지 않는다.
 - 검색 입력·결과 metadata·임시 URL·quota 정보는 영속화하지 않는다. same-session cache는 선택한 파일의 재다운로드를 줄이는 최소 필드만 보관하고 수치로 고정한 entry·byte·TTL 상한에서 eviction하며, provider 오류 본문이나 credential을 로그·진단·사용자 메시지에 노출하지 않는다.
-- 사용자 계정·JWT, Play Plus backend/proxy, BYOK, 자동 검색·추천·역할 적용과 provider provenance 영속 schema는 승인 범위가 아니다. 현재 OpenSubtitles.com REST API의 production consumer 승인, API key, quota, host, attribution과 로그인 없는 동작을 구현·릴리스 gate에서 다시 확인한다. 새 host, redirect 허용, 로그인/JWT 또는 추가 영속 데이터가 필요하면 구현을 멈추고 새 승인을 받는다.
+- 사용자 계정·JWT, Play Plus backend/proxy, BYOK, 자동 검색·추천·역할 적용과 provider provenance 영속 schema는 승인 범위가 아니다. 로그인/JWT는 OpenSubtitles가 quota 사용을 위해 권장하지만 초기 무료 확장의 출시 조건은 아니다. 새 host, redirect 허용, 로그인/JWT 또는 추가 영속 데이터가 필요하면 구현을 멈추고 새 승인을 받는다.
 
-2026-08-07 provider qualification 기준은 [canonical OpenSubtitles.com REST API documentation](https://opensubtitles.stoplight.io/docs/opensubtitles-api), [공식 Getting Started](https://opensubtitles.tawk.help/article/getting-started), [공식 Pro Packages 안내](https://opensubtitles.tawk.help/article/pro-packages)와 [legacy OpenSubtitles.org API 종료 공지](https://forum.opensubtitles.com/t/opensubtitles-org-api-final-shutdown-notice-for-non-vip-users/5045)다.
+2026-08-07 provider qualification의 공개 기준은 [canonical OpenSubtitles.com REST API documentation](https://opensubtitles.stoplight.io/docs/opensubtitles-api), [공식 Getting Started](https://opensubtitles.tawk.help/article/getting-started), [공식 Pro Packages 안내](https://opensubtitles.tawk.help/article/pro-packages)와 [legacy OpenSubtitles.org API 종료 공지](https://forum.opensubtitles.com/t/opensubtitles-org-api-final-shutdown-notice-for-non-vip-users/5045)다. 여기에 사용자가 2026-08-13 제공한 `support@opensubtitles.org`의 2026-07-25 답변과, 현재 로컬 key가 사용자 자신의 OpenSubtitles 계정에 Play Plus용으로 등록한 Consumer key라는 사용자 확인을 production qualification 근거로 추가한다. 실제 key 값과 메일 원문은 source, fixture, log 또는 committed evidence에 기록하지 않는다.
 
-- 구현 대상은 OpenSubtitles.com REST API와 승인된 Consumer/application 경로이며 legacy XML-RPC가 아니다.
-- 현재 공식 안내는 모든 API 요청에 API key와 유효한 app/version `User-Agent`를 요구한다. 최종 사용자의 로그인 없이 쓰는 application에는 Consumer에 연결한 Pro Package 경로를 안내하므로, 실제 Play Plus Consumer 승인·plan·quota·attribution은 별도 production gate다. 구매나 subscription 변경은 이 계약이 승인하지 않는다.
-- 공식 Getting Started는 HTTP redirect 처리를 권고하지만 현재 승인 범위는 blind redirect나 미확정 host를 허용하지 않는다. 승인된 Consumer로 redirect를 자동 추적하지 않는 direct search와 download가 작동하는지 pre-implementation qualification에서 증명한다. 작동하지 않으면 구현을 시작하지 않고 인간 결정을 다시 받는다.
-- 문서와 공식 forum의 [`www.opensubtitles.com` download 운영 사례](https://forum.opensubtitles.com/t/download-rate-limit/6415), [`dl.opensubtitles.com` download 운영 사례](https://forum.opensubtitles.com/t/cant-download/3043)에는 `api.opensubtitles.com`, `vip-api.opensubtitles.com`, `www.opensubtitles.com`과 `dl.opensubtitles.com`이 API base 또는 생성 download link 후보로 나타난다. 후보를 모두 권한에 넣지 말고 승인된 Consumer의 실제 login-free search와 `/download`에서 필요한 전체 origin 집합을 식별한 뒤 각각 exact origin으로 고정한다. 집합이 안정적으로 증명되지 않으면 구현을 시작하지 않는다.
-- 이 조사는 production Consumer 승인, exact origin 집합, quota와 실제 임시 download URL 계약을 최종 확정한 것이 아니다. 위 evidence를 구현 Issue 생성 전과 릴리스 후보에서 다시 확인한다.
+- 구현 대상은 OpenSubtitles.com REST API와 사용자 계정에 등록한 Play Plus Consumer/application 경로이며 legacy XML-RPC가 아니다. 별도의 사전 승인 절차는 필요하지 않다.
+- 무료이고 유료 기능이 없는 현재 확장에는 standard free API Consumer를 사용할 수 있다. 로그인하지 않은 최종 사용자의 다운로드 한도는 현재 사용자당 하루 5회이며, 사용량이 크게 늘거나 이후 수익화하면 적절한 tier를 OpenSubtitles와 다시 협의한다. 이 계약은 구매, subscription 변경, 유료 기능 또는 자체 quota 시스템을 승인하지 않는다.
+- API key는 앱을 식별하는 public client 값으로 확장 package에 포함할 수 있다. 제3자 남용 시 OpenSubtitles가 rotate, throttle 또는 block할 수 있으므로 실제 값은 build 환경에서만 주입하고 source, fixture, log와 evidence에 commit하지 않는다. 장기적으로 더 견고할 수 있는 server-side proxy는 초기 출시 조건이 아니며 현재 범위에도 포함하지 않는다.
+- OpenSubtitles는 확장 UI와 Chrome Web Store listing에 `OpenSubtitles.com`을 자막 source로 표시하고 `https://www.opensubtitles.com/` 링크를 제공할 것을 요구한다.
+- 공식 Getting Started는 HTTP redirect 처리를 권고하지만 현재 승인 범위는 blind redirect나 미확정 host를 허용하지 않는다. 등록된 Play Plus Consumer로 redirect를 자동 추적하지 않는 direct search와 download가 작동하는지 production qualification에서 증명한다. 작동하지 않으면 구현을 시작하지 않고 인간 결정을 다시 받는다.
+- 문서와 공식 forum의 [`www.opensubtitles.com` download 운영 사례](https://forum.opensubtitles.com/t/download-rate-limit/6415), [`dl.opensubtitles.com` download 운영 사례](https://forum.opensubtitles.com/t/cant-download/3043)에는 `api.opensubtitles.com`, `vip-api.opensubtitles.com`, `www.opensubtitles.com`과 `dl.opensubtitles.com`이 API base 또는 생성 download link 후보로 나타난다. 후보를 모두 권한에 넣지 말고 등록된 Consumer의 실제 login-free search와 `/download`에서 필요한 전체 origin 집합을 식별한 뒤 각각 exact origin으로 고정한다. 집합이 안정적으로 증명되지 않으면 구현을 시작하지 않는다.
+- production gate는 위 Consumer 소유·무료 plan·anonymous quota·public key·attribution 조건, exact origin 집합과 로그인/JWT 없는 실제 direct search/download를 함께 확인한다. Provider가 이 조건을 변경하거나 새 host, redirect, confidential credential, login/JWT 또는 proxy를 요구하면 현재 gate를 재사용하지 않고 인간 결정을 다시 받는다.
 
 ### 5.2 확정 — 2.0에서 제거
 
@@ -532,7 +534,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 전체 자막 snapshot과 현재 재생 시각은 활성 tab의 UI-content 직접 메시지에서만 일시적으로 사용한다. 등록 자막 읽기 전용 확인은 이미 canonical 로컬 저장소에 있는 해당 cue 본문을 UI에서 strict하게 읽을 뿐 새 사본을 만들지 않는다. cue 본문을 background, 추가 Storage, network, telemetry 또는 진단 로그로 복제하지 않는다.
 - 필수 host access는 Coupang Play로 제한한다. OpenSubtitles에는 pre-implementation qualification으로 증명한 API base와 download origin 각각만 exact optional permission으로 선언하고 첫 명시적 검색에서 요청한다. 후보 host 전체나 wildcard를 선언하지 않는다.
 - OpenSubtitles에는 사용자가 제출한 제목/query, 언어, 선택 필터와 page만 전송한다. query, 결과 metadata, `file_id`, quota, 임시 URL과 다운로드 원문은 provider-specific persistent storage에 남기지 않고, 성공적으로 등록한 자막 metadata와 cue만 기존 로컬 저장소에 보존한다.
-- build-time consumer credential과 app/version `User-Agent`는 OpenSubtitles가 배포 가능한 public client 사용을 승인하고 로그인/JWT 없이 동작하는 경우에만 모든 API 요청에 사용한다. credential은 보안 secret으로 주장하지 않으며 실제 값은 source, fixture와 로그에 commit하지 않고 build 환경에서 주입한다. confidential secret이 필요해지면 현재 범위를 중단한다.
+- build-time Consumer key와 app/version `User-Agent`는 사용자 계정에 등록한 Play Plus application 식별자로 모든 API 요청에 사용한다. key는 confidential credential이나 최종 사용자 credential로 주장하지 않으며 실제 값은 source, fixture, log와 committed evidence에 넣지 않고 build 환경에서만 주입한다. Provider가 confidential secret을 요구하게 되면 현재 범위를 중단한다.
 - migration/mission 오류 log, 테스트 fixture와 진단 정보에 실제 사용자의 자막 본문, 전체 시청 URL, 등록 자막 본문, typed answer 또는 unsaved mission text를 기록하지 않는다.
 - 위에서 승인한 범위를 벗어나는 새 host, redirect, 전송 필드, 계정·JWT, proxy 또는 개인정보 계약은 별도 ChatGPT 검토와 사용자 승인을 받는다.
 - Listening Mission은 새 Chrome permission, host, CSP, network request, external service, microphone, speech recognition, AI/semantic evaluation, telemetry, account, sync 또는 payment를 추가하지 않는다.
@@ -601,9 +603,9 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - `unassigned`는 Library에 남고 Review에서 제외되며 사용자가 정상 카드로 바꿀 수 있다.
 - `active`와 `completed`만으로 Review와 Library 동작이 일관된다.
 - 명시적 `검색` 전에는 OpenSubtitles 요청이나 선택적 권한 prompt가 발생하지 않고, 권한 거부·취소·회수와 provider 실패가 플랫폼/로컬 자막 또는 기존 로컬 데이터에 영향을 주지 않는다.
-- 승인된 login-free Consumer에서 redirect 자동 추적 없이 동작하는 전체 API/download origin 집합을 증명해 각각 exact permission으로 고정하며, wildcard와 미확정 후보 host가 없다.
+- 사용자 계정에 등록한 Play Plus Consumer에서 redirect 자동 추적 없이 동작하는 전체 API/download origin 집합을 증명해 각각 exact permission으로 고정하며, wildcard와 미확정 후보 host가 없다.
 - 사용자가 제출한 필드만 검색에 사용하고, 명시적으로 선택한 하나의 결과만 다운로드해 strict 등록 경계로 저장한다. 등록 뒤에도 학습/도움 역할을 자동 적용하지 않는다.
-- 검색 입력, 결과 metadata, 임시 URL과 provider download cache가 영속 저장되지 않으며, session cache의 entry·byte·TTL 상한과 eviction이 지켜지고 provider production consumer 승인·attribution·quota·로그인 없는 실제 동작이 확인된다.
+- 검색 입력, 결과 metadata, 임시 URL과 provider download cache가 영속 저장되지 않으며, session cache의 entry·byte·TTL 상한과 eviction이 지켜진다. 사용자 소유의 등록된 Play Plus Consumer, 무료 확장 plan, anonymous 사용자당 하루 5회 한도, public package key와 UI/Store attribution 조건이 확인되고 로그인/JWT 없는 실제 동작이 증명된다.
 - 현재 선택한 native 또는 등록 학습·도움 source의 전체 cue가 delay를 정확히 한 번 적용한 source 순서로 표시되고, source 정체와 기존 관리 영역으로 가는 변경 동작이 사실대로 작동한다.
 - 기본 `함께` 보기에서 저장과 같은 결정론적 alignment로 도움 문장이 학습 cue에 대응되고, 매칭되지 않은 학습 cue와 `학습`/`도움` 전체 보기가 손실 없이 작동한다. 검색·현재 cue highlight·follow 재개·pointer/keyboard seek가 각 보기에서 작동한다.
 - `함께`와 `학습` 행 저장은 seek 없이 정확한 학습 source index를 다시 검증해 기존 카드 builder와 저장소를 사용한다. 도움 포함/학습만 저장 결과, stale·cue 없음·pending·오류가 구분되고, 현재 cue 저장과 중복 요청 lock을 공유하며 완료 뒤 반복 저장은 별도 카드가 된다.
@@ -622,7 +624,9 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 
 ### 9.4 Verification gate
 
-릴리스 후보에서 다음을 모두 실제로 실행한다.
+릴리스 후보 증거는 아래 등급으로 평가한다. 실제로 수행하지 않은 manual row는 계속 `NOT RUN`, 외부 환경이나 관찰 한계로 판정할 수 없는 row는 `UNKNOWN`으로 기록하며, 자동화나 waiver를 manual `PASS`로 바꾸지 않는다.
+
+#### 필수 자동·정적 gate
 
 - `yarn type-check`
 - `yarn lint`
@@ -633,22 +637,52 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - mission reducer/component transient-draft, controller union, async race, IME, focus, accessibility, progress-failure/discard, difficult-save와 320/360/390 geometry suites
 - direct UI-content catalog/session, content playback/restore/lease/suppression, background progress readiness, Learning landing/lock/Next 10/reset/save와 external storage-change integration suites
 - source와 built output에서 typed answer persistence/logging, forbidden raw cue/catalog background relay, microphone/speech/AI, telemetry, account/payment, new network/permission/host/CSP, fifth destination와 release/version change가 없음을 audit한다. explicit canonical LearningCard save exception은 forbidden relay로 오탐하지 않는다.
-- `docs/manual-smoke-test.md`를 2.0 계약에 맞게 먼저 갱신한 뒤 전체 Chrome smoke matrix
-- exact optional permission grant·deny·cancel·revoke, 명시적 검색·pagination·empty/error/quota, 선택한 결과의 download·decode·parse·등록과 same-session cache를 provider mock과 실제 Chrome에서 검증
-- session cache의 최대 entry·총 byte·TTL 경계, 초과 시 결정론적 eviction, service-worker/extension-session restart와 persistent storage 미유입을 검증
-- 검색 전 외부 요청 0건, 허용 origin·전송 필드·로그·session/persistent storage와 자동 역할 미적용을 Network/Chrome Storage에서 확인
-- 승인된 production consumer credential과 app identifier로 로그인/JWT 없는 실제 OpenSubtitles.com REST search/download를 확인
-- README, 한국어·영어 locale, manifest 권한 설명과 적용 가능한 공개 개인정보/Chrome Web Store disclosure가 명시적 전송, 선택적 권한, 로컬 등록과 자동 역할 미적용을 사실대로 설명하는지 확인
-- native·등록 자막과 양수·음수 delay에서 함께/학습/도움 목록·source 표시·시간 범위·검색·follow·키보드 seek·학습 행 저장·toast·저장 표시를 확인하고, 대형·여러 줄 cue fixture에서 고밀도 가상화·검색 후 비겹침과 stale identity 격리를 검증
-- 역할로 선택하지 않은 등록 자막의 읽기 전용 확인, 검색, delay 표시, late load·삭제 오류와 Back focus 복원을 검증하고 active overview의 seek/save/current/follow control이 섞이지 않는지 확인
-- v1.11.0을 설치하고 대표 데이터를 만든 실제 Chrome profile에서 2.0으로 update하는 upgrade smoke
-- 깨끗한 Chrome profile의 fresh-install smoke
-- 실제 Chrome에서는 해당 빌드가 허용하는 최소 side panel 폭(현재 환경 기준 360 CSS px)과 약 390 CSS px에서 Listening Mission, 전체 자막, Library, Review, 설정, migration 오류 상태의 키보드·스크롤·레이아웃을 확인한다. 320 CSS px는 자동 반응형 검증으로 유지하며, Chrome이 360px에서 폭을 고정하면 실제 Chrome의 320px 결과는 `FAIL`이 아니라 브라우저 제약이 기록된 `NOT RUN`이다.
-- 실제 Chrome의 rebuilt production `dist`에서 native/registered learning, learning-only/support, delay, no-video/identity/source/segment, current/Continue/fewer-than-10 entry와 exact segment/hint fixture를 확인한다.
-- 실제 Chrome에서 automatic/replay/slow playback, answer/IME/hint/Reveal/Later/retry/Results, difficult save, progress/reset, persistent write-failure discard, every end mode, Side Panel close/reload 뒤 15초 lease와 route/video/tab/source/revision invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
-- 실제 Chrome에서 mission 전후 기존 Learning playback, Subtitles, Library, Review, OpenSubtitles, readiness와 v1.11/fresh migration regression을 확인하고 navigation lock, 0.75× rate, hidden subtitle/controller 또는 media observer가 남지 않음을 확인한다.
 
-자동 테스트는 실제 Chrome upgrade smoke를 대신하지 않는다. 실행하지 않은 항목은 `NOT RUN`, 외부 환경 때문에 판정할 수 없는 항목은 `UNKNOWN`으로 기록한다.
+위 자동·정적 gate는 최종 review head에서 모두 통과해야 하며 이전 head 결과를 승계하지 않는다.
+
+#### 필수 핵심 actual Chrome smoke
+
+- `docs/manual-smoke-test.md`를 2.0 계약에 맞게 먼저 갱신하고 rebuilt production `dist`를 실제 action으로 연 Chrome Extension Pages Side Panel에서 검증한다. 일반 extension tab은 증거가 아니다.
+- 깨끗한 전용 profile의 fresh install/readiness와, signed-in actual v1.11.0 전용 profile에서 대표 public data를 만든 뒤 같은 extension identity와 stable unpacked path로 수행하는 2.0 upgrade/readback을 각각 직접 확인한다. 자동 테스트는 이 두 smoke를 대신하지 않는다.
+- signed-in supported Coupang Play route에서 extension install/reload, active-tab 통신, DRM/player 접근, native와 registered learning/support source, platform-caption 비간섭과 기존 네 destination을 확인한다.
+- 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
+- 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
+- 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
+
+핵심 actual row가 `NOT RUN` 또는 `UNKNOWN`이면 acceptance를 막는다.
+
+#### Exact-head 자동화로 인정하는 결정론적 변형
+
+다음 변형은 해당 production code의 exact review head에서 focused suite와 전체 gate가 `PASS`하고 `docs/manual-smoke-test.md`가 test/claim mapping을 기록하면 acceptance evidence로 인정한다.
+
+- migration/readiness/progress/card write failure injection과 retry·discard 분기
+- async race, duplicate action, delayed response와 stale tab/video/source/revision identity 격리
+- OpenSubtitles permission deny/cancel/revoke, invalid/error/quota, decode/parse/atomic-registration 경계
+- session cache entry cap, 총 byte cap, 6시간 TTL, deterministic eviction과 persistent-storage 비유입
+- 320/360/390 CSS px deterministic geometry, long/multilingual text, focus와 accessibility 변형
+
+이 인정은 대응 manual row를 `PASS`로 바꾸지 않는다. manual row는 직접 수행하지 않았다면 `NOT RUN`으로 남고 별도 acceptance mapping에서 자동화 근거를 가리킨다. 자동화에 매핑되지 않은 핵심 동작을 임의로 이 목록에 포함하지 않는다.
+
+#### 비핵심 compound 반복
+
+위 core actual smoke 또는 exact-head 자동화로 이미 확인한 같은 제품 경계를 양 route, 모든 file/source/role/theme, 모든 view/state/keyboard 조합으로 다시 반복하는 manual compound row는 revision 3의 비핵심 exhaustive evidence다. 직접 전부 수행하지 않았으면 literal `NOT RUN`을 유지하고 별도 acceptance inventory에서 `NC`로 분류한다. `NC`는 미실행 동작의 `PASS`가 아니며, 대표 core actual 경계가 없거나 자동화로 증명해야 하는 deterministic failure/race/cache/TTL/eviction/stale/geometry 변형을 대신할 수 없다.
+
+#### Revision 3 환경 waiver
+
+다음 두 actual-Chrome row만 Issue #66 acceptance의 환경 waiver로 승인한다.
+
+- MCP가 service-worker inspector를 분리하지 못해 수행할 수 없는 worker-only natural restart. `reload_extension`을 worker-only 증거로 간주하지 않으며 row는 `NOT RUN`으로 남긴다.
+- actual Extension Pages Side Panel의 약 390 CSS px 조정이 `Protocol error (Browser.getWindowForTarget): Browser window not found`로 실패한 환경. 실제 attainable minimum 폭 검증은 계속 필수이고 320/360/390 deterministic geometry suite도 유지하며, 약 390px actual row 자체는 `NOT RUN`으로 남긴다.
+
+waiver는 제품 동작을 확인했다는 뜻이 아니며 다른 environment failure, `UNKNOWN` 또는 `FAIL`로 확장하지 않는다. 어느 row든 실제 결과가 `FAIL`이면 waiver 없이 acceptance를 막는다.
+
+#### 공개 disclosure와 Store 제출 전 gate
+
+- README, 한국어·영어 locale과 manifest 권한 설명은 명시적 전송, 선택적 권한, 로컬 등록, 자동 역할 미적용, anonymous quota와 OpenSubtitles attribution을 사실대로 설명해야 한다.
+- 확장 UI와 Chrome Web Store listing에는 `Subtitles provided by OpenSubtitles.com`에 준하는 source credit과 `https://www.opensubtitles.com/` 링크를 제공한다.
+- Chrome Web Store 개인정보 공개와 적용 가능한 개인정보처리방침은 사용자가 Search로 제출한 제목/query, 언어, 선택 필터와 page만 OpenSubtitles로 전송하고, 시청 URL·Coupang Play video ID·재생 위치·카드·cue 본문은 전송하지 않으며, 선택한 자막만 다운로드하고 provider 검색정보를 영속 저장하지 않는다는 사실을 정확히 설명한다.
+
+외부 Chrome Web Store listing과 개인정보 공개 갱신은 Store 제출 전에 반드시 완료하지만 Issue #66 merge나 이 문서 개정이 Store 제출·배포 권한을 부여하지 않는다.
 
 ## 10. Explicit Non-goals and Amendment Rule
 

@@ -27,6 +27,7 @@ const testState = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
   viewState: { status: 'loading' } as unknown,
   virtualIndexes: [0, 1, 2],
+  virtualizerCounts: [] as number[],
 }));
 
 vi.mock('@tanstack/react-virtual', () => ({
@@ -38,34 +39,37 @@ vi.mock('@tanstack/react-virtual', () => ({
     count: number;
     getScrollElement: () => HTMLElement | null;
     getItemKey: (index: number) => string | number;
-  }) => ({
-    getTotalSize: () => count * 49,
-    getVirtualItems: () =>
-      testState.virtualIndexes
-        .filter((index) => index < count)
-        .map((index) => ({ index, key: getItemKey(index), start: index * 49 })),
-    measure: testState.measure,
-    measureElement: testState.measureElement,
-    range:
-      count === 0
-        ? null
-        : {
-            endIndex: Math.min(testState.rangeEndIndex, count - 1),
-            startIndex: Math.min(testState.rangeStartIndex, count - 1),
-          },
-    scrollToIndex: (...args: unknown[]) => {
-      testState.scrollToIndex(...args);
-      if (testState.emitProgrammaticScroll) {
-        getScrollElement()?.dispatchEvent(new Event('scroll', { bubbles: true }));
-      }
-    },
-    scrollToOffset: (...args: unknown[]) => {
-      testState.scrollToOffset(...args);
-      if (testState.emitProgrammaticScroll) {
-        getScrollElement()?.dispatchEvent(new Event('scroll', { bubbles: true }));
-      }
-    },
-  }),
+  }) => {
+    testState.virtualizerCounts.push(count);
+    return {
+      getTotalSize: () => count * 49,
+      getVirtualItems: () =>
+        testState.virtualIndexes
+          .filter((index) => index < count)
+          .map((index) => ({ index, key: getItemKey(index), start: index * 49 })),
+      measure: testState.measure,
+      measureElement: testState.measureElement,
+      range:
+        count === 0
+          ? null
+          : {
+              endIndex: Math.min(testState.rangeEndIndex, count - 1),
+              startIndex: Math.min(testState.rangeStartIndex, count - 1),
+            },
+      scrollToIndex: (...args: unknown[]) => {
+        testState.scrollToIndex(...args);
+        if (testState.emitProgrammaticScroll) {
+          getScrollElement()?.dispatchEvent(new Event('scroll', { bubbles: true }));
+        }
+      },
+      scrollToOffset: (...args: unknown[]) => {
+        testState.scrollToOffset(...args);
+        if (testState.emitProgrammaticScroll) {
+          getScrollElement()?.dispatchEvent(new Event('scroll', { bubbles: true }));
+        }
+      },
+    };
+  },
 }));
 
 vi.mock('@utils/message', () => ({
@@ -187,6 +191,7 @@ describe('SubtitleOverview', () => {
     testState.rangeStartIndex = 0;
     testState.viewState = readyState(snapshot);
     testState.virtualIndexes = [0, 1, 2];
+    testState.virtualizerCounts = [];
     testState.sendMessageToTab.mockResolvedValue({
       success: true,
       data: { status: 'played' },
@@ -368,6 +373,58 @@ describe('SubtitleOverview', () => {
 
     expect(container.textContent).toContain('v2_subtitle_overview_following');
     expect(testState.scrollToIndex).toHaveBeenLastCalledWith(1, { align: 'center' });
+  });
+
+  it('renders a truthful empty-search state without an empty scroll surface', () => {
+    act(() => root.render(<SubtitleOverview learningProfile={learningProfile} />));
+
+    act(() => setInputValue(getSearchInput(container), 'no matching subtitle text'));
+
+    expect(container.textContent).toContain('v2_subtitle_overview_count:0/3');
+    expect(container.textContent).toContain('v2_subtitle_overview_time_range:00:01/00:06');
+    expect(container.querySelector("[role='status']")?.textContent).toBe(
+      'v2_subtitle_overview_no_results'
+    );
+    expect(container.querySelectorAll("[data-scroll-owner='subtitle-overview']")).toHaveLength(0);
+    expect(getCueButtons(container)).toHaveLength(0);
+  });
+
+  it('keeps thousands of cues virtualized behind one scroll owner and measures rendered rows', () => {
+    const cueCount = 3_000;
+    const cues = Array.from({ length: cueCount }, (_, sourceIndex) => ({
+      sourceIndex,
+      startTime: sourceIndex,
+      endTime: sourceIndex + 0.75,
+      text:
+        sourceIndex % 2 === 0
+          ? `Short cue ${sourceIndex}`
+          : `Long multilingual cue ${sourceIndex} 한국어 자막 ${'extended text '.repeat(12)}`,
+    }));
+    testState.virtualIndexes = [0, 1_501, 2_999];
+    testState.viewState = readyState({
+      ...snapshot,
+      currentTime: -1,
+      tracks: {
+        ...snapshot.tracks,
+        learning: { ...snapshot.tracks.learning, cues },
+      },
+    });
+
+    act(() => root.render(<SubtitleOverview learningProfile={learningProfile} />));
+
+    expect(testState.virtualizerCounts).toContain(cueCount);
+    expect(container.querySelectorAll("[data-scroll-owner='subtitle-overview']")).toHaveLength(1);
+    expect(container.querySelectorAll('[data-row-key]')).toHaveLength(3);
+    expect(getCueButtons(container).map(({ textContent }) => textContent)).toEqual([
+      expect.stringContaining('Short cue 0'),
+      expect.stringContaining('Long multilingual cue 1501'),
+      expect.stringContaining('Long multilingual cue 2999'),
+    ]);
+    const measuredElements = testState.measureElement.mock.calls
+      .map(([element]) => element)
+      .filter((element): element is HTMLElement => element instanceof HTMLElement);
+    expect(measuredElements).toHaveLength(3);
+    expect(measuredElements.every((element) => element.hasAttribute('data-row-key'))).toBe(true);
   });
 
   it('switches among Together, Learning, and Support and resets the query each time', () => {
