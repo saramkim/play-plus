@@ -14,6 +14,8 @@
 
 이 계약을 바꾸려면 코드부터 수정하지 않는다. Codex의 최신 저장소 조사, ChatGPT의 제품·설계 검토와 사용자의 명시적 승인을 거친 뒤 이 문서와 해당 Issue를 먼저 갱신한다. 단순한 구현 세부사항은 Issue에서 정할 수 있지만, 여기에서 `확정`, `제외` 또는 `연기`한 범위를 하위 작업이 임의로 바꿀 수 없다.
 
+2026-08-14 실제 Coupang Play 조사에서 관찰한 route, runtime과 비공개 API data surface, 신뢰도와 개인정보 경계는 [Coupang Play Content and Runtime Evidence](./coupang-play-content-evidence.md)에 기록한다. 이 시점별 조사 기록은 구현 가능성을 판단하는 근거이며, 비공개 API의 안정성을 보장하거나 이 계약의 `확정`, `제외`, `연기` 범위를 자체적으로 변경하지 않는다.
+
 ## 1. Product North Star
 
 Play Plus 2.0은 Coupang Play를 위한 범용 편의 기능 모음이 아니라 **영상 시청과 문장 복습을 연결하는 언어 학습 도구**다.
@@ -645,6 +647,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - `docs/manual-smoke-test.md`를 2.0 계약에 맞게 먼저 갱신하고 rebuilt production `dist`를 실제 action으로 연 Chrome Extension Pages Side Panel에서 검증한다. 일반 extension tab은 증거가 아니다.
 - 깨끗한 전용 profile의 fresh install/readiness와, signed-in actual v1.11.0 전용 profile에서 대표 public data를 만든 뒤 같은 extension identity와 stable unpacked path로 수행하는 2.0 upgrade/readback을 각각 직접 확인한다. 자동 테스트는 이 두 smoke를 대신하지 않는다.
 - signed-in supported Coupang Play route에서 extension install/reload, active-tab 통신, DRM/player 접근, native와 registered learning/support source, platform-caption 비간섭과 기존 네 destination을 확인한다.
+- 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
 - 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
