@@ -244,6 +244,10 @@ export function ListeningMission({
         setPlaybackStatus('error');
         return;
       }
+      if (result.status === 'suspended') {
+        setPlaybackStatus('idle');
+        return;
+      }
       invalidate(result.status, 'restore-start');
     },
     [controller, invalidate]

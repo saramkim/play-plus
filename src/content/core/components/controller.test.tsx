@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { useVideoControlStore } from '@/content/features/video/video-controller';
+import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 import { Controller } from './controller';
 
@@ -18,6 +19,7 @@ describe('Controller', () => {
 
   beforeEach(() => {
     useListeningMissionActiveStore.getState().setActive(false);
+    usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
     useVideoControlStore.getState().reset();
     useVideoControlStore.getState().setSettings({
       playbackSpeed: structuredClone(DEFAULT_V2_SYNC_STORAGE.playbackSpeed),
@@ -75,3 +77,17 @@ describe('Controller', () => {
     expect(container.querySelector('button')).not.toBeNull();
   });
 });
+
+const SUPPORTED_PLAYBACK_CONTEXT = {
+  contentEpoch: 1,
+  contentInstanceId: 'content-test',
+  learningAvailable: true,
+  lifecycle: 'content',
+  mediaAttachmentRevision: 1,
+  missionResumeRequired: false,
+  routeChangedAt: 1,
+  routeKind: 'episode',
+  subtitleIdentity: { learning: 'native:en', subtitleRevision: 1, support: null },
+  videoId: 'video-test',
+  videoRevision: 1,
+} as const;

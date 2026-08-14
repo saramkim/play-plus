@@ -58,6 +58,7 @@ describe('Listening Learning production flow', () => {
     });
     useTabStore.setState({
       activeTab: { id: 17 } as chrome.tabs.Tab,
+      playbackContext: PLAYBACK_CONTEXT,
       tabInfo: { connectionStatus: 'connected', videoStatus: 'detected' },
     });
     SETTINGS_STORE.setState({
@@ -595,6 +596,63 @@ describe('Listening Learning production flow', () => {
     expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 
+  it('keeps the mission hidden through an ad and requires explicit same-content resume', async () => {
+    await startReadyMission();
+    const interrupted = {
+      ...PLAYBACK_CONTEXT,
+      learningAvailable: false,
+      lifecycle: 'advertisement' as const,
+      mediaAttachmentRevision: PLAYBACK_CONTEXT.videoRevision + 1,
+      missionResumeRequired: true,
+      videoRevision: PLAYBACK_CONTEXT.videoRevision + 1,
+    };
+
+    await act(async () => {
+      useTabStore.setState({ playbackContext: interrupted });
+      useTabStore.setState({ playbackContext: interrupted });
+      await flush();
+    });
+    expect(container.textContent).toContain('v2_listening_advertisement_title');
+    expect(
+      container
+        .querySelector("[data-testid='active-mission']")
+        ?.parentElement?.hasAttribute('inert')
+    ).toBe(true);
+    expect(controller.resumeAfterAdvertisement).not.toHaveBeenCalled();
+
+    await act(async () => {
+      useTabStore.setState({
+        playbackContext: {
+          ...interrupted,
+          learningAvailable: true,
+          lifecycle: 'content',
+          mediaAttachmentRevision: interrupted.videoRevision + 1,
+          videoRevision: interrupted.videoRevision + 1,
+        },
+      });
+      await flush();
+    });
+    expect(container.textContent).toContain('v2_listening_advertisement_returned_title');
+    await act(async () => getButton('v2_listening_advertisement_continue').click());
+    expect(controller.resumeAfterAdvertisement).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      useTabStore.setState({
+        playbackContext: {
+          ...PLAYBACK_CONTEXT,
+          mediaAttachmentRevision: PLAYBACK_CONTEXT.videoRevision + 2,
+          videoRevision: PLAYBACK_CONTEXT.videoRevision + 2,
+        },
+      });
+      await flush();
+    });
+    expect(
+      container
+        .querySelector("[data-testid='active-mission']")
+        ?.parentElement?.hasAttribute('inert')
+    ).toBe(false);
+  });
+
   it.each([320, 360, 390])('keeps one idle scroll owner at %ipx', async (width) => {
     container.style.width = `${width}px`;
     await renderFlow();
@@ -636,6 +694,7 @@ const createController = (): ListeningSessionController => ({
   dispose: vi.fn().mockResolvedValue(undefined),
   endSession: vi.fn().mockResolvedValue({ status: 'ended' }),
   playSegment: vi.fn().mockResolvedValue({ status: 'played' }),
+  resumeAfterAdvertisement: vi.fn().mockResolvedValue('resumed'),
   saveDifficultSegments: vi.fn().mockResolvedValue({ retryableFailures: [], saved: [] }),
   sessionId: 'session-a',
   startHeartbeat: vi.fn(),
@@ -649,6 +708,7 @@ const SEGMENT_KEYS = Array.from({ length: 12 }, (_, index) =>
 const CATALOG = {
   currentTime: 5.1,
   identity: {
+    contentEpoch: 1,
     contentInstanceId: 'content-a',
     routeChangedAt: 1,
     videoId: 'video-a',
@@ -665,6 +725,20 @@ const CATALOG = {
   subtitleRevision: 3,
   supportAvailable: true,
   videoId: 'video-a',
+} as const;
+
+const PLAYBACK_CONTEXT = {
+  ...CATALOG.identity,
+  learningAvailable: true,
+  lifecycle: 'content',
+  mediaAttachmentRevision: CATALOG.identity.videoRevision,
+  missionResumeRequired: false,
+  routeKind: 'episode',
+  subtitleIdentity: {
+    learning: CATALOG.sourceKey,
+    subtitleRevision: CATALOG.subtitleRevision,
+    support: 'native:ko',
+  },
 } as const;
 
 const READY_SESSION = {

@@ -25,7 +25,27 @@ const defaultDependencies: ViewVideoDependencies = {
   enqueueViewAction,
   getVideoId: getCoupangPlayVideoId,
   playVideo: async (tabId, startTime) => {
-    await sendMessageToTab(tabId, 'playVideo', { startTime });
+    const ping = await sendMessageToTab(tabId, 'pingContent');
+    if (!ping.success || !ping.data.learningAvailable) return;
+    const {
+      contentEpoch,
+      contentInstanceId,
+      routeChangedAt,
+      subtitleIdentity,
+      videoId,
+      videoRevision,
+    } = ping.data;
+    await sendMessageToTab(tabId, 'playVideo', {
+      expectedIdentity: {
+        contentEpoch,
+        contentInstanceId,
+        routeChangedAt,
+        videoId,
+        videoRevision,
+      },
+      expectedSubtitleRevision: subtitleIdentity.subtitleRevision,
+      startTime,
+    });
   },
   queryTabs: () => chrome.tabs.query({}),
 };

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
 import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
+import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 import { initializeSubtitleSync, syncSubtitles } from './subtitle';
 import { useSubtitleStore } from './subtitle-store';
@@ -14,6 +15,7 @@ describe('canonical subtitle presentation', () => {
   beforeEach(() => {
     useSubtitleStore.getState().clearCaches();
     useListeningMissionActiveStore.getState().setActive(false);
+    usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
     useSubtitleStore.getState().setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
     useVideoStore.setState({ currentTime: 0 });
     elementStore.getSubtitleElement('learning').textContent = '';
@@ -137,3 +139,17 @@ describe('canonical subtitle presentation', () => {
     expect(chrome.storage.sync.onChanged.removeListener).toHaveBeenCalledOnce();
   });
 });
+
+const SUPPORTED_PLAYBACK_CONTEXT = {
+  contentEpoch: 1,
+  contentInstanceId: 'content-test',
+  learningAvailable: true,
+  lifecycle: 'content',
+  mediaAttachmentRevision: 1,
+  missionResumeRequired: false,
+  routeChangedAt: 1,
+  routeKind: 'episode',
+  subtitleIdentity: { learning: 'native:en', subtitleRevision: 1, support: null },
+  videoId: 'video-test',
+  videoRevision: 1,
+} as const;

@@ -8,6 +8,7 @@ import type {
   OpenSubtitlesSearchQuery,
   OpenSubtitlesSearchResult,
 } from '@utils/opensubtitles/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 
 import type {
   ListeningSegmentKey,
@@ -18,6 +19,7 @@ import type { EndSessionResult, PlaySegmentResult } from '@/listening/session/mi
 export type SubtitleRole = 'learning' | 'support';
 
 export type ContentVideoIdentity = {
+  contentEpoch: number;
   contentInstanceId: string;
   routeChangedAt: number;
   videoId: string | null;
@@ -161,6 +163,14 @@ export type HeartbeatListeningSessionResponse =
   | { status: 'alive' }
   | { status: 'stale' | 'no-video' | 'segment-unavailable' | 'error' };
 
+export type ResumeListeningSessionAfterAdvertisementResponse =
+  | {
+      status: 'resumed';
+      identity: ContentVideoIdentity;
+      subtitleRevision: number;
+    }
+  | { status: 'stale' | 'no-video' | 'segment-unavailable' | 'error' };
+
 export type PlayListeningSegmentResponse = PlaySegmentResult;
 
 export type SaveListeningSegmentResponse =
@@ -183,6 +193,7 @@ export type MessageSchema = {
   detectVideo: void;
   fetchVideoMetadata: {
     params: {
+      expectedIdentity: ContentVideoIdentity;
       requestId: string;
       videoId: string | null;
       url: string;
@@ -192,7 +203,7 @@ export type MessageSchema = {
   playVideo: {
     params: {
       startTime: number;
-      expectedIdentity?: ContentVideoIdentity;
+      expectedIdentity: ContentVideoIdentity;
       expectedSubtitleRevision?: number;
     };
     response: PlayVideoResponse;
@@ -239,6 +250,14 @@ export type MessageSchema = {
     };
     response: HeartbeatListeningSessionResponse;
   };
+  resumeListeningSessionAfterAdvertisement: {
+    params: {
+      sessionId: string;
+      expectedIdentity: ContentVideoIdentity;
+      expectedSubtitleRevision: number;
+    };
+    response: ResumeListeningSessionAfterAdvertisementResponse;
+  };
   playListeningSegment: {
     params: {
       sessionId: string;
@@ -262,19 +281,22 @@ export type MessageSchema = {
     response: EndListeningSessionResponse;
   };
   pingContent: {
-    response: ContentVideoIdentity & {
+    response: PlaybackContextStatus & {
       hasVideo: boolean;
     };
   };
   contentStatus: {
-    params: {
-      contentInstanceId: string;
+    params: PlaybackContextStatus & {
       hasVideo: boolean;
       isVideoUrl: boolean;
-      routeChangedAt: number;
-      videoId: string | null;
-      videoRevision: number;
     };
+  };
+  getPlaybackContext: {
+    params: { tabId: number };
+    response: PlaybackContextStatus | null;
+  };
+  playbackContextChanged: {
+    params: { status: PlaybackContextStatus | null; tabId: number };
   };
   searchOpenSubtitles: {
     params: OpenSubtitlesSearchQuery;

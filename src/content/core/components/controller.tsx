@@ -20,12 +20,16 @@ import { useListeningMissionActiveStore } from '@/content/features/listening-ses
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { useVideoControlStore, videoController } from '@/content/features/video/video-controller';
+import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 const BUTTON_SIZE = 40;
 
 export function Controller({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const missionActive = useListeningMissionActiveStore((state) => state.active);
+  const learningAvailable = usePlaybackContextStore(
+    (state) => state.status?.learningAvailable === true
+  );
   const playbackSpeed = useVideoControlStore((state) => state.playbackSpeed);
   const ready = useVideoControlStore((state) => state.ready);
   const supportLanguage = useSubtitleStore((state) => state.learningProfile.supportLanguage);
@@ -58,7 +62,7 @@ export function Controller({ className }: { className?: string }) {
       : []),
   ], [playbackSpeed.enabled, speed.decreaseSpeed, speed.increaseSpeed, speed.resetSpeed, supportLanguage, supportVisibility]);
 
-  if (!ready || missionActive) return null;
+  if (!ready || missionActive || !learningAvailable) return null;
   return (
     <div className={cn('absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-lg bg-black/50 shadow-lg transition-all hover:bg-black/80 pointer-events-auto', className)}>
       {isExpanded && buttons.map((button) => <IconButton key={button.title} {...button} />)}

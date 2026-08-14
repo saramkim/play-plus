@@ -13,7 +13,11 @@ import { useListeningMissionActiveStore } from '@/content/features/listening-ses
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 
 import { coupangStrategy } from './coupang-play';
-import { createVideoLifecycleHandler, initializeMessageListener } from './message-handler';
+import {
+  createVideoLifecycleHandler,
+  initializeMessageListener,
+  playbackContextController,
+} from './message-handler';
 import { VideoLifecycleEvent } from './video-lifecycle/video-lifecycle-monitor';
 
 vi.mock('@storage/registered-subtitle', () => ({ getRegisteredSubtitles: vi.fn() }));
@@ -31,9 +35,10 @@ const SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000001';
 const SECOND_SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000002';
 
 const createNativeRequest = (requestId = 'request-1', videoId: string | null = VIDEO_ID) => ({
+  expectedIdentity: playbackContextController.createIdentity(),
   requestId,
   videoId,
-  url: 'https://synthetic.test/playback',
+  url: 'https://synthetic.test/playback?titleType=EPISODE',
   headers: [] as chrome.webRequest.HttpHeader[],
 });
 
@@ -85,7 +90,12 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.setVideo).toHaveBeenCalledOnce();
     expect(dependencies.setupContainer).toHaveBeenCalledOnce();
     expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('detected');
-    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(true, 1, VIDEO_ID);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(
+      true,
+      'content',
+      1,
+      VIDEO_ID
+    );
   });
 
   it.each(['advertisement', 'placeholder', 'waiting', 'transitioning'] as const)(
@@ -101,11 +111,15 @@ describe('canonical video lifecycle handler', () => {
 
       expect(getCurrentVideo()).toBeNull();
       expect(dependencies.clearVideo).toHaveBeenCalledOnce();
-      expect(dependencies.clearNativeCues).toHaveBeenCalledOnce();
+      if (state === 'advertisement' || state === 'transitioning') {
+        expect(dependencies.clearNativeCues).not.toHaveBeenCalled();
+      } else {
+        expect(dependencies.clearNativeCues).toHaveBeenCalledOnce();
+      }
       expect(dependencies.resetElements).toHaveBeenCalledOnce();
       expect(dependencies.setCurrentTime).toHaveBeenCalledWith(0);
       expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('detecting');
-      expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, 1, null);
+      expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, state, 2, null);
     }
   );
 
@@ -118,7 +132,7 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.clearVideo).not.toHaveBeenCalled();
     expect(dependencies.resetElements).not.toHaveBeenCalled();
     expect(dependencies.setDetectionStatus).toHaveBeenLastCalledWith('failed');
-    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, 0, null);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(false, 'waiting', 0, null);
   });
 
   it('clears native cues when Coupang replaces one content video directly', () => {
@@ -136,7 +150,12 @@ describe('canonical video lifecycle handler', () => {
     expect(dependencies.resetElements).toHaveBeenCalledOnce();
     expect(dependencies.setCurrentTime).toHaveBeenCalledWith(0);
     expect(dependencies.setVideo).toHaveBeenCalledTimes(2);
-    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(true, 2, VIDEO_ID);
+    expect(dependencies.reportContentStatus).toHaveBeenLastCalledWith(
+      true,
+      'content',
+      2,
+      VIDEO_ID
+    );
   });
 });
 
@@ -148,6 +167,8 @@ describe('canonical content messages', () => {
     vi.mocked(getRegisteredSubtitles).mockReset().mockResolvedValue([]);
     vi.mocked(getLocalSubtitle).mockReset();
     vi.mocked(getCoupangPlayVideoId).mockReset().mockReturnValue(VIDEO_ID);
+    window.history.replaceState(null, '', `/play/${VIDEO_ID}/episode`);
+    playbackContextController.reset(window.location.href);
     vi.mocked(coupangStrategy.fetchSubtitles).mockReset().mockResolvedValue([]);
     vi.mocked(sendMessage).mockReset().mockResolvedValue({ success: true, data: {} } as never);
     const store = useSubtitleStore.getState();
@@ -163,9 +184,20 @@ describe('canonical content messages', () => {
     expect(request.sendResponse).toHaveBeenCalledWith({
       success: true,
       data: {
+        contentEpoch: 1,
         contentInstanceId: expect.any(String),
         hasVideo: false,
+        learningAvailable: false,
+        lifecycle: 'waiting',
+        mediaAttachmentRevision: 0,
+        missionResumeRequired: false,
         routeChangedAt: expect.any(Number),
+        routeKind: 'unknown',
+        subtitleIdentity: {
+          learning: null,
+          subtitleRevision: expect.any(Number),
+          support: null,
+        },
         videoId: VIDEO_ID,
         videoRevision: 0,
       },
@@ -187,7 +219,7 @@ describe('canonical content messages', () => {
     const overview = dispatch('getSubtitleOverview', undefined);
     const time = dispatch('getVideoTime', undefined);
     const pingData = ping.sendResponse.mock.calls[0][0].data;
-    const { hasVideo, ...identity } = pingData;
+    const { hasVideo, identity } = readPing(pingData);
 
     expect(video.currentTime).toBe(12.345);
     expect(hasVideo).toBe(true);
@@ -329,7 +361,7 @@ describe('canonical content messages', () => {
     });
     expect(playWithoutVideo.sendResponse).toHaveBeenCalledWith({
       success: true,
-      data: { status: 'no-video' },
+      data: { status: 'stale' },
     });
 
     attachVideo(1);
@@ -338,6 +370,7 @@ describe('canonical content messages', () => {
       learningProfile: { learningLanguage: 'en', supportLanguage: null },
       subtitleDisplay: state.subtitleDisplay,
     });
+    state.setNativeCues('en', [{ start: 0, end: 1, text: 'Learning only' }]);
     const { dispatch: dispatchWithVideo } = createMessageHarness();
     const overview = dispatchWithVideo('getSubtitleOverview', undefined);
 
@@ -353,7 +386,14 @@ describe('canonical content messages', () => {
             role: 'learning',
             language: 'en',
             source: { kind: 'native', language: 'en' },
-            cues: [],
+            cues: [
+              {
+                endTime: 1,
+                sourceIndex: 0,
+                startTime: 0,
+                text: 'Learning only',
+              },
+            ],
           },
           support: null,
         },
@@ -369,7 +409,9 @@ describe('canonical content messages', () => {
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...videoAIdentity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity: videoAIdentity } = readPing(
+      ping.sendResponse.mock.calls[0][0].data
+    );
 
     expect(hasVideo).toBe(true);
     expect(videoAIdentity.videoId).toBe(VIDEO_ID);
@@ -407,7 +449,7 @@ describe('canonical content messages', () => {
       success: true,
       data: { status: 'stale' },
     });
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalledWith('addLearningCard', expect.anything());
   });
 
   it('saves the exact learning source index without seeking and reports aligned support', async () => {
@@ -422,7 +464,7 @@ describe('canonical content messages', () => {
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
     const overview = dispatch('getSubtitleOverview', undefined);
 
     const request = dispatch('saveSubtitleOverviewCue', {
@@ -467,7 +509,7 @@ describe('canonical content messages', () => {
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
 
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
@@ -502,7 +544,7 @@ describe('canonical content messages', () => {
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
 
     const overview = dispatch('getSubtitleOverview', undefined);
     const request = dispatch('saveSubtitleOverviewCue', {
@@ -535,7 +577,7 @@ describe('canonical content messages', () => {
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
 
     const staleIdentity = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: { ...identity, videoRevision: identity.videoRevision + 1 },
@@ -584,7 +626,7 @@ describe('canonical content messages', () => {
         data: { status: 'stale' },
       });
     }
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalledWith('addLearningCard', expect.anything());
   });
 
   it('rejects invalid, missing, and empty learning source indices', async () => {
@@ -609,13 +651,13 @@ describe('canonical content messages', () => {
         data: { status: 'cue-unavailable' },
       });
     }
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalledWith('addLearningCard', expect.anything());
   });
 
   it('returns no-video before building or storing a card', async () => {
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
 
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
@@ -626,9 +668,9 @@ describe('canonical content messages', () => {
     expect(hasVideo).toBe(false);
     await expectResponse(request.sendResponse, {
       success: true,
-      data: { status: 'no-video' },
+      data: { status: 'stale' },
     });
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalledWith('addLearningCard', expect.anything());
   });
 
   it('reports storage failures without leaving the save coordinator locked', async () => {
@@ -687,14 +729,16 @@ describe('canonical content messages', () => {
       success: true,
       data: { status: 'saved-learning-only' },
     });
-    expect(sendMessage).toHaveBeenCalledOnce();
+    expect(
+      vi.mocked(sendMessage).mock.calls.filter(([message]) => message === 'addLearningCard')
+    ).toHaveLength(1);
   });
 
-  it('rejects stale guarded seeks and keeps legacy callers working', () => {
+  it('rejects stale guarded seeks and callers without an epoch identity', () => {
     const video = attachVideo(10);
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
 
     expect(hasVideo).toBe(true);
@@ -736,16 +780,19 @@ describe('canonical content messages', () => {
     const legacy = dispatch('playVideo', { startTime: 40 });
     expect(legacy.sendResponse).toHaveBeenCalledWith({
       success: true,
-      data: { status: 'played' },
+      data: { status: 'stale' },
     });
-    expect(video.currentTime).toBe(40);
+    expect(video.currentTime).toBe(35);
   });
 
   it('rechecks guarded deferred seeks before canplay changes the captured video time', () => {
     const capturedVideo = attachVideo(10, 0);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: 'Deferred cue' },
+    ]);
     const { dispatch } = createMessageHarness();
     const ping = dispatch('pingContent', undefined);
-    const { hasVideo, ...identity } = ping.sendResponse.mock.calls[0][0].data;
+    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
 
     expect(hasVideo).toBe(true);
@@ -767,10 +814,13 @@ describe('canonical content messages', () => {
 
     videoManager.clear();
     const revisionVideo = attachVideo(11, 0);
+    const { identity: revisionIdentity } = readPing(
+      dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data
+    );
     const currentRevision = useSubtitleStore.getState().subtitleRevision;
     const pendingRevision = dispatch('playVideo', {
       startTime: 30,
-      expectedIdentity: identity,
+      expectedIdentity: revisionIdentity,
       expectedSubtitleRevision: currentRevision,
     });
     expect(pendingRevision.sendResponse).toHaveBeenCalledWith({
@@ -783,17 +833,32 @@ describe('canonical content messages', () => {
     expect(revisionVideo.currentTime).toBe(11);
   });
 
-  it('keeps legacy and deferred seeks inert while a Listening Mission owns media', () => {
+  it('keeps a guarded deferred seek inert while a Listening Mission owns media', () => {
     const video = attachVideo(10, 0);
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: 'Mission cue' },
+    ]);
     const { dispatch } = createMessageHarness();
-    const deferred = dispatch('playVideo', { startTime: 20 });
+    const { identity } = readPing(
+      dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data
+    );
+    const expectedSubtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const deferred = dispatch('playVideo', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision,
+      startTime: 20,
+    });
     expect(deferred.sendResponse).toHaveBeenCalledWith({
       success: true,
       data: { status: 'played' },
     });
 
     useListeningMissionActiveStore.getState().setActive(true);
-    const blocked = dispatch('playVideo', { startTime: 30 });
+    const blocked = dispatch('playVideo', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision,
+      startTime: 30,
+    });
     expect(blocked.sendResponse).toHaveBeenCalledWith({
       success: true,
       data: { status: 'stale' },
@@ -824,6 +889,22 @@ describe('canonical content messages', () => {
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual(expectedCache);
+  });
+
+  it('preserves subtitle revision when the same native replay returns after an advertisement', async () => {
+    const cues = [{ start: 0, end: 1, text: 'Same synthetic cue', settings: ['line:0'] }];
+    useSubtitleStore.getState().setNativeCues('en', cues);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
+      { lang: 'en', subtitleData: cues },
+    ]);
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(subtitleRevision);
   });
 
   it('fails native acquisition without retaining a partial cache when a supported body is invalid', async () => {
@@ -982,6 +1063,7 @@ describe('canonical content messages', () => {
     const coordinator = createListeningSessionCoordinatorMock();
     const { dispatch, dispose } = createMessageHarness(coordinator);
     const identity = {
+      contentEpoch: 1,
       contentInstanceId: 'content-listening',
       routeChangedAt: 1,
       videoId: VIDEO_ID,
@@ -1110,8 +1192,11 @@ const createListeningSessionCoordinatorMock = (): ListeningSessionCoordinator =>
   dispose: vi.fn(),
   end: vi.fn(async () => ({ status: 'already-ended' as const })),
   getCatalog: vi.fn(async () => ({ status: 'no-video' as const })),
+  handlePlaybackContextChange: vi.fn(),
   heartbeat: vi.fn(async () => ({ status: 'alive' as const })),
+  isAdvertisementResumeRequired: vi.fn(() => false),
   play: vi.fn(async () => ({ status: 'played' as const })),
+  resumeAfterAdvertisement: vi.fn(async () => ({ status: 'stale' as const })),
   save: vi.fn(async () => ({ status: 'busy' as const })),
 });
 
@@ -1144,5 +1229,33 @@ const attachVideo = (currentTime: number, readyState = 4) => {
   video.cancelVideoFrameCallback = vi.fn();
   document.body.append(video);
   videoManager.set(video);
+  playbackContextController.observeLifecycle({
+    lifecycle: 'content',
+    url: window.location.href,
+    videoId: VIDEO_ID,
+    videoRevision: playbackContextController.createIdentity().videoRevision + 1,
+  });
+  playbackContextController.observePlaybackEvidence({
+    expectedIdentity: playbackContextController.createIdentity(),
+    playbackUrl: 'https://synthetic.test/playback?titleType=EPISODE',
+  });
   return video;
 };
+
+const readPing = (data: {
+  contentEpoch: number;
+  contentInstanceId: string;
+  hasVideo: boolean;
+  routeChangedAt: number;
+  videoId: string | null;
+  videoRevision: number;
+}) => ({
+  hasVideo: data.hasVideo,
+  identity: {
+    contentEpoch: data.contentEpoch,
+    contentInstanceId: data.contentInstanceId,
+    routeChangedAt: data.routeChangedAt,
+    videoId: data.videoId,
+    videoRevision: data.videoRevision,
+  },
+});

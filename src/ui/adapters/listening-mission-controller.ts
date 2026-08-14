@@ -36,6 +36,7 @@ type DirectListeningMessage =
   | 'getListeningCatalog'
   | 'heartbeatListeningSession'
   | 'playListeningSegment'
+  | 'resumeListeningSessionAfterAdvertisement'
   | 'saveListeningSegment';
 
 type RuntimeListeningMessage =
@@ -74,6 +75,7 @@ export type ListeningSessionFatalReason = ListeningTerminalReason | 'error';
 export interface ListeningSessionController extends ListeningMissionController {
   dispose: () => Promise<void>;
   sessionId: string;
+  resumeAfterAdvertisement: () => Promise<'resumed' | ListeningSessionFatalReason | 'error'>;
   startHeartbeat: () => void;
   stopHeartbeat: () => void;
 }
@@ -105,6 +107,7 @@ export const LISTENING_HEARTBEAT_INTERVAL_MS = 5_000;
 const finiteNumberSchema = z.number().finite();
 const contentVideoIdentitySchema = z
   .object({
+    contentEpoch: nonnegativeSafeIntegerSchema,
     contentInstanceId: z.string().min(1),
     routeChangedAt: finiteNumberSchema,
     videoId: z.string().min(1).nullable(),
@@ -227,8 +230,20 @@ const heartbeatListeningSessionResponseSchema = z
   .object({ status: z.enum(['alive', 'stale', 'no-video', 'segment-unavailable', 'error']) })
   .strict();
 const playListeningSegmentResponseSchema = z
-  .object({ status: z.enum(['played', 'stale', 'no-video', 'segment-unavailable', 'error']) })
+  .object({ status: z.enum(['played', 'suspended', 'stale', 'no-video', 'segment-unavailable', 'error']) })
   .strict();
+const resumeListeningSessionAfterAdvertisementResponseSchema = z.union([
+  z
+    .object({
+      identity: contentVideoIdentitySchema,
+      status: z.literal('resumed'),
+      subtitleRevision: nonnegativeSafeIntegerSchema,
+    })
+    .strict(),
+  z
+    .object({ status: z.enum(['stale', 'no-video', 'segment-unavailable', 'error']) })
+    .strict(),
+]);
 const saveListeningSegmentResponseSchema = z
   .object({
     status: z.enum([
@@ -343,6 +358,8 @@ export const createListeningSessionController = ({
   subtitleRevision: number;
   tabId: number;
 }): ListeningSessionController => {
+  let currentIdentity = identity;
+  let currentSubtitleRevision = subtitleRevision;
   let disposed = false;
   let disposeRequest: Promise<void> | undefined;
   let endCompleted = false;
@@ -370,8 +387,8 @@ export const createListeningSessionController = ({
   const heartbeat = async (generation: number) => {
     try {
       const response = await sendTabMessage(tabId, 'heartbeatListeningSession', {
-        expectedIdentity: identity,
-        expectedSubtitleRevision: subtitleRevision,
+        expectedIdentity: currentIdentity,
+        expectedSubtitleRevision: currentSubtitleRevision,
         sessionId,
       });
       if (generation !== heartbeatGeneration || endCompleted) return;
@@ -392,6 +409,31 @@ export const createListeningSessionController = ({
     if (disposed || heartbeatTimer !== undefined || endCompleted) return;
     const generation = ++heartbeatGeneration;
     heartbeatTimer = setInterval(() => void heartbeat(generation), LISTENING_HEARTBEAT_INTERVAL_MS);
+  };
+
+  const resumeAfterAdvertisement = async () => {
+    if (disposed || endCompleted || fatalReported) return 'stale' as const;
+    try {
+      const response = await sendTabMessage(
+        tabId,
+        'resumeListeningSessionAfterAdvertisement',
+        {
+          expectedIdentity: currentIdentity,
+          expectedSubtitleRevision: currentSubtitleRevision,
+          sessionId,
+        }
+      );
+      const parsed = response.success
+        ? resumeListeningSessionAfterAdvertisementResponseSchema.safeParse(response.data)
+        : undefined;
+      if (!parsed?.success) return 'error' as const;
+      if (parsed.data.status !== 'resumed') return parsed.data.status;
+      currentIdentity = parsed.data.identity;
+      currentSubtitleRevision = parsed.data.subtitleRevision;
+      return 'resumed' as const;
+    } catch {
+      return 'error' as const;
+    }
   };
 
   const playSegment = async (segmentKey: string, rate: 1 | 0.75): Promise<PlaySegmentResult> => {
@@ -561,6 +603,7 @@ export const createListeningSessionController = ({
     playSegment,
     saveDifficultSegments,
     sessionId,
+    resumeAfterAdvertisement,
     startHeartbeat,
     stopHeartbeat,
   };

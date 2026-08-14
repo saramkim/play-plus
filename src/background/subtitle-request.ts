@@ -1,7 +1,8 @@
 import type { SubtitleReplayRequest } from '@storage/session-type';
 import { COUPANG_PLAY_SUBTITLE_API_URL } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
-import type { MessageResponse } from '@utils/message';
+import type { AsyncMessageResponse, MessageResponse } from '@utils/message';
+import type { ContentVideoIdentity } from '@utils/message/type';
 
 import {
   clearSubtitleReplayRequest,
@@ -11,13 +12,31 @@ import {
 
 type SubtitleRequestReplayDependencies = {
   clearReplay: typeof clearSubtitleReplayRequest;
-  deliver: (tabId: number, payload: SubtitleReplayRequest) => Promise<MessageResponse<'fetchVideoMetadata'>>;
+  deliver: (
+    tabId: number,
+    payload: SubtitleReplayRequest & { expectedIdentity: ContentVideoIdentity }
+  ) => Promise<MessageResponse<'fetchVideoMetadata'>>;
   getReplay: typeof getSubtitleReplayRequest;
-  pingContent: (tabId: number) => Promise<MessageResponse<'pingContent'>>;
+  pingContent: (
+    tabId: number
+  ) => Promise<
+    AsyncMessageResponse<
+      Pick<
+        NormalizedContentStatus,
+        | 'contentEpoch'
+        | 'contentInstanceId'
+        | 'hasVideo'
+        | 'routeChangedAt'
+        | 'videoId'
+        | 'videoRevision'
+      >
+    >
+  >;
   saveReplay: typeof saveSubtitleReplayRequest;
 };
 
 type ContentStatus = {
+  contentEpoch?: number;
   contentInstanceId?: string;
   documentId?: string | null;
   hasVideo: boolean;
@@ -28,6 +47,7 @@ type ContentStatus = {
 };
 
 type NormalizedContentStatus = ContentStatus & {
+  contentEpoch: number;
   contentInstanceId: string;
   documentId: string | null;
   routeChangedAt: number;
@@ -35,7 +55,12 @@ type NormalizedContentStatus = ContentStatus & {
 
 type DetectedContent = Pick<
   NormalizedContentStatus,
-  'contentInstanceId' | 'documentId' | 'routeChangedAt' | 'videoId' | 'videoRevision'
+  | 'contentEpoch'
+  | 'contentInstanceId'
+  | 'documentId'
+  | 'routeChangedAt'
+  | 'videoId'
+  | 'videoRevision'
 >;
 type ContentSnapshot = DetectedContent &
   Pick<NormalizedContentStatus, 'hasVideo' | 'isVideoUrl'>;
@@ -56,6 +81,7 @@ export const createSubtitleRequestReplayController = (
   dependencies: SubtitleRequestReplayDependencies
 ) => {
   const captureRevisions = new Map<number, number>();
+  const contentEpochs = new Map<number, number>();
   const contentInstanceIds = new Map<number, string>();
   const contentStates = new Map<number, DetectedContent>();
   const deliveredStates = new Map<
@@ -102,10 +128,12 @@ export const createSubtitleRequestReplayController = (
     const routeChanged =
       routeVideoIds.has(tabId) && routeVideoIds.get(tabId) !== snapshot.videoId;
     const instanceChanged = contentInstanceIds.get(tabId) !== snapshot.contentInstanceId;
+    const epochChanged = contentEpochs.get(tabId) !== snapshot.contentEpoch;
     routeVideoIds.set(tabId, snapshot.videoId);
     latestRouteChangedAt.set(tabId, snapshot.routeChangedAt);
     if (routeChanged) advanceOwnership(ownershipRevisions, tabId);
-    if (routeChanged || instanceChanged) {
+    if (routeChanged || instanceChanged || epochChanged) {
+      contentEpochs.set(tabId, snapshot.contentEpoch);
       contentInstanceIds.set(tabId, snapshot.contentInstanceId);
       resetDetectedContent(tabId);
     }
@@ -248,6 +276,7 @@ export const createSubtitleRequestReplayController = (
       tabId,
       {
         ...status,
+        contentEpoch: status.contentEpoch ?? 0,
         contentInstanceId: status.contentInstanceId ?? 'unknown-content-instance',
         documentId: status.documentId ?? null,
         routeChangedAt: status.routeChangedAt ?? 0,
@@ -350,6 +379,7 @@ export const createSubtitleRequestReplayController = (
       }
     }
     contentStates.set(tabId, {
+      contentEpoch: status.contentEpoch,
       contentInstanceId: status.contentInstanceId,
       documentId: status.documentId,
       routeChangedAt: status.routeChangedAt,
@@ -375,6 +405,7 @@ export const createSubtitleRequestReplayController = (
     if (routeVideoIds.has(tabId) && routeVideoIds.get(tabId) === nextVideoId) return;
 
     latestRouteChangedAt.delete(tabId);
+    contentEpochs.delete(tabId);
     contentInstanceIds.delete(tabId);
     routeVideoIds.set(tabId, nextVideoId);
     const ownershipRevision = advanceOwnership(ownershipRevisions, tabId);
@@ -401,6 +432,7 @@ export const createSubtitleRequestReplayController = (
 
   const clear = async (tabId: number) => {
     latestRouteChangedAt.delete(tabId);
+    contentEpochs.delete(tabId);
     contentInstanceIds.delete(tabId);
     routeVideoIds.set(tabId, null);
     const ownershipRevision = advanceOwnership(ownershipRevisions, tabId);
@@ -456,12 +488,21 @@ export const createSubtitleRequestReplayController = (
       ) {
         return;
       }
-      const deliveryKey = `${replay.requestId}:${content.contentInstanceId}:${content.videoRevision}`;
+      const deliveryKey = `${replay.requestId}:${content.contentInstanceId}:${content.contentEpoch}:${content.videoRevision}`;
       if (deliveryKey === attemptedDelivery) return;
       attemptedDelivery = deliveryKey;
 
       try {
-        const response = await dependencies.deliver(tabId, replay);
+        const response = await dependencies.deliver(tabId, {
+          ...replay,
+          expectedIdentity: {
+            contentEpoch: content.contentEpoch,
+            contentInstanceId: content.contentInstanceId,
+            routeChangedAt: content.routeChangedAt,
+            videoId: content.videoId,
+            videoRevision: content.videoRevision,
+          },
+        });
         if (!response.success) {
           if (await hasNewerFlushState(tabId, replay, content, generation)) continue;
           return;
@@ -549,6 +590,7 @@ const getContentSnapshot = async (
     return response.success
       ? {
           contentInstanceId: response.data.contentInstanceId,
+          contentEpoch: response.data.contentEpoch,
           documentId: null,
           hasVideo: response.data.hasVideo,
           isVideoUrl: response.data.videoId !== null,

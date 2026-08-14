@@ -6,7 +6,7 @@ export type ListeningTerminalReason = 'stale' | 'no-video' | 'segment-unavailabl
 
 export type PlaySegmentResult =
   | { status: 'played' }
-  | { status: ListeningTerminalReason | 'error' };
+  | { status: ListeningTerminalReason | 'error' | 'suspended' };
 
 export type CommitProgressResult = { status: 'saved' } | { status: 'error' };
 

@@ -10,6 +10,26 @@ const SEGMENT_KEY = `segment-v1-${'a'.repeat(64)}` as const;
 
 const emptyProgress: ListeningProgressV1 = { version: 1, videos: {} };
 
+const createContentStatus = (hasVideo: boolean, videoRevision: number) => ({
+  contentEpoch: 1,
+  contentInstanceId: 'content-1',
+  hasVideo,
+  isVideoUrl: true,
+  learningAvailable: hasVideo,
+  lifecycle: hasVideo ? 'content' as const : 'waiting' as const,
+  mediaAttachmentRevision: videoRevision,
+  missionResumeRequired: false,
+  routeChangedAt: 1_000,
+  routeKind: 'episode' as const,
+  subtitleIdentity: {
+    learning: hasVideo ? 'native:en' : null,
+    subtitleRevision: 1,
+    support: null,
+  },
+  videoId: VIDEO_ID,
+  videoRevision,
+});
+
 const attemptedWithoutSubmission: ListeningMissionResult = {
   videoId: VIDEO_ID,
   learningSourceKey: 'native:en',
@@ -139,14 +159,7 @@ describe('background message handler', () => {
     listener?.(
       {
         message: 'contentStatus',
-        params: {
-          contentInstanceId: 'content-1',
-          hasVideo: true,
-          isVideoUrl: true,
-          routeChangedAt: 1_000,
-          videoId: VIDEO_ID,
-          videoRevision: 2,
-        },
+        params: createContentStatus(true, 2),
       },
       {
         documentId: 'document-1',
@@ -159,7 +172,8 @@ describe('background message handler', () => {
 
     await vi.waitFor(() => expect(cardsResponse).toHaveBeenCalledWith({ success: true, data: [card] }));
     expect(dependencies.awaitReady).toHaveBeenCalledTimes(3);
-    expect(dependencies.updateConnectedStatus).toHaveBeenCalledWith(7, {
+    expect(dependencies.updateConnectedStatus).toHaveBeenCalledWith(7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: true,
@@ -167,8 +181,9 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 2,
-    });
-    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(7, {
+    }));
+    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: true,
@@ -176,7 +191,7 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 2,
-    });
+    }));
     expect(dependencies.handleViewVideo).toHaveBeenCalledWith({ url: 'https://example.com', startTime: 10 });
   });
 
@@ -198,14 +213,7 @@ describe('background message handler', () => {
     listener?.(
       {
         message: 'contentStatus',
-        params: {
-          contentInstanceId: 'content-1',
-          hasVideo: false,
-          isVideoUrl: true,
-          routeChangedAt: 1_000,
-          videoId: VIDEO_ID,
-          videoRevision: 1,
-        },
+        params: createContentStatus(false, 1),
       },
       sender,
       waitingResponse
@@ -213,21 +221,15 @@ describe('background message handler', () => {
     listener?.(
       {
         message: 'contentStatus',
-        params: {
-          contentInstanceId: 'content-1',
-          hasVideo: true,
-          isVideoUrl: true,
-          routeChangedAt: 1_000,
-          videoId: VIDEO_ID,
-          videoRevision: 2,
-        },
+        params: createContentStatus(true, 2),
       },
       sender,
       detectedResponse
     );
 
     await vi.waitFor(() => expect(dependencies.updateConnectedStatus).toHaveBeenCalledOnce());
-    expect(dependencies.updateConnectedStatus).toHaveBeenLastCalledWith(7, {
+    expect(dependencies.updateConnectedStatus).toHaveBeenLastCalledWith(7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: false,
@@ -235,14 +237,15 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 1,
-    });
+    }));
     expect(dependencies.handleSubtitleContentStatus).not.toHaveBeenCalled();
     expect(detectedResponse).not.toHaveBeenCalled();
 
     firstStatusWrite.resolve(true);
     await vi.waitFor(() => expect(detectedResponse).toHaveBeenCalledWith({ success: true }));
 
-    expect(dependencies.updateConnectedStatus).toHaveBeenNthCalledWith(2, 7, {
+    expect(dependencies.updateConnectedStatus).toHaveBeenNthCalledWith(2, 7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: true,
@@ -250,8 +253,9 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 2,
-    });
-    expect(dependencies.handleSubtitleContentStatus).toHaveBeenNthCalledWith(1, 7, {
+    }));
+    expect(dependencies.handleSubtitleContentStatus).toHaveBeenNthCalledWith(1, 7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: false,
@@ -259,8 +263,9 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 1,
-    });
-    expect(dependencies.handleSubtitleContentStatus).toHaveBeenNthCalledWith(2, 7, {
+    }));
+    expect(dependencies.handleSubtitleContentStatus).toHaveBeenNthCalledWith(2, 7, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: 'document-1',
       hasVideo: true,
@@ -268,7 +273,7 @@ describe('background message handler', () => {
       routeChangedAt: 1_000,
       videoId: VIDEO_ID,
       videoRevision: 2,
-    });
+    }));
   });
 
   it('readiness-gates and routes strict listening progress operations, including zero attempts', async () => {

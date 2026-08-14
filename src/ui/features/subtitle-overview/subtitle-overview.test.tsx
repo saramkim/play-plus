@@ -98,6 +98,7 @@ vi.mock('./use-subtitle-overview', () => ({
 const snapshot: Extract<SubtitleOverviewResponse, { status: 'ready' }> = {
   status: 'ready',
   identity: {
+    contentEpoch: 1,
     contentInstanceId: 'content-1',
     routeChangedAt: 1,
     videoId: 'video-1',

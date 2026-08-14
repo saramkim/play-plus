@@ -5,6 +5,7 @@ import { COUPANG_PLAY_BASE_URL, COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/const
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
 import { sendMessageToTab } from '@utils/message';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 import { Link2, Link2Off, Loader2, Video, VideoOff } from 'lucide-react';
 
 import { useTabStore } from '@/ui/store/tab-store';
@@ -12,6 +13,7 @@ import { useTabStore } from '@/ui/store/tab-store';
 export function ConnectionStatus() {
   const activeTab = useTabStore((state) => state.activeTab);
   const tabInfo = useTabStore((state) => state.tabInfo);
+  const playbackContext = useTabStore((state) => state.playbackContext);
   const tabUrl = activeTab?.url;
   const isCoupangPlay = Boolean(tabUrl?.startsWith(COUPANG_PLAY_BASE_URL));
   const isVideoUrl = Boolean(tabUrl && COUPANG_PLAY_VIDEO_URL_LIST.some((url) => tabUrl.startsWith(url)));
@@ -65,7 +67,7 @@ export function ConnectionStatus() {
   };
 
   const connectionLabel = getConnectionLabel(isCoupangPlay, connectionStatus);
-  const videoLabel = getVideoLabel(isCoupangPlay, videoStatus);
+  const videoLabel = getVideoLabel(isCoupangPlay, videoStatus, playbackContext);
 
   return (
     <div className='flex items-center h-8 border-b px-2 text-xs text-muted-foreground bg-background'>
@@ -230,7 +232,11 @@ function getConnectionLabel(isCoupangPlay: boolean, contentStatus: ConnectionSta
   };
 }
 
-function getVideoLabel(isCoupangPlay: boolean, videoStatus: VideoStatusState): StatusLabelConfig {
+function getVideoLabel(
+  isCoupangPlay: boolean,
+  videoStatus: VideoStatusState,
+  playbackContext: PlaybackContextStatus | null
+): StatusLabelConfig {
   if (!isCoupangPlay || videoStatus === 'idle') {
     return {
       text: t('connection_label_video_idle'),
@@ -247,6 +253,58 @@ function getVideoLabel(isCoupangPlay: boolean, videoStatus: VideoStatusState): S
       tone: 'warning',
       icon: Loader2,
       spin: true,
+    };
+  }
+
+  if (playbackContext?.lifecycle === 'advertisement') {
+    return {
+      text: t('connection_label_video_advertisement'),
+      title: t('connection_video_advertisement'),
+      tone: 'warning',
+      icon: VideoOff,
+    };
+  }
+
+  if (playbackContext?.lifecycle === 'transitioning') {
+    return {
+      text: t('connection_label_video_transitioning'),
+      title: t('connection_video_transitioning'),
+      tone: 'warning',
+      icon: Loader2,
+      spin: true,
+    };
+  }
+
+  if (playbackContext?.lifecycle === 'waiting' || playbackContext?.lifecycle === 'placeholder') {
+    return {
+      text: t(
+        playbackContext.lifecycle === 'waiting'
+          ? 'connection_label_video_waiting'
+          : 'connection_label_video_placeholder'
+      ),
+      title: t(
+        playbackContext.lifecycle === 'waiting'
+          ? 'connection_video_waiting'
+          : 'connection_video_placeholder'
+      ),
+      tone: 'warning',
+      icon: Loader2,
+      spin: true,
+    };
+  }
+
+  if (
+    playbackContext?.lifecycle === 'content' &&
+    (playbackContext.routeKind === 'trailer' ||
+      playbackContext.routeKind === 'channel' ||
+      playbackContext.routeKind === 'highlight' ||
+      playbackContext.routeKind === 'unknown')
+  ) {
+    return {
+      text: t('connection_label_video_learning_unavailable'),
+      title: t('connection_video_learning_unavailable'),
+      tone: 'muted',
+      icon: VideoOff,
     };
   }
 

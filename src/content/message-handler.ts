@@ -1,7 +1,8 @@
 import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getLocalSubtitle } from '@storage/subtitle';
 import { languageSchema, subtitleCueSchema } from '@storage/v2/schema';
-import { COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
+import type { V2SubtitleCue } from '@storage/v2/type';
+import { COUPANG_PLAY_VIDEO_URL_LIST, type Language } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { t } from '@utils/i18n';
 import { AsyncMessageResponse, onMessage, sendMessage } from '@utils/message';
@@ -14,6 +15,7 @@ import type {
   SubtitleRole,
   VideoTimeResponse,
 } from '@utils/message/type';
+import type { PlaybackContextStatus, PlaybackSubtitleIdentity } from '@utils/playback-context';
 
 import {
   createNativeListeningSourceKey,
@@ -38,6 +40,8 @@ import {
   createSubtitleOverviewCues,
 } from './features/subtitle/subtitle-overview';
 import { selectSubtitleTrack, useSubtitleStore } from './features/subtitle/subtitle-store';
+import { PlaybackContextController } from './playback-context/playback-context-controller';
+import { usePlaybackContextStore } from './playback-context/playback-context-store';
 import { VideoLifecycleEvent, VideoLifecycleMonitor } from './video-lifecycle/video-lifecycle-monitor';
 
 export type VideoLifecycleDependencies = {
@@ -52,6 +56,7 @@ export type VideoLifecycleDependencies = {
   setDetectionStatus: (status: 'idle' | 'detecting' | 'detected' | 'failed') => void;
   reportContentStatus: (
     hasVideo: boolean,
+    lifecycle: VideoLifecycleEvent['state'],
     videoRevision: number,
     videoId: string | null
   ) => void;
@@ -73,18 +78,21 @@ export const createVideoLifecycleHandler = (dependencies: VideoLifecycleDependen
         dependencies.setupContainer();
       }
       dependencies.setDetectionStatus('detected');
-      dependencies.reportContentStatus(true, videoRevision, event.videoId);
+      dependencies.reportContentStatus(true, event.state, videoRevision, event.videoId);
       return;
     }
 
     if (dependencies.getVideo()) {
+      videoRevision += 1;
       dependencies.clearVideo();
-      dependencies.clearNativeCues();
+      if (event.state !== 'advertisement' && event.state !== 'transitioning') {
+        dependencies.clearNativeCues();
+      }
       dependencies.resetElements();
       dependencies.setCurrentTime(0);
     }
     dependencies.setDetectionStatus(event.delayed ? 'failed' : 'detecting');
-    dependencies.reportContentStatus(false, videoRevision, event.videoId);
+    dependencies.reportContentStatus(false, event.state, videoRevision, event.videoId);
   };
 };
 
@@ -100,10 +108,12 @@ const defaultMessageListenerDependencies: MessageListenerDependencies = {
 };
 
 let activeVideoLifecycleMonitor: VideoLifecycleMonitor | null = null;
-let activeRouteChangedAt = performance.timeOrigin;
-let activeRouteVideoId = getCoupangPlayVideoId(window.location.href);
-let activeVideoRevision = 0;
 const contentInstanceId = crypto.randomUUID();
+export const playbackContextController = new PlaybackContextController(
+  contentInstanceId,
+  window.location.href,
+  () => Date.now()
+);
 let latestNativeSubtitleRequestId: string | null = null;
 const listeningSessionCoordinator = createListeningSessionCoordinator({
   readContext: createListeningSessionContext,
@@ -116,11 +126,6 @@ const listeningSessionCoordinator = createListeningSessionCoordinator({
 export function initializeMessageListener(dependencies = defaultMessageListenerDependencies) {
   const sessionCoordinator =
     dependencies.listeningSessionCoordinator ?? listeningSessionCoordinator;
-  const currentVideoId = getCoupangPlayVideoId(window.location.href);
-  if (currentVideoId !== activeRouteVideoId) {
-    activeRouteChangedAt = Date.now();
-    activeRouteVideoId = currentVideoId;
-  }
   const videoLifecycleMonitor = dependencies.createVideoLifecycleMonitor();
   const registration = dependencies.registerMessageListener(({ message, params, sendResponse }) => {
     switch (message) {
@@ -157,6 +162,12 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
         return respond(sendResponse, () => sessionCoordinator.begin(params));
       case 'heartbeatListeningSession':
         return respond(sendResponse, () => sessionCoordinator.heartbeat(params));
+      case 'resumeListeningSessionAfterAdvertisement':
+        return respond(sendResponse, async () => {
+          const result = await sessionCoordinator.resumeAfterAdvertisement(params);
+          reportCurrentContentStatus();
+          return result;
+        });
       case 'playListeningSegment':
         return respond(sendResponse, () => sessionCoordinator.play(params));
       case 'saveListeningSegment':
@@ -167,12 +178,17 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
         sendResponse({
           success: true,
           data: {
-            ...createContentVideoIdentity(),
+            ...createPlaybackContextStatus(),
             hasVideo: Boolean(videoManager.get()),
           },
         });
         break;
     }
+  });
+  const subtitleSubscription = useSubtitleStore.subscribe((state, previousState) => {
+    if (state.subtitleRevision === previousState.subtitleRevision) return;
+    listeningSessionCoordinator.handlePlaybackContextChange();
+    reportCurrentContentStatus();
   });
 
   try {
@@ -181,6 +197,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
   } catch (error) {
     registration.remove();
     videoLifecycleMonitor.stop();
+    subtitleSubscription();
     sessionCoordinator.dispose();
     throw error;
   }
@@ -213,31 +230,69 @@ const handleResetElement = () => {
 };
 
 const handleFetchVideoMetadata = async ({
+  expectedIdentity,
   headers,
   requestId,
   url,
   videoId,
 }: MessageSchema['fetchVideoMetadata']['params']) => {
+  if (!isValidContentVideoIdentity(expectedIdentity)) return;
   latestNativeSubtitleRequestId = requestId;
   const subtitles = await coupangStrategy.fetchSubtitles(url, headers);
   if (
     latestNativeSubtitleRequestId !== requestId ||
     videoId === null ||
-    getCoupangPlayVideoId(window.location.href) !== videoId
+    getCoupangPlayVideoId(window.location.href) !== videoId ||
+    !playbackContextController.observePlaybackEvidence({ expectedIdentity, playbackUrl: url })
   ) {
     return;
   }
   const store = useSubtitleStore.getState();
+  let tracks: { cues: V2SubtitleCue[]; language: Language }[];
+  try {
+    tracks = subtitles.flatMap((subtitle) => {
+      const language = languageSchema.safeParse(subtitle.lang);
+      if (!language.success) return [];
+      return [{ language: language.data, cues: subtitleCueSchema.array().parse(subtitle.subtitleData) }];
+    });
+  } catch (error) {
+    store.clearNativeCues();
+    throw error;
+  }
+  if (areNativeSubtitleTracksEqual(store.nativeCueCache, tracks)) return;
   store.clearNativeCues();
-  const tracks = (subtitles ?? []).flatMap((subtitle) => {
-    const language = languageSchema.safeParse(subtitle.lang);
-    if (!language.success) return [];
-    return [{ language: language.data, cues: subtitleCueSchema.array().parse(subtitle.subtitleData) }];
-  });
   for (const { cues, language } of tracks) {
     store.setNativeCues(language, cues);
   }
+  listeningSessionCoordinator.handlePlaybackContextChange();
+  reportCurrentContentStatus();
 };
+
+const areNativeSubtitleTracksEqual = (
+  cache: Partial<Record<Language, V2SubtitleCue[]>>,
+  tracks: readonly { cues: V2SubtitleCue[]; language: Language }[]
+) => {
+  const next = new Map(tracks.map(({ cues, language }) => [language, cues]));
+  const cachedLanguages = Object.keys(cache) as Language[];
+  if (cachedLanguages.length !== next.size) return false;
+  return cachedLanguages.every((language) => {
+    const cachedCues = cache[language];
+    const nextCues = next.get(language);
+    return (
+      cachedCues !== undefined &&
+      nextCues !== undefined &&
+      cachedCues.length === nextCues.length &&
+      cachedCues.every((cue, index) => areSubtitleCuesEqual(cue, nextCues[index]))
+    );
+  });
+};
+
+const areSubtitleCuesEqual = (left: V2SubtitleCue, right: V2SubtitleCue) =>
+  left.start === right.start &&
+  left.end === right.end &&
+  left.text === right.text &&
+  (left.settings?.length ?? 0) === (right.settings?.length ?? 0) &&
+  (left.settings ?? []).every((setting, index) => setting === right.settings?.[index]);
 
 const handlePlayVideo = ({
   expectedIdentity,
@@ -245,6 +300,8 @@ const handlePlayVideo = ({
   startTime,
 }: MessageSchema['playVideo']['params']): MessageSchema['playVideo']['response'] => {
   if (isListeningMissionActive()) return { status: 'stale' };
+  if (!isValidContentVideoIdentity(expectedIdentity)) return { status: 'stale' };
+  if (!createPlaybackContextStatus().learningAvailable) return { status: 'stale' };
   if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) return { status: 'stale' };
 
   const video = videoManager.get();
@@ -304,7 +361,12 @@ const handleRefreshRegisteredSubtitle = async (subtitleId: string) => {
 
 const handleGetSubtitleOverview = (): SubtitleOverviewResponse => {
   const identity = createContentVideoIdentity();
-  if (!isLiveVideoIdentityCurrent(identity)) return { status: 'no-video', identity };
+  if (
+    !isLiveVideoIdentityCurrent(identity) ||
+    !createPlaybackContextStatus().learningAvailable
+  ) {
+    return { status: 'no-video', identity };
+  }
   const video = videoManager.get();
   if (!video) return { status: 'no-video', identity };
 
@@ -363,7 +425,12 @@ const createSubtitleOverviewSource = (
 
 const handleGetVideoTime = (): VideoTimeResponse => {
   const identity = createContentVideoIdentity();
-  if (!isLiveVideoIdentityCurrent(identity)) return { status: 'no-video', identity };
+  if (
+    !isLiveVideoIdentityCurrent(identity) ||
+    !createPlaybackContextStatus().learningAvailable
+  ) {
+    return { status: 'no-video', identity };
+  }
   const video = videoManager.get();
   if (!video) return { status: 'no-video', identity };
   return {
@@ -440,6 +507,7 @@ function createListeningSessionContext(): ListeningSessionContext {
 
   return {
     identity: createContentVideoIdentity(),
+    playbackContext: createPlaybackContextStatus(false),
     learning:
       learningLanguage === null || learningTrack.cues.length === 0
         ? null
@@ -465,17 +533,16 @@ function createListeningSessionContext(): ListeningSessionContext {
   };
 }
 
-const createContentVideoIdentity = (): ContentVideoIdentity => ({
-  contentInstanceId,
-  routeChangedAt: activeRouteChangedAt,
-  videoId: activeRouteVideoId,
-  videoRevision: activeVideoRevision,
-});
+const createContentVideoIdentity = (): ContentVideoIdentity =>
+  playbackContextController.createIdentity();
 
 const isValidContentVideoIdentity = (value: unknown): value is ContentVideoIdentity => {
   if (typeof value !== 'object' || value === null) return false;
   const identity = value as Partial<ContentVideoIdentity>;
   return (
+    typeof identity.contentEpoch === 'number' &&
+    Number.isSafeInteger(identity.contentEpoch) &&
+    identity.contentEpoch >= 0 &&
     typeof identity.contentInstanceId === 'string' &&
     identity.contentInstanceId.length > 0 &&
     typeof identity.routeChangedAt === 'number' &&
@@ -496,6 +563,7 @@ const isSameContentVideoIdentity = (
   left: ContentVideoIdentity,
   right: ContentVideoIdentity
 ) =>
+  left.contentEpoch === right.contentEpoch &&
   left.contentInstanceId === right.contentInstanceId &&
   left.routeChangedAt === right.routeChangedAt &&
   left.videoId === right.videoId &&
@@ -511,6 +579,7 @@ const isGuardedRequestStale = (
   const identity = createContentVideoIdentity();
   return (
     !isLiveVideoIdentityCurrent(identity) ||
+    !createPlaybackContextStatus().learningAvailable ||
     (expectedIdentity !== undefined &&
       !isSameContentVideoIdentity(expectedIdentity, identity)) ||
     (expectedSubtitleRevision !== undefined &&
@@ -519,28 +588,71 @@ const isGuardedRequestStale = (
 };
 
 const isLiveVideoIdentityCurrent = (identity: ContentVideoIdentity) => {
-  return getCoupangPlayVideoId(window.location.href) === identity.videoId;
+  return (
+    getCoupangPlayVideoId(window.location.href) === identity.videoId &&
+    playbackContextController.isIdentityCurrent(identity)
+  );
 };
 
 const reportContentStatus = (
   hasVideo: boolean,
+  lifecycle: VideoLifecycleEvent['state'],
   videoRevision: number,
   videoId: string | null
 ) => {
-  if (videoId !== activeRouteVideoId) {
-    activeRouteChangedAt = Date.now();
-    activeRouteVideoId = videoId;
-  }
-  activeVideoRevision = videoRevision;
-  const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
-  void sendMessage('contentStatus', {
-    contentInstanceId,
-    hasVideo,
-    isVideoUrl,
-    routeChangedAt: activeRouteChangedAt,
-    videoId: activeRouteVideoId,
+  const { contentChanged } = playbackContextController.observeLifecycle({
+    lifecycle,
+    url: window.location.href,
+    videoId,
     videoRevision,
   });
+  if (contentChanged) latestNativeSubtitleRequestId = null;
+  listeningSessionCoordinator.handlePlaybackContextChange();
+  reportCurrentContentStatus();
+};
+
+const reportCurrentContentStatus = () => {
+  const status = createPlaybackContextStatus();
+  usePlaybackContextStore.getState().setStatus(status);
+  const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
+  void sendMessage('contentStatus', {
+    ...status,
+    hasVideo: Boolean(videoManager.get()),
+    isVideoUrl,
+  });
+};
+
+const createPlaybackContextStatus = (
+  missionResumeRequired = listeningSessionCoordinator.isAdvertisementResumeRequired()
+): PlaybackContextStatus =>
+  playbackContextController.createStatus({
+    hasVideo: Boolean(videoManager.get()),
+    missionResumeRequired,
+    subtitleIdentity: createPlaybackSubtitleIdentity(),
+    url: window.location.href,
+  });
+
+const createPlaybackSubtitleIdentity = (): PlaybackSubtitleIdentity => {
+  const state = useSubtitleStore.getState();
+  const learningLanguage = state.learningProfile.learningLanguage;
+  const learningTrack = selectSubtitleTrack(state, 'learning');
+  const supportLanguage = state.learningProfile.supportLanguage;
+  const supportTrack = selectSubtitleTrack(state, 'support');
+  return {
+    learning:
+      learningLanguage === null || learningTrack.cues.length === 0
+        ? null
+        : state.registeredSelections.learning
+          ? `registered:${state.registeredSelections.learning.subtitleId}`
+          : `native:${learningLanguage}`,
+    subtitleRevision: state.subtitleRevision,
+    support:
+      supportLanguage === null || supportTrack.cues.length === 0
+        ? null
+        : state.registeredSelections.support
+          ? `registered:${state.registeredSelections.support.subtitleId}`
+          : `native:${supportLanguage}`,
+  };
 };
 
 const handleVideoLifecycle = createVideoLifecycleHandler({

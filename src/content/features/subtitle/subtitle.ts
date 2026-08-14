@@ -11,6 +11,7 @@ import {
   useSubtitleStore,
 } from '@/content/features/subtitle/subtitle-store';
 import { applySubtitleStyles } from '@/content/features/subtitle/subtitle-utils';
+import { isLearningPlaybackAvailable } from '@/content/playback-context/playback-context-store';
 
 type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay'>;
 
@@ -68,7 +69,7 @@ export async function initializeSubtitleSync() {
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
   const state = useSubtitleStore.getState();
 
-  if (isListeningMissionActive()) {
+  if (isListeningMissionActive() || !isLearningPlaybackAvailable()) {
     for (const role of SUBTITLE_ROLES) {
       const subtitleElement = elementStore.getSubtitleElement(role);
       if (hasStyleChanged) applySubtitleStyles(subtitleElement, state.subtitleDisplay[role]);

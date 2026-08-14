@@ -2,18 +2,32 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createConnectionStatus } from './connection-status';
 
+const createPlaybackStatus = (overrides: Record<string, unknown> = {}) => ({
+  contentEpoch: 1,
+  contentInstanceId: 'content-1',
+  hasVideo: true,
+  learningAvailable: true,
+  lifecycle: 'content' as const,
+  mediaAttachmentRevision: 1,
+  missionResumeRequired: false,
+  routeChangedAt: 1_000,
+  routeKind: 'episode' as const,
+  subtitleIdentity: {
+    learning: 'native:en',
+    subtitleRevision: 1,
+    support: null,
+  },
+  videoId: '00000000-0000-4000-8000-000000000001',
+  videoRevision: 1,
+  ...overrides,
+});
+
 const createDependencies = () => ({
   getCurrentVideoId: vi.fn(async () => '00000000-0000-4000-8000-000000000001'),
   handleSubtitleContentStatus: vi.fn(async () => {}),
   pingContent: vi.fn(async () => ({
     success: true as const,
-    data: {
-      contentInstanceId: 'content-1',
-      hasVideo: true,
-      routeChangedAt: 1_000,
-      videoId: '00000000-0000-4000-8000-000000000001',
-      videoRevision: 1,
-    },
+    data: createPlaybackStatus(),
   })),
   updateTabInfo: vi.fn(async () => {}),
 });
@@ -29,7 +43,8 @@ describe('connection status', () => {
       connectionStatus: 'connected',
       videoStatus: 'detected',
     });
-    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(4, {
+    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(4, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: null,
       hasVideo: true,
@@ -37,27 +52,22 @@ describe('connection status', () => {
       routeChangedAt: 1_000,
       videoId: '00000000-0000-4000-8000-000000000001',
       videoRevision: 1,
-    });
+    }));
   });
 
   it('forwards a successful startup ping as a replay trigger even before content emits a new status', async () => {
     const dependencies = createDependencies();
     dependencies.pingContent.mockResolvedValue({
       success: true,
-      data: {
-        contentInstanceId: 'content-1',
-        hasVideo: true,
-        routeChangedAt: 1_000,
-        videoId: '00000000-0000-4000-8000-000000000001',
-        videoRevision: 7,
-      },
+      data: createPlaybackStatus({ mediaAttachmentRevision: 7, videoRevision: 7 }),
     });
     const { checkContentConnection } = createConnectionStatus(dependencies);
 
     await checkContentConnection(4, true);
 
     expect(dependencies.getCurrentVideoId).toHaveBeenCalledWith(4);
-    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(4, {
+    expect(dependencies.handleSubtitleContentStatus).toHaveBeenCalledWith(4, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: null,
       hasVideo: true,
@@ -65,20 +75,20 @@ describe('connection status', () => {
       routeChangedAt: 1_000,
       videoId: '00000000-0000-4000-8000-000000000001',
       videoRevision: 7,
-    });
+    }));
   });
 
   it('discards a ping whose page-owned video changed before the current route check', async () => {
     const dependencies = createDependencies();
     dependencies.pingContent.mockResolvedValue({
       success: true,
-      data: {
+      data: createPlaybackStatus({
         contentInstanceId: 'content-old',
-        hasVideo: true,
+        mediaAttachmentRevision: 4,
         routeChangedAt: 900,
         videoId: '00000000-0000-4000-8000-000000000002',
         videoRevision: 4,
-      },
+      }),
     });
     const { checkContentConnection } = createConnectionStatus(dependencies);
 
@@ -113,18 +123,19 @@ describe('connection status', () => {
     const dependencies = createDependencies();
     const { updateConnectedStatus } = createConnectionStatus(dependencies);
     const status = {
-      contentInstanceId: 'content-1',
+      ...createPlaybackStatus({ mediaAttachmentRevision: 2, videoRevision: 2 }),
       documentId: null,
-      hasVideo: true,
       isVideoUrl: true,
-      routeChangedAt: 1_000,
-      videoId: '00000000-0000-4000-8000-000000000001',
-      videoRevision: 2,
     };
 
     await expect(updateConnectedStatus(4, status)).resolves.toBe(true);
     await expect(
-      updateConnectedStatus(4, { ...status, hasVideo: false, videoRevision: 1 })
+      updateConnectedStatus(4, {
+        ...status,
+        hasVideo: false,
+        mediaAttachmentRevision: 1,
+        videoRevision: 1,
+      })
     ).resolves.toBe(false);
 
     expect(dependencies.updateTabInfo).toHaveBeenCalledOnce();
@@ -140,13 +151,9 @@ describe('connection status', () => {
     dependencies.updateTabInfo.mockImplementationOnce(() => connectedWrite.promise);
     const { updateConnectedStatus, updateNavigatingStatus } = createConnectionStatus(dependencies);
     const status = {
-      contentInstanceId: 'content-1',
+      ...createPlaybackStatus(),
       documentId: 'document-1',
-      hasVideo: true,
       isVideoUrl: true,
-      routeChangedAt: 1_000,
-      videoId: '00000000-0000-4000-8000-000000000001',
-      videoRevision: 1,
     };
 
     const connected = updateConnectedStatus(4, status);
