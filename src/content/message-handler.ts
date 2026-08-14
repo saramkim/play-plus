@@ -259,10 +259,11 @@ const handleFetchVideoMetadata = async ({
     store.clearNativeCues();
     throw error;
   }
-  if (areNativeSubtitleTracksEqual(store.nativeCueCache, tracks)) return;
-  store.clearNativeCues();
-  for (const { cues, language } of tracks) {
-    store.setNativeCues(language, cues);
+  if (!areNativeSubtitleTracksEqual(store.nativeCueCache, tracks)) {
+    store.clearNativeCues();
+    for (const { cues, language } of tracks) {
+      store.setNativeCues(language, cues);
+    }
   }
   listeningSessionCoordinator.handlePlaybackContextChange();
   reportCurrentContentStatus();

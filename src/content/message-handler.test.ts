@@ -891,20 +891,50 @@ describe('canonical content messages', () => {
     expect(useSubtitleStore.getState().nativeCueCache).toEqual(expectedCache);
   });
 
-  it('preserves subtitle revision when the same native replay returns after an advertisement', async () => {
+  it('publishes current route capability without revising an identical native replay', async () => {
     const cues = [{ start: 0, end: 1, text: 'Same synthetic cue', settings: ['line:0'] }];
+    const video = document.createElement('video');
+    video.requestVideoFrameCallback = vi.fn(() => 1);
+    video.cancelVideoFrameCallback = vi.fn();
+    document.body.append(video);
+    videoManager.set(video);
+    playbackContextController.observeLifecycle({
+      lifecycle: 'content',
+      url: window.location.href,
+      videoId: VIDEO_ID,
+      videoRevision: playbackContextController.createIdentity().videoRevision + 1,
+    });
     useSubtitleStore.getState().setNativeCues('en', cues);
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
     vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
       { lang: 'en', subtitleData: cues },
     ]);
     const { dispatch } = createMessageHarness();
+    const before = dispatch('pingContent', undefined);
+    expect(before.sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: expect.objectContaining({
+        contentEpoch: 1,
+        learningAvailable: false,
+        routeKind: 'unknown',
+      }),
+    });
+    vi.mocked(sendMessage).mockClear();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
     expect(useSubtitleStore.getState().subtitleRevision).toBe(subtitleRevision);
+    expect(sendMessage).toHaveBeenCalledWith(
+      'contentStatus',
+      expect.objectContaining({
+        contentEpoch: 1,
+        learningAvailable: true,
+        routeKind: 'episode',
+        subtitleIdentity: expect.objectContaining({ subtitleRevision }),
+      })
+    );
   });
 
   it('fails native acquisition without retaining a partial cache when a supported body is invalid', async () => {
@@ -966,9 +996,11 @@ describe('canonical content messages', () => {
     const { dispatch } = createMessageHarness();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest('request-1', VIDEO_ID));
+    vi.mocked(sendMessage).mockClear();
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: existing });
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('sets a registered role with raw cues and a separately validated delay, then refreshes it', async () => {

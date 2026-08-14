@@ -75,7 +75,7 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | --- | --- | --- |
 | Latest-main dependency | PASS | #75가 포함된 `main` `136bc4e`에서 `feature/p0-playback-context`를 시작했고 merged canonical text와 #76 contract를 다시 확인 |
 | Full local gates | PASS | `yarn.cmd type-check`, `yarn.cmd lint`, `yarn.cmd test:run` 99 files / 957 tests, `yarn.cmd build`; build warning은 기존 bundle/font size 3종뿐 |
-| Focused advertisement corrections | PASS | 실제 Chrome에서 발견한 hidden focused Mission의 `aria-hidden` warning을 `inert`로 수정하고, 동일 native replay가 `subtitleRevision`을 불필요하게 바꾸지 않도록 회귀 테스트 추가; focused 2 files / 65 tests와 full gate로 재검증 |
+| Focused advertisement corrections | PASS | 실제 Chrome에서 발견한 hidden focused Mission의 `aria-hidden` warning을 `inert`로 수정했다. 동일 native replay는 `subtitleRevision`을 유지하면서도 accepted playback evidence가 current `routeKind`/capability를 다시 발행하도록 회귀 테스트를 추가했고, focused 35 tests와 full gate로 재검증 |
 | Static boundary audit | PASS | `package.json`, Yarn lock, manifest, Storage schema/key/migration과 permission/host/CSP/entry 변경 없음; 새 fetch/XHR/network primitive, telemetry, metadata acquisition, P1/P2/P3 behavior 없음 |
 | Whitespace and generated output | PASS | `git diff --check`는 최종 문서 반영 뒤 다시 실행; production `dist/`는 검증 산출물이며 tracked diff에 포함하지 않음 |
 
@@ -87,10 +87,10 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Production extension installation | PASS | `list_extensions`에서 현재 상태를 확인하고 current absolute `dist`를 install/reload; action이 연 실제 Chrome Extension Pages Side Panel target만 증거로 사용 |
 | Authentication | PASS | persistent profile의 기존 signed-in session으로 supported route 진입; login/credential 입력·수집 없음 |
 | DRM/player access | PASS | 실제 episode 본편이 `blob:` attachment, `readyState: 4`, media error 없음, 재생 시간 진행 상태였고 광고는 별도 direct attachment로 관찰 |
-| Native subtitle acquisition | PASS | 기존 playback replay boundary의 실제 request 뒤 English learning/Korean support native catalog가 non-empty ready 상태로 Side Panel에 표시; player DOM track 유무와 extension acquisition을 별도 gate로 판정 |
-| Supported-content availability | PASS | `/en/play/<video-id>/episode`에서 current route/content/media/subtitle identity가 검증된 뒤에만 `Connected / Detected`, Mission catalog와 content learning controls가 활성화 |
+| Native subtitle acquisition | PASS | 기존 playback replay boundary의 실제 request 뒤 English learning/Korean support native catalog가 non-empty ready 상태로 Side Panel에 표시; review correction을 적용한 final rebuild에서도 동일 native replay 뒤 acquisition과 availability 발행을 반복 확인했고, player DOM track 유무와 extension acquisition을 별도 gate로 판정 |
+| Supported-content availability | PASS | `/en/play/<video-id>/episode`에서 current route/content/media/subtitle identity가 검증된 뒤에만 `Connected / Detected`, Mission catalog와 content learning controls가 활성화; final rebuild의 새 content epoch에서도 동일 segment 수와 무관하게 availability가 재발행됨을 확인 |
 | Real advertisement entry | PASS | 동일 episode의 실제 약 30초 광고에서 direct media와 host ad overlay를 확인; Side Panel은 즉시 `Advertisement`와 “Mission playback is paused”를 표시하고 Mission subtree는 `inert`, learning controls는 unavailable |
-| Same-content main return | PASS | 광고 뒤 같은 episode가 latest `blob:` attachment로 `readyState: 4` 복귀; 동일 native replay는 revision을 유지했고 Side Panel은 `The advertisement has ended`와 explicit continue만 표시 |
+| Same-content main return | PASS | final rebuild에서 광고 뒤 같은 episode가 latest `blob:` attachment로 `readyState: 4` 복귀; 동일 native replay는 revision을 유지했고 Side Panel은 `The advertisement has ended`와 explicit continue만 표시 |
 | Explicit Mission resume | PASS | pointer/keyboard로 `Advertisement ended · Continue`를 선택한 뒤 frozen Mission이 `Line 1 of 10`에서만 재개; zero-completed exit 뒤 cleared/mastered/best combo가 모두 0으로 유지되어 광고만으로 attempt/combo/progress가 바뀌지 않음 |
 | Ordinary cue/follow restoration | PASS | Mission 종료 뒤 main-content current time의 실제 learning cue가 다시 표시되고 Show/Hide, Previous, Next, Repeat와 Save controls가 실제 page overlay에서 복구; subtitle 본문은 기록하지 않음 |
 | SPA next-content transition | PASS | 실제 Next Episode 동작으로 새 episode/ad attachment로 전환했을 때 이전 Mission은 safe terminal state로 끝나 old text가 제거됐고, 본편 복귀 뒤 새 episode의 별도 native catalog만 표시 |
