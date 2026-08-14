@@ -359,22 +359,22 @@ content 내부의 lifecycle 분류는 background/UI로 올라가면서 주로 `h
 
 데이터가 존재한다는 사실은 unpacked Play Plus가 이를 안전하게 획득할 수 있다는 증거가 아니다. 실제 extension POC 전까지 discover 획득 경로는 `NOT RUN`이다.
 
-## 9. 구현 가능성 후보
+## 9. 구현 가능성 후보와 P0 승인 상태
 
-아래 순서는 이후 논의를 위한 Codex 권고이며 승인된 2.0 roadmap이 아니다. 각 항목은 구현 지시 전에 ChatGPT 검토, 사용자 승인과 canonical contract 개정 여부를 판단한다.
+아래 순서는 2026-08-14 조사 시점의 Codex 권고로 작성됐으며 그 자체는 승인된 2.0 roadmap이 아니다. 이후 P0의 transient Playback Context와 advertisement safety 경계만 [Play Plus 2.0 canonical contract](./play-plus-2.0.md#transient-playback-context-and-advertisement-safety)로 별도 승인됐다. 이 승인은 P1/P2/P3 또는 Later 후보를 승인하거나 순서를 확정하지 않는다. 각 나머지 항목은 구현 지시 전에 ChatGPT 검토, 사용자 승인과 canonical contract 개정 여부를 다시 판단한다.
 
 | 우선순위 후보 | 사용자 결과 | 이용 가능한 근거 | 기술 판단 | 아직 필요한 결정 |
 | --- | --- | --- | --- | --- |
-| P0 Content and Runtime Spine | 현재 콘텐츠가 영화·에피소드·트레일러·라이브·하이라이트인지 알고 관찰 가능한 runtime에서만 안전한 기능을 활성화 | route suffix, playback `titleType`, lifecycle | kind와 runtime 축은 높음. 새 metadata request 없이 시작 가능하지만 공개 예정·entitlement 판정은 별도 POC 필요 | 지원 kind, unknown과 UI 문구, fail-closed 동작 |
+| P0 Content and Runtime Spine — canonical boundary approved | 현재 콘텐츠가 영화·에피소드·트레일러·라이브·하이라이트인지 알고 검증된 movie/episode content runtime에서만 학습 기능을 활성화 | route suffix, playback `titleType`, lifecycle | exact route kind, lifecycle, two-layer identity, fail-closed capability와 advertisement safety만 승인. 새 metadata request 없음 | 후속 implementation Issue는 canonical amendment merge 뒤에만 시작하고 actual extension에서 검증 |
 | P1 Playback Markers | intro 경계와 다음 화·추천 화면 전에 반복·Mission을 안전하게 끝냄 | 기존 playback replay의 `cue_points` | 높음. optional parser 가능 | marker별 의미, missing/drift fallback, 자동 행동 여부 |
 | P2 Subtitle Variant Compatibility | `ko sdh` 같은 실제 provider track을 잃지 않고 명시적으로 선택 | playback `text_tracks` | 높음. 현재 gap이 구체적 | normalization, SDH 표시, 동일 언어 복수 track 우선순위 |
 | P3 Explicit Content Descriptor | 사용자 요청 때 작품명·연도·시즌·회차를 보여 주거나 검색 입력 후보로 사용 | title/episode/clip/event response | 데이터는 충분하지만 획득 POC 필요 | explicit action, 전송·보존 범위, locale, private API failure UX |
 | Later Content Library | artwork, synopsis, 영상별 grouping/search | discover metadata | 기술적으로 가능하나 범위·유지비 큼 | 자동 수집·영속 schema·refresh·privacy 전체 계약 |
 | Later Live/Sports Learning | live DVR와 스포츠에 학습 기능 제공 | event/playback/runtime | 현재 표본으로는 부족 | entitlement, live seek window, subtitles, end/restore semantics |
 
-### P0 POC에서 우선 검증할 proposed state inventory
+### 조사 당시 P0 POC용 proposed state inventory
 
-아래 값은 구현 계약이 아니라 POC와 후속 논의에서 반례를 찾기 위한 working vocabulary다.
+아래 값은 조사 당시 POC와 후속 논의에서 반례를 찾기 위한 working vocabulary다. 후속 canonical 승인은 exact `routeKind`와 기존 runtime lifecycle만 채택했으며 아래 `availability/capability` 이름을 public/message enum으로 승격하지 않았다.
 
 기존 route·playback·lifecycle만으로는 `coming-soon`과 `entitlement-required`를 안정적으로 채울 수 없다. 이 값은 discover response와 route gate를 다루는 별도 POC 전까지 `unknown`으로 실패 닫힘 처리하는 후보다.
 
@@ -390,7 +390,7 @@ availability/capability
   entitlement-required | unsupported-kind | player-error | unknown
 ```
 
-세 축을 한 enum으로 합치지 않는 것이 현재 권고다. 예를 들어 `episode + advertisement + no-compatible-subtitle`처럼 서로 독립적으로 바뀔 수 있다.
+세 축을 한 enum으로 합치지 않는 원칙은 canonical contract에 반영됐다. 다만 예시의 `learning-ready`, `no-compatible-subtitle`, `coming-soon`, `entitlement-required`, `unsupported-kind`, `player-error`, `unknown`은 계속 evidence-only vocabulary이며 승인된 UI copy, schema 또는 message state가 아니다.
 
 ## 10. 계약 영향
 

@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-13 — OpenSubtitles 공식 지원 답변과 revision 3 릴리스 후보 증거 등급 계약 추가
+최종 개정 승인일: 2026-08-14 — transient Playback Context와 광고 안전 계약 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -439,6 +439,38 @@ Difficult line은 자동으로 Library에 넣지 않는다. Results의 모든 ch
 - 기존 MV3 context 책임, 메시지 스키마, 저장소 중앙화와 탭 생명주기 개선은 유지한다.
 - 페이지 DOM과 video 접근은 content script만 담당하고, background service worker의 메모리 지속성을 가정하지 않는다.
 
+#### Transient Playback Context and advertisement safety
+
+Playback Context는 현재 Coupang Play route, 논리 콘텐츠, 실제 media attachment, runtime lifecycle과 자막 source를 결합해 학습 기능이 stale media를 제어하지 않도록 하는 **transient safety contract**다. parser support, `routeKind`, runtime lifecycle과 derived learning capability는 서로 독립된 축이며 하나의 enum이나 boolean으로 합치지 않는다.
+
+##### Route support, kind, lifecycle, and capability
+
+- 현재 `www.coupangplay.com`의 locale/suffix-tolerant `/play/<UUID>` parser 계약을 보존한다. `/play/<UUID>`, `/en/play/<UUID>`와 UUID 뒤 suffix가 있는 현재 지원 경로를 좁히지 않는다. parser가 route UUID를 지원한다는 사실은 해당 route에서 학습 기능을 열 수 있다는 뜻이 아니다.
+- transient `routeKind`는 정확히 `movie | episode | trailer | channel | highlight | unknown`이다.
+- `routeKind`는 route suffix와 기존 native-subtitle playback request/response replay 경계 안의 `titleType`을 strict optional signal로 사용한다. 두 signal이 모두 인식되고 같은 kind를 가리킬 때만 그 kind를 사용한다. 하나라도 누락, malformed, 비인식 상태이거나 서로 충돌하면 title, duration, DOM copy 또는 video shape로 추측·보정하지 않고 `unknown`으로 둔다.
+- runtime lifecycle은 기존 `waiting | placeholder | advertisement | content | transitioning`을 그대로 유지하며 `routeKind`와 독립적으로 변한다.
+- learning capability는 current route/content identity, media attachment, learning/support source identity와 `subtitleRevision`의 일치 여부를 함께 검증하는 derived projection이다. 별도의 공개 capability enum은 이 계약에서 승인하지 않는다. evidence 문서의 `learning-ready`, `no-compatible-subtitle`, `coming-soon`, `entitlement-required`, `unsupported-kind`, `player-error`, `unknown`은 계속 비규범적 working vocabulary이며 public/message 상태 이름으로 사용하지 않는다.
+- `movie | episode`만 lifecycle이 `content`이고 위 identity가 모두 현재 값으로 검증됐을 때 learning capability를 열 수 있다. `trailer | channel | highlight | unknown`은 항상 fail closed한다. `waiting | placeholder | advertisement | transitioning`인 모든 non-`content` lifecycle도 kind와 별개로 capability를 즉시 닫는다.
+- background와 Side Panel은 content가 소유한 정확한 transient kind, lifecycle과 identity-bound capability 결과를 검증·중계할 수 있지만 page DOM, video 또는 page global을 직접 판정하지 않는다. 알려진 광고, placeholder, waiting과 transition을 generic `not_detected`로 축약해 capability를 다시 열어서는 안 된다.
+
+##### Two-layer transient identity
+
+- `contentEpoch`은 active tab 안의 검증된 논리 콘텐츠 lifetime을 나타내는 content-owned authoritative identity다. route/content identity가 바뀌거나 무효화·clear되면 새 epoch으로 advance하거나 현재 epoch을 invalidate하고, 이전 epoch에 묶인 observation, playback response, subtitle snapshot, capability decision과 command를 모두 stale 처리한다. background와 UI는 이를 새 source of truth로 재계산하지 않고 exact current value만 검증·중계한다.
+- `mediaAttachmentRevision`은 같은 논리 콘텐츠 안에서 실제 video/media attachment가 detach, replace 또는 rebind되는 lifetime이다. 별도 counter를 추가하지 않고 기존 `videoRevision` spine을 이 의미의 authoritative revision으로 재사용한다. media event와 command는 current `contentEpoch`과 current `mediaAttachmentRevision`을 모두 만족해야 한다.
+- Coupang Play UUID, `contentInstanceId`와 `routeChangedAt`의 기존 request-replay stale guard는 유지한다. 이 값들이 이미 계약을 만족하는 곳에서는 재사용하며 병렬 identity source를 만들거나 기존 검사를 제거하지 않는다.
+- learning/support source identity와 `subtitleRevision`은 content와 media identity에 합치지 않는 별도 검증 축이다. source 또는 subtitle revision이 바뀌면 이전 cue, catalog, save, seek, repeat와 mission 작업은 현재 상태로 승격되지 않는다.
+- 광고 진입만으로 `contentEpoch`을 새 논리 콘텐츠로 바꾸지 않는다. 광고 media attachment, current time, cue와 transcript를 main-content identity나 학습 데이터에 투영하지 않는다.
+
+##### Advertisement suspend, rebind, and explicit Mission resume
+
+- `advertisement` 진입 또는 content 여부가 모호한 전환에서는 마지막으로 검증된 transient main-content context만 freeze하고 learning/media capability를 즉시 닫는다. 진행 중인 media command, observer, cue follow, seek, repeat, current-line save와 Listening Mission playback을 취소하거나 identity-bound 상태로 안전하게 suspend한다.
+- 광고의 media, time, cue, transcript는 subtitle display, mission catalog, Learning Card 또는 Listening Progress에 들어가면 안 된다. persistent setting, 저장 카드, 등록 자막과 이미 완료된 mission progress는 광고 진입 때문에 바꾸지 않는다.
+- 본편 복귀는 lifecycle `content`, 같은 current `contentEpoch`, 지원되는 `routeKind`, 같은 learning/support source identity와 `subtitleRevision`, 최신 `mediaAttachmentRevision`을 모두 다시 검증한 뒤에만 rebind한다.
+- 일반 overlay, current cue와 follow는 현재 본편 시점에서 자동 복구할 수 있다. 중단된 Listening Mission은 자동 재개하지 않으며 사용자의 명시적인 `광고가 끝났어요 · 계속` 계열 action 뒤에만 activity를 계속한다. 광고 자체만으로 attempt나 combo를 변경하지 않는다.
+- 광고 길이에 대한 generic timeout을 두지 않는다. route/content 또는 subtitle/source identity 변경, unsupported/unknown kind 전환, 사용자 이탈, heartbeat/lease failure에서는 frozen context와 pending work를 폐기하며 새 콘텐츠나 새 media에 재사용하지 않는다.
+
+이 경계는 새 Storage key, schema, migration, permission, host, CSP, dependency 또는 network request를 승인하지 않는다. title, year, season/episode descriptor, synopsis, artwork, watched URL, raw cue/subtitle body, request header/cookie와 runtime identity를 새로 영속 저장·로그·외부 전송하지 않는다. 비공개 discover endpoint direct fetch, 기존 native-subtitle replay 밖의 playback fetch, page main-world interception과 metadata prefetch도 승인하지 않는다. P1 playback marker, P2 subtitle variant/SDH와 P3 content descriptor/Search prefill은 [evidence 문서의 후속 후보](./coupang-play-content-evidence.md#9-%EA%B5%AC%ED%98%84-%EA%B0%80%EB%8A%A5%EC%84%B1-%ED%9B%84%EB%B3%B4%EC%99%80-p0-%EC%8A%B9%EC%9D%B8-%EC%83%81%ED%83%9C)로 남으며 이 계약에 포함되지 않는다.
+
 #### Explicit OpenSubtitles acquisition
 
 OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함해야 한다. 다만 온라인 사용과 선택적 권한은 사용자 선택이며, Coupang Play 자막과 로컬 파일을 사용하는 핵심 흐름의 전제 조건이 아니다.
@@ -540,6 +572,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - migration/mission 오류 log, 테스트 fixture와 진단 정보에 실제 사용자의 자막 본문, 전체 시청 URL, 등록 자막 본문, typed answer 또는 unsaved mission text를 기록하지 않는다.
 - 위에서 승인한 범위를 벗어나는 새 host, redirect, 전송 필드, 계정·JWT, proxy 또는 개인정보 계약은 별도 ChatGPT 검토와 사용자 승인을 받는다.
 - Listening Mission은 새 Chrome permission, host, CSP, network request, external service, microphone, speech recognition, AI/semantic evaluation, telemetry, account, sync 또는 payment를 추가하지 않는다.
+- Playback Context의 `routeKind`, lifecycle, capability, `contentEpoch`과 `mediaAttachmentRevision`은 active tab의 승인된 transient message boundary 안에서만 사용한다. Storage, Web Storage, telemetry, diagnostics 또는 외부 network에 기록하지 않으며 광고 media/time/cue/text를 main-content subtitle, card 또는 progress로 투영하지 않는다.
 
 ## 8. Implementation Program
 
@@ -561,6 +594,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 11. **Isolated Listening Mission session UI**: immutable 1–10 segment reducer, transient typed draft, injected controller union, retry·Results·failure escape와 narrow Side Panel accessibility를 production에서 unmounted 상태로 검증.
 12. **Active-video Listening Mission integration**: direct UI-content catalog/session, content-owned playback·restore·lease, Learning entry/progress, background progress API와 explicit canonical Library save를 연결.
 13. **Listening Mission latest-main certification**: combined automated, privacy/permission/storage/migration audit와 actual Chrome mission·failure-discard·restoration·lease·Side Panel regression을 evidence로 기록.
+14. **Transient Playback Context and advertisement safety**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P0 implementation Issue에서 route kind, lifecycle, two-layer identity, fail-closed capability와 광고 suspend/rebind/explicit Mission resume를 구현하고 exact-head 자동화와 actual Chrome으로 검증한다.
 
 기능을 먼저 제거해 v1.11 사용자의 데이터를 읽지 못하게 만들면 안 된다. migration decoder와 fixture를 먼저 고정하고, 제거 작업과 정상 v2 경로 전환이 같은 릴리스에서 일관되게 완료돼야 한다.
 
@@ -620,6 +654,8 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - multilingual answer normalization, exact/almost threshold, draft-independent Shape/First-graphemes mask, support skip와 Reveal이 deterministic하고 typed draft에서 expected token을 추론하지 않는다.
 - first round, optional one retry, combo, 1–3 stars, Perfect와 difficult candidates가 계약과 일치한다. `Later`/Reveal-only visit은 `totalAttempts: 0`을 기록할 수 있고 retry clear는 mastered를 소급하지 않는다.
 - mission은 exact current video state를 capture하고 Play Plus overlay/controller만 transiently suppress한다. 1.0×/0.75× clip, pre/post-roll cap, 모든 end mode, 5초 heartbeat/15초 lease와 route/video/source/revision invalidation이 old text나 media command를 새 video에 적용하지 않고 정상·emergency cleanup을 수행한다.
+- locale/suffix-tolerant route parser 지원을 좁히지 않으면서 parser support와 learning eligibility를 분리한다. exact `routeKind`, lifecycle, `contentEpoch`, 기존 `videoRevision` 기반 media attachment revision과 subtitle/source identity가 독립적으로 검증되고, supported `movie | episode`의 current `content` attachment에서만 learning capability가 열린다.
+- 광고와 모호한 전환에서는 capability와 identity-bound 작업이 즉시 suspend되고 광고 media/time/cue/text가 자막·카드·mission·progress에 섞이지 않는다. 같은 콘텐츠 복귀는 최신 attachment에 rebind하며 일반 cue/follow만 자동 복구할 수 있고 Listening Mission은 명시적 post-ad resume를 요구한다. generic ad timeout을 두지 않으며 identity 변경·unsupported kind·이탈·lease failure에서는 frozen state를 폐기한다.
 - progress는 exact namespace와 monotonic state만 저장하고 current catalog에서 denominator를 계산한다. record/reset failure는 기존 data를 보존하며 Retry와 truthful discard escape가 각각 `restore-start`/`complete-stay`로 lock, heartbeat, observer, rate와 suppression을 즉시 정리한다.
 - difficult segment는 처음에 선택되지 않고 explicit selected-only action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
 - 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
@@ -648,6 +684,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - 깨끗한 전용 profile의 fresh install/readiness와, signed-in actual v1.11.0 전용 profile에서 대표 public data를 만든 뒤 같은 extension identity와 stable unpacked path로 수행하는 2.0 upgrade/readback을 각각 직접 확인한다. 자동 테스트는 이 두 smoke를 대신하지 않는다.
 - signed-in supported Coupang Play route에서 extension install/reload, active-tab 통신, DRM/player 접근, native와 registered learning/support source, platform-caption 비간섭과 기존 네 destination을 확인한다.
 - 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
+- Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
 - 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
