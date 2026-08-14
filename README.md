@@ -208,6 +208,7 @@ UI와 background는 페이지 DOM이나 video에 직접 접근하지 않습니�
 제품·UX·아키텍처·공개 동작 변경은 Issue에서 범위를 정한 뒤 최신 `main` 기반 작업 브랜치와 Pull Request로 진행합니다. 실제 릴리스는 별도의 릴리스 커밋과 `v<version>` 태그로 구분합니다.
 
 - 제품·마이그레이션 계약: [`docs/play-plus-2.0.md`](docs/play-plus-2.0.md)
+- Coupang Play 콘텐츠·runtime 조사 근거: [`docs/coupang-play-content-evidence.md`](docs/coupang-play-content-evidence.md)
 - 개발 workflow: [`docs/development-workflow.md`](docs/development-workflow.md)
 - 선택적 Batch Relay workflow: [`docs/batch-relay.md`](docs/batch-relay.md)
 - 저장소·검증 규칙: [`AGENTS.md`](AGENTS.md)
