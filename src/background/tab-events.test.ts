@@ -134,9 +134,20 @@ describe('active tab snapshots', () => {
       pingContent: vi.fn(async () => ({
         success: true as const,
         data: {
+          contentEpoch: 1,
           contentInstanceId: 'content-1',
           hasVideo: true,
+          learningAvailable: true,
+          lifecycle: 'content' as const,
+          mediaAttachmentRevision: 8,
+          missionResumeRequired: false,
           routeChangedAt: 1_000,
+          routeKind: 'episode' as const,
+          subtitleIdentity: {
+            learning: 'native:en',
+            subtitleRevision: 1,
+            support: null,
+          },
           videoId: '00000000-0000-4000-8000-000000000001',
           videoRevision: 8,
         },
@@ -148,7 +159,8 @@ describe('active tab snapshots', () => {
 
     await seedActiveTabConnection(snapshots, vi.fn(async () => tab), dependencies);
 
-    expect(handleSubtitleContentStatus).toHaveBeenCalledWith(3, {
+    expect(handleSubtitleContentStatus).toHaveBeenCalledWith(3, expect.objectContaining({
+      contentEpoch: 1,
       contentInstanceId: 'content-1',
       documentId: null,
       hasVideo: true,
@@ -156,7 +168,7 @@ describe('active tab snapshots', () => {
       routeChangedAt: 1_000,
       videoId: '00000000-0000-4000-8000-000000000001',
       videoRevision: 8,
-    });
+    }));
   });
 
   it('does not let a slow startup seed overwrite a newer tab event', async () => {

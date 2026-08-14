@@ -9,6 +9,7 @@ import {
 import type { ListeningProgressV1 } from '@storage/v2/type';
 import { t } from '@utils/i18n';
 import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 import { HeadphonesIcon, LoaderCircleIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 
 import type { ListeningMissionSnapshot } from '@/listening/session/mission-reducer';
@@ -50,6 +51,7 @@ type ResetRequest = Readonly<{
 type LandingState =
   | { kind: 'loading' }
   | { kind: 'disconnected'; status: 'connecting' | 'disconnected' }
+  | { context: PlaybackContextStatus; kind: 'playback-context' }
   | { kind: 'unavailable'; status: CatalogUnavailableStatus }
   | { kind: 'error' }
   | {
@@ -87,17 +89,19 @@ export function ListeningLearningPage({
 }: ListeningLearningPageProps) {
   const activeTabId = useTabStore((state) => state.activeTab?.id);
   const tabInfo = useTabStore((state) => state.tabInfo);
+  const playbackContext = useTabStore((state) => state.playbackContext);
   const connectionStatus = tabInfo?.connectionStatus;
   const learningLanguage = settingsStore((state) => state.learningProfile.learningLanguage);
   const supportLanguage = settingsStore((state) => state.learningProfile.supportLanguage);
-  const tabContextKey = `${activeTabId ?? 'none'}:${connectionStatus ?? 'unknown'}:${tabInfo?.videoStatus ?? 'unknown'}:${learningLanguage}:${supportLanguage ?? 'none'}:${tabInfo?.learningSubtitleId ?? 'native'}:${tabInfo?.supportSubtitleId ?? 'none'}`;
+  const tabContextKey = `${activeTabId ?? 'none'}:${connectionStatus ?? 'unknown'}:${tabInfo?.videoStatus ?? 'unknown'}:${playbackContext?.contentEpoch ?? 'no-epoch'}:${playbackContext?.videoRevision ?? 'no-attachment'}:${playbackContext?.subtitleIdentity.subtitleRevision ?? 'no-subtitle'}:${playbackContext?.lifecycle ?? 'no-lifecycle'}:${playbackContext?.learningAvailable ?? false}:${learningLanguage}:${supportLanguage ?? 'none'}:${tabInfo?.learningSubtitleId ?? 'native'}:${tabInfo?.supportSubtitleId ?? 'none'}`;
   const acquireNavigationLock = usePageStore((state) => state.acquireNavigationLock);
   const transport = useMemo(
     () =>
       activeTabId === undefined || connectionStatus !== 'connected'
+        || playbackContext?.learningAvailable !== true
         ? undefined
         : transportFactory(activeTabId),
-    [activeTabId, connectionStatus, transportFactory]
+    [activeTabId, connectionStatus, playbackContext?.learningAvailable, transportFactory]
   );
   const [activeMission, setActiveMission] = useState<ActiveMission>();
   const [announcement, setAnnouncement] = useState<string>();
@@ -107,6 +111,8 @@ export function ListeningLearningPage({
   const [fatalTeardown, setFatalTeardown] = useState<FatalTeardownState>();
   const [landing, setLanding] = useState<LandingState>({ kind: 'loading' });
   const [reloadRevision, setReloadRevision] = useState(0);
+  const [resumeError, setResumeError] = useState(false);
+  const [resumePending, setResumePending] = useState(false);
   const [resetError, setResetError] = useState(false);
   const [resetPending, setResetPending] = useState(false);
   const [resetRequest, setResetRequest] = useState<ResetRequest>();
@@ -424,6 +430,14 @@ export function ListeningLearningPage({
     setBeginError(undefined);
 
     if (!transport) {
+      if (
+        activeTabId !== undefined &&
+        connectionStatus === 'connected' &&
+        playbackContext !== null
+      ) {
+        setLanding({ context: playbackContext, kind: 'playback-context' });
+        return;
+      }
       setLanding({
         kind: 'disconnected',
         status:
@@ -504,6 +518,7 @@ export function ListeningLearningPage({
     startMission,
     tabContextKey,
     transport,
+    playbackContext,
   ]);
 
   useEffect(() => {
@@ -572,6 +587,22 @@ export function ListeningLearningPage({
   }, [clearActiveMission]);
 
   const getPracticedAt = useCallback(() => new Date().toISOString(), []);
+
+  const resumeAfterAdvertisement = async () => {
+    const current = activeMissionRef.current;
+    if (!current || resumePending) return;
+    setResumeError(false);
+    setResumePending(true);
+    const result = await current.controller.resumeAfterAdvertisement();
+    if (!mountedRef.current || activeMissionRef.current !== current) return;
+    setResumePending(false);
+    if (result === 'resumed') return;
+    if (result === 'error') {
+      setResumeError(true);
+      return;
+    }
+    fatalHandlerRef.current?.(current.sessionId, result);
+  };
 
   const openReset = (target: ResetTarget) => {
     if (beginPendingRef.current || resetPendingRef.current || landing.kind !== 'ready') return;
@@ -685,15 +716,32 @@ export function ListeningLearningPage({
   };
 
   if (activeMission) {
+    const interrupted = playbackContext?.missionResumeRequired === true;
+    const canResume =
+      interrupted &&
+      playbackContext.lifecycle === 'content' &&
+      playbackContext.learningAvailable;
     return (
-      <ListeningMission
-        controller={activeMission.controller}
-        getPracticedAt={getPracticedAt}
-        snapshot={activeMission.snapshot}
-        onExit={returnToIdle}
-        onNextMission={startNextMission}
-        onOwnershipChange={onOwnershipChange}
-      />
+      <>
+        <div className={interrupted ? 'hidden' : 'h-full min-h-0'} inert={interrupted}>
+          <ListeningMission
+            controller={activeMission.controller}
+            getPracticedAt={getPracticedAt}
+            snapshot={activeMission.snapshot}
+            onExit={returnToIdle}
+            onNextMission={startNextMission}
+            onOwnershipChange={onOwnershipChange}
+          />
+        </div>
+        {interrupted && (
+          <MissionAdvertisementInterruption
+            canResume={canResume}
+            error={resumeError}
+            pending={resumePending}
+            onResume={() => void resumeAfterAdvertisement()}
+          />
+        )}
+      </>
     );
   }
 
@@ -794,6 +842,14 @@ function LandingContent({
   if (landing.kind === 'error') {
     return <LandingNotice action={t('v2_retry')} title={t('v2_listening_landing_error_title')} description={t('v2_listening_landing_error_description')} onAction={onRetry} />;
   }
+  if (landing.kind === 'playback-context') {
+    return (
+      <LandingNotice
+        title={t('v2_listening_playback_waiting_title')}
+        description={t('v2_listening_playback_waiting_description')}
+      />
+    );
+  }
   if (landing.kind === 'unavailable') {
     return <LandingNotice {...unavailableCopy(landing.status)} action={t('v2_retry')} onAction={onRetry} />;
   }
@@ -831,6 +887,51 @@ function LandingContent({
         </Button>
       </div>
     </div>
+  );
+}
+
+function MissionAdvertisementInterruption({
+  canResume,
+  error,
+  onResume,
+  pending,
+}: {
+  canResume: boolean;
+  error: boolean;
+  onResume: () => void;
+  pending: boolean;
+}) {
+  return (
+    <section
+      aria-live='polite'
+      className='flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-y-auto p-6 text-center'
+      data-scroll-owner='learning-advertisement'
+    >
+      <h1 className='text-wrap text-lg font-semibold'>
+        {t(
+          canResume
+            ? 'v2_listening_advertisement_returned_title'
+            : 'v2_listening_advertisement_title'
+        )}
+      </h1>
+      <p className='text-wrap text-sm text-muted-foreground'>
+        {t(
+          canResume
+            ? 'v2_listening_advertisement_returned_description'
+            : 'v2_listening_advertisement_description'
+        )}
+      </p>
+      {error && (
+        <p role='alert' className='text-wrap text-sm text-destructive'>
+          {t('v2_listening_advertisement_resume_error')}
+        </p>
+      )}
+      {canResume && (
+        <Button disabled={pending} onClick={onResume}>
+          {t('v2_listening_advertisement_continue')}
+        </Button>
+      )}
+    </section>
   );
 }
 

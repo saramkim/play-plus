@@ -1,4 +1,3 @@
-
 import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
 import { listeningSegmentKeySchema } from '@storage/v2/schema';
 import type { BeginListeningSessionResponse } from '@utils/message/type';
@@ -451,6 +450,7 @@ const SEGMENT_D = listeningSegmentKeySchema.parse(`segment-v1-${'d'.repeat(64)}`
 const catalog = {
   currentTime: 1,
   identity: {
+    contentEpoch: 1,
     contentInstanceId: 'content-a',
     routeChangedAt: 1,
     videoId: '123e4567-e89b-12d3-a456-426614174020',

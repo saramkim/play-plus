@@ -8,6 +8,11 @@ import {
 import { listeningVideoIdSchema } from '@storage/v2/schema';
 import { onMessage } from '@utils/message';
 import type { ContentBootstrap, MessageSchema, V2ReadinessStatus } from '@utils/message/type';
+import {
+  playbackContextStatusSchema,
+  selectPlaybackContextStatus,
+  type PlaybackContextStatus,
+} from '@utils/playback-context';
 
 import { respondToAsyncMessage } from './async-message-response';
 import { getOpenSubtitlesErrorDetails } from './opensubtitles-client';
@@ -17,6 +22,7 @@ type BackgroundMessageHandlerDependencies = {
   getReadiness: () => Promise<V2ReadinessStatus>;
   retryReadiness: () => Promise<V2ReadinessStatus>;
   getContentBootstrap: (tabId: number) => Promise<ContentBootstrap>;
+  getPlaybackContext?: (tabId: number) => Promise<PlaybackContextStatus | null>;
   searchOpenSubtitles: (
     params: MessageSchema['searchOpenSubtitles']['params']
   ) => Promise<MessageSchema['searchOpenSubtitles']['response']>;
@@ -26,29 +32,13 @@ type BackgroundMessageHandlerDependencies = {
   handleViewVideo: (params: MessageSchema['viewVideo']['params']) => Promise<void>;
   handleSubtitleContentStatus: (
     tabId: number,
-    status: {
-      contentInstanceId: string;
-      documentId: string | null;
-      hasVideo: boolean;
-      isVideoUrl: boolean;
-      routeChangedAt: number;
-      videoId: string | null;
-      videoRevision: number;
-    }
+    status: MessageSchema['contentStatus']['params'] & { documentId: string | null }
   ) => Promise<void>;
   learningCards: V2LearningCardStorageApi;
   listeningProgress: V2ListeningProgressStorageApi;
   updateConnectedStatus: (
     tabId: number,
-    status: {
-      contentInstanceId: string;
-      documentId: string | null;
-      hasVideo: boolean;
-      isVideoUrl: boolean;
-      routeChangedAt: number;
-      videoId: string | null;
-      videoRevision: number;
-    }
+    status: MessageSchema['contentStatus']['params'] & { documentId: string | null }
   ) => Promise<boolean>;
 };
 
@@ -120,22 +110,21 @@ export const registerBackgroundMessageHandler = (
           enqueueContentStatus(tabId, () =>
             runBackgroundOperation(async () => {
               await dependencies.awaitReady();
-              const {
-                contentInstanceId,
-                hasVideo,
-                isVideoUrl,
-                routeChangedAt,
-                videoId,
-                videoRevision,
-              } = request.params;
+              const playbackContext = playbackContextStatusSchema.safeParse(
+                selectPlaybackContextStatus(request.params)
+              );
+              if (
+                !playbackContext.success ||
+                typeof request.params.hasVideo !== 'boolean' ||
+                typeof request.params.isVideoUrl !== 'boolean'
+              ) {
+                throw new Error('Invalid content status');
+              }
               const status = {
-                contentInstanceId,
+                ...playbackContext.data,
                 documentId: request.sender.documentId ?? null,
-                hasVideo,
-                isVideoUrl,
-                routeChangedAt,
-                videoId,
-                videoRevision,
+                hasVideo: request.params.hasVideo,
+                isVideoUrl: request.params.isVideoUrl,
               };
               if (await dependencies.updateConnectedStatus(tabId, status)) {
                 await dependencies.handleSubtitleContentStatus(tabId, status);
@@ -144,6 +133,14 @@ export const registerBackgroundMessageHandler = (
           )
         );
       }
+      case 'getPlaybackContext':
+        return respondToAsyncMessage(request.sendResponse, () =>
+          runBackgroundOperation(async () => {
+            await dependencies.awaitReady();
+            const tabId = z.number().int().nonnegative().parse(request.params.tabId);
+            return dependencies.getPlaybackContext?.(tabId) ?? null;
+          })
+        );
       case 'searchOpenSubtitles':
         return respondToAsyncMessage(
           request.sendResponse,

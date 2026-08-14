@@ -13,6 +13,7 @@ import { videoManager } from '@/content/core/video/video-manager';
 import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
+import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 import {
   useVideoControlStore,
@@ -397,6 +398,7 @@ const lastToastMessage = () => {
 
 const resetStores = () => {
   useListeningMissionActiveStore.getState().setActive(false);
+  usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
   useVideoControlStore.getState().reset();
   usePlaybackSpeedStore.getState().resetSpeed();
   useToastStore.getState().clearToasts();
@@ -405,6 +407,20 @@ const resetStores = () => {
   subtitleStore.setSettings(structuredClone(DEFAULT_V2_SYNC_STORAGE));
   vi.mocked(sendMessage).mockReset();
 };
+
+const SUPPORTED_PLAYBACK_CONTEXT = {
+  contentEpoch: 1,
+  contentInstanceId: 'content-test',
+  learningAvailable: true,
+  lifecycle: 'content',
+  mediaAttachmentRevision: 1,
+  missionResumeRequired: false,
+  routeChangedAt: 1,
+  routeKind: 'episode',
+  subtitleIdentity: { learning: 'native:en', subtitleRevision: 1, support: null },
+  videoId: 'video-test',
+  videoRevision: 1,
+} as const;
 
 const createDependencies = (storage: V2SyncStorageApi): VideoControllerDependencies => ({ document, storage });
 

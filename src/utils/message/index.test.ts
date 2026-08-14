@@ -9,11 +9,21 @@ beforeEach(() => {
 
 describe('message transport', () => {
   it('preserves falsy runtime and tab message payloads', async () => {
-    await sendMessage('playVideo', { startTime: 0 });
-    await sendMessageToTab(7, 'playVideo', { startTime: 0 });
+    const params = {
+      expectedIdentity: {
+        contentEpoch: 1,
+        contentInstanceId: 'content-a',
+        routeChangedAt: 1,
+        videoId: 'video-a',
+        videoRevision: 1,
+      },
+      startTime: 0,
+    };
+    await sendMessage('playVideo', params);
+    await sendMessageToTab(7, 'playVideo', params);
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ message: 'playVideo', params: { startTime: 0 } });
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'playVideo', params: { startTime: 0 } });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ message: 'playVideo', params });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, { message: 'playVideo', params });
   });
 
   it('omits params for messages without payloads', async () => {
@@ -40,6 +50,7 @@ describe('message transport', () => {
 
   it('preserves the direct listening boundary and sends only progress facts to background', async () => {
     const identity = {
+      contentEpoch: 1,
       contentInstanceId: 'content-listening',
       routeChangedAt: 1_000,
       videoId: 'video-listening',
@@ -124,6 +135,7 @@ describe('message transport', () => {
       {
         message: 'contentStatus',
         params: {
+          contentEpoch: 1,
           contentInstanceId: 'content-1',
           hasVideo: true,
           isVideoUrl: true,

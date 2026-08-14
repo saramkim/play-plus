@@ -1,21 +1,16 @@
 import { updateTabInfo } from '@storage/tab';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { MessageResponse, sendMessageToTab } from '@utils/message';
+import type { MessageSchema } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 
 type ConnectionStatusDependencies = {
   getCurrentVideoId: (tabId: number) => Promise<string | null>;
   handleSubtitleContentStatus: (
     tabId: number,
-    status: {
-      contentInstanceId: string;
-      documentId: string | null;
-      hasVideo: boolean;
-      isVideoUrl: boolean;
-      routeChangedAt: number;
-      videoId: string | null;
-      videoRevision: number;
-    }
+    status: MessageSchema['contentStatus']['params'] & { documentId: string | null }
   ) => Promise<void>;
+  publishPlaybackContext: (tabId: number, status: PlaybackContextStatus | null) => Promise<void>;
   pingContent: (tabId: number) => Promise<MessageResponse<'pingContent'>>;
   updateTabInfo: typeof updateTabInfo;
 };
@@ -28,6 +23,7 @@ const defaultDependencies: ConnectionStatusDependencies = {
   getCurrentVideoId: async (tabId) => getCoupangPlayVideoId((await chrome.tabs.get(tabId)).url),
   handleSubtitleContentStatus: async () => {},
   pingContent: (tabId) => sendMessageToTab(tabId, 'pingContent'),
+  publishPlaybackContext: async () => {},
   updateTabInfo,
 };
 
@@ -70,7 +66,9 @@ export const createConnectionStatus = (
         (status.routeChangedAt < latest.routeChangedAt ||
           (status.routeChangedAt === latest.routeChangedAt &&
             status.contentInstanceId === latest.contentInstanceId &&
-            status.videoRevision < latest.videoRevision))
+            (status.contentEpoch < latest.contentEpoch ||
+              (status.contentEpoch === latest.contentEpoch &&
+                status.videoRevision < latest.videoRevision))))
       ) {
         return false;
       }
@@ -84,6 +82,7 @@ export const createConnectionStatus = (
             : 'not_detected'
           : 'idle',
       });
+      await dependencies.publishPlaybackContext(tabId, status);
 
       const verifiedVideoId = await dependencies.getCurrentVideoId(tabId);
       if (verifiedVideoId === status.videoId) return true;
@@ -120,6 +119,7 @@ export const createConnectionStatus = (
       connectionStatus: 'disconnected',
       videoStatus: isVideoUrl ? 'not_detected' : 'idle',
     });
+    await dependencies.publishPlaybackContext(tabId, null);
     const verifiedVideoId = await dependencies.getCurrentVideoId(tabId);
     if (verifiedVideoId !== expectedVideoId) {
       await restoreCurrentRouteStatus(tabId, verifiedVideoId);
@@ -139,13 +139,9 @@ export const createConnectionStatus = (
 
     if (response.success) {
       const status = {
-        contentInstanceId: response.data.contentInstanceId,
+        ...response.data,
         documentId: null,
-        hasVideo: response.data.hasVideo,
         isVideoUrl: response.data.videoId !== null,
-        routeChangedAt: response.data.routeChangedAt,
-        videoId: response.data.videoId,
-        videoRevision: response.data.videoRevision,
       };
       if (await updateConnectedStatus(tabId, status)) {
         await dependencies.handleSubtitleContentStatus(tabId, status);

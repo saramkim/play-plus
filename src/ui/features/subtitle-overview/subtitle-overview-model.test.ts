@@ -147,6 +147,7 @@ describe('subtitle overview model', () => {
 
   it('compares every content and video identity field', () => {
     const identity = {
+      contentEpoch: 1,
       contentInstanceId: 'content-a',
       routeChangedAt: 10,
       videoId: 'video-a',

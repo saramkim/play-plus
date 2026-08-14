@@ -939,6 +939,120 @@ describe('listening session coordinator', () => {
     expect(harness.media.getPaused()).toBe(false);
     expect(harness.getMissionActive()).toBe(false);
   });
+
+  it('freezes one mission across repeated ad observations and resumes only by explicit consent', async () => {
+    const harness = create();
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: false,
+          lifecycle: 'advertisement',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: true,
+        },
+        video: null,
+      };
+    });
+
+    harness.coordinator.handlePlaybackContextChange();
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+    expect(harness.getMissionActive()).toBe(true);
+    expect(
+      await harness.coordinator.play({
+        rate: 1,
+        segmentKey: begun.snapshot.segments[0].segmentKey,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'suspended' });
+    expect(
+      await harness.coordinator.heartbeat({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'alive' });
+
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: true,
+          lifecycle: 'content',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: true,
+        },
+        video: harness.media.video,
+      };
+    });
+    harness.coordinator.handlePlaybackContextChange();
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+
+    const resumed = await harness.coordinator.resumeAfterAdvertisement({
+      expectedIdentity: begun.identity,
+      expectedSubtitleRevision: begun.subtitleRevision,
+      sessionId: begun.sessionId,
+    });
+    expect(resumed).toMatchObject({
+      status: 'resumed',
+      identity: { contentEpoch: begun.identity.contentEpoch, videoRevision: 4 },
+      subtitleRevision: begun.subtitleRevision,
+    });
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
+    expect(harness.getMissionActive()).toBe(true);
+  });
+
+  it('discards a frozen mission when the logical content changes during transition', async () => {
+    const harness = create();
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.updateContext((context) => {
+      const identity = {
+        ...context.identity,
+        contentEpoch: context.identity.contentEpoch + 1,
+        routeChangedAt: context.identity.routeChangedAt + 1,
+        videoId: 'video-2',
+        videoRevision: context.identity.videoRevision + 1,
+      };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: false,
+          lifecycle: 'transitioning',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: false,
+        },
+        video: null,
+      };
+    });
+
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(harness.getMissionActive()).toBe(false);
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
+    expect(
+      await harness.coordinator.resumeAfterAdvertisement({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'stale' });
+  });
 });
 
 interface HarnessOptions {
@@ -965,6 +1079,19 @@ const createHarness = (options: HarnessOptions = {}) => {
   let context: ListeningSessionContext = {
     video: media.video,
     identity: structuredClone(IDENTITY),
+    playbackContext: {
+      ...structuredClone(IDENTITY),
+      learningAvailable: true,
+      lifecycle: 'content',
+      mediaAttachmentRevision: IDENTITY.videoRevision,
+      missionResumeRequired: false,
+      routeKind: 'episode',
+      subtitleIdentity: {
+        learning: options.sourceKey ?? NATIVE_SOURCE_KEY,
+        subtitleRevision: 4,
+        support: options.support ? 'native:ko' : null,
+      },
+    },
     subtitleRevision: 4,
     watchedUrl: 'https://www.coupangplay.com/play/video-1?episode=1',
     learning: {
@@ -1128,6 +1255,7 @@ const flushPromises = async () => {
 };
 
 const IDENTITY: ContentVideoIdentity = {
+  contentEpoch: 1,
   contentInstanceId: 'content-1',
   routeChangedAt: 1,
   videoId: 'video-1',

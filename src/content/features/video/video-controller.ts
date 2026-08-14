@@ -12,6 +12,7 @@ import { LearningCueCommand, resolveLearningCueCommand } from '@/content/feature
 import { isListeningMissionActive } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { selectSubtitleTrack, useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
+import { isLearningPlaybackAvailable } from '@/content/playback-context/playback-context-store';
 
 type VideoControlSettings = Pick<V2SyncStorage, 'playbackSpeed' | 'shortcuts'>;
 type UserLearningCommand = LearningCueCommand;
@@ -78,7 +79,7 @@ export class VideoController {
   }
 
   async execute(command: UserLearningCommand) {
-    if (isListeningMissionActive()) return;
+    if (isListeningMissionActive() || !isLearningPlaybackAvailable()) return;
 
     const video = videoManager.get();
     if (!video) {
@@ -194,7 +195,7 @@ export class VideoController {
   }
 
   private handleKeyDown = (event: KeyboardEvent) => {
-    if (isListeningMissionActive()) return;
+    if (isListeningMissionActive() || !isLearningPlaybackAvailable()) return;
 
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {

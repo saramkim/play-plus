@@ -65,6 +65,43 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
 | Reload unpacked `dist/` and run signed-in Chrome smoke | PASS | `list_extensions`에서 ID를 동적으로 확인하고 미설치 production `dist/`를 install; MCP reconnect 뒤 목록이 비어 동일 stable build를 reinstall한 다음 persistent 인증 세션의 실제 `/en/play/<video-id>/episode` route, DRM/player, registered subtitle catalog와 실제 Extension Pages Side Panel에서 아래 bounded smoke 수행 |
 
+## Issue #76 transient Playback Context certification record
+
+이 절은 merged #75 계약을 구현한 #76 후보를 최신 `main` 기준 working tree에서 검증한 기록이다. machine-specific extension ID, account/profile 값, 전체 URL, request header, cookie, subtitle 본문은 기록하지 않는다. 최종 commit SHA와 terminal CI는 Draft PR 본문과 exact-head checks에 기록한다.
+
+### Automated and boundary evidence
+
+| Check | Result | Evidence / notes |
+| --- | --- | --- |
+| Latest-main dependency | PASS | #75가 포함된 `main` `136bc4e`에서 `feature/p0-playback-context`를 시작했고 merged canonical text와 #76 contract를 다시 확인 |
+| Full local gates | PASS | `yarn.cmd type-check`, `yarn.cmd lint`, `yarn.cmd test:run` 99 files / 957 tests, `yarn.cmd build`; build warning은 기존 bundle/font size 3종뿐 |
+| Focused advertisement corrections | PASS | 실제 Chrome에서 발견한 hidden focused Mission의 `aria-hidden` warning을 `inert`로 수정했다. 동일 native replay는 `subtitleRevision`을 유지하면서도 accepted playback evidence가 current `routeKind`/capability를 다시 발행하도록 회귀 테스트를 추가했고, focused 35 tests와 full gate로 재검증 |
+| Static boundary audit | PASS | `package.json`, Yarn lock, manifest, Storage schema/key/migration과 permission/host/CSP/entry 변경 없음; 새 fetch/XHR/network primitive, telemetry, metadata acquisition, P1/P2/P3 behavior 없음 |
+| Whitespace and generated output | PASS | `git diff --check`는 최종 문서 반영 뒤 다시 실행; production `dist/`는 검증 산출물이며 tracked diff에 포함하지 않음 |
+
+### Actual Korean Chrome observations
+
+| Check | Result | Evidence / notes |
+| --- | --- | --- |
+| Dedicated KR route setup | PASS | 사용자 승인 뒤 전용 gateway가 KR egress, host routing 불변과 Coupang preflight ready를 확인; 최종 stop은 `active: false` |
+| Production extension installation | PASS | `list_extensions`에서 현재 상태를 확인하고 current absolute `dist`를 install/reload; action이 연 실제 Chrome Extension Pages Side Panel target만 증거로 사용 |
+| Authentication | PASS | persistent profile의 기존 signed-in session으로 supported route 진입; login/credential 입력·수집 없음 |
+| DRM/player access | PASS | 실제 episode 본편이 `blob:` attachment, `readyState: 4`, media error 없음, 재생 시간 진행 상태였고 광고는 별도 direct attachment로 관찰 |
+| Native subtitle acquisition | PASS | 기존 playback replay boundary의 실제 request 뒤 English learning/Korean support native catalog가 non-empty ready 상태로 Side Panel에 표시; review correction을 적용한 final rebuild에서도 동일 native replay 뒤 acquisition과 availability 발행을 반복 확인했고, player DOM track 유무와 extension acquisition을 별도 gate로 판정 |
+| Supported-content availability | PASS | `/en/play/<video-id>/episode`에서 current route/content/media/subtitle identity가 검증된 뒤에만 `Connected / Detected`, Mission catalog와 content learning controls가 활성화; final rebuild의 새 content epoch에서도 동일 segment 수와 무관하게 availability가 재발행됨을 확인 |
+| Real advertisement entry | PASS | 동일 episode의 실제 약 30초 광고에서 direct media와 host ad overlay를 확인; Side Panel은 즉시 `Advertisement`와 “Mission playback is paused”를 표시하고 Mission subtree는 `inert`, learning controls는 unavailable |
+| Same-content main return | PASS | final rebuild에서 광고 뒤 같은 episode가 latest `blob:` attachment로 `readyState: 4` 복귀; 동일 native replay는 revision을 유지했고 Side Panel은 `The advertisement has ended`와 explicit continue만 표시 |
+| Explicit Mission resume | PASS | pointer/keyboard로 `Advertisement ended · Continue`를 선택한 뒤 frozen Mission이 `Line 1 of 10`에서만 재개; zero-completed exit 뒤 cleared/mastered/best combo가 모두 0으로 유지되어 광고만으로 attempt/combo/progress가 바뀌지 않음 |
+| Ordinary cue/follow restoration | PASS | Mission 종료 뒤 main-content current time의 실제 learning cue가 다시 표시되고 Show/Hide, Previous, Next, Repeat와 Save controls가 실제 page overlay에서 복구; subtitle 본문은 기록하지 않음 |
+| SPA next-content transition | PASS | 실제 Next Episode 동작으로 새 episode/ad attachment로 전환했을 때 이전 Mission은 safe terminal state로 끝나 old text가 제거됐고, 본편 복귀 뒤 새 episode의 별도 native catalog만 표시 |
+| Unsupported route sample | PASS | 접근 가능한 실제 `/en/play/<video-id>/trailer`는 DRM 재생 중에도 Side Panel이 `Learning unavailable`과 supported-content waiting copy를 표시하고 Mission/learning capability를 fail closed |
+| Channel/highlight/unknown samples | NOT RUN | 이번 후보에서 별도 실제 표본을 열지 않았으며 fixture 결과를 real-Chrome PASS로 승계하지 않음 |
+| Pointer and keyboard | PASS | 실제 Extension Pages target에서 pointer로 Exit/Save and exit를 실행하고 keyboard로 setup, Mission entry와 post-ad continue를 실행 |
+| Console diagnostics | PASS | 최종 build에서 Side Panel/background uncaught error와 warning 0; focus warning correction 뒤 재현 없음. Side Panel form-field `id/name` DevTools issue와 host DRM robustness/preload/form/route-timer diagnostics는 별도 browser/site advisory로 기록했고 sensitive log는 관찰하지 않음 |
+| Network, permission and Storage boundary | PASS | Side Panel request는 packaged icon 1건뿐이고 host에는 기존 playback replay만 존재; manifest permission은 불변. sanitized Storage key inventory는 기존 local/sync/session keys만 포함하고 transient playback context/epoch/lifecycle/capability key는 없음 |
+
+Actual #76 core smoke는 **PASS**다. `channel`, `highlight`, `unknown`의 선택적 실제 표본만 literal `NOT RUN`이며, merge, release, tag, deployment 또는 Store submission 승인이 아니다.
+
 ## Issue #66 final integration certification record
 
 이 절은 Batch Relay #67의 마지막 통합 후보를 최신 `main`에서 다시 검증한 증거다. 아래에서 명시적으로 `PASS`로 적은 subset 외의 기존 matrix 행은 계속 `NOT RUN`이며, automated fixture나 이전 PR의 Chrome 관찰을 이번 후보의 real-Chrome `PASS`로 승계하지 않는다.

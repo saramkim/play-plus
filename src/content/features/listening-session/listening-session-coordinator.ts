@@ -11,8 +11,10 @@ import type {
   ListeningSessionSnapshot,
   MessageSchema,
   PlayListeningSegmentResponse,
+  ResumeListeningSessionAfterAdvertisementResponse,
   SaveListeningSegmentResponse,
 } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 
 import { useVideoStore } from '@/content/core/store/video-store';
 import {
@@ -47,6 +49,8 @@ type PlayListeningSegmentParams = MessageSchema['playListeningSegment']['params'
 type SaveListeningSegmentParams = MessageSchema['saveListeningSegment']['params'];
 type EndListeningSessionParams = MessageSchema['endListeningSession']['params'];
 type EndListeningSessionMode = EndListeningSessionParams['mode'];
+type ResumeListeningSessionParams =
+  MessageSchema['resumeListeningSessionAfterAdvertisement']['params'];
 
 const nonnegativeSafeIntegerSchema = z
   .number()
@@ -55,6 +59,7 @@ const nonnegativeSafeIntegerSchema = z
   .refine(Number.isSafeInteger);
 const contentVideoIdentitySchema = z
   .object({
+    contentEpoch: nonnegativeSafeIntegerSchema,
     contentInstanceId: z.string().min(1),
     routeChangedAt: z.number().finite().nonnegative(),
     videoId: z.string().min(1).nullable(),
@@ -95,6 +100,13 @@ const endParamsSchema = z
     mode: z.enum(['restore-start', 'complete-stay', 'continue-watching']),
   })
   .strict();
+const resumeParamsSchema = z
+  .object({
+    sessionId: sessionIdSchema,
+    expectedIdentity: contentVideoIdentitySchema,
+    expectedSubtitleRevision: nonnegativeSafeIntegerSchema,
+  })
+  .strict();
 
 export interface ListeningSessionTrack {
   cues: readonly V2SubtitleCue[];
@@ -109,6 +121,7 @@ export interface ListeningSessionLearningTrack extends ListeningSessionTrack {
 export interface ListeningSessionContext {
   identity: ContentVideoIdentity;
   learning: ListeningSessionLearningTrack | null;
+  playbackContext: PlaybackContextStatus;
   subtitleRevision: number;
   support: ListeningSessionTrack | null;
   video: HTMLVideoElement | null;
@@ -139,6 +152,11 @@ export interface ListeningSessionCoordinator {
   play: (params: PlayListeningSegmentParams) => Promise<PlayListeningSegmentResponse>;
   save: (params: SaveListeningSegmentParams) => Promise<SaveListeningSegmentResponse>;
   end: (params: EndListeningSessionParams) => Promise<EndListeningSessionResponse>;
+  handlePlaybackContextChange: () => void;
+  isAdvertisementResumeRequired: () => boolean;
+  resumeAfterAdvertisement: (
+    params: ResumeListeningSessionParams
+  ) => Promise<ResumeListeningSessionAfterAdvertisementResponse>;
   dispose: () => void;
 }
 
@@ -183,6 +201,7 @@ interface ActiveListeningSession {
   selectedSegments: readonly ListeningPracticeSegment[];
   sessionId: string;
   snapshot: ListeningSessionSnapshot;
+  suspendedForAdvertisement: boolean;
   video: HTMLVideoElement;
 }
 
@@ -281,6 +300,8 @@ export const createListeningSessionCoordinator = (
   const invalidateActiveClip = () => settleActiveClip({ status: 'stale' });
 
   const supersedeActiveClip = () => settleActiveClip({ status: 'error' });
+
+  const suspendActiveClip = () => settleActiveClip({ status: 'suspended' });
 
   const clearLease = (session: ActiveListeningSession) => {
     if (session.leaseTimer === null) return;
@@ -422,6 +443,9 @@ export const createListeningSessionCoordinator = (
   const prepareCatalog = async (): Promise<CatalogPreparationResult> => {
     try {
       const context = dependencies.readContext();
+      if (!context.playbackContext.learningAvailable) {
+        return { status: 'video-identity-unavailable' };
+      }
       if (!context.video || !dependencies.isCurrentVideo(context.video)) {
         return { status: 'no-video' };
       }
@@ -588,6 +612,7 @@ export const createListeningSessionCoordinator = (
         selectedSegments,
         sessionId,
         snapshot,
+        suspendedForAdvertisement: false,
         video: context.video,
       };
       startedSession = session;
@@ -693,6 +718,12 @@ export const createListeningSessionCoordinator = (
       return { status: 'stale' };
     }
 
+    if (session.suspendedForAdvertisement) {
+      session.lastHeartbeatAt = now();
+      scheduleLease(session);
+      return { status: 'alive' };
+    }
+
     // Canonical source/cue mutations always increment subtitleRevision. Keep the
     // five-second heartbeat cheap; begin and explicit saves own catalog rebuilds.
     const validation = validateSession(session);
@@ -714,6 +745,7 @@ export const createListeningSessionCoordinator = (
     const request = parsedParams.data;
     const session = activeSession;
     if (!session || session.sessionId !== request.sessionId) return { status: 'stale' };
+    if (session.suspendedForAdvertisement) return { status: 'suspended' };
     if (session.pendingEndMode !== null || session.endRetryRequired) {
       return { status: 'error' };
     }
@@ -943,6 +975,7 @@ export const createListeningSessionCoordinator = (
     const request = parsedParams.data;
     const session = activeSession;
     if (!session || session.sessionId !== request.sessionId) return { status: 'stale' };
+    if (session.suspendedForAdvertisement) return { status: 'busy' };
     if (session.pendingEndMode !== null || session.endRetryRequired) {
       return { status: 'error' };
     }
@@ -1014,6 +1047,10 @@ export const createListeningSessionCoordinator = (
         : { status: 'stale' };
     }
     if (session.sessionId !== request.sessionId) return { status: 'stale' };
+    if (session.suspendedForAdvertisement) {
+      abandonSessionWithoutSeeking(session);
+      return { status: 'ended' };
+    }
     if (session.pendingEndMode !== null && session.pendingEndMode !== request.mode) {
       return { status: 'error' };
     }
@@ -1044,10 +1081,101 @@ export const createListeningSessionCoordinator = (
     void finishSession(session, 'restore-start', false);
   };
 
-  return { getCatalog, begin, heartbeat, play, save, end, dispose };
+  const handlePlaybackContextChange = () => {
+    const session = activeSession;
+    if (!session) return;
+    let context: ListeningSessionContext;
+    try {
+      context = dependencies.readContext();
+    } catch {
+      abandonSessionWithoutSeeking(session);
+      return;
+    }
+    const sameFrozenContext = isSameFrozenContext(session.context, context);
+    const lifecycle = context.playbackContext.lifecycle;
+    if (lifecycle === 'advertisement' || lifecycle === 'transitioning') {
+      if (!sameFrozenContext) {
+        abandonSessionWithoutSeeking(session);
+        return;
+      }
+      if (!session.suspendedForAdvertisement) {
+        session.suspendedForAdvertisement = true;
+        suspendActiveClip();
+      }
+      return;
+    }
+    if (session.suspendedForAdvertisement) {
+      if (!sameFrozenContext || !isSupportedPlaybackKind(context.playbackContext.routeKind)) {
+        abandonSessionWithoutSeeking(session);
+      }
+      return;
+    }
+    if (!context.playbackContext.learningAvailable) {
+      stopAndReleaseSessionWithoutSeeking(session, context);
+    }
+  };
+
+  const resumeAfterAdvertisement = async (
+    params: ResumeListeningSessionParams
+  ): Promise<ResumeListeningSessionAfterAdvertisementResponse> => {
+    const parsed = resumeParamsSchema.safeParse(params);
+    if (!parsed.success) return { status: 'error' };
+    const session = activeSession;
+    if (!session || session.sessionId !== parsed.data.sessionId) return { status: 'stale' };
+    if (
+      !session.suspendedForAdvertisement ||
+      !isSameIdentity(parsed.data.expectedIdentity, session.context.identity) ||
+      parsed.data.expectedSubtitleRevision !== session.context.subtitleRevision
+    ) {
+      return { status: 'stale' };
+    }
+    let context: ListeningSessionContext;
+    try {
+      context = dependencies.readContext();
+    } catch {
+      return { status: 'error' };
+    }
+    if (!context.video || !dependencies.isCurrentVideo(context.video)) {
+      return { status: 'no-video' };
+    }
+    if (
+      !context.playbackContext.learningAvailable ||
+      !isSameFrozenContext(session.context, context)
+    ) {
+      abandonSessionWithoutSeeking(session);
+      return { status: 'stale' };
+    }
+    session.context = context as ReadyListeningSessionContext;
+    session.video = context.video;
+    session.suspendedForAdvertisement = false;
+    session.lastHeartbeatAt = now();
+    scheduleLease(session);
+    return {
+      status: 'resumed',
+      identity: cloneIdentity(context.identity),
+      subtitleRevision: context.subtitleRevision,
+    };
+  };
+
+  const isAdvertisementResumeRequired = () =>
+    activeSession?.suspendedForAdvertisement === true;
+
+  return {
+    getCatalog,
+    begin,
+    heartbeat,
+    play,
+    save,
+    end,
+    handlePlaybackContextChange,
+    isAdvertisementResumeRequired,
+    resumeAfterAdvertisement,
+    dispose,
+  };
 };
 
 const cloneIdentity = (identity: ContentVideoIdentity): ContentVideoIdentity => ({
+  contentEpoch: identity.contentEpoch,
   contentInstanceId: identity.contentInstanceId,
   routeChangedAt: identity.routeChangedAt,
   videoId: identity.videoId,
@@ -1055,10 +1183,27 @@ const cloneIdentity = (identity: ContentVideoIdentity): ContentVideoIdentity => 
 });
 
 const isSameIdentity = (left: ContentVideoIdentity, right: ContentVideoIdentity) =>
+  left.contentEpoch === right.contentEpoch &&
   left.contentInstanceId === right.contentInstanceId &&
   left.routeChangedAt === right.routeChangedAt &&
   left.videoId === right.videoId &&
   left.videoRevision === right.videoRevision;
+
+const isSameFrozenContext = (
+  left: ListeningSessionContext,
+  right: ListeningSessionContext
+) =>
+  left.identity.contentEpoch === right.identity.contentEpoch &&
+  left.identity.contentInstanceId === right.identity.contentInstanceId &&
+  left.identity.routeChangedAt === right.identity.routeChangedAt &&
+  left.identity.videoId === right.identity.videoId &&
+  left.subtitleRevision === right.subtitleRevision &&
+  left.learning?.sourceKey === right.learning?.sourceKey &&
+  left.playbackContext.subtitleIdentity.support ===
+    right.playbackContext.subtitleIdentity.support;
+
+const isSupportedPlaybackKind = (kind: PlaybackContextStatus['routeKind']) =>
+  kind === 'movie' || kind === 'episode';
 
 const isSameCatalogContext = (
   left: ListeningSessionContext,

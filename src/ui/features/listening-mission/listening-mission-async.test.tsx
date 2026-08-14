@@ -58,6 +58,19 @@ describe('ListeningMission asynchronous controller contract', () => {
   afterAll(() => vi.unstubAllGlobals());
 
   describe('playback generations', () => {
+    it('does not mutate progress or terminate when advertisement suspension interrupts playback', async () => {
+      const harness = createHarness();
+      harness.playSegment.mockResolvedValueOnce({ status: 'suspended' });
+
+      await renderMission(root, harness, snapshot(1));
+
+      expect(harness.playSegment.mock.calls).toEqual([[key(0), 1]]);
+      expect(container.textContent).not.toContain('v2_listening_mission_terminal_title');
+      expect(container.textContent).toContain('v2_listening_mission_round_progress:1/1');
+      expect(harness.commitProgress).not.toHaveBeenCalled();
+      expect(harness.endSession).not.toHaveBeenCalled();
+    });
+
     it('auto-plays each current line once and ignores stale playback focus', async () => {
       const first = deferred<PlaySegmentResult>();
       const second = deferred<PlaySegmentResult>();

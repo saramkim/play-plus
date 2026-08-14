@@ -101,6 +101,7 @@ describe('Listening flow selection', () => {
 const createCatalog = (count: number): ReadyListeningCatalog => ({
   currentTime: 0,
   identity: {
+    contentEpoch: 1,
     contentInstanceId: 'content-a',
     routeChangedAt: 1,
     videoId: '123e4567-e89b-12d3-a456-426614174030',

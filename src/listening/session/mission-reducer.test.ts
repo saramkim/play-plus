@@ -32,7 +32,7 @@ describe('Listening Mission controller contract', () => {
     >();
     expectTypeOf<PlaySegmentResult>().toEqualTypeOf<
       | { status: 'played' }
-      | { status: ListeningTerminalReason | 'error' }
+      | { status: ListeningTerminalReason | 'error' | 'suspended' }
     >();
     expectTypeOf<CommitProgressResult>().toEqualTypeOf<
       { status: 'saved' } | { status: 'error' }

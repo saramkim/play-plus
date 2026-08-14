@@ -4,7 +4,11 @@ import { runV2Migration } from '@storage/v2/chrome-storage-adapter';
 import { createV2LearningCardStorage } from '@storage/v2/learning-card-storage';
 import { createV2ListeningProgressStorage } from '@storage/v2/listening-progress-storage';
 import { createV2SyncStorage } from '@storage/v2/sync-storage';
-import { sendMessageToTab } from '@utils/message';
+import { sendMessage, sendMessageToTab } from '@utils/message';
+import {
+  playbackContextStatusSchema,
+  selectPlaybackContextStatus,
+} from '@utils/playback-context';
 
 import { createConnectionStatus } from './connection-status';
 import { registerBackgroundMessageHandler } from './message-handler';
@@ -46,8 +50,22 @@ const subtitleRequests = createSubtitleRequestReplayController({
   pingContent: (tabId) => sendMessageToTab(tabId, 'pingContent'),
   saveReplay: saveSubtitleReplayRequest,
 });
+const publishPlaybackContext = async (
+  tabId: number,
+  status: Parameters<typeof selectPlaybackContextStatus>[0] | null
+) => {
+  try {
+    await sendMessage('playbackContextChanged', {
+      status: status === null ? null : selectPlaybackContextStatus(status),
+      tabId,
+    });
+  } catch {
+    // The transient relay has no receiver while the Side Panel is closed.
+  }
+};
 const connectionStatus = createConnectionStatus({
   handleSubtitleContentStatus: subtitleRequests.handleContentStatus,
+  publishPlaybackContext,
 });
 
 registerRuntimeEvents();
@@ -55,6 +73,14 @@ registerBackgroundMessageHandler({
   awaitReady,
   downloadOpenSubtitle: ({ fileId, language }) => openSubtitles.download(fileId, language),
   getReadiness: readiness.wait,
+  getPlaybackContext: async (tabId) => {
+    const response = await sendMessageToTab(tabId, 'pingContent');
+    if (!response.success) return null;
+    const parsed = playbackContextStatusSchema.safeParse(
+      selectPlaybackContextStatus(response.data)
+    );
+    return parsed.success ? parsed.data : null;
+  },
   retryReadiness: readiness.retry,
   getContentBootstrap: (tabId) =>
     reconcileTabSubtitleRoles(tabId, {

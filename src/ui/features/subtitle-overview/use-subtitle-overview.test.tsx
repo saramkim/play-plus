@@ -35,6 +35,7 @@ vi.mock('@/ui/store/tab-store', () => {
 });
 
 const IDENTITY_A: ContentVideoIdentity = {
+  contentEpoch: 1,
   contentInstanceId: 'content-a',
   routeChangedAt: 100,
   videoId: 'video-a',
@@ -42,6 +43,7 @@ const IDENTITY_A: ContentVideoIdentity = {
 };
 
 const IDENTITY_B: ContentVideoIdentity = {
+  contentEpoch: 1,
   contentInstanceId: 'content-b',
   routeChangedAt: 200,
   videoId: 'video-b',

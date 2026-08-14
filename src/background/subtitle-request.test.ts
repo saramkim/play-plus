@@ -43,6 +43,7 @@ const createHarness = () => {
     pingContent: vi.fn(async () => ({
       success: true as const,
       data: {
+        contentEpoch: 1,
         contentInstanceId: 'content-1',
         hasVideo: false,
         routeChangedAt: 1_000,
@@ -146,7 +147,10 @@ describe('subtitle request replay controller', () => {
     await Promise.all([firstCapture, secondCapture]);
 
     expect(dependencies.deliver).toHaveBeenCalledTimes(2);
-    expect(dependencies.deliver).toHaveBeenLastCalledWith(5, createRequest('request-2'));
+    expect(dependencies.deliver).toHaveBeenLastCalledWith(
+      5,
+      expect.objectContaining(createRequest('request-2'))
+    );
   });
 
   it('flushes the latest capture and player revision after an older delivery fails', async () => {
@@ -177,7 +181,10 @@ describe('subtitle request replay controller', () => {
     await Promise.all([firstCapture, secondCapture, newerStatus]);
 
     expect(dependencies.deliver).toHaveBeenCalledTimes(2);
-    expect(dependencies.deliver).toHaveBeenLastCalledWith(5, createRequest('request-2'));
+    expect(dependencies.deliver).toHaveBeenLastCalledWith(
+      5,
+      expect.objectContaining(createRequest('request-2'))
+    );
 
     await controller.handleContentStatus(5, {
       hasVideo: true,
@@ -306,6 +313,7 @@ describe('subtitle request replay controller', () => {
     dependencies.pingContent.mockResolvedValue({
       success: true,
       data: {
+        contentEpoch: 1,
         contentInstanceId: 'content-1',
         hasVideo: false,
         routeChangedAt: 1_000,
@@ -337,6 +345,7 @@ describe('subtitle request replay controller', () => {
     dependencies.pingContent.mockResolvedValue({
       success: true,
       data: {
+        contentEpoch: 1,
         contentInstanceId: 'content-1',
         hasVideo: false,
         routeChangedAt: 2_000,
@@ -376,11 +385,13 @@ describe('subtitle request replay controller', () => {
     );
     expect(dependencies.deliver).toHaveBeenCalledWith(
       5,
-      createRequest('request-current', OTHER_VIDEO_ID, {
-        capturedAt: 2_100,
-        contentInstanceId: 'content-1',
-        documentId: 'document-current',
-      })
+      expect.objectContaining(
+        createRequest('request-current', OTHER_VIDEO_ID, {
+          capturedAt: 2_100,
+          contentInstanceId: 'content-1',
+          documentId: 'document-current',
+        })
+      )
     );
   });
 
@@ -557,6 +568,7 @@ describe('subtitle request replay controller', () => {
     dependencies.pingContent.mockResolvedValue({
       success: true,
       data: {
+        contentEpoch: 1,
         contentInstanceId: 'content-old',
         hasVideo: true,
         routeChangedAt: 1_000,
@@ -609,6 +621,7 @@ describe('subtitle request replay controller', () => {
     dependencies.pingContent.mockResolvedValue({
       success: true,
       data: {
+        contentEpoch: 1,
         contentInstanceId: 'content-old',
         hasVideo: true,
         routeChangedAt: 1_000,
@@ -733,7 +746,9 @@ describe('subtitle request replay controller', () => {
     expect(dependencies.deliver).toHaveBeenCalledTimes(2);
     expect(dependencies.deliver).toHaveBeenLastCalledWith(
       5,
-      createRequest('request-2', OTHER_VIDEO_ID, { contentInstanceId: 'content-2' })
+      expect.objectContaining(
+        createRequest('request-2', OTHER_VIDEO_ID, { contentInstanceId: 'content-2' })
+      )
     );
   });
 

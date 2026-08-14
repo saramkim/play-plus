@@ -452,6 +452,16 @@
     "connection_label_video_idle":  {
                                         "message":  "Waiting"
                                     },
+    "connection_label_video_advertisement": { "message": "Advertisement" },
+    "connection_video_advertisement": { "message": "Learning controls are paused while an advertisement is playing." },
+    "connection_label_video_transitioning": { "message": "Switching" },
+    "connection_video_transitioning": { "message": "Coupang Play is switching the current media." },
+    "connection_label_video_waiting": { "message": "Waiting" },
+    "connection_video_waiting": { "message": "Waiting for the current Coupang Play media." },
+    "connection_label_video_placeholder": { "message": "Preparing" },
+    "connection_video_placeholder": { "message": "Coupang Play is preparing the current media." },
+    "connection_label_video_learning_unavailable": { "message": "Learning unavailable" },
+    "connection_video_learning_unavailable": { "message": "Learning is unavailable for this unverified or unsupported content type." },
     "playback_speed":  {
                            "message":  "Playback Speed"
                        },
@@ -989,6 +999,14 @@
     "v2_listening_landing_connecting_description": { "message": "Listening practice will become available when this Coupang Play tab finishes connecting." },
     "v2_listening_landing_disconnected_title": { "message": "Connect a Coupang Play tab" },
     "v2_listening_landing_disconnected_description": { "message": "Open a supported Coupang Play video to start a Listening Mission." },
+    "v2_listening_playback_waiting_title": { "message": "Waiting for supported content" },
+    "v2_listening_playback_waiting_description": { "message": "Listening practice stays closed until the current movie or episode, media, and subtitles are verified." },
+    "v2_listening_advertisement_title": { "message": "Advertisement in progress" },
+    "v2_listening_advertisement_description": { "message": "Mission playback is paused. Advertisement media, time, and captions are not used for learning." },
+    "v2_listening_advertisement_returned_title": { "message": "The advertisement has ended" },
+    "v2_listening_advertisement_returned_description": { "message": "Your mission is still here. Continue explicitly to use the current main-content media." },
+    "v2_listening_advertisement_continue": { "message": "Advertisement ended · Continue" },
+    "v2_listening_advertisement_resume_error": { "message": "The mission could not resume on the current media." },
     "v2_listening_landing_no_video_title": { "message": "No video is ready" },
     "v2_listening_landing_no_video_description": { "message": "Start a supported Coupang Play video, then try again." },
     "v2_listening_landing_video_identity_unavailable_title": { "message": "This video is not ready for practice" },
