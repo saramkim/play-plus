@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-14 — transient Playback Context와 광고 안전 계약 추가
+최종 개정 승인일: 2026-08-15 — episode `watch_next` 학습 안전 fence 계약 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -469,7 +469,35 @@ Playback Context는 현재 Coupang Play route, 논리 콘텐츠, 실제 media at
 - 일반 overlay, current cue와 follow는 현재 본편 시점에서 자동 복구할 수 있다. 중단된 Listening Mission은 자동 재개하지 않으며 사용자의 명시적인 `광고가 끝났어요 · 계속` 계열 action 뒤에만 activity를 계속한다. 광고 자체만으로 attempt나 combo를 변경하지 않는다.
 - 광고 길이에 대한 generic timeout을 두지 않는다. route/content 또는 subtitle/source identity 변경, unsupported/unknown kind 전환, 사용자 이탈, heartbeat/lease failure에서는 frozen context와 pending work를 폐기하며 새 콘텐츠나 새 media에 재사용하지 않는다.
 
-이 경계는 새 Storage key, schema, migration, permission, host, CSP, dependency 또는 network request를 승인하지 않는다. title, year, season/episode descriptor, synopsis, artwork, watched URL, raw cue/subtitle body, request header/cookie와 runtime identity를 새로 영속 저장·로그·외부 전송하지 않는다. 비공개 discover endpoint direct fetch, 기존 native-subtitle replay 밖의 playback fetch, page main-world interception과 metadata prefetch도 승인하지 않는다. P1 playback marker, P2 subtitle variant/SDH와 P3 content descriptor/Search prefill은 [evidence 문서의 후속 후보](./coupang-play-content-evidence.md#9-%EA%B5%AC%ED%98%84-%EA%B0%80%EB%8A%A5%EC%84%B1-%ED%9B%84%EB%B3%B4%EC%99%80-p0-%EC%8A%B9%EC%9D%B8-%EC%83%81%ED%83%9C)로 남으며 이 계약에 포함되지 않는다.
+이 경계는 새 Storage key, schema, migration, permission, host, CSP, dependency 또는 network request를 승인하지 않는다. title, year, season/episode descriptor, synopsis, artwork, watched URL, raw cue/subtitle body, request header/cookie와 runtime identity를 새로 영속 저장·로그·외부 전송하지 않는다. 비공개 discover endpoint direct fetch, 기존 native-subtitle replay 밖의 playback fetch, page main-world interception과 metadata prefetch도 승인하지 않는다. P1은 아래의 episode-only `watch_next` 학습 안전 fence로만 제한해 승인한다. P2 subtitle variant/SDH와 P3 content descriptor/Search prefill은 [evidence 문서의 후속 후보](./coupang-play-content-evidence.md#9-%EA%B5%AC%ED%98%84-%EA%B0%80%EB%8A%A5%EC%84%B1-%ED%9B%84%EB%B3%B4%EC%99%80-p0-%EC%8A%B9%EC%9D%B8-%EC%83%81%ED%83%9C)로 남으며 이 계약에 포함되지 않는다.
+
+#### Episode `watch_next` learning safety fence
+
+Episode의 optional terminal learning fence는 Play Plus가 소유한 학습 동작이 다음 화 전환 영역을 침범하지 않게 하는 transient safety projection이다. acquisition qualification의 범위와 근거는 [Coupang Play runtime evidence §14](./coupang-play-content-evidence.md#14-issue-79-p1-playback-marker-acquisition-qualification--2026-08-15)에 기록한다. `routeKind === episode`이고 lifecycle이 `content`인 current Playback Context에서만 사용할 수 있다. 일반 Coupang Play 재생은 fence를 지나 계속될 수 있으며 Play Plus는 fence를 이유로 자동 pause, 자동 seek, 자동 next episode 또는 host UI click을 하지 않는다.
+
+##### Strict optional projection and invalidation
+
+- observation과 consumption은 모두 current `contentEpoch`, content instance, route change, video identity, `mediaAttachmentRevision`, learning/support source identity와 `subtitleRevision`에 정확히 묶는다. 어느 값이든 drift하면 observation과 기존 fence를 즉시 폐기한다.
+- `cue_points`는 배열이어야 하고 raw `duration`은 finite·nonnegative number여야 한다. Issue #79 qualification에서 확인한 raw-duration scale `0.001`을 적용한 duration과 current finite·nonnegative media duration을 모두 검증하며, 관계가 증명되지 않으면 fence를 만들지 않는다.
+- raw array에서 `name === "watch_next"`인 entry는 정확히 하나여야 한다. 같은 이름의 두 번째 entry는 그 entry 자체가 malformed여도 ambiguity이므로 fence 전체를 unavailable로 만든다.
+- 선택 entry는 추가·누락 field 없이 정확히 `force_stop`, `id`, `metadata`, `name`, `time`, `type` 여섯 field를 가져야 한다. `force_stop === false`, nonempty string `id`, string `metadata`, `name === "watch_next"`, `type === "CODE"`, finite·nonnegative number `time`을 만족하고, time은 normalized raw duration과 current media duration을 모두 넘지 않아야 한다.
+- malformed, unknown 또는 unqualified sibling은 자체적으로 fence를 무효화하지 않으며 marker projection 실패가 기존 `text_tracks` subtitle extraction을 실패시키거나 바꾸면 안 된다.
+- intro marker는 공개 기능에 사용하지 않고 strict consistency check에만 쓴다. malformed intro sibling 또는 strict intro marker 한쪽만 존재하는 경우는 fence를 무효화하지 않는다. 같은 strict `skip_intro_start` 또는 `skip_intro_end`가 복수이면 ambiguity로 fence를 무효화한다. strict intro marker와 `watch_next`의 source order가 감소하거나 strict intro time이 `watch_next` 이상이면 fence를 무효화한다. strict start/end가 각각 하나이면 `start < end < watch_next`여야 한다.
+- `advertisement | waiting | placeholder | transitioning`에서는 fence를 관찰하거나 소비하지 않는다. 같은 current identity가 lifecycle `content`로 복귀한 뒤 raw evidence와 모든 identity를 다시 검증해야 한다. marker를 Storage, cache, telemetry, diagnostics 또는 background/UI relay에 보존하지 않는다.
+- fence가 unavailable이면 marker timing을 추측하거나 subtitle 끝, media duration, `show_recommendations`, DOM 또는 title로 대체 terminal을 만들지 않고 기존 marker-agnostic 동작을 유지한다.
+
+##### Learning operation boundary
+
+- Listening Mission catalog에는 각 학습 segment의 전체 effective interval이 fence 안에서 끝나는 항목만 포함한다. fence를 가로지르는 segment를 자르거나 일부 cue만 남겨 부분 문제를 만들지 않는다.
+- automatic clip, 새 line playback, `Listen again`과 `Slow 0.75×` replay는 pre-roll과 post-roll을 포함한 전체 요청 interval을 fence 안으로 제한하며 fence를 넘는 playback command를 발행하지 않는다.
+- previous/next/current-line repeat와 전체 자막 행 seek는 target cue 또는 segment의 전체 effective interval이 fence 안에서 끝날 때만 실행한다. fence 뒤 현재 위치에서 사용자가 명시적으로 이전의 유효한 pre-fence 문장으로 돌아가는 동작은 허용할 수 있다.
+- control affordance는 current valid target에 대해 계속 제공한다. 기존 controls-always-available 계약은 fence 밖 operation을 발행하거나 invalid target을 실행해야 한다는 뜻이 아니다.
+- 마지막 pre-fence Mission을 마치면 기존 Results 상태로 이동하고 fence 뒤 항목을 대상으로 하는 `Next 10`은 제공하지 않는다.
+- `Continue Watching`은 active clip, Mission media ownership과 Play Plus observer를 정리하고 현재 위치에서 original rate와 transient visibility를 복원한 뒤 host playback으로 제어권을 돌려준다. 이 handoff는 host의 다음 화 UI를 inspect·click하거나 playback 위치를 fence로 강제하는 동작이 아니다.
+
+후속 구현에서 content script는 모든 current identity에 묶인 derived transient fence만 유지한다. raw marker response, ID, metadata, exact timing, title, content ID, full URL, request header/cookie/token 또는 viewing history를 background, UI, diagnostics, telemetry, committed evidence나 외부 network로 relay하지 않는다. normal page traffic과 기존 one-time native-subtitle playback replay만 유지하며 `chrome.storage.local/sync/session`, Web Storage, schema와 migration을 변경하지 않는다.
+
+이 fence는 Skip Intro 버튼·UI·단축키·설정, manual/automatic intro skip, intro 구간 seek, `show_recommendations`, movie/trailer/channel/highlight/unknown marker, marker 표시, raw marker relay, persistence, cache 또는 Learning Card time/schema 변경을 승인하지 않는다. 새 request, retry, prefetch, interception, bridge, permission, host, CSP, dependency, Storage schema/migration도 추가하지 않는다. 후속 production 구현은 이 amendment가 reviewed·merged된 뒤 별도 Issue에서만 시작한다.
 
 #### Explicit OpenSubtitles acquisition
 
@@ -595,6 +623,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 12. **Active-video Listening Mission integration**: direct UI-content catalog/session, content-owned playback·restore·lease, Learning entry/progress, background progress API와 explicit canonical Library save를 연결.
 13. **Listening Mission latest-main certification**: combined automated, privacy/permission/storage/migration audit와 actual Chrome mission·failure-discard·restoration·lease·Side Panel regression을 evidence로 기록.
 14. **Transient Playback Context and advertisement safety**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P0 implementation Issue에서 route kind, lifecycle, two-layer identity, fail-closed capability와 광고 suspend/rebind/explicit Mission resume를 구현하고 exact-head 자동화와 actual Chrome으로 검증한다.
+15. **Episode `watch_next` learning safety fence**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P1 implementation Issue에서 strict optional marker projection을 current P0 identity에 결합하고 Mission catalog/clip/replay, learning seek/repeat, Results/`Next 10`과 explicit `Continue Watching` 경계를 구현한다. production code는 이 문서 변경에 포함하지 않는다.
 
 기능을 먼저 제거해 v1.11 사용자의 데이터를 읽지 못하게 만들면 안 된다. migration decoder와 fixture를 먼저 고정하고, 제거 작업과 정상 v2 경로 전환이 같은 릴리스에서 일관되게 완료돼야 한다.
 
@@ -656,6 +685,8 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - mission은 exact current video state를 capture하고 Play Plus overlay/controller만 transiently suppress한다. 1.0×/0.75× clip, pre/post-roll cap, 모든 end mode, 5초 heartbeat/15초 lease와 route/video/source/revision invalidation이 old text나 media command를 새 video에 적용하지 않고 정상·emergency cleanup을 수행한다.
 - locale/suffix-tolerant route parser 지원을 좁히지 않으면서 parser support와 learning eligibility를 분리한다. exact `routeKind`, lifecycle, `contentEpoch`, 기존 `videoRevision` 기반 media attachment revision과 subtitle/source identity가 독립적으로 검증되고, supported `movie | episode`의 current `content` attachment에서만 learning capability가 열린다.
 - 광고와 모호한 전환에서는 capability와 identity-bound 작업이 즉시 suspend되고 광고 media/time/cue/text가 자막·카드·mission·progress에 섞이지 않는다. 같은 콘텐츠 복귀는 최신 attachment에 rebind하며 일반 cue/follow만 자동 복구할 수 있고 Listening Mission은 명시적 post-ad resume를 요구한다. generic ad timeout을 두지 않으며 identity 변경·unsupported kind·이탈·lease failure에서는 frozen state를 폐기한다.
+- episode/content-only `watch_next` fence는 strict uniqueness/shape/type/unit/range와 intro consistency를 모두 만족한 current P0 identity에서만 transiently 존재한다. malformed·unknown sibling과 marker projection failure는 native subtitle extraction을 바꾸지 않고 missing·ambiguous·stale·advertisement evidence는 marker-agnostic fallback으로 fail closed한다.
+- Mission catalog는 전체 effective interval이 fence 안에서 끝나는 segment만 포함하고 crossing segment를 자르지 않는다. clip/replay와 learning seek/repeat는 전체 interval이 fence 안인 target만 실행하며 마지막 pre-fence Results 뒤 fence 밖 `Next 10`을 만들지 않는다. explicit `Continue Watching`은 Play Plus ownership을 정리해 host playback에 제어권을 돌려주되 일반 playback을 자동 pause/seek/next/click하지 않는다.
 - progress는 exact namespace와 monotonic state만 저장하고 current catalog에서 denominator를 계산한다. record/reset failure는 기존 data를 보존하며 Retry와 truthful discard escape가 각각 `restore-start`/`complete-stay`로 lock, heartbeat, observer, rate와 suppression을 즉시 정리한다.
 - difficult segment는 처음에 선택되지 않고 explicit selected-only action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
 - 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
@@ -685,6 +716,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - signed-in supported Coupang Play route에서 extension install/reload, active-tab 통신, DRM/player 접근, native와 registered learning/support source, platform-caption 비간섭과 기존 네 destination을 확인한다.
 - 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
 - Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
+- episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 두 독립 episode positive와 missing/invalid negative를 확인한다. 마지막 pre-fence Mission, Results, fence 뒤 `Next 10` 부재, explicit `Continue Watching`, bounded clip/replay와 learning seek/repeat, same-document next-episode SPA, advertisement → content, attachment/source/revision drift, 추가 network 0과 새 Storage/permission 0을 확인한다. 이 핵심 row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
 - 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
