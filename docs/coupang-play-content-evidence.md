@@ -1,6 +1,6 @@
 # Coupang Play Content and Runtime Evidence
 
-상태: **2026-08-14 조사와 2026-08-15 Issue #79 qualification의 비규범적 기록**
+상태: **2026-08-14 조사와 2026-08-15 Issue #79·#80 qualification의 비규범적 기록**
 
 이 문서는 Play Plus가 Coupang Play의 현재 콘텐츠와 재생 상태를 어느 정도 이해할 수 있는지 판단하기 위해 실제 서비스에서 관찰한 데이터 surface를 기록한다. Coupang Play의 공개·버전 고정 API 계약, Play Plus 2.0 기능 승인, 구현 계획 또는 릴리스 smoke 결과가 아니다.
 
@@ -366,8 +366,8 @@ content 내부의 lifecycle 분류는 background/UI로 올라가면서 주로 `h
 | 우선순위 후보 | 사용자 결과 | 이용 가능한 근거 | 기술 판단 | 아직 필요한 결정 |
 | --- | --- | --- | --- | --- |
 | P0 Content and Runtime Spine — canonical boundary approved | 현재 콘텐츠가 영화·에피소드·트레일러·라이브·하이라이트인지 알고 검증된 movie/episode content runtime에서만 학습 기능을 활성화 | route suffix, playback `titleType`, lifecycle | exact route kind, lifecycle, two-layer identity, fail-closed capability와 advertisement safety만 승인. 새 metadata request 없음 | 후속 implementation Issue는 canonical amendment merge 뒤에만 시작하고 actual extension에서 검증 |
-| P1 Playback Markers | intro 경계와 다음 화·추천 화면 전에 반복·Mission을 안전하게 끝냄 | 기존 playback replay의 `cue_points` | [Issue #79 qualification](#13-issue-79-p1-playback-marker-acquisition-qualification--2026-08-15)은 episode intro pair/`watch_next`에 한해 `READY FOR CONTRACT DISCUSSION`; production 계약은 미승인 | 추천 marker 의미, missing/drift fallback, 자동 행동 여부 |
-| P2 Subtitle Variant Compatibility | `ko sdh` 같은 실제 provider track을 잃지 않고 명시적으로 선택 | playback `text_tracks` | 높음. 현재 gap이 구체적 | normalization, SDH 표시, 동일 언어 복수 track 우선순위 |
+| P1 Playback Markers | intro 경계와 다음 화·추천 화면 전에 반복·Mission을 안전하게 끝냄 | 기존 playback replay의 `cue_points` | [Issue #79 qualification](#14-issue-79-p1-playback-marker-acquisition-qualification--2026-08-15)은 episode intro pair/`watch_next`에 한해 `READY FOR CONTRACT DISCUSSION`; production 계약은 미승인 | 추천 marker 의미, missing/drift fallback, 자동 행동 여부 |
+| P2 Subtitle Variant Compatibility | `ko sdh` 같은 실제 provider track을 잃지 않고 명시적으로 선택 | playback `text_tracks` | [Issue #80 qualification](#13-issue-80-p2-native-subtitle-variant-qualification--2026-08-15)은 실제 compatibility risk에 한해 `READY FOR CONTRACT DISCUSSION`; production 계약은 미승인 | normalization, SDH 표시, 동일 언어 복수 track 우선순위 |
 | P3 Explicit Content Descriptor | 사용자 요청 때 작품명·연도·시즌·회차를 보여 주거나 검색 입력 후보로 사용 | title/episode/clip/event response | 데이터는 충분하지만 획득 POC 필요 | explicit action, 전송·보존 범위, locale, private API failure UX |
 | Later Content Library | artwork, synopsis, 영상별 grouping/search | discover metadata | 기술적으로 가능하나 범위·유지비 큼 | 자동 수집·영속 schema·refresh·privacy 전체 계약 |
 | Later Live/Sports Learning | live DVR와 스포츠에 학습 기능 제공 | event/playback/runtime | 현재 표본으로는 부족 | entitlement, live seek window, subtitles, end/restore semantics |
@@ -460,9 +460,129 @@ availability/capability
 4. Codex가 후속 논의에 먼저 제안하는 후보는 자동 metadata 수집이 아니라 content kind, lifecycle와 capability를 분리하는 transient safety spine이다.
 5. 제목·시즌·회차 descriptor는 기술적으로 가능하지만 실제 extension 획득 POC, explicit initiation, non-persistence와 private API failure 계약을 먼저 정해야 한다.
 
-## 13. Issue #79 P1 Playback Marker Acquisition Qualification — 2026-08-15
+## 13. Issue #80 P2 Native Subtitle Variant Qualification — 2026-08-15
 
-### 13.1 범위와 판정 규칙
+### 13.1 범위와 기준
+
+이 절은 Issue #80의 **qualification-only** 결과다. P2 구현, canonical 계약 변경, 언어 normalization, SDH/CC 분류 정책, 기본·우선순위, selector UI, source identity 재설계 또는 retry 정책을 승인하지 않는다.
+
+| 항목 | 기록 |
+| --- | --- |
+| 조사 기준일 | 2026-08-15 |
+| latest-main 기준 | `11f1133c55f3b659b39bebe1a3308dcffaf14f6d` — PR #78의 transient Playback Context 포함 |
+| tracked 변경 범위 | 이 evidence 절, characterization test와 tests-only helper만 포함. production runtime과 canonical 문서는 변경하지 않음 |
+| 실제 표본 제한 | anonymous movie 3개와 episode 2개, 총 5개 attachment를 조사함. movie 2개와 episode 2개가 accepted baseline이며 hard cap 10을 넘지 않음 |
+| 실제 값 제한 | title·ID·URL·request/header·raw descriptor/response·cue 본문/수·시각을 기록하지 않고 category, field-presence, URL shape와 boolean outcome만 기록 |
+
+### 13.2 현재 획득과 소실 경로
+
+현재 경로는 다음과 같다.
+
+1. [background capture](../src/background/subtitle-request.ts)가 page-owned playback request를 포착하고 현재 `contentEpoch`, content instance, route change, video identity와 `videoRevision`에 묶어 content에 replay를 전달한다.
+2. [content adapter](../src/content/coupang-play.ts)는 replay response의 `raw.text_tracks`를 strict하게 parse하고 exact `kind: subtitles`, truthy `srclang`과 usable URL만 남긴다. direct `src`를 먼저 사용하고 nullish일 때만 `sources[0].src`로 fallback한다.
+3. 같은 adapter가 남은 모든 track body를 `Promise.all`로 fetch하고 VTT로 parse한다. 한 track의 fetch/body-read failure가 전체 acquisition을 reject한다.
+4. [content receiver](../src/content/message-handler.ts)는 전체 fetch가 끝난 뒤 superseded request, route/video와 P0 identity를 다시 검증한다. 그 다음 raw `srclang`을 exact [language schema](../src/storage/v2/schema.ts)에 통과시키며 실패한 값은 버린다.
+5. 통과한 cue는 [subtitle store](../src/content/features/subtitle/subtitle-store.ts)의 `nativeCueCache[language]`에 순서대로 기록된다. 같은 canonical language가 여러 번 나오면 뒤 track이 앞 track을 덮는다.
+6. learning과 playback source identity는 variant가 아니라 `native:<language>`이며 global `subtitleRevision`만 함께 검증한다. 따라서 같은 언어 복수 variant는 cache와 source identity 양쪽에서 충돌한다.
+
+이 경로에는 descriptor label, MIME, default, variant identity를 보존하는 production field가 없다. native role 선택도 canonical language만 저장하므로 qualification에서 variant 정책을 정해도 현재 계약에 넣을 위치는 없다.
+
+### 13.3 synthetic characterization matrix
+
+모든 fixture 값은 synthetic이다. 실제 provider 값, URL 또는 cue를 복제하지 않았다.
+
+| Shape | 현재 결과 | characterization |
+| --- | --- | --- |
+| regular + canonical language + direct source + non-empty parse | fetch·parse 뒤 exact validation과 cache retention 성공 | canonical baseline |
+| accessibility-like language identifier | track은 fetch·parse되지만 exact language validation에서 drop | 실제 normalization 정책 미결정 |
+| 같은 canonical language track 2개 | 둘 다 fetch·parse되며 cache는 뒤 track 하나만 보존 | `native:<language>`도 동일해 collision risk 확인 |
+| case variation | fetch·parse 뒤 exact validation에서 drop | case normalization 미결정 |
+| canonical에 없는 region variation | fetch·parse 뒤 exact validation에서 drop | region mapping 미결정 |
+| canonical region key | exact validation과 retention 성공 | 기존 key baseline만 확인 |
+| metadata, captions와 unknown kind | exact `subtitles`가 아니므로 body fetch 전 제외 | captions 포함 여부는 미결정, metadata exclusion은 feasible |
+| missing, null 또는 empty language | body fetch 전 제외 | fail-closed current behavior |
+| invalid language type | playback envelope 전체 parse 실패 | sibling isolation 없음 |
+| direct source 없음, valid `sources[]` | 첫 fallback source 사용 | existing fallback 확인 |
+| direct source와 fallback 모두 있음 | direct source 사용 | current precedence characterization이며 future policy 승인 아님 |
+| empty-string direct source와 valid fallback | nullish fallback을 사용하지 않고 track drop | current edge case |
+| usable URL 없음 | body fetch 전 track drop | fail-closed current behavior |
+| parse-empty | empty cue array를 language cache에 기록하지만 native learning source는 unavailable | empty/failure 표현 정책 미결정 |
+| body-read 또는 한 track fetch failure | `Promise.all`이 전체 acquisition reject | 성공한 sibling도 적용되지 않음 |
+| tests-only sibling settlement | 실패 track과 성공 track을 분리 가능 | acquisition boundary 변경 없이 기술적 feasibility만 확인; retry/retention 정책 미결정 |
+| stale epoch, instance, route, video 또는 attachment | observation reject | P0 identity binding 유지 |
+| subtitle source 또는 revision 변경 | observation reject | P2 source binding 유지 |
+| non-`content` lifecycle 또는 unsupported route kind | observation reject | advertisement/transition과 unsupported kind 제외 |
+
+### 13.4 actual unpacked-extension sample
+
+표본 label과 실제 콘텐츠 사이의 mapping은 만들거나 저장하지 않는다. `NOT OBSERVED WITHIN SAMPLE`은 부재를 뜻하지 않는다.
+
+| Sample | P0 kind/lifecycle/identity gate | regular path | accessibility-like path | coexistence·case·region | non-subtitle·URL shape | 판정 |
+| --- | --- | --- | --- | --- | --- | --- |
+| M1 | UNKNOWN — supported movie attachment 뒤 content player가 진행하지 않아 acceptance 전 중단 | UNKNOWN | UNKNOWN | NOT OBSERVED WITHIN SAMPLE | UNKNOWN | 환경/player stall; variant evidence로 사용하지 않음 |
+| M2 | PASS — `movie/content`, route·epoch·instance·video·attachment·source revision bound | NOT OBSERVED WITHIN SAMPLE | NOT OBSERVED WITHIN SAMPLE | same-base·case·region NOT OBSERVED WITHIN SAMPLE | metadata만 관찰·body fetch 전 제외; direct와 fallback field가 함께 있는 shape | accepted negative sample |
+| M3 | PASS — `movie/content`, 모든 P0/source binding 유지 | canonical track fetch·non-empty parse·retention PASS | NOT OBSERVED WITHIN SAMPLE | same-base·case·region NOT OBSERVED WITHIN SAMPLE | metadata 제외; canonical descriptor에 direct와 fallback field가 함께 있음 | accepted regular baseline |
+| E1 | PASS — `episode/content`, 모든 P0/source binding 유지 | NOT OBSERVED WITHIN SAMPLE | NOT OBSERVED WITHIN SAMPLE | same-base·case·region NOT OBSERVED WITHIN SAMPLE | metadata만 관찰·body fetch 전 제외; direct와 fallback field가 함께 있는 shape | accepted negative sample |
+| E2 | PASS — `episode/content`, 모든 P0/source binding 유지 | canonical track fetch·non-empty parse·retention PASS | OBSERVED ONCE — accessibility-like track fetch·non-empty parse 뒤 exact-language drop | canonical/accessibility category pair OBSERVED ONCE; same-base=false, case·region NOT OBSERVED WITHIN SAMPLE | metadata 제외; 두 subtitle descriptor 모두 direct와 fallback field가 함께 있음 | accepted one-off variant sample |
+
+E2의 boolean-only 재관찰은 같은 attachment를 다시 확인한 것이므로 별도 sample로 세지 않았다. 추가 SVOD 후보 2개는 지원 episode가 아닌 `/tvshow` action만 있어 attachment 전에 제외했고, 다음 free-series card는 browser automation target 확인이 거부되어 우회하지 않았다. 이 pre-play 후보도 sample로 세지 않으며, 미관찰 shape가 provider에 없다는 증거로 사용하지 않는다.
+
+### 13.5 검증 gate
+
+자동·정적 결과는 최종 review head에서 다시 실행한다. fixture `PASS`는 actual Chrome `PASS`를 대신하지 않는다.
+
+| Automated/static check | Result | Evidence / notes |
+| --- | --- | --- |
+| latest-main SHA와 branch 격리 | PASS | `11f1133c55f3b659b39bebe1a3308dcffaf14f6d`; P1 branch·fixture·helper·evidence를 상속하지 않음 |
+| Focused characterization/fixture | PASS | tests-only matrix와 production receiver characterization |
+| Focused playback-context, Coupang playback, subtitle store/source identity, message handler | PASS | 7 files, 160 tests |
+| Type-check | PASS | `yarn type-check` |
+| Focused lint | PASS | 변경 code/test 경로 |
+| Temporary-instrumentation production build | PASS | `yarn build`; 기존 size warning 3개 |
+| Full unit suite | PASS | 100 files, 1007 tests |
+| Full lint | PASS | `yarn lint` |
+| Clean production build | PASS | 임시 instrumentation 제거와 원본 production blob hash 확인 뒤 `yarn build`; 기존 size warning 3개 |
+| `git diff --check` | PASS | 최종 tracked evidence/test diff |
+| Production/canonical/schema/Storage/manifest/permission/dependency/network diff audit | PASS | 최종 diff는 이 evidence 절과 tests-only characterization/receiver test뿐 |
+| Sensitive-value scan | PASS | 새 diff에 실제 title·ID·URL·request/header·raw descriptor/response·cue content/count/timing·HAR/log dump 없음 |
+| GitHub checks | NOT RUN | Draft PR 생성 뒤 확인 예정 |
+
+| Actual Chrome check | Result | Evidence / notes |
+| --- | --- | --- |
+| Dedicated KR egress와 host unchanged | PASS | explicit volunteer-gateway consent 뒤 KR egress를 확인했고 Windows host는 NZ egress로 유지; IP는 기록하지 않음 |
+| Extension installation/reload와 actual Side Panel | PASS | production `dist` 설치, action으로 열린 actual Extension Page Side Panel에서 Connected/Detected 확인; 일반 tab으로 대체하지 않음 |
+| Authentication | PASS | 기존 signed-in profile로 catalog와 player 접근; install/region gate와 분리 |
+| Regional access | PASS | KR catalog와 supported playback route 접근; auth gate와 분리 |
+| DRM/player access | PASS | M2·M3·E1·E2 content video 진행과 media error 없음; M1 stall은 별도 UNKNOWN으로 보존 |
+| Native-subtitle acquisition | PASS | M3 canonical, E2 canonical+accessibility-like가 existing replay에서 fetch·parse됨 |
+| P0 identity/lifecycle/source/revision binding | PASS | accepted 4개 모두 content lifecycle과 epoch·instance·route·video·attachment·source revision guard 뒤에만 기록 |
+| Regular canonical track | PASS | M3와 E2에서 non-empty parse; current cache/source retention 확인 |
+| Accessibility-like track | OBSERVED ONCE | 독립 accepted attachment는 E2 1개이며, 같은 attachment 재관찰은 반복 표본으로 세지 않음. descriptor·fetch·non-empty parse와 current exact-language drop을 함께 확인 |
+| Bounded variant search | PASS | attachment 5/10; accepted movie 2 + episode 2 baseline. 같은 E2 재관찰과 pre-play skip은 미포함 |
+| Same-base, case와 region variation | NOT OBSERVED WITHIN SAMPLE | E2 category pair의 same-base boolean은 false; absence로 일반화하지 않음 |
+| Metadata exclusion | PASS | M2·M3·E1·E2에서 metadata descriptor를 관찰하고 subtitle body-fetch 대상에서 제외됨을 확인 |
+| Direct/fallback shape | PASS | actual descriptor에는 direct와 fallback field가 함께 있었고 current direct path가 성공; fallback-only actual shape는 NOT OBSERVED WITHIN SAMPLE |
+| Console/network/privacy safety | PASS | acceptance 뒤 sanitized category/field/boolean만 확인; raw body·descriptor·ID·URL·header·cue/count/timing·HAR/log dump를 저장하거나 commit하지 않음 |
+| Clean-build reload regression | PASS | clean `dist` reload, existing TV listing과 action-opened Side Panel에서 Connected/expected waiting·4개 navigation 확인; P2 instrumentation log 0, console error 0 |
+| Gateway shutdown | PASS | validation gateway `ok=true`, `active=false`; shared KR profile release 뒤 종료 |
+
+### 13.6 qualification result
+
+READY FOR CONTRACT DISCUSSION
+
+이 판정은 구현 승인이 아니다. 한 번 관찰된 compatibility risk와 regular acquisition, 현재 충돌·failure 특성, P0 binding을 바탕으로 별도 계약 논의를 시작할 수 있다는 뜻이며 qualified discriminator나 정책 근거로 사용하지 않는다.
+
+### 13.7 현재 한계와 후속 결정 경계
+
+- 2026-08-14 사이트 조사에서 accessibility-like identifier를 한 번 관찰했지만 당시 profile에는 Play Plus가 설치되지 않았다. 이는 Issue #80의 actual unpacked-extension proof가 아니다.
+- 같은-base coexistence와 case/region variation은 bounded actual sample에서 관찰되지 않았다. descriptor field와 direct/fallback 분포도 관찰된 `both` shape만 보고하며, 미관찰 값은 존재하지 않는다고 결론내리지 않는다.
+- one-track failure isolation은 tests-only helper로 기술적 가능성만 보였다. 어떤 track을 유지하고 언제 retry하거나 사용자에게 어떻게 보여 줄지는 승인되지 않았다.
+- language normalization, regular/SDH precedence, selector, default, persistence와 source identity는 이 qualification이 결정하지 않는다.
+- 구현을 시작하려면 actual qualification, ChatGPT review, 명시적 사용자 승인, merged canonical amendment와 별도 implementation Issue가 모두 필요하다.
+
+## 14. Issue #79 P1 Playback Marker Acquisition Qualification — 2026-08-15
+
+### 14.1 범위와 판정 규칙
 
 이 절은 최신 `origin/main`의 `11f1133`에 temporary investigator instrumentation을 더한 production-mode `dist/`로 기존 Play Plus native-subtitle replay의 `cue_points`를 일시 관찰한 qualification 기록이다. instrumentation은 commit 전에 완전히 제거했고 clean `11f1133` production `dist/`를 다시 빌드해 Side Panel 회귀를 확인했다. production parser, 동작, schema, Storage, message, manifest, permission, dependency와 [canonical contract](./play-plus-2.0.md)는 바꾸지 않았다. 자동 skip, 자동 종료, 카드 범위 변경 또는 구현 승인이 아니다.
 
@@ -472,7 +592,7 @@ availability/capability
 2. 선택한 논의 범위에서 marker category 하나 이상이 독립 positive 2개와 actual UI/time 교차 확인을 갖고 sample, negative, P0 identity, SPA stale, advertisement separation, privacy와 scope gate가 모두 통과할 때만 `READY FOR CONTRACT DISCUSSION`이다.
 3. 안전 경계 위반은 없지만 필수 실제 근거가 빠지거나 의미가 불명확하면 `INSUFFICIENT EVIDENCE`다.
 
-### 13.2 환경과 개인정보 경계
+### 14.2 환경과 개인정보 경계
 
 | 항목 | 결과 |
 | --- | --- |
@@ -486,7 +606,7 @@ availability/capability
 
 표본에는 title, content/episode/asset ID, full URL, 정확한 marker time·duration, subtitle/cue text, raw response, header, token, cookie, request ID, extension ID, profile 정보, screenshot, HAR 또는 log dump를 남기지 않았다. 아래 표의 enum, count, field 이름·type과 boolean만 보존했다.
 
-### 13.3 실제 extension 표본
+### 14.3 실제 extension 표본
 
 `current`는 exact route/content identity와 media attachment가 관찰 시작·수락 시점에 같고 lifecycle이 `content`였다는 뜻이다. `none`은 target marker가 없다는 뜻이지 subtitle이나 player 실패라는 뜻이 아니다.
 
@@ -507,7 +627,7 @@ availability/capability
 
 actual negative M-08은 지원되는 current movie route의 shared playback shape에서 empty array를 확인한 경우다. episode marker 부재의 실제 분포까지 증명하지는 않으며, episode missing/empty는 tests-only fail-closed case로만 보완했다. 이 제한은 provider 분포를 일반화하지 않는 조건으로 contract discussion에 전달한다.
 
-### 13.4 교차 표본 구조와 실제 UI 의미
+### 14.4 교차 표본 구조와 실제 UI 의미
 
 positive entry에서 반복 관찰한 exact field set은 `force_stop`, `id`, `metadata`, `name`, `time`, `type`이었다. field type은 각각 boolean, string, string, string, finite number, string이었고 `type`은 `CODE`, `force_stop`은 `false`였다. ID와 metadata 값은 보존하지 않았다.
 
@@ -518,7 +638,7 @@ positive entry에서 반복 관찰한 exact field set은 `force_stop`, `id`, `me
 - movie의 `show_recommendations` marker 근처에서는 visible recommendation UI signal을 확인하지 못했다. 따라서 field 이름만으로 사용자 의미나 trigger 시점을 확정하지 않으며 이번 contract-discussion candidate에서 제외한다.
 - 관찰 표본은 cue time과 raw duration의 서로 다른 단위를 지지했지만, private response 전반의 영구 단위 계약으로 승격하지 않는다. candidate는 actual media duration과도 독립 교차 검증해야 한다.
 
-### 13.5 fail-closed characterization fixture
+### 14.5 fail-closed characterization fixture
 
 새 helper는 `*.test.ts` 내부에만 있고 production bundle로 export되지 않는다. observed six-field shape를 synthetic placeholder로 재현하며 다음 경우 candidate를 만들지 않는다.
 
@@ -537,14 +657,14 @@ positive entry에서 반복 관찰한 exact field set은 `force_stop`, `id`, `me
 
 이 helper는 미래 production parser 설계가 아니다. 특히 duplicate 선택 순서, metadata 해석, provider drift fallback과 자동 행동은 미결정이다.
 
-### 13.6 P0, SPA와 network proof
+### 14.6 P0, SPA와 network proof
 
 - positive actual observation은 current movie/episode route, current content identity, current media attachment와 lifecycle `content`에서만 기록했다.
 - same-document SPA에서 이미 표본화한 movie로 진입한 뒤 replay가 완료되기 전에 feed로 돌아갔다. 지연된 old response는 expected identity, latest request와 route video guard가 모두 달라 전체 거부됐다. 새 표본이나 persistence는 만들지 않았다.
 - 단일 기존 표본에서 network 기준점을 잡은 뒤 host playback request와 기존 extension replay의 동일 endpoint 성공 GET 두 건만 확인했다. 조사 코드는 직접 fetch, response relay, interceptor 또는 추가 request를 만들지 않았다. 기존 replay가 materialize한 response에서는 허용된 field 이름·type·boolean·count만 요약했고 raw body/header를 출력·복제·보존하지 않았다.
 - instrumentation을 제거하고 clean production `dist/`를 reload한 같은 tab에서 실제 Side Panel이 `Connected + Advertisement`와 학습 대기 상태를 표시했다. 이후 같은 tab이 `Connected + Detected`와 nonempty native learning catalog로 복귀했다. 광고 request 존재가 아니라 제품의 실제 lifecycle 전환을 기준으로 했으므로 advertisement separation actual gate는 `PASS`다.
 
-### 13.7 acceptance gates
+### 14.7 acceptance gates
 
 | Gate | 결과 | 근거 |
 | --- | --- | --- |
@@ -567,7 +687,7 @@ positive entry에서 반복 관찰한 exact field set은 `force_stop`, `id`, `me
 | privacy | PASS | alias, enum, count, field name/type, boolean만 commit |
 | scope | PASS | docs/tests only; production/canonical/schema/storage/manifest/network/dependency 변경 없음 |
 
-### 13.8 최종 qualification 결과
+### 14.8 최종 qualification 결과
 
 두 독립 episode에서 ordered intro pair와 `watch_next` 구조 및 실제 intro/next UI signal을 반복 확인했고, negative, P0, SPA stale, advertisement, replay isolation, subtitle isolation, privacy와 scope gate가 모두 통과했다. 따라서 discussion candidate는 이 episode 범위로만 제한한다. `show_recommendations`는 구조 관찰만 남기고 의미·trigger가 확인될 때까지 제외한다. 추가 권한·요청·영속화 필요 또는 stale/ad evidence 수락 같은 `NO-GO` 사유는 관찰되지 않았다.
 

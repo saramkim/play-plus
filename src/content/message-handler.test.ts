@@ -891,6 +891,66 @@ describe('canonical content messages', () => {
     expect(useSubtitleStore.getState().nativeCueCache).toEqual(expectedCache);
   });
 
+  it('drops an accessibility-like language identifier after fetch while retaining a canonical sibling', async () => {
+    const canonicalCues = [{ start: 0, end: 1, text: 'Canonical synthetic cue' }];
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
+      { lang: 'en', subtitleData: canonicalCues },
+      {
+        lang: 'ko sdh',
+        subtitleData: [{ start: 1, end: 2, text: 'Accessibility-like synthetic cue' }],
+      },
+    ]);
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: canonicalCues });
+    expect(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data).toMatchObject({
+      subtitleIdentity: { learning: 'native:en', support: null },
+    });
+  });
+
+  it('leaves canonical native learning unavailable when only an accessibility-like identifier is fetched', async () => {
+    useSubtitleStore.getState().setNativeCues('en', [
+      { start: 0, end: 1, text: 'Stale synthetic cue' },
+    ]);
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
+      {
+        lang: 'ko sdh',
+        subtitleData: [{ start: 1, end: 2, text: 'Accessibility-like synthetic cue' }],
+      },
+    ]);
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({});
+    expect(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data).toMatchObject({
+      learningAvailable: false,
+      subtitleIdentity: { learning: null, support: null },
+    });
+  });
+
+  it('collides same-language native tracks in the language-keyed cache and source identity', async () => {
+    const first = [{ start: 0, end: 1, text: 'First synthetic cue' }];
+    const second = [{ start: 2, end: 3, text: 'Second synthetic cue' }];
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
+      { lang: 'en', subtitleData: first },
+      { lang: 'en', subtitleData: second },
+    ]);
+    const { dispatch } = createMessageHarness();
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: second });
+    expect(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data).toMatchObject({
+      subtitleIdentity: { learning: 'native:en', support: null },
+    });
+  });
+
   it('publishes current route capability without revising an identical native replay', async () => {
     const cues = [{ start: 0, end: 1, text: 'Same synthetic cue', settings: ['line:0'] }];
     const video = document.createElement('video');
