@@ -147,6 +147,43 @@ describe('coupangStrategy playback response adapter', () => {
     ]);
   });
 
+  it.each([
+    null,
+    'drifted',
+    [
+      {
+        force_stop: false,
+        metadata: null,
+        name: 'skip_intro_start',
+        time: 10,
+        type: 'marker',
+      },
+      { name: 'malformed', time: Number.NaN },
+    ],
+  ])('keeps subtitle extraction independent from %s cue_points', async (cuePoints) => {
+    const response = {
+      data: {
+        raw: {
+          cue_points: cuePoints,
+          text_tracks: [
+            {
+              kind: 'subtitles',
+              srclang: 'en',
+              src: 'https://cdn.example.com/en.vtt',
+            },
+          ],
+        },
+      },
+    };
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(response)))
+      .mockResolvedValueOnce(new Response('WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello'));
+
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
+      { lang: 'en', subtitleData: [{ start: 1, end: 2, text: 'Hello' }] },
+    ]);
+  });
+
   it('rejects an invalid playback response envelope', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({})));
 
