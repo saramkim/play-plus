@@ -296,6 +296,24 @@ describe('playback-marker qualification-only projection', () => {
     }
   );
 
+  it('rejects a qualified marker beyond normalized raw duration', () => {
+    const result = characterizeStrictOptionalProjection(
+      context(playbackResponse([marker('watch_next', 500)], 400_000))
+    );
+
+    expect(result.terminalMarkers).toEqual([]);
+  });
+
+  it('rejects a qualified marker beyond media duration', () => {
+    const result = characterizeStrictOptionalProjection(
+      context(playbackResponse([marker('watch_next', 500)]), {
+        mediaDurationSeconds: 400,
+      })
+    );
+
+    expect(result.terminalMarkers).toEqual([]);
+  });
+
   it('rejects malformed entries individually while preserving a valid sibling', () => {
     const result = characterizeStrictOptionalProjection(
       context(
