@@ -39,6 +39,30 @@ type DescriptorProjection = Readonly<{
   title: TextField;
 }>;
 
+type ActiveTabSnapshot = Readonly<{
+  id: number;
+  url: string;
+}>;
+
+type RequestPlan = Readonly<{
+  init: Readonly<{
+    credentials: 'include';
+    method: 'GET';
+    redirect: 'manual';
+  }>;
+  url: string;
+}>;
+
+type TerminalInput =
+  | { kind: 'aborted' | 'offline' | 'timeout' }
+  | { json: string; kind: 'response' };
+
+type AttemptSettlement = Readonly<{
+  acceptedDescriptor: DescriptorProjection | null;
+  retryScheduled: false;
+  status: string;
+}>;
+
 type ProjectionResult =
   | { status: 'ready'; descriptor: DescriptorProjection }
   | {
@@ -142,6 +166,32 @@ const createTarget = (context: QualificationContext) => {
   target.searchParams.set('locale', locale);
   return target;
 };
+
+const createRequestPlan = (context: QualificationContext): RequestPlan | null => {
+  const target = createTarget(context);
+  if (target === null) return null;
+  return {
+    init: {
+      credentials: 'include',
+      method: 'GET',
+      redirect: 'manual',
+    },
+    url: target.href,
+  };
+};
+
+const isExactActiveTab = (expected: ActiveTabSnapshot, current: ActiveTabSnapshot) =>
+  expected.id === current.id && expected.url === current.url;
+
+const isRequestAdmitted = (
+  context: QualificationContext,
+  expectedIdentity: ContentVideoIdentity,
+  expectedTab: ActiveTabSnapshot,
+  currentTab: ActiveTabSnapshot
+) =>
+  expectedTab.url === context.url &&
+  isExactActiveTab(expectedTab, currentTab) &&
+  isEligible(context, expectedIdentity);
 
 const isAcceptanceCurrent = (start: QualificationContext, end: QualificationContext) =>
   start.url === end.url &&
@@ -250,20 +300,120 @@ const classifyResponseBoundary = ({
 class AttemptGate {
   attemptsStarted = 0;
   pending = false;
+  private controller: AbortController | null = null;
+  private stale = false;
+
+  get drifted() {
+    return this.stale;
+  }
+
+  get signal() {
+    return this.controller?.signal ?? null;
+  }
 
   start(eligible: boolean) {
     if (this.pending) return 'busy' as const;
     if (!eligible) return 'unsupported' as const;
     if (this.attemptsStarted >= MAX_ATTEMPTS) return 'limit-reached' as const;
     this.attemptsStarted += 1;
+    this.controller = new AbortController();
     this.pending = true;
+    this.stale = false;
     return 'started' as const;
   }
 
+  abortForDrift() {
+    if (!this.pending) return false;
+    this.stale = true;
+    this.controller?.abort();
+    return true;
+  }
+
+  abortPending() {
+    if (!this.pending) return false;
+    this.controller?.abort();
+    return true;
+  }
+
   finish() {
+    this.controller = null;
     this.pending = false;
+    this.stale = false;
   }
 }
+
+const settleAttempt = ({
+  currentTab,
+  endContext,
+  expectedTab,
+  gate,
+  startContext,
+  terminal,
+}: {
+  currentTab: ActiveTabSnapshot;
+  endContext: QualificationContext;
+  expectedTab: ActiveTabSnapshot;
+  gate: AttemptGate;
+  startContext: QualificationContext;
+  terminal: TerminalInput;
+}): AttemptSettlement => {
+  if (!gate.pending) {
+    return {
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'late-ignored',
+    };
+  }
+
+  const acceptanceDrifted =
+    !isExactActiveTab(expectedTab, currentTab) ||
+    !isAcceptanceCurrent(startContext, endContext);
+  if (acceptanceDrifted) gate.abortForDrift();
+
+  let acceptedDescriptor: DescriptorProjection | null = null;
+  let status: string;
+  if (gate.drifted) {
+    status = 'stale';
+  } else if (terminal.kind === 'offline' || terminal.kind === 'timeout') {
+    if (terminal.kind === 'timeout') gate.abortPending();
+    status = 'network-error';
+  } else if (terminal.kind === 'aborted') {
+    gate.abortPending();
+    status = 'aborted';
+  } else if (terminal.kind !== 'response') {
+    status = 'aborted';
+  } else {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(terminal.json) as unknown;
+    } catch {
+      parsed = undefined;
+    }
+    if (parsed === undefined) {
+      status = 'malformed';
+    } else {
+      const routeKind = startContext.playbackContext.routeKind;
+      const expectedVideoId = startContext.identity.videoId;
+      if (
+        expectedVideoId === null ||
+        (routeKind !== 'movie' && routeKind !== 'episode')
+      ) {
+        status = 'stale';
+      } else {
+        const projection = projectDescriptor(parsed, routeKind, expectedVideoId);
+        status = projection.status;
+        if (projection.status === 'ready') acceptedDescriptor = projection.descriptor;
+      }
+    }
+  }
+
+  gate.finish();
+  return {
+    acceptedDescriptor,
+    retryScheduled: false,
+    status,
+  };
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -284,6 +434,38 @@ describe('P3 tests-only content descriptor qualification evidence model', () => 
 
     expect([...target?.searchParams.entries() ?? []]).toEqual([['locale', 'ko']]);
   });
+
+  it('models the admitted request as GET with browser credentials and no body or headers', () => {
+    const plan = createRequestPlan(createContext());
+
+    expect(plan).not.toBeNull();
+    if (plan === null) return;
+    expect(plan.init).toEqual({
+      credentials: 'include',
+      method: 'GET',
+      redirect: 'manual',
+    });
+    expect('body' in plan.init).toBe(false);
+    expect('headers' in plan.init).toBe(false);
+  });
+
+  it.each([
+    ['tab ID', { id: 18, url: `${ORIGIN}/en/play/${VIDEO_ID}/movie` }],
+    ['exact URL', { id: 17, url: `${ORIGIN}/en/play/${VIDEO_ID}/movie?drift=1` }],
+    ['locale URL', { id: 17, url: `${ORIGIN}/play/${VIDEO_ID}/movie` }],
+  ] satisfies readonly [string, ActiveTabSnapshot][]) (
+    'issues zero requests after an active %s mismatch',
+    (_label, currentTab) => {
+      const context = createContext();
+      const expectedTab = { id: 17, url: context.url };
+      const gate = new AttemptGate();
+
+      expect(
+        gate.start(isRequestAdmitted(context, context.identity, expectedTab, currentTab))
+      ).toBe('unsupported');
+      expect(gate.attemptsStarted).toBe(0);
+    }
+  );
 
   it.each([
     ['different origin', `${ORIGIN.replace('www.', '')}/en/play/${VIDEO_ID}/movie`],
@@ -352,6 +534,7 @@ describe('P3 tests-only content descriptor qualification evidence model', () => 
     ['video revision', { videoRevision: 4, mediaAttachmentRevision: 4 }],
     ['media attachment', { mediaAttachmentRevision: 4 }],
     ['lifecycle', { lifecycle: 'advertisement' as const }],
+    ['transition lifecycle', { lifecycle: 'transitioning' as const }],
     ['route kind', { routeKind: 'episode' as const }],
   ] satisfies readonly [string, Partial<PlaybackContextStatus>][]) (
     'rejects acceptance after %s changes',
@@ -573,24 +756,156 @@ describe('P3 tests-only content descriptor qualification evidence model', () => 
     expect(gate.attemptsStarted).toBe(1);
   });
 
-  it('counts every started terminal outcome and blocks attempt nine', () => {
+  it('counts eight explicit started attempts and blocks attempt nine', () => {
     const gate = new AttemptGate();
-    const terminalOutcomes = [
-      'ready',
-      'http-error',
-      'network-error',
-      'aborted',
-      'stale',
-      'malformed',
-      'too-large',
-      'response-kind-mismatch',
-    ];
-    for (const outcome of terminalOutcomes) {
-      expect(gate.start(true), outcome).toBe('started');
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      expect(gate.start(true), `attempt ${attempt}`).toBe('started');
       gate.finish();
     }
     expect(gate.attemptsStarted).toBe(MAX_ATTEMPTS);
     expect(gate.start(true)).toBe('limit-reached');
+  });
+
+  it.each(['offline', 'timeout'] as const)(
+    'settles %s as a released network error without retry or acceptance',
+    (kind) => {
+      const startContext = createContext();
+      const activeTab = { id: 17, url: startContext.url };
+      const gate = new AttemptGate();
+      expect(gate.start(true)).toBe('started');
+      const signal = gate.signal;
+      expect(signal).not.toBeNull();
+
+      expect(settleAttempt({
+        currentTab: activeTab,
+        endContext: startContext,
+        expectedTab: activeTab,
+        gate,
+        startContext,
+        terminal: { kind },
+      })).toEqual({
+        acceptedDescriptor: null,
+        retryScheduled: false,
+        status: 'network-error',
+      });
+      expect(gate.pending).toBe(false);
+      expect(gate.attemptsStarted).toBe(1);
+      expect(signal?.aborted).toBe(kind === 'timeout');
+    }
+  );
+
+  it('settles malformed JSON without retrying or exposing a descriptor', () => {
+    const startContext = createContext();
+    const activeTab = { id: 17, url: startContext.url };
+    const gate = new AttemptGate();
+    expect(gate.start(true)).toBe('started');
+
+    expect(settleAttempt({
+      currentTab: activeTab,
+      endContext: startContext,
+      expectedTab: activeTab,
+      gate,
+      startContext,
+      terminal: { json: '{', kind: 'response' },
+    })).toEqual({
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'malformed',
+    });
+    expect(gate.pending).toBe(false);
+    expect(gate.attemptsStarted).toBe(1);
+  });
+
+  it('aborts for active-tab drift and ignores a late response without retrying', () => {
+    const startContext = createContext();
+    const expectedTab = { id: 17, url: startContext.url };
+    const gate = new AttemptGate();
+    expect(gate.start(true)).toBe('started');
+    const signal = gate.signal;
+    expect(signal).not.toBeNull();
+
+    expect(settleAttempt({
+      currentTab: { ...expectedTab, url: `${startContext.url}?drift=1` },
+      endContext: startContext,
+      expectedTab,
+      gate,
+      startContext,
+      terminal: {
+        json: JSON.stringify({ as: 'MOVIE', id: VIDEO_ID, title: 'Synthetic movie' }),
+        kind: 'response',
+      },
+    })).toEqual({
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'stale',
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(settleAttempt({
+      currentTab: expectedTab,
+      endContext: startContext,
+      expectedTab,
+      gate,
+      startContext,
+      terminal: {
+        json: JSON.stringify({ as: 'MOVIE', id: VIDEO_ID, title: 'Synthetic movie' }),
+        kind: 'response',
+      },
+    })).toEqual({
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'late-ignored',
+    });
+    expect(gate.pending).toBe(false);
+    expect(gate.attemptsStarted).toBe(1);
+  });
+
+  it('releases an explicit aborted attempt without retrying or accepting a descriptor', () => {
+    const startContext = createContext();
+    const activeTab = { id: 17, url: startContext.url };
+    const gate = new AttemptGate();
+    expect(gate.start(true)).toBe('started');
+    const signal = gate.signal;
+    expect(signal).not.toBeNull();
+
+    expect(settleAttempt({
+      currentTab: activeTab,
+      endContext: startContext,
+      expectedTab: activeTab,
+      gate,
+      startContext,
+      terminal: { kind: 'aborted' },
+    })).toEqual({
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'aborted',
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(gate.pending).toBe(false);
+    expect(gate.attemptsStarted).toBe(1);
+  });
+
+  it('gives P0 drift precedence over a concurrent offline terminal', () => {
+    const startContext = createContext();
+    const activeTab = { id: 17, url: startContext.url };
+    const gate = new AttemptGate();
+    expect(gate.start(true)).toBe('started');
+    const signal = gate.signal;
+
+    expect(settleAttempt({
+      currentTab: activeTab,
+      endContext: createContext({ lifecycle: 'transitioning' }),
+      expectedTab: activeTab,
+      gate,
+      startContext,
+      terminal: { kind: 'offline' },
+    })).toEqual({
+      acceptedDescriptor: null,
+      retryScheduled: false,
+      status: 'stale',
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(gate.pending).toBe(false);
+    expect(gate.attemptsStarted).toBe(1);
   });
 
   it('projects no URL, ID, header, credential, raw body, or unrelated metadata field', () => {
