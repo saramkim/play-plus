@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-15 — episode `watch_next` 학습 안전 fence 계약 추가
+최종 개정 승인일: 2026-08-15 — deterministic native SDH fallback compatibility 계약 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -469,7 +469,7 @@ Playback Context는 현재 Coupang Play route, 논리 콘텐츠, 실제 media at
 - 일반 overlay, current cue와 follow는 현재 본편 시점에서 자동 복구할 수 있다. 중단된 Listening Mission은 자동 재개하지 않으며 사용자의 명시적인 `광고가 끝났어요 · 계속` 계열 action 뒤에만 activity를 계속한다. 광고 자체만으로 attempt나 combo를 변경하지 않는다.
 - 광고 길이에 대한 generic timeout을 두지 않는다. route/content 또는 subtitle/source identity 변경, unsupported/unknown kind 전환, 사용자 이탈, heartbeat/lease failure에서는 frozen context와 pending work를 폐기하며 새 콘텐츠나 새 media에 재사용하지 않는다.
 
-이 경계는 새 Storage key, schema, migration, permission, host, CSP, dependency 또는 network request를 승인하지 않는다. title, year, season/episode descriptor, synopsis, artwork, watched URL, raw cue/subtitle body, request header/cookie와 runtime identity를 새로 영속 저장·로그·외부 전송하지 않는다. 비공개 discover endpoint direct fetch, 기존 native-subtitle replay 밖의 playback fetch, page main-world interception과 metadata prefetch도 승인하지 않는다. P1은 아래의 episode-only `watch_next` 학습 안전 fence로만 제한해 승인한다. P2 subtitle variant/SDH와 P3 content descriptor/Search prefill은 [evidence 문서의 후속 후보](./coupang-play-content-evidence.md#9-%EA%B5%AC%ED%98%84-%EA%B0%80%EB%8A%A5%EC%84%B1-%ED%9B%84%EB%B3%B4%EC%99%80-p0-%EC%8A%B9%EC%9D%B8-%EC%83%81%ED%83%9C)로 남으며 이 계약에 포함되지 않는다.
+이 경계는 새 Storage key, schema, migration, permission, host, CSP, dependency 또는 network request를 승인하지 않는다. title, year, season/episode descriptor, synopsis, artwork, watched URL, raw cue/subtitle body, request header/cookie와 runtime identity를 새로 영속 저장·로그·외부 전송하지 않는다. 비공개 discover endpoint direct fetch, 기존 native-subtitle replay 밖의 playback fetch, page main-world interception과 metadata prefetch도 승인하지 않는다. P1은 아래의 episode-only `watch_next` 학습 안전 fence로, P2는 아래의 deterministic native SDH fallback compatibility로만 제한해 승인한다. P3 content descriptor/Search prefill은 [evidence 문서의 후속 후보](./coupang-play-content-evidence.md#9-%EA%B5%AC%ED%98%84-%EA%B0%80%EB%8A%A5%EC%84%B1-%ED%9B%84%EB%B3%B4%EC%99%80-p0-%EC%8A%B9%EC%9D%B8-%EC%83%81%ED%83%9C)로 남으며 이 계약에 포함되지 않는다.
 
 #### Episode `watch_next` learning safety fence
 
@@ -498,6 +498,43 @@ Episode의 optional terminal learning fence는 Play Plus가 소유한 학습 동
 후속 구현에서 content script는 모든 current identity에 묶인 derived transient fence만 유지한다. raw marker response, ID, metadata, exact timing, title, content ID, full URL, request header/cookie/token 또는 viewing history를 background, UI, diagnostics, telemetry, committed evidence나 외부 network로 relay하지 않는다. normal page traffic과 기존 one-time native-subtitle playback replay만 유지하며 `chrome.storage.local/sync/session`, Web Storage, schema와 migration을 변경하지 않는다.
 
 이 fence는 Skip Intro 버튼·UI·단축키·설정, manual/automatic intro skip, intro 구간 seek, `show_recommendations`, movie/trailer/channel/highlight/unknown marker, marker 표시, raw marker relay, persistence, cache 또는 Learning Card time/schema 변경을 승인하지 않는다. 새 request, retry, prefetch, interception, bridge, permission, host, CSP, dependency, Storage schema/migration도 추가하지 않는다. 후속 production 구현은 이 amendment가 reviewed·merged된 뒤 별도 Issue에서만 시작한다.
+
+#### Deterministic native SDH fallback compatibility
+
+P2 native subtitle compatibility는 exact canonical native language가 없을 때 같은 언어의 exact SDH descriptor 하나를 논리적으로 같은 native source의 fallback으로 사용할 수 있게 하는 최소 경계다. qualification의 범위와 제한된 관찰은 [Coupang Play runtime evidence §13](./coupang-play-content-evidence.md#13-issue-80-p2-native-subtitle-variant-qualification--2026-08-15)에 기록한다. 이 계약은 selector, variant catalog, 별도 source namespace 또는 provider의 일반적 SDH 지원을 승인하지 않는다.
+
+##### Exact candidate classification and URL boundary
+
+- canonical language `L`마다 descriptor `kind === "subtitles"`인 track만 후보로 분류한다. `srclang === L`이면 regular이고, `srclang === "<L> sdh"`이면 같은-base SDH다.
+- 비교는 case-sensitive exact match이며 language와 `sdh` 사이에는 ASCII space 하나만 허용한다. trim, case folding, region folding, alias mapping과 `cc`, `captions`, label, MIME, default, descriptor metadata 또는 cue 본문 추론을 하지 않는다.
+- `metadata`와 다른 non-`subtitles` descriptor는 body fetch 전에 제외한다. strict top-level playback/P0 envelope가 malformed이면 개별 후보 격리가 아니라 acquisition 전체를 fail closed한다. malformed 또는 unknown candidate field가 strict envelope 안에서 후보 단위로 격리 가능한 경우에는 그 candidate만 제외한다.
+- 승인된 각 후보의 URL은 기존 `src ?? sources[0].src` 규칙으로만 결정한다. 두 번째 URL, empty direct source 보정, alternate provider, discover lookup 또는 새 playback request로 fallback하지 않는다.
+
+##### Per-track settlement and deterministic language selection
+
+- 승인된 각 후보는 기존 body fetch와 VTT parse를 독립적으로 수행한다. fetch, body-read 또는 parse 실패와 empty parse는 그 candidate만 unusable로 만들며, 다른 언어 또는 usable sibling을 제거하지 않는다.
+- 실패한 후보를 retry하거나 두 번째 URL·provider fallback·추가 lookup으로 대체하지 않는다. 모든 후보 settlement가 끝난 뒤 canonical language별 usable candidate 집합을 임시 결과에서 선택한다.
+- usable regular가 정확히 하나면 그것을 선택한다. usable regular가 둘 이상이면 array order, label, default, URL 또는 first/last precedence를 만들지 않고 그 언어 전체를 unavailable로 둔다. 이 경우 SDH로 내려가지 않는다.
+- usable regular가 없고 usable SDH가 정확히 하나면 그 SDH를 fallback으로 선택한다. usable regular와 usable SDH가 모두 없거나, regular 없이 usable SDH가 둘 이상이면 그 언어를 unavailable로 둔다.
+
+##### Atomic transient application and invalidation
+
+- content script는 후보 fetch·parse·언어별 선택을 content-owned temporary result에서 모두 끝낸 다음 current native cue cache snapshot을 한 번에 교체한다. pending, partially settled 또는 partially selected 결과를 UI, Listening Mission, role projection이나 다른 consumer에 노출하지 않는다.
+- snapshot을 수락하기 직전에 current route/video와 P0 `contentEpoch`, content instance, `mediaAttachmentRevision`, lifecycle과 source state를 다시 검증한다. `advertisement | waiting | placeholder | transitioning`, unsupported route, SPA/content drift, media attachment drift 또는 source drift에서는 결과를 적용하지 않는다.
+- 선택된 physical candidate identity 또는 category가 바뀌거나 선택된 cue snapshot이 바뀌면 active subtitle-bound transcript, follow, seek, repeat, clip, save와 Listening Mission work를 모두 invalidate하고 `subtitleRevision`을 snapshot 교체와 원자적으로 advance한다. 이전 Mission response나 pending operation을 새 snapshot으로 승격하지 않는다.
+- 같은 logical source에 대해 physical candidate identity, category와 cue snapshot이 모두 동일한 accepted result는 cache와 `subtitleRevision`을 churn시키지 않는다. physical identity는 content-owned transient comparison에만 사용하고 저장·중계하지 않는다.
+
+##### Logical source, progress, and non-expansion boundary
+
+- SDH fallback을 선택해도 logical source는 기존 `native:<language>`다. physical descriptor category를 user-visible source로 만들지 않으며 Library/source 표시와 Listening Progress namespace도 `native:<language>`를 유지한다.
+- physical category 또는 track이 바뀔 때 persisted progress를 migrate하거나 delete하지 않는다. active subtitle-bound work만 `subtitleRevision`으로 invalidate하고 current catalog와 segment identity에서 다시 시작한다.
+- variant selector·label UI, persisted preference, variant role, variant-aware `ListeningSourceKey`/progress, catalog 또는 fingerprint를 추가하지 않는다. 이후 이런 구분이 필요하면 별도 canonical amendment를 먼저 승인한다.
+- 실제 표본은 accessibility-like track을 `OBSERVED ONCE`로만 확인했다. same-base regular+SDH coexistence, case/region variation과 fallback-only URL shape는 `NOT OBSERVED WITHIN SAMPLE`이다. fixture와 qualification은 deterministic feasibility이지 provider 지원·분포 또는 production 동작의 증명이 아니다.
+- `cc`, `captions`, forced, commentary, metadata와 다른 descriptor, label/MIME/default/order/URL/cue-text inference, track merge·dedupe·content precedence, retry·alternate URL·provider lookup과 raw variant persistence는 승인하지 않는다. P1 runtime 또는 P3 범위도 이 계약에 포함하지 않는다.
+- raw playback/provider descriptor, URL, header, cookie, token, cue body/count/timing, title, content/account/profile 또는 viewing history를 Storage, Web Storage, log, telemetry, diagnostics나 committed evidence에 기록하지 않는다. 새 message, permission, host, CSP, dependency, schema, migration 또는 local/sync/session Storage key를 추가하지 않고 native source/progress schema와 version을 유지한다.
+- network는 normal page traffic, 기존 one-time native-subtitle playback replay와 그 replay가 이미 승인한 candidate body GET만 사용한다. 새 replay, discover, retry, prefetch, proxy, interception 또는 external service를 추가하지 않는다.
+
+후속 production 구현은 이 amendment가 reviewed·merged된 뒤 별도 P2 Issue에서만 시작한다. 구현은 P0/SPA/advertisement identity 경계를 약화하지 않고 위 exact classifier, per-track settlement, deterministic fail-closed selection, atomic cache replacement와 source/progress 비확대를 함께 증명해야 한다.
 
 #### Explicit OpenSubtitles acquisition
 
@@ -624,6 +661,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 13. **Listening Mission latest-main certification**: combined automated, privacy/permission/storage/migration audit와 actual Chrome mission·failure-discard·restoration·lease·Side Panel regression을 evidence로 기록.
 14. **Transient Playback Context and advertisement safety**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P0 implementation Issue에서 route kind, lifecycle, two-layer identity, fail-closed capability와 광고 suspend/rebind/explicit Mission resume를 구현하고 exact-head 자동화와 actual Chrome으로 검증한다.
 15. **Episode `watch_next` learning safety fence**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P1 implementation Issue에서 strict optional marker projection을 current P0 identity에 결합하고 Mission catalog/clip/replay, learning seek/repeat, Results/`Next 10`과 explicit `Continue Watching` 경계를 구현한다. production code는 이 문서 변경에 포함하지 않는다.
+16. **Deterministic native SDH fallback compatibility**: 이 canonical amendment가 reviewed·merged된 뒤에만 별도 P2 implementation Issue에서 exact regular/`<L> sdh` 후보 분류, per-track settlement, regular-first duplicate fail-closed selection, atomic cache replacement와 기존 `native:<language>` source/progress 경계를 구현한다. production code는 이 문서 변경에 포함하지 않는다.
 
 기능을 먼저 제거해 v1.11 사용자의 데이터를 읽지 못하게 만들면 안 된다. migration decoder와 fixture를 먼저 고정하고, 제거 작업과 정상 v2 경로 전환이 같은 릴리스에서 일관되게 완료돼야 한다.
 
@@ -687,6 +725,8 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - 광고와 모호한 전환에서는 capability와 identity-bound 작업이 즉시 suspend되고 광고 media/time/cue/text가 자막·카드·mission·progress에 섞이지 않는다. 같은 콘텐츠 복귀는 최신 attachment에 rebind하며 일반 cue/follow만 자동 복구할 수 있고 Listening Mission은 명시적 post-ad resume를 요구한다. generic ad timeout을 두지 않으며 identity 변경·unsupported kind·이탈·lease failure에서는 frozen state를 폐기한다.
 - episode/content-only `watch_next` fence는 strict uniqueness/shape/type/unit/range와 intro consistency를 모두 만족한 current P0 identity에서만 transiently 존재한다. malformed·unknown sibling과 marker projection failure는 native subtitle extraction을 바꾸지 않고 missing·ambiguous·stale·advertisement evidence는 marker-agnostic fallback으로 fail closed한다.
 - Mission catalog는 전체 effective interval이 fence 안에서 끝나는 segment만 포함하고 crossing segment를 자르지 않는다. clip/replay와 learning seek/repeat는 전체 interval이 fence 안인 target만 실행하며 마지막 pre-fence Results 뒤 fence 밖 `Next 10`을 만들지 않는다. explicit `Continue Watching`은 Play Plus ownership을 정리해 host playback에 제어권을 돌려주되 일반 playback을 자동 pause/seek/next/click하지 않는다.
+- native subtitle candidate는 exact `kind === "subtitles"`와 case-sensitive `L` 또는 `<L> sdh`만 사용한다. 각 body fetch·read·parse와 non-empty 결과를 독립적으로 settle한 뒤 language별 exactly-one regular를 우선하고, regular가 없을 때 exactly-one SDH만 같은 `native:<language>` fallback으로 선택한다. regular 또는 SDH duplicate는 order/default/label 추론 없이 그 언어를 unavailable로 만들며 regular duplicate에서 SDH로 내려가지 않는다.
+- native cue cache는 P0/SPA/advertisement/source identity를 acceptance 직전에 재검증한 complete temporary result로 한 번에 교체한다. physical category 또는 cue snapshot 변화는 subtitle-bound work와 `subtitleRevision`을 원자적으로 invalidate하고, identical accepted snapshot은 revision churn을 만들지 않는다. variant source, preference, progress namespace, Storage/schema 또는 새 network path는 없다.
 - progress는 exact namespace와 monotonic state만 저장하고 current catalog에서 denominator를 계산한다. record/reset failure는 기존 data를 보존하며 Retry와 truthful discard escape가 각각 `restore-start`/`complete-stay`로 lock, heartbeat, observer, rate와 suppression을 즉시 정리한다.
 - difficult segment는 처음에 선택되지 않고 explicit selected-only action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
 - 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
@@ -717,6 +757,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
 - Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
 - episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 두 독립 episode positive와 missing/invalid negative를 확인한다. 마지막 pre-fence Mission, Results, fence 뒤 `Next 10` 부재, explicit `Continue Watching`, bounded clip/replay와 learning seek/repeat, same-document next-episode SPA, advertisement → content, attachment/source/revision drift, 추가 network 0과 새 Storage/permission 0을 확인한다. 이 핵심 row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
+- native SDH fallback 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported movie/episode의 regular positive와 regular-absent exact `<language> sdh` positive를 확인한다. install/auth/region/DRM/player/native acquisition은 별도 gate로 기록하고, P0/SPA/advertisement 전환, candidate failure isolation, duplicate fail-closed, atomic replacement/revision invalidation, 추가 replay/discover/retry 0과 새 Storage/permission/logging 0을 확인한다. actual coexistence를 관찰하지 못하면 `NOT OBSERVED WITHIN SAMPLE`을 유지하고 precedence는 exact-head fixture로 증명한다. core row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
 - 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
