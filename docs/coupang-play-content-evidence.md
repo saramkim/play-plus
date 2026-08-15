@@ -1,6 +1,6 @@
 # Coupang Play Content and Runtime Evidence
 
-상태: **2026-08-14 조사와 2026-08-15 Issue #79·#80 qualification의 비규범적 기록**
+상태: **2026-08-14 조사와 2026-08-15 Issue #79·#80·#83 qualification의 비규범적 기록**
 
 이 문서는 Play Plus가 Coupang Play의 현재 콘텐츠와 재생 상태를 어느 정도 이해할 수 있는지 판단하기 위해 실제 서비스에서 관찰한 데이터 surface를 기록한다. Coupang Play의 공개·버전 고정 API 계약, Play Plus 2.0 기능 승인, 구현 계획 또는 릴리스 smoke 결과가 아니다.
 
@@ -694,3 +694,91 @@ positive entry에서 반복 관찰한 exact field set은 `force_stop`, `id`, `me
 이 판정은 구현, 자동 skip/end, P1 승인, `show_recommendations` 지원 또는 canonical amendment를 허가하지 않는다.
 
 **READY FOR CONTRACT DISCUSSION**
+
+## 15. Issue #83 P3 Explicit Content Descriptor Acquisition Qualification — 2026-08-15
+
+### 15.1 범위와 판정 규칙
+
+이 절은 사용자가 명시적으로 승인한 제3자 자원봉사 KR gateway와 private discover request 경계에서 Issue #83의 **qualification-only** 결과를 기록한다. 기준은 `origin/main` `720dd6b2406392815db7c4d6b7ee29f6c62d69e1`이다. actual 조사에 사용한 Side Panel action, message, fetch와 instrumentation은 제거했고 production blob은 기준과 일치하는지 다시 확인했다. 최종 tracked 변경은 evidence와 tests only이며 production runtime, schema, Storage, manifest, permission, dependency, network 동작과 [canonical contract](./play-plus-2.0.md)는 바꾸지 않는다.
+
+판정은 다음 순서를 사용했다.
+
+1. 응답의 exact top-level identity와 current P0 identity가 먼저 같아야 해당 응답의 descriptor field를 관찰 후보로 받아들인다.
+2. identity가 missing, malformed, mismatched이거나 lifecycle이 바뀌면 field value를 표시·비교·저장하지 않고 전체 결과를 폐기한다.
+3. strict identity를 통과한 실제 표본이 없으면 field를 `NOT OBSERVED WITHIN SAMPLE`로 남기고, 요청 가능성만으로 contract discussion이나 구현을 승인하지 않는다.
+
+### 15.2 환경, action과 개인정보 경계
+
+| 항목 | 결과 |
+| --- | --- |
+| KR gateway | `ok=true`, `active=true`, KR egress, Windows host routing 불변과 서로 다른 egress를 확인. IP는 기록하지 않음 |
+| KR gateway 종료 | qualification과 clean-build 회귀 뒤 `ok=true`, `active=false` 확인 |
+| Coupang Play preflight | signed-in service가 준비된 상태임을 확인 |
+| 확장 surface | unpacked production-mode `dist`의 action으로 연 actual Chrome Extension Pages Side Panel; 일반 extension tab으로 대체하지 않음 |
+| 독립 gate | authentication, player/DRM, native-subtitle acquisition `PASS` |
+| 시작 경계 | 현재 content에서 fixed Side Panel action을 실행한 뒤에만 request를 시작. pre-action GET 0 |
+| request 경계 | current route identity로 만든 same-origin locale-only provisional detail target에 action당 GET 최대 1회, 전체 8회 상한, response body 1 MiB 상한 |
+| credential 경계 | browser-managed session credential이 포함될 수 있는 request를 사용했지만 cookie·header·token을 열람·복사·기록하지 않음 |
+| 응답 경계 | investigator는 response header와 raw body를 열람·출력·저장하지 않음. 임시 코드는 byte cap 안에서 strict JSON/identity 판정만 수행 |
+| 금지 경계 | prefetch, retry, fallback, second lookup, redirect follow, other-host request, captured credential 재사용, screenshot, OCR, DOM text 수집, raw response 보존 없음 |
+
+실제 title, content·episode·asset ID, full watched URL, query 전체, account/profile 값, request ID, header, cookie, token과 raw response는 tracked evidence와 commit 대상 파일에 남기지 않았다.
+
+### 15.3 actual action과 GET ledger
+
+네 observation sample은 movie 2개와 episode 2개이며 모두 English route에서 실행했다. alias와 실제 content의 mapping은 만들거나 저장하지 않았다.
+
+| Row | 시작 context | qualification fetch delta | internal attempt | strict outcome | 수락 결과 |
+| --- | --- | ---: | ---: | --- | --- |
+| pre-action | non-content listing, `routeKind=unknown` | 0 | 0 | action disabled | observation 없음 |
+| P3-M1 | movie/content, English route | 1 | 1 | 초기 coarse `identity missing/type/mismatch` status | reject; exact 하위 사유를 소급 적용하지 않음 |
+| P3-M2 | movie/content, English route | 1 | 1 | `response-identity-missing` | reject |
+| P3-E1 | episode/content, English route | 1 | 1 | `response-identity-missing` | reject |
+| P3-E2 | episode/content, English route | 1 | 1 | `response-identity-missing` | reject |
+| full-document navigation | 기존 English content에서 request 후 history navigation | 1 | 1 | document/lifecycle 변경 후 결과 미수락 | stale result 0 |
+| Korean-route attempt | locale 전환 시도 | 0 | 0 | first-party가 action 전 English route로 복귀 | `ko` coverage `NOT REACHED` |
+
+GET attempt ledger는 총 **5/8**에서 중단했다. 정확한 URL·header를 노출하는 DevTools network export는 만들지 않았으며, 표의 delta는 임시 fetch admission/terminal counter와 action당 단일 fetch 경로가 반환한 sanitized boolean으로 기록했다. P3-E1에서 실제 duplicate double-click을 했을 때 UI action slot은 하나 더 소비됐지만 pending lock으로 internal attempt와 qualification fetch는 각각 1회만 발생했다. 관찰 표본 네 개의 admitted action도 각각 internal attempt 1회였고 retry·fallback·second lookup은 없었다.
+
+### 15.4 response identity와 field 관찰 결과
+
+네 observation attempt에서 exact same-origin target, HTTP success, JSON object와 1 MiB 미만 상한은 만족했다. redirect를 따라가거나 response header·raw body를 investigator가 열람하지 않았다. 그러나 locale-only provisional direct endpoint의 JSON object에는 exact top-level `id`가 반복적으로 없었고, strict response identity gate를 통과한 응답은 0개였다. 따라서 descriptor value를 accepted observation으로 표시하거나 인간이 실제 UI와 비교하는 단계는 시작하지 않았다.
+
+| 항목 | 판정 | 제한 |
+| --- | --- | --- |
+| top-level response identity | `NOT OBSERVED WITHIN SAMPLE` | provisional response object의 `id` missing; mismatch로 소급하지 않음 |
+| title | `NOT OBSERVED WITHIN SAMPLE` | identity 이후 field projection이 0개 |
+| release year | `NOT OBSERVED WITHIN SAMPLE` | missing·null·type·의미를 actual로 분류하지 못함 |
+| season | `NOT OBSERVED WITHIN SAMPLE` | movie/episode 독립 field 관찰이 identity gate 앞에서 중단됨 |
+| episode | `NOT OBSERVED WITHIN SAMPLE` | movie/episode 독립 field 관찰이 identity gate 앞에서 중단됨 |
+| episode series/work title | `AMBIGUOUS` / unqualified | parent lookup은 승인 범위가 아니어서 수행하지 않음 |
+| human semantic comparison | `NOT RUN` | metadata value가 strict identity 후 accepted/rendered된 적이 없음 |
+| Korean locale | `NOT REACHED` | first-party English 복귀 후 request 전에 중단; `ko` GET 0 |
+
+`id`가 없는 이유를 missing query, 다른 wrapper 또는 provider 변경 중 하나로 추정하지 않는다. 이 결과는 필요한 query를 추측하거나 request/header capture·replay, page main-world interception 또는 parent lookup으로 우회할 근거가 아니다.
+
+### 15.5 lifecycle, Storage와 진단 경계
+
+| Gate | 결과 | 근거 |
+| --- | --- | --- |
+| non-content 사전 차단 | PASS | listing의 `routeKind=unknown`에서 action disabled, GET 0 |
+| explicit-initiation / one-shot | PASS | pre-action 0; admitted action당 internal attempt 1와 GET 1 |
+| duplicate pending isolation | PASS | P3-E1 double-click이 second GET을 만들지 않음 |
+| full-document stale discard | PASS | request 후 history navigation에서 result accepted/rendered 0 |
+| same-document SPA stale discard | `NOT RUN` | full-document navigation으로 대체하지 않음 |
+| advertisement separation | `NOT RUN` | 광고 상태에서 request/action을 실행하지 않음 |
+| Storage non-mutation | PASS | M1·M2·E1·E2 각각에서 값을 읽지 않는 mutation observer가 `chrome.storage.local/sync/session`, Side Panel UI Web Storage와 content Web Storage의 P3 action-window 변경을 보고하지 않음 |
+| clean production regression | PASS | 임시 UI·message·fetch·instrumentation 제거 뒤 실제 episode가 재생되고 P0 `content`/attachment binding과 native learning source가 복귀; P3 UI·console marker 0 |
+| Side Panel console | PASS | warning 0, error 0 |
+| provider-page console | scoped PASS | 기존 warning/error는 있었지만 P3 marker 0, credential marker 0 |
+| network/response privacy | PASS | redirect·retry·fallback·second lookup·other-host request 0; header·raw body·credential 열람·기록 0 |
+
+tests-only characterization은 synthetic identity와 placeholder text만 사용해 exact target, one-shot·duplicate·8회 cap, 1 MiB byte cap, HTTP·JSON·redirect 경계, independent field classification과 P0 stale rejection을 fail closed로 고정한다. 이 fixture는 actual descriptor 획득, Korean locale, advertisement, same-document SPA 또는 인간 UI 비교를 `PASS`로 바꾸지 않는다.
+
+### 15.6 최종 qualification 결과와 후속 경계
+
+same-origin private GET을 explicit Side Panel action에서 단 한 번 시작하고 byte·identity·lifecycle 경계를 fail closed로 적용하는 기술적 seam은 actual extension에서 확인했다. Storage는 값에 접근하지 않는 observer로 action window의 non-mutation만 확인했으며 acceptance를 차단하는 runtime gate로 사용하지 않았다. 그러나 관찰한 locale-only provisional response는 exact top-level identity를 제공하지 않아 descriptor field를 하나도 수락·표시·의미 비교하지 못했다. Korean locale, same-document SPA와 advertisement gate도 남아 있다.
+
+**INSUFFICIENT EVIDENCE**
+
+따라서 P3 product contract, implementation, canonical amendment, metadata 표시·저장·자동 수집, card title이나 OpenSubtitles prefill을 제안하거나 시작하지 않는다. request/header capture·replay나 page main-world interception은 후속 방법으로 권하지 않는다. 미래에 exact first-party endpoint와 query의 현재 근거를 같은 explicit-initiation, same-origin, one-shot, no-retention, no-credential-inspection과 P0 fail-closed 경계 안에서 얻는 경우에만 별도 qualification Issue로 다시 판단한다.
