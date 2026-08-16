@@ -1,8 +1,6 @@
 import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getLocalSubtitle } from '@storage/subtitle';
-import { languageSchema, subtitleCueSchema } from '@storage/v2/schema';
-import type { V2SubtitleCue } from '@storage/v2/type';
-import { COUPANG_PLAY_VIDEO_URL_LIST, type Language } from '@utils/constants';
+import { COUPANG_PLAY_VIDEO_URL_LIST } from '@utils/constants';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { t } from '@utils/i18n';
 import { AsyncMessageResponse, onMessage, sendMessage } from '@utils/message';
@@ -187,7 +185,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
   });
   const subtitleSubscription = useSubtitleStore.subscribe((state, previousState) => {
     if (state.subtitleRevision === previousState.subtitleRevision) return;
-    listeningSessionCoordinator.handlePlaybackContextChange();
+    sessionCoordinator.handlePlaybackContextChange();
     reportCurrentContentStatus();
   });
 
@@ -208,6 +206,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
     active = false;
     registration.remove();
     videoLifecycleMonitor.stop();
+    subtitleSubscription();
     sessionCoordinator.dispose();
     if (activeVideoLifecycleMonitor === videoLifecycleMonitor) activeVideoLifecycleMonitor = null;
   };
@@ -236,64 +235,46 @@ const handleFetchVideoMetadata = async ({
   url,
   videoId,
 }: MessageSchema['fetchVideoMetadata']['params']) => {
-  if (!isValidContentVideoIdentity(expectedIdentity)) return;
+  if (
+    !isValidContentVideoIdentity(expectedIdentity) ||
+    !isLiveVideoIdentityCurrent(expectedIdentity)
+  ) {
+    return;
+  }
+  const startingStatus = createPlaybackContextStatus();
+  if (startingStatus.lifecycle !== 'content' || !videoManager.get()) return;
+  const startingSubtitleRevision = startingStatus.subtitleIdentity.subtitleRevision;
   latestNativeSubtitleRequestId = requestId;
   const subtitles = await coupangStrategy.fetchSubtitles(url, headers);
+  const statusBeforeEvidence = createPlaybackContextStatus();
   if (
     latestNativeSubtitleRequestId !== requestId ||
     videoId === null ||
     getCoupangPlayVideoId(window.location.href) !== videoId ||
+    statusBeforeEvidence.lifecycle !== 'content' ||
+    statusBeforeEvidence.subtitleIdentity.subtitleRevision !== startingSubtitleRevision ||
     !playbackContextController.observePlaybackEvidence({ expectedIdentity, playbackUrl: url })
   ) {
     return;
   }
+  const acceptanceStatus = createPlaybackContextStatus();
+  if (
+    (acceptanceStatus.routeKind !== 'movie' && acceptanceStatus.routeKind !== 'episode') ||
+    acceptanceStatus.lifecycle !== 'content' ||
+    acceptanceStatus.mediaAttachmentRevision !== expectedIdentity.videoRevision
+  ) {
+    return;
+  }
   const store = useSubtitleStore.getState();
-  let tracks: { cues: V2SubtitleCue[]; language: Language }[];
-  try {
-    tracks = subtitles.flatMap((subtitle) => {
-      const language = languageSchema.safeParse(subtitle.lang);
-      if (!language.success) return [];
-      return [{ language: language.data, cues: subtitleCueSchema.array().parse(subtitle.subtitleData) }];
-    });
-  } catch (error) {
-    store.clearNativeCues();
-    throw error;
+  const snapshotChanged = store.applyNativeSubtitleSnapshot(subtitles);
+  if (
+    !snapshotChanged &&
+    (statusBeforeEvidence.routeKind !== acceptanceStatus.routeKind ||
+      statusBeforeEvidence.learningAvailable !== acceptanceStatus.learningAvailable)
+  ) {
+    reportCurrentContentStatus();
   }
-  if (!areNativeSubtitleTracksEqual(store.nativeCueCache, tracks)) {
-    store.clearNativeCues();
-    for (const { cues, language } of tracks) {
-      store.setNativeCues(language, cues);
-    }
-  }
-  listeningSessionCoordinator.handlePlaybackContextChange();
-  reportCurrentContentStatus();
 };
-
-const areNativeSubtitleTracksEqual = (
-  cache: Partial<Record<Language, V2SubtitleCue[]>>,
-  tracks: readonly { cues: V2SubtitleCue[]; language: Language }[]
-) => {
-  const next = new Map(tracks.map(({ cues, language }) => [language, cues]));
-  const cachedLanguages = Object.keys(cache) as Language[];
-  if (cachedLanguages.length !== next.size) return false;
-  return cachedLanguages.every((language) => {
-    const cachedCues = cache[language];
-    const nextCues = next.get(language);
-    return (
-      cachedCues !== undefined &&
-      nextCues !== undefined &&
-      cachedCues.length === nextCues.length &&
-      cachedCues.every((cue, index) => areSubtitleCuesEqual(cue, nextCues[index]))
-    );
-  });
-};
-
-const areSubtitleCuesEqual = (left: V2SubtitleCue, right: V2SubtitleCue) =>
-  left.start === right.start &&
-  left.end === right.end &&
-  left.text === right.text &&
-  (left.settings?.length ?? 0) === (right.settings?.length ?? 0) &&
-  (left.settings ?? []).every((setting, index) => setting === right.settings?.[index]);
 
 const handlePlayVideo = ({
   expectedIdentity,
@@ -495,6 +476,9 @@ const handleSaveSubtitleOverviewCue = async ({
   if (result.status === 'busy') return { status: 'busy' };
   if (result.status === 'error') return { status: 'error' };
   if (result.status === 'card-unavailable') return { status: unavailableStatus };
+  if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) {
+    return { status: 'stale' };
+  }
   return { status: supportIncluded ? 'saved-with-support' : 'saved-learning-only' };
 };
 

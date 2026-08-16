@@ -711,6 +711,7 @@ function readyState(
       activeTabUrl: 'https://www.coupangplay.com/play/1',
       generation: 1,
       learningSubtitleId: 'learning-upload',
+      publishedSubtitleRevision: readySnapshot.subtitleRevision,
       supportSubtitleId: null,
       tabId: 7,
     },

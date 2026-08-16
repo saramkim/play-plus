@@ -35,15 +35,31 @@ export interface ResolvedSubtitleTrack {
   delay: number;
 }
 
+export type NativeSubtitleCategory = 'regular' | 'sdh';
+
+export interface NativeSubtitleTrack {
+  category: NativeSubtitleCategory;
+  cues: V2SubtitleCue[];
+  language: Language;
+  physicalIdentity: string;
+}
+
+interface NativeSubtitleTrackIdentity {
+  category: NativeSubtitleCategory;
+  physicalIdentity: string;
+}
+
 type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay'>;
 
 export interface SubtitleStoreState extends SubtitleSettings {
   nativeCueCache: Partial<Record<Language, V2SubtitleCue[]>>;
+  nativeTrackIdentityCache: Partial<Record<Language, NativeSubtitleTrackIdentity>>;
   registeredSelections: Record<SubtitleRole, RegisteredSubtitleSelection | null>;
   subtitleRevision: number;
 
   setSettings: (settings: SubtitleSettings) => void;
   setNativeCues: (language: Language, cues: V2SubtitleCue[]) => void;
+  applyNativeSubtitleSnapshot: (tracks: readonly NativeSubtitleTrack[]) => boolean;
   clearNativeCues: (language?: Language) => void;
   setRegisteredSelection: (role: SubtitleRole, selection: RegisteredSubtitleSelection) => void;
   clearRegisteredSelection: (role: SubtitleRole) => void;
@@ -58,6 +74,47 @@ const createEmptyRegisteredSelections = (): SubtitleStoreState['registeredSelect
 const initialSettings: SubtitleSettings = {
   learningProfile: learningProfileSchema.parse(DEFAULT_V2_SYNC_STORAGE.learningProfile),
   subtitleDisplay: subtitleDisplaySchema.parse(DEFAULT_V2_SYNC_STORAGE.subtitleDisplay),
+};
+
+const nativeSubtitleTrackSchema = z
+  .object({
+    category: z.enum(['regular', 'sdh']),
+    cues: z.array(subtitleCueSchema),
+    language: languageSchema,
+    physicalIdentity: z.string().min(1),
+  })
+  .strict();
+
+const areSubtitleCuesEqual = (left: V2SubtitleCue, right: V2SubtitleCue) =>
+  left.start === right.start &&
+  left.end === right.end &&
+  left.text === right.text &&
+  (left.settings?.length ?? 0) === (right.settings?.length ?? 0) &&
+  (left.settings ?? []).every((setting, index) => setting === right.settings?.[index]);
+
+const areNativeSubtitleSnapshotsEqual = (
+  state: Pick<SubtitleStoreState, 'nativeCueCache' | 'nativeTrackIdentityCache'>,
+  cues: SubtitleStoreState['nativeCueCache'],
+  identities: SubtitleStoreState['nativeTrackIdentityCache']
+) => {
+  const languages = Object.keys(state.nativeCueCache) as Language[];
+  if (languages.length !== Object.keys(cues).length) return false;
+  return languages.every((language) => {
+    const currentCues = state.nativeCueCache[language];
+    const nextCues = cues[language];
+    const currentIdentity = state.nativeTrackIdentityCache[language];
+    const nextIdentity = identities[language];
+    return (
+      currentCues !== undefined &&
+      nextCues !== undefined &&
+      currentIdentity !== undefined &&
+      nextIdentity !== undefined &&
+      currentIdentity.category === nextIdentity.category &&
+      currentIdentity.physicalIdentity === nextIdentity.physicalIdentity &&
+      currentCues.length === nextCues.length &&
+      currentCues.every((cue, index) => areSubtitleCuesEqual(cue, nextCues[index]))
+    );
+  });
 };
 
 export const selectSubtitleTrack = (
@@ -79,6 +136,7 @@ export const selectSubtitleTrack = (
 export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
   ...initialSettings,
   nativeCueCache: {},
+  nativeTrackIdentityCache: {},
   registeredSelections: createEmptyRegisteredSelections(),
   subtitleRevision: 0,
 
@@ -95,15 +153,44 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
   setNativeCues: (language, cues) => {
     const parsedLanguage = languageSchema.parse(language);
     const parsedCues = z.array(subtitleCueSchema).parse(cues);
-    set((state) => ({
-      nativeCueCache: { ...state.nativeCueCache, [parsedLanguage]: parsedCues },
-      subtitleRevision: state.subtitleRevision + 1,
-    }));
+    set((state) => {
+      const { [parsedLanguage]: _, ...nativeTrackIdentityCache } = state.nativeTrackIdentityCache;
+      return {
+        nativeCueCache: { ...state.nativeCueCache, [parsedLanguage]: parsedCues },
+        nativeTrackIdentityCache,
+        subtitleRevision: state.subtitleRevision + 1,
+      };
+    });
+  },
+  applyNativeSubtitleSnapshot: (tracks) => {
+    const parsedTracks = z.array(nativeSubtitleTrackSchema).parse(tracks);
+    const nativeCueCache: SubtitleStoreState['nativeCueCache'] = {};
+    const nativeTrackIdentityCache: SubtitleStoreState['nativeTrackIdentityCache'] = {};
+    for (const { category, cues, language, physicalIdentity } of parsedTracks) {
+      if (nativeCueCache[language] !== undefined) {
+        throw new Error('Duplicate native subtitle language');
+      }
+      nativeCueCache[language] = cues;
+      nativeTrackIdentityCache[language] = { category, physicalIdentity };
+    }
+
+    let changed = false;
+    set((state) => {
+      if (areNativeSubtitleSnapshotsEqual(state, nativeCueCache, nativeTrackIdentityCache)) return state;
+      changed = true;
+      return {
+        nativeCueCache,
+        nativeTrackIdentityCache,
+        subtitleRevision: state.subtitleRevision + 1,
+      };
+    });
+    return changed;
   },
   clearNativeCues: (language) => {
     if (language === undefined) {
       set((state) => ({
         nativeCueCache: {},
+        nativeTrackIdentityCache: {},
         subtitleRevision: state.subtitleRevision + 1,
       }));
       return;
@@ -112,8 +199,10 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
     const parsedLanguage = languageSchema.parse(language);
     set((state) => {
       const { [parsedLanguage]: _, ...nativeCueCache } = state.nativeCueCache;
+      const { [parsedLanguage]: __, ...nativeTrackIdentityCache } = state.nativeTrackIdentityCache;
       return {
         nativeCueCache,
+        nativeTrackIdentityCache,
         subtitleRevision: state.subtitleRevision + 1,
       };
     });
@@ -136,6 +225,7 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
   clearCaches: () =>
     set((state) => ({
       nativeCueCache: {},
+      nativeTrackIdentityCache: {},
       registeredSelections: createEmptyRegisteredSelections(),
       subtitleRevision: state.subtitleRevision + 1,
     })),

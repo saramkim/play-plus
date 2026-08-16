@@ -1025,6 +1025,13 @@ export const createListeningSessionCoordinator = (
       return { status: 'error' };
     }
 
+    if (activeSession !== session) return { status: 'stale' };
+    const completionValidation = validateSession(session);
+    if (completionValidation.status !== 'valid') {
+      await handleTerminalValidation(session, completionValidation.status);
+      return { status: completionValidation.status };
+    }
+
     if (result.status === 'busy') return { status: 'busy' };
     if (result.status === 'error') return { status: 'error' };
     if (result.status === 'card-unavailable') {
@@ -1111,6 +1118,14 @@ export const createListeningSessionCoordinator = (
       return;
     }
     if (!context.playbackContext.learningAvailable) {
+      stopAndReleaseSessionWithoutSeeking(session, context);
+      return;
+    }
+    if (!isSessionContextCurrent(session, context)) {
+      if (canSafelyRestoreCapturedVideo(session, context)) {
+        emergencyRestoreAndRelease(session);
+        return;
+      }
       stopAndReleaseSessionWithoutSeeking(session, context);
     }
   };

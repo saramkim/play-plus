@@ -65,6 +65,48 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
 | Reload unpacked `dist/` and run signed-in Chrome smoke | PASS | `list_extensions`에서 ID를 동적으로 확인하고 미설치 production `dist/`를 install; MCP reconnect 뒤 목록이 비어 동일 stable build를 reinstall한 다음 persistent 인증 세션의 실제 `/en/play/<video-id>/episode` route, DRM/player, registered subtitle catalog와 실제 Extension Pages Side Panel에서 아래 bounded smoke 수행 |
 
+## Issue #89 deterministic native SDH fallback certification record
+
+이 절은 #89 구현 후보만을 위한 추가 기록이다. 최종 review head SHA와 terminal GitHub checks는 PR 본문에도 같은 값으로 기록한다. 아래 행은 해당 exact head에서 새로 실행하거나 실제로 관찰하기 전까지 `NOT RUN`이며, 이전 #76/#66 결과나 qualification 표본을 이번 후보의 `PASS`로 승계하지 않는다. raw playback descriptor, physical candidate identity/category, 전체 URL, header/cookie/token, cue 본문·개수·시간, title, content/account/profile identity와 viewing history는 기록하지 않는다.
+
+### Exact-head automated evidence map
+
+| Contract boundary | Exact-head evidence | Result | Evidence / notes |
+| --- | --- | --- | --- |
+| Review-head identity | PR head SHA, clean scoped diff and final generated/sensitive-value audit | NOT RUN | 최종 implementation review head를 commit/push한 뒤 기록 |
+| Exact classifier and exclusions | `src/content/coupang-play.test.ts`, `src/content/native-subtitle-variant-qualification.test.ts`: exact case-sensitive `L` / `L sdh`, one ASCII space, non-subtitle/case/region/CC/captions/malformed sibling exclusion | NOT RUN | trim, alias, label, MIME, default, metadata 또는 cue-content inference가 없음을 exact-head fixture로 확인 |
+| Candidate-local settlement | 같은 focused suites: fetch rejection, body-read rejection, VTT parse rejection, empty parse와 usable sibling retention | NOT RUN | strict top-level playback envelope failure는 acquisition-wide이고 candidate-local failure만 격리되는지 확인 |
+| URL and deterministic selection | 같은 focused suites: direct `src`, nullish `sources[0].src`, both-present precedence, no usable URL, regular only, SDH only, regular+SDH, duplicate usable regular/SDH와 usable-count selection | NOT RUN | second URL, retry, new playback/discover lookup, provider fallback 또는 prefetch가 없음을 함께 audit |
+| Complete atomic snapshot | `src/content/features/subtitle/subtitle-store.test.ts`, `src/content/message-handler.test.ts`: complete-result replacement, physical category/identity change, cue change, identical snapshot no-op and exactly-one `subtitleRevision` transition | NOT RUN | pending/partial result가 consumer에게 보이지 않는지 확인 |
+| Fresh P0 acceptance | message-handler, playback-context and video-lifecycle focused suites: route/video/content instance, `contentEpoch`, attachment, lifecycle, source and request drift rejection | NOT RUN | advertisement/waiting/placeholder/transitioning, unsupported route, SPA/content/attachment/source drift를 fail closed 처리 |
+| Subtitle-bound invalidation | transcript/overview, seek/repeat/clip/save, catalog and Listening Mission coordinator/UI focused suites | NOT RUN | changed snapshot은 모든 subtitle-bound work를 함께 무효화하고 identical snapshot은 catalog/Mission churn을 만들지 않음을 확인 |
+| Existing behavior regression | Coupang playback, native/registered role, source identity, subtitle overview/save/seek/repeat and Listening Mission focused suites | NOT RUN | logical source, Library display와 Listening Progress가 계속 `native:<language>`인지 포함 |
+| Full local gates | `yarn type-check`, `yarn lint`, `yarn test:run`, `yarn build`, `git diff --check` | NOT RUN | production `dist/`는 exact review head에서 다시 build; 기존 bundle warning과 새 warning을 구분 |
+| Static privacy/config boundary | source와 built output의 message, Storage/schema/migration, permission/host/CSP/dependency, network/replay/discover/retry/prefetch/interception/logging audit | NOT RUN | 새 product message surface, key/write, permission prompt/grant, request path 또는 sensitive persistence/relay/logging이 없어야 함 |
+| GitHub exact-head checks | PR의 required checks가 같은 review head SHA에서 terminal success | NOT RUN | 이전 SHA의 checks는 승계하지 않음 |
+
+### Actual Korean Chrome required core gate
+
+Rebuilt production `dist/`, dedicated Korean egress, signed-in supported Coupang Play movie/episode tab과 action-opened tab-bound Chrome Extension Pages Side Panel을 사용한다. 설치, 인증, 지역, DRM/player와 native acquisition은 서로 독립된 gate다. 아래 `Core` 행은 모두 실제 `PASS`여야 하며 하나라도 `NOT RUN`, `UNKNOWN` 또는 `FAIL`이면 #89 merge를 차단한다.
+
+| Check | Gate | Result | Required observation / evidence |
+| --- | --- | --- | --- |
+| Exact-head production extension | Core | UNKNOWN | production `dist/`를 동적으로 확인한 unpacked ID에 설치하고 action이 연 실제 Extension Pages Side Panel을 사용했지만, 후보가 아직 commit되지 않아 review-head SHA와의 동일성은 확정할 수 없음 |
+| Korean egress and authentication | Core | PASS | gateway가 KR/ICN egress, host route 불변과 서로 다른 egress를 보고했고 기존 signed-in session을 credential 입력·수집 없이 사용 |
+| Supported DRM/player | Core | PASS | 실제 movie와 episode 본편에서 current media attachment, ready state, 시간 전진과 media error 부재를 native acquisition과 별도로 확인; entitlement가 없는 탐색 표본은 제외 |
+| Regular canonical positive | Core | PASS | 실제 exact regular 표본에서 non-empty logical native overview/catalog과 current revision을 확인하고 pointer/keyboard seek, Repeat, Save→Library delete, Mission start→정상 exit를 수행해 저장 baseline을 복원 |
+| Regular-absent exact SDH positive | Core | PASS | 실제 응답을 raw 미출력 observer로 판정해 configured canonical language의 regular 0, exact SDH 1과 usable URL을 확인했고 같은 non-empty logical native source, current overview/catalog와 keyboard seek를 확인; fixture를 사용하지 않음 |
+| P0 and stale-boundary rejection | Core | UNKNOWN | advertisement→content 전환의 ad-candidate 비수용 subset에 더해, 자연 에피소드 SPA/페이지 이탈에서 기존 Mission이 즉시 제거되고 old heartbeat가 `stale`이며, Slow 3G 뒤로/앞으로 전환 중 current route/video identity가 어긋나는 ready snapshot은 관찰되지 않았음. 다만 throttled return이 bounded window 안에 current-ready로 완료되지 않아 late response·attachment/source drift 전부를 PASS로 닫지 못함; 네트워크 제한은 즉시 해제 |
+| Changed snapshot atomic invalidation | Core | PASS | 활성 Mission 중 실제 “다음 에피소드” SPA를 수행해 새 logical-native snapshot, 관찰 구간의 revision 전환 1회, Overview/Catalog/current revision 일치, non-empty ready, mixed/partial ready 0건과 기존 Mission 즉시 제거를 확인; 이전 session heartbeat는 후속 자연 전환에서 `stale` |
+| Identical snapshot no-churn | Core | UNKNOWN | 실제 재생을 45초간 관찰했으나 광고 또는 same-content replay가 자연 발생하지 않음(`NOT OBSERVED WITHIN SAMPLE`); 관찰 중 revision/source는 안정적이었지만 재전달 자체가 없었으므로 no-churn PASS로 승격하지 않음 |
+| Existing replay and request boundary | Core | UNKNOWN | 기준점 이후 정상 reload에서 page playback 1회와 extension replay 1회, playback 모두 success, VTT GET success, failed/blocked 0건과 external subtitle lookup 0건을 raw response/file 없이 확인. 원래 player VTT와 content-script VTT의 initiator가 DevTools ledger에서 분리되지 않아 selected-candidate별 exact one-attempt/retry 0을 manual PASS로 닫지 못함 |
+| Storage, permission and namespace boundary | Core | PASS | granted permission/origin이 manifest required/optional subset이고 local/sync key set은 기존 canonical set과 동일하며 physical identity/category/candidate field가 Storage에 없음; logical native Library/Progress baseline 복원 |
+| Diagnostics and privacy | Core | PASS | 복구 후 새 certification run은 `responseFilePath`/raw playback body를 전혀 사용하지 않고 in-memory boolean/counter만 기록. Side Panel extension error/warning 0, subtitle-sensitive diagnostic 0, granted permission/origin=manifest exact set, Storage의 physical identity/category·raw subtitle URL 0건, workspace raw-response artifact 0건을 확인. 이 clean rerun이 삭제 완료된 이전 validation-tool residue FAIL을 대체하며, 제품·commit·외부 전송으로 raw 값이 나가지 않음 |
+| Candidate failure or duplicate reached naturally | Conditional sample | NOT OBSERVED WITHIN SAMPLE | 실제 표본에서 자연 failure 또는 duplicate usable candidate가 없었으며 automated fixture를 manual PASS로 바꾸지 않음 |
+| Same-base regular and SDH coexistence | Conditional sample | NOT OBSERVED WITHIN SAMPLE | regular과 SDH는 서로 다른 canonical language에서 관찰됐고 same-base coexistence는 관찰되지 않았으므로 provider-wide support를 주장하지 않음 |
+
+#89 actual Chrome core status: **BLOCKED — 0 CORE FAIL, 4 CORE ROWS UNKNOWN**. Korean egress/authentication, DRM/player, actual regular and actual regular-absent exact SDH positives, changed-snapshot atomic invalidation, Storage/permission과 clean diagnostics/privacy boundary는 직접 PASS했다. exact review-head identity, complete P0/stale boundary, naturally occurring identical-snapshot no-churn과 initiator-isolated candidate request ledger가 남았다. 계약상 이 UNKNOWN을 automated fixture나 인위적 replay/interception으로 대체할 수 없으므로 #89 merge와 Batch Relay progression을 차단한다. Release, tag, deployment, Store submission, merge 또는 direct `main` push는 이 기록으로 승인되지 않는다.
+
 ## Issue #76 transient Playback Context certification record
 
 이 절은 merged #75 계약을 구현한 #76 후보를 최신 `main` 기준 working tree에서 검증한 기록이다. machine-specific extension ID, account/profile 값, 전체 URL, request header, cookie, subtitle 본문은 기록하지 않는다. 최종 commit SHA와 terminal CI는 Draft PR 본문과 exact-head checks에 기록한다.
