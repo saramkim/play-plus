@@ -74,7 +74,7 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Contract boundary | Exact-head evidence | Result | Evidence / notes |
 | --- | --- | --- | --- |
 | Review-head identity | PR head SHA, #89 squash merge ancestry, clean scoped diff and exact-head CI | NOT RUN | 최종 implementation head를 commit/push한 뒤 기록 |
-| Strict optional projection | `src/content/playback-marker-projection.test.ts`, `src/content/coupang-play.test.ts`: episode candidate shape, raw-duration `0.001` scale/range, current media range, exactly-one raw `watch_next`, exact six fields and malformed/unknown sibling isolation | PASS | synthetic fixture만 사용하며 raw marker value를 production log/message/Storage로 내보내지 않음 |
+| Strict optional projection | `src/content/playback-marker-projection.test.ts`, `src/content/coupang-play.test.ts`: episode candidate shape, raw-duration `0.001` scale/range, current media range, exactly-one raw `watch_next`, exact six fields, malformed/unknown sibling isolation과 candidate settlement 뒤 current media-duration 판정 | PASS | synthetic fixture만 사용하며 raw marker value를 production log/message/Storage로 내보내지 않음 |
 | Intro consistency | marker projection focused suite: malformed/one-sided endpoint isolation, duplicate strict start/end, source-order decrease, endpoint order/equality and terminal overlap | PASS | intro는 consistency check에만 사용하고 skip action/UI를 만들지 않음 |
 | Full transient binding | `src/content/playback-context/playback-fence.test.ts`, message-handler/playback-context/video-lifecycle suites | PASS | episode/content, P0 content/route/video/attachment, logical source, #89 physical category/identity snapshot과 `subtitleRevision` drift를 exact compare하고 non-content에서 폐기 |
 | Whole catalog boundary | `src/listening/domain/segment-catalog.test.ts`, coordinator suite | PASS | 전체 effective closed interval의 end가 fence 안인 segment만 유지하며 crossing/beyond segment를 자르거나 constituent cue를 재사용하지 않음 |
@@ -82,7 +82,7 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Learning seek/repeat boundary | learning-playback, video-controller, message-handler와 subtitle-overview focused suites | PASS | previous/next/repeat는 current eligible cue set에서 해결하고 post-fence 위치의 explicit previous는 유효한 pre-fence target으로 이동; overview seek는 target 전체 interval을 control 직전에 재검증 |
 | Results and handoff | listening-flow/model, Listening Mission UI와 coordinator end-mode suites | PASS | filtered catalog tail에서는 `Next 10`을 렌더하지 않고 explicit Continue Watching은 기존 `continue-watching` cleanup/handoff만 사용; host UI inspect/click, fence seek 또는 auto-next 없음 |
 | Regression and no expansion | existing #89/P0/native/registered/overview/save/Mission suites plus source/built audit | PASS | message/Storage/schema/migration/manifest/permission/host/CSP/dependency 변경 없음; 새 replay/request/retry/prefetch/interception, raw marker relay/logging과 background/UI marker token 없음 |
-| Full local gates | `yarn type-check`, `yarn lint`, `yarn test:run`, `yarn build`, `git diff --check` | PASS | 104 files / 1,213 tests, production build 성공; 기존 bundle-size warning 3건과 Windows line-ending 안내만 존재 |
+| Full local gates | `yarn type-check`, `yarn lint`, `yarn test:run`, `yarn build`, `git diff --check` | PASS | 104 files / 1,214 tests, production build 성공; 기존 bundle-size warning 3건과 Windows line-ending 안내만 존재 |
 | GitHub exact-head checks | PR required checks terminal success on the same head | NOT RUN | 이전 SHA 결과를 승계하지 않음 |
 
 ### Actual Korean Chrome required core gate

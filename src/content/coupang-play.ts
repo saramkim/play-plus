@@ -126,7 +126,7 @@ class CoupangPlayStrategy {
   async fetchPlaybackData(
     url: string,
     headers: chrome.webRequest.HttpHeader[],
-    mediaDurationSeconds: number
+    getMediaDurationSeconds: number | (() => number)
   ): Promise<NativePlaybackAcquisition> {
     const { candidates, playbackResponse } = await this.fetchVideoMetadata(url, headers);
     const settlements = await Promise.allSettled(
@@ -151,7 +151,9 @@ class CoupangPlayStrategy {
       subtitles,
       watchNextFenceSeconds: extractWatchNextFenceSeconds(
         playbackResponse,
-        mediaDurationSeconds
+        typeof getMediaDurationSeconds === 'function'
+          ? getMediaDurationSeconds()
+          : getMediaDurationSeconds
       ),
     };
   }

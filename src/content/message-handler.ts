@@ -259,7 +259,7 @@ const handleFetchVideoMetadata = async ({
   const acquisition = await coupangStrategy.fetchPlaybackData(
     url,
     headers,
-    startingVideo.duration
+    () => startingVideo.duration
   );
   const statusBeforeEvidence = createPlaybackContextStatus();
   if (

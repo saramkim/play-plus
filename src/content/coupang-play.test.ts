@@ -262,6 +262,49 @@ describe('coupangStrategy playback response adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('reads the current media duration after candidate settlement', async () => {
+    let mediaDuration = Number.NaN;
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse({
+          data: {
+            raw: {
+              cue_points: [
+                {
+                  force_stop: false,
+                  id: 'fixture-id',
+                  metadata: 'fixture-metadata',
+                  name: 'watch_next',
+                  time: 500,
+                  type: 'CODE',
+                },
+              ],
+              duration: 600_000,
+              text_tracks: [
+                {
+                  kind: 'subtitles',
+                  srclang: 'en',
+                  src: 'https://cdn.example.com/en.vtt',
+                },
+              ],
+            },
+          },
+        })
+      )
+      .mockImplementationOnce(async () => {
+        mediaDuration = 600;
+        return createResponse(VALID_VTT);
+      });
+
+    await expect(
+      coupangStrategy.fetchPlaybackData(
+        'https://example.com/playback',
+        [],
+        () => mediaDuration
+      )
+    ).resolves.toMatchObject({ watchNextFenceSeconds: 500 });
+  });
+
   it('selects one exact SDH candidate as its canonical logical language', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
