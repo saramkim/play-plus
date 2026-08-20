@@ -65,6 +65,48 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
 | Reload unpacked `dist/` and run signed-in Chrome smoke | PASS | `list_extensions`에서 ID를 동적으로 확인하고 미설치 production `dist/`를 install; MCP reconnect 뒤 목록이 비어 동일 stable build를 reinstall한 다음 persistent 인증 세션의 실제 `/en/play/<video-id>/episode` route, DRM/player, registered subtitle catalog와 실제 Extension Pages Side Panel에서 아래 bounded smoke 수행 |
 
+## Issue #90 episode watch-next learning fence certification record
+
+이 절은 #90 exact review head의 추가 기록이다. raw playback response, marker ID/metadata/time, title/content/account/profile identity, 전체 URL, header/cookie/token, cue 본문·개수·시간과 #89 physical identity는 committed evidence에 기록하지 않는다. 아래 actual Chrome 행은 rebuilt production `dist`, dedicated KR egress, signed-in actual Coupang Play와 action-opened tab-bound Chrome Extension Pages Side Panel에서 직접 확인하기 전까지 `NOT RUN`이며 fixture나 #79 qualification을 실제 `PASS`로 승계하지 않는다.
+
+### Exact-head automated evidence map
+
+| Contract boundary | Exact-head evidence | Result | Evidence / notes |
+| --- | --- | --- | --- |
+| Review-head identity | PR head SHA, #89 squash merge ancestry, clean scoped diff and exact-head CI | NOT RUN | 최종 implementation head를 commit/push한 뒤 기록 |
+| Strict optional projection | `src/content/playback-marker-projection.test.ts`, `src/content/coupang-play.test.ts`: episode candidate shape, raw-duration `0.001` scale/range, current media range, exactly-one raw `watch_next`, exact six fields and malformed/unknown sibling isolation | PASS | synthetic fixture만 사용하며 raw marker value를 production log/message/Storage로 내보내지 않음 |
+| Intro consistency | marker projection focused suite: malformed/one-sided endpoint isolation, duplicate strict start/end, source-order decrease, endpoint order/equality and terminal overlap | PASS | intro는 consistency check에만 사용하고 skip action/UI를 만들지 않음 |
+| Full transient binding | `src/content/playback-context/playback-fence.test.ts`, message-handler/playback-context/video-lifecycle suites | PASS | episode/content, P0 content/route/video/attachment, logical source, #89 physical category/identity snapshot과 `subtitleRevision` drift를 exact compare하고 non-content에서 폐기 |
+| Whole catalog boundary | `src/listening/domain/segment-catalog.test.ts`, coordinator suite | PASS | 전체 effective closed interval의 end가 fence 안인 segment만 유지하며 crossing/beyond segment를 자르거나 constituent cue를 재사용하지 않음 |
+| Clip/replay boundary | listening coordinator focused suite | PASS | automatic new line, 1.0x replay와 Slow 0.75x의 pre/post-roll stop을 current fence로 cap하고 context drift 시 active clip/session을 stale 처리 |
+| Learning seek/repeat boundary | learning-playback, video-controller, message-handler와 subtitle-overview focused suites | PASS | previous/next/repeat는 current eligible cue set에서 해결하고 post-fence 위치의 explicit previous는 유효한 pre-fence target으로 이동; overview seek는 target 전체 interval을 control 직전에 재검증 |
+| Results and handoff | listening-flow/model, Listening Mission UI와 coordinator end-mode suites | PASS | filtered catalog tail에서는 `Next 10`을 렌더하지 않고 explicit Continue Watching은 기존 `continue-watching` cleanup/handoff만 사용; host UI inspect/click, fence seek 또는 auto-next 없음 |
+| Regression and no expansion | existing #89/P0/native/registered/overview/save/Mission suites plus source/built audit | PASS | message/Storage/schema/migration/manifest/permission/host/CSP/dependency 변경 없음; 새 replay/request/retry/prefetch/interception, raw marker relay/logging과 background/UI marker token 없음 |
+| Full local gates | `yarn type-check`, `yarn lint`, `yarn test:run`, `yarn build`, `git diff --check` | PASS | 104 files / 1,213 tests, production build 성공; 기존 bundle-size warning 3건과 Windows line-ending 안내만 존재 |
+| GitHub exact-head checks | PR required checks terminal success on the same head | NOT RUN | 이전 SHA 결과를 승계하지 않음 |
+
+### Actual Korean Chrome required core gate
+
+검증 중에는 raw response/request detail을 relay하거나 파일로 저장하지 않고 in-memory sanitized boolean/counter만 기록한다. 두 positive episode는 서로 독립된 실제 표본이어야 하고 모든 core 행은 `PASS`여야 한다. `NOT RUN | UNKNOWN | FAIL`은 #90 merge를 막는다.
+
+| Check | Result | Required observation / evidence |
+| --- | --- | --- |
+| Exact-head extension / KR / auth / DRM / player / native acquisition | NOT RUN | current review head를 production build/reload한 실제 extension, KR gateway, existing signed-in session, episode 본편 media와 nonempty current native projection을 서로 별도 gate로 확인 |
+| Independent episode positive A | NOT RUN | strict-valid current `watch_next` sanitized predicate와 marker-bound catalog/learning operations 확인 |
+| Independent episode positive B | NOT RUN | 첫 표본과 다른 실제 episode에서 같은 strict-valid predicate와 current binding 확인 |
+| Missing or invalid marker negative | NOT RUN | 실제 missing/invalid evidence에서 fence를 추측하지 않고 marker-agnostic learning behavior 유지 |
+| Final pre-fence Mission / Results / no Next 10 | NOT RUN | 마지막 eligible line까지 수행해 정상 Results와 fence-outside `Next 10` 부재 확인 |
+| Explicit Continue Watching | NOT RUN | active clip, observer, Mission ownership, heartbeat/lease와 suppression을 해제하고 current handoff point에서 host playback으로 복귀; host UI click/auto seek/advance 없음 |
+| Automatic / replay / Slow bounds | NOT RUN | sanitized observation으로 세 clip interval이 fence를 넘지 않음 확인 |
+| Previous / next / repeat / overview seek bounds | NOT RUN | crossing/beyond target은 제어하지 않고 post-fence 위치의 explicit previous는 유효한 pre-fence target으로 이동 |
+| Same-document next-episode SPA | NOT RUN | old fence/catalog/Mission이 새 episode로 승격되지 않고 fresh evidence 뒤 current projection만 사용 |
+| Advertisement to content | NOT RUN | non-content 동안 fence 미소비/폐기, 본편 복귀 뒤 stale reuse 없이 fresh evidence 요구 |
+| Attachment / source / physical snapshot / revision drift | NOT RUN | 각 drift에서 old fence, catalog, clip, seek/repeat와 Mission work가 stale 처리됨 확인 |
+| Network boundary | NOT RUN | normal page traffic + existing extension playback replay 외 추가 playback/discover/retry/prefetch/interception/external request 0 |
+| Storage / permission / privacy / diagnostics | NOT RUN | 새 key/write/prompt/grant 0, raw marker/physical provider/header/cue persistence·relay·logging 0, extension error/warning 0 |
+
+#90 verification status: **NOT RUN**. Automated focused evidence는 구현 중간 head의 deterministic boundary만 나타낸다. Final exact-head full gate, CI와 위 actual Chrome core가 모두 완료되기 전에는 merge-ready로 간주하지 않는다.
+
 ## Issue #89 deterministic native SDH fallback certification record
 
 이 절은 #89 구현 후보만을 위한 추가 기록이다. 최종 review head SHA와 terminal GitHub checks는 PR 본문에도 같은 값으로 기록한다. 아래 행은 해당 exact head에서 새로 실행하거나 실제로 관찰하기 전까지 `NOT RUN`이며, 이전 #76/#66 결과나 qualification 표본을 이번 후보의 `PASS`로 승계하지 않는다. raw playback descriptor, physical candidate identity/category, 전체 URL, header/cookie/token, cue 본문·개수·시간, title, content/account/profile identity와 viewing history는 기록하지 않는다.

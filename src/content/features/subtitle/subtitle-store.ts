@@ -44,7 +44,7 @@ export interface NativeSubtitleTrack {
   physicalIdentity: string;
 }
 
-interface NativeSubtitleTrackIdentity {
+export interface NativeSubtitleTrackIdentity {
   category: NativeSubtitleCategory;
   physicalIdentity: string;
 }

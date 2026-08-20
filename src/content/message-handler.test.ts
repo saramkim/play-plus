@@ -27,7 +27,9 @@ vi.mock('@utils/message', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@utils/message')>();
   return { ...actual, sendMessage: vi.fn() };
 });
-vi.mock('./coupang-play', () => ({ coupangStrategy: { fetchSubtitles: vi.fn() } }));
+vi.mock('./coupang-play', () => ({
+  coupangStrategy: { fetchPlaybackData: vi.fn(), fetchSubtitles: vi.fn() },
+}));
 
 const VIDEO_ID = '123e4567-e89b-12d3-a456-426614174000';
 const OTHER_VIDEO_ID = '123e4567-e89b-12d3-a456-426614174001';
@@ -173,6 +175,12 @@ describe('canonical content messages', () => {
     window.history.replaceState(null, '', `/play/${VIDEO_ID}/episode`);
     playbackContextController.reset(window.location.href);
     vi.mocked(coupangStrategy.fetchSubtitles).mockReset().mockResolvedValue([]);
+    vi.mocked(coupangStrategy.fetchPlaybackData).mockReset().mockImplementation(
+      async (url, headers) => ({
+        subtitles: await coupangStrategy.fetchSubtitles(url, headers),
+        watchNextFenceSeconds: null,
+      })
+    );
     vi.mocked(sendMessage).mockReset().mockResolvedValue({ success: true, data: {} } as never);
     const store = useSubtitleStore.getState();
     store.clearCaches();
@@ -986,6 +994,45 @@ describe('canonical content messages', () => {
     expect(relayedBoundary).not.toContain('https://synthetic.test/en-sdh.vtt');
     expect(relayedBoundary).not.toContain('physicalIdentity');
     expect(relayedBoundary).not.toContain('"category":"sdh"');
+  });
+
+  it('binds an accepted episode fence to the snapshot and rejects crossing overview seeks', async () => {
+    const video = attachVideo(0);
+    Object.defineProperty(video, 'duration', { configurable: true, value: 10 });
+    vi.mocked(coupangStrategy.fetchPlaybackData).mockResolvedValue({
+      subtitles: [
+        createFetchedNativeTrack('en', [
+          { start: 1, end: 2, text: 'Before fence' },
+          { start: 4.5, end: 5.5, text: 'Crosses fence' },
+          { start: 6, end: 7, text: 'Beyond fence' },
+        ]),
+      ],
+      watchNextFenceSeconds: 5,
+    });
+    const { dispatch } = createMessageHarness();
+
+    const acquisition = dispatch('fetchVideoMetadata', createNativeRequest());
+    await expectResponse(acquisition.sendResponse, { success: true });
+    const ping = readPing(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+
+    for (const startTime of [4.5, 6]) {
+      expect(
+        dispatch('playVideo', {
+          expectedIdentity: ping.identity,
+          expectedSubtitleRevision: subtitleRevision,
+          startTime,
+        }).sendResponse
+      ).toHaveBeenCalledWith({ success: true, data: { status: 'stale' } });
+    }
+    expect(
+      dispatch('playVideo', {
+        expectedIdentity: ping.identity,
+        expectedSubtitleRevision: subtitleRevision,
+        startTime: 1,
+      }).sendResponse
+    ).toHaveBeenCalledWith({ success: true, data: { status: 'played' } });
+    expect(video.currentTime).toBe(1);
   });
 
   it('clears stale native learning when the complete selected snapshot is empty', async () => {

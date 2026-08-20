@@ -121,6 +121,7 @@ export interface ListeningSessionLearningTrack extends ListeningSessionTrack {
 export interface ListeningSessionContext {
   identity: ContentVideoIdentity;
   learning: ListeningSessionLearningTrack | null;
+  learningFenceEndMs: number | null;
   playbackContext: PlaybackContextStatus;
   subtitleRevision: number;
   support: ListeningSessionTrack | null;
@@ -265,7 +266,8 @@ export const createListeningSessionCoordinator = (
   ) =>
     canSafelyRestoreCapturedVideo(session, context) &&
     context.subtitleRevision === session.context.subtitleRevision &&
-    context.learning?.sourceKey === session.context.learning.sourceKey;
+    context.learning?.sourceKey === session.context.learning.sourceKey &&
+    context.learningFenceEndMs === session.context.learningFenceEndMs;
 
   const safelyClearSuppression = () => {
     try {
@@ -461,6 +463,7 @@ export const createListeningSessionCoordinator = (
 
       const catalog = freezeCatalog(
         await buildListeningSegmentCatalog({
+          fenceEndMs: context.learningFenceEndMs,
           learningCues: context.learning.cues,
           learningDelaySeconds: context.learning.delaySeconds,
           sourceKey: context.learning.sourceKey,
@@ -657,6 +660,7 @@ export const createListeningSessionCoordinator = (
 
     try {
       const catalog = await buildListeningSegmentCatalog({
+        fenceEndMs: validation.context.learningFenceEndMs,
         learningCues: validation.context.learning.cues,
         learningDelaySeconds: validation.context.learning.delaySeconds,
         sourceKey: validation.context.learning.sourceKey,
@@ -777,7 +781,11 @@ export const createListeningSessionCoordinator = (
       ({ segmentKey }) => segmentKey === segment.segmentKey
     );
     const nextSegment = session.catalog[catalogIndex + 1];
-    const stopMs = getClipStopMs(segment, nextSegment);
+    const stopMs = getClipStopMs(
+      segment,
+      nextSegment,
+      session.context.learningFenceEndMs
+    );
     const startSeconds = Math.max(0, segment.startMs - LISTENING_CLIP_PREROLL_MS) / 1000;
     const stopSeconds = Math.max(0, stopMs) / 1000;
     const generation = ++clipGeneration;
@@ -1214,6 +1222,7 @@ const isSameFrozenContext = (
   left.identity.videoId === right.identity.videoId &&
   left.subtitleRevision === right.subtitleRevision &&
   left.learning?.sourceKey === right.learning?.sourceKey &&
+  left.learningFenceEndMs === right.learningFenceEndMs &&
   left.playbackContext.subtitleIdentity.support ===
     right.playbackContext.subtitleIdentity.support;
 
@@ -1227,7 +1236,8 @@ const isSameCatalogContext = (
   left.video === right.video &&
   isSameIdentity(left.identity, right.identity) &&
   left.subtitleRevision === right.subtitleRevision &&
-  left.learning?.sourceKey === right.learning?.sourceKey;
+  left.learning?.sourceKey === right.learning?.sourceKey &&
+  left.learningFenceEndMs === right.learningFenceEndMs;
 
 const selectRequestedSegments = (
   catalog: readonly ListeningPracticeSegment[],
@@ -1311,9 +1321,12 @@ const createUniqueSessionId = (
 
 const getClipStopMs = (
   segment: ListeningPracticeSegment,
-  nextSegment: ListeningPracticeSegment | undefined
+  nextSegment: ListeningPracticeSegment | undefined,
+  fenceEndMs: number | null
 ) => {
   const postrollEnd = segment.endMs + LISTENING_CLIP_POSTROLL_MS;
-  if (!nextSegment) return postrollEnd;
-  return Math.max(segment.endMs, Math.min(postrollEnd, nextSegment.startMs));
+  const nextBoundedEnd = nextSegment
+    ? Math.max(segment.endMs, Math.min(postrollEnd, nextSegment.startMs))
+    : postrollEnd;
+  return fenceEndMs === null ? nextBoundedEnd : Math.min(nextBoundedEnd, fenceEndMs);
 };

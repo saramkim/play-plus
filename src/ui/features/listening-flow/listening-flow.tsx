@@ -62,6 +62,7 @@ type LandingState =
     };
 
 type ActiveMission = Readonly<{
+  canStartNextMission: boolean;
   controller: ListeningSessionController;
   finalSegmentKey: ReadyListeningCatalog['segments'][number]['segmentKey'];
   sessionId: string;
@@ -304,7 +305,12 @@ export function ListeningLearningPage({
           fatalHandlerRef.current?.(response.sessionId, reason)
         );
         const snapshot = toMissionSnapshot(response.snapshot);
+        const finalCatalogIndex = catalog.segments.findIndex(
+          ({ segmentKey }) => segmentKey === snapshot.segments.at(-1)?.segmentKey
+        );
         const mission: ActiveMission = Object.freeze({
+          canStartNextMission:
+            finalCatalogIndex >= 0 && finalCatalogIndex < catalog.segments.length - 1,
           controller,
           finalSegmentKey: snapshot.segments[snapshot.segments.length - 1].segmentKey,
           sessionId: response.sessionId,
@@ -725,6 +731,7 @@ export function ListeningLearningPage({
       <>
         <div className={interrupted ? 'hidden' : 'h-full min-h-0'} inert={interrupted}>
           <ListeningMission
+            canStartNextMission={activeMission.canStartNextMission}
             controller={activeMission.controller}
             getPracticedAt={getPracticedAt}
             snapshot={activeMission.snapshot}

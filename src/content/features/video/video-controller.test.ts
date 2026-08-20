@@ -14,6 +14,10 @@ import { useListeningMissionActiveStore } from '@/content/features/listening-ses
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
+import {
+  discardPlaybackFence,
+  replacePlaybackFence,
+} from '@/content/playback-context/playback-fence';
 
 import {
   useVideoControlStore,
@@ -266,6 +270,50 @@ describe('canonical learning commands', () => {
     controller.stop();
   });
 
+  it('keeps learning seeks inside the current fence and moves back from post-fence time', async () => {
+    const controller = new VideoController(createDependencies(new FakeSyncStorage()));
+    const observedVideo = createObservedVideo(8);
+    Object.defineProperty(observedVideo.video, 'duration', { configurable: true, value: 10 });
+    vi.spyOn(videoManager, 'get').mockReturnValue(observedVideo.video);
+    const store = useSubtitleStore.getState();
+    store.applyNativeSubtitleSnapshot([
+      {
+        category: 'regular',
+        cues: [
+          { start: 1, end: 2, text: 'Before fence' },
+          { start: 4.5, end: 5.5, text: 'Crossing fence' },
+          { start: 6, end: 7, text: 'Beyond fence' },
+        ],
+        language: 'en',
+        physicalIdentity: 'physical-en',
+      },
+    ]);
+    const currentStore = useSubtitleStore.getState();
+    const playbackContext = {
+      ...SUPPORTED_PLAYBACK_CONTEXT,
+      subtitleIdentity: {
+        learning: 'native:en',
+        subtitleRevision: currentStore.subtitleRevision,
+        support: null,
+      },
+    };
+    usePlaybackContextStore.setState({ status: playbackContext });
+    replacePlaybackFence(5, {
+      mediaDurationSeconds: 10,
+      nativeTracks: currentStore.nativeTrackIdentityCache,
+      playbackContext,
+    });
+
+    await controller.execute('previous');
+    expect(observedVideo.seek).toHaveBeenLastCalledWith(1);
+    observedVideo.setObservedTime(2.5);
+    await controller.execute('next');
+    expect(observedVideo.seek).toHaveBeenCalledOnce();
+    observedVideo.setObservedTime(4.75);
+    await controller.execute('repeat-current');
+    expect(observedVideo.seek).toHaveBeenCalledOnce();
+  });
+
   it('sends exactly one canonical learning-only card and sends nothing without a current cue', async () => {
     const storage = new FakeSyncStorage();
     const controller = new VideoController(createDependencies(storage));
@@ -397,6 +445,7 @@ const lastToastMessage = () => {
 };
 
 const resetStores = () => {
+  discardPlaybackFence();
   useListeningMissionActiveStore.getState().setActive(false);
   usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
   useVideoControlStore.getState().reset();

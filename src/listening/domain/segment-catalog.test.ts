@@ -101,6 +101,20 @@ describe('listening segment catalog', () => {
     expect(catalog).toEqual([]);
   });
 
+  it('omits a whole crossing segment without truncating it or its source cues', async () => {
+    const catalog = await build(
+      [
+        cue(0, 0.999, 'Before.'),
+        cue(2, 3.2, 'Crossing.'),
+        cue(4, 4.999, 'Beyond.'),
+      ],
+      { fenceEndMs: 3000 }
+    );
+
+    expect(catalog.map(({ sourceIndices }) => sourceIndices)).toEqual([[0]]);
+    expect(catalog[0]).toMatchObject({ startMs: 0, endMs: 999 });
+  });
+
   it('cleans spoken parts once and keeps deterministic source order', async () => {
     const catalog = await build([
       cue(0, 0.4, '<i>Hello</i> [noise]'),
@@ -241,6 +255,7 @@ describe('listening mission catalog selection', () => {
 const build = (
   learningCues: V2SubtitleCue[],
   options: {
+    fenceEndMs?: number | null;
     learningDelaySeconds?: number;
     supportCues?: V2SubtitleCue[];
     supportDelaySeconds?: number;

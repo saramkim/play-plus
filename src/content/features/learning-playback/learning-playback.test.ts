@@ -40,6 +40,33 @@ describe('learning playback resolver', () => {
     expect(resolve('save', cues, 4)).toEqual({ status: 'no-current-cue' });
   });
 
+  it('skips fence-outside targets and permits an explicit move back from post-fence time', () => {
+    const cues = [
+      { start: 1, end: 2, text: 'Before fence' },
+      { start: 4.5, end: 5.5, text: 'Crossing fence' },
+      { start: 6, end: 7, text: 'Beyond fence' },
+    ];
+
+    expect(
+      resolvedText(
+        resolveLearningCueCommand({
+          command: 'previous',
+          cues,
+          currentTime: 8,
+          fenceEndMs: 5000,
+        })
+      )
+    ).toBe('Before fence');
+    expect(
+      resolveLearningCueCommand({
+        command: 'next',
+        cues,
+        currentTime: 2.5,
+        fenceEndMs: 5000,
+      })
+    ).toEqual({ status: 'no-target-cue' });
+  });
+
   it('handles positions before the first and after the last valid cue', () => {
     const cues = [cue(1, 2, 'First'), cue(3, 4, 'Last')];
 

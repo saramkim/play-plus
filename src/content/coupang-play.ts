@@ -7,6 +7,11 @@ import { parseVTT } from '@utils/parse';
 import type { NativeSubtitleTrack } from '@/content/features/subtitle/subtitle-store';
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
+export interface NativePlaybackAcquisition {
+  subtitles: NativeSubtitleTrack[];
+  watchNextFenceSeconds: number | null;
+}
+
 
 class CoupangPlayStrategy {
   /**
@@ -115,7 +120,15 @@ class CoupangPlayStrategy {
   }
 
   async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]): Promise<NativeSubtitleTrack[]> {
-    const candidates = await this.fetchVideoMetadata(url, headers);
+    return (await this.fetchPlaybackData(url, headers, Number.NaN)).subtitles;
+  }
+
+  async fetchPlaybackData(
+    url: string,
+    headers: chrome.webRequest.HttpHeader[],
+    mediaDurationSeconds: number
+  ): Promise<NativePlaybackAcquisition> {
+    const { candidates, playbackResponse } = await this.fetchVideoMetadata(url, headers);
     const settlements = await Promise.allSettled(
       candidates.map(async ({ category, language, physicalIdentity, url }) => {
         const cues = subtitleCueSchema.array().parse(await this.fetchSubtitle(url));
@@ -126,7 +139,7 @@ class CoupangPlayStrategy {
       settlement.status === 'fulfilled' && settlement.value !== null ? [settlement.value] : []
     );
 
-    return (Object.keys(LANGUAGES) as Language[]).flatMap((language) => {
+    const subtitles = (Object.keys(LANGUAGES) as Language[]).flatMap((language) => {
       const languageTracks = usableTracks.filter((track) => track.language === language);
       const regularTracks = languageTracks.filter((track) => track.category === 'regular');
       if (regularTracks.length === 1) return regularTracks;
@@ -134,6 +147,13 @@ class CoupangPlayStrategy {
       const sdhTracks = languageTracks.filter((track) => track.category === 'sdh');
       return sdhTracks.length === 1 ? sdhTracks : [];
     });
+    return {
+      subtitles,
+      watchNextFenceSeconds: extractWatchNextFenceSeconds(
+        playbackResponse,
+        mediaDurationSeconds
+      ),
+    };
   }
 
   private async fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -142,7 +162,7 @@ class CoupangPlayStrategy {
       'X-Extension-Request': 'true', // 무한 루프 방지용 커스텀 헤더
     };
     const response = await fetch(url, { headers });
-    return this.extractSubtitleApiInfoFromResponse(await response.json());
+    return this.extractPlaybackDataFromResponse(await response.json());
   }
 
   private async fetchSubtitle(url: string) {
@@ -150,13 +170,13 @@ class CoupangPlayStrategy {
     return parseVTT(await response.text());
   }
 
-  private extractSubtitleApiInfoFromResponse(response: unknown) {
+  private extractPlaybackDataFromResponse(response: unknown) {
     const result = playbackResponseSchema.safeParse(response);
     if (!result.success) {
       throw new Error('Invalid Coupang Play playback response');
     }
 
-    return result.data.data.raw.text_tracks.flatMap((value) => {
+    const candidates = result.data.data.raw.text_tracks.flatMap((value) => {
       const descriptor = playbackTextTrackSchema.safeParse(value);
       if (!descriptor.success || descriptor.data.kind !== 'subtitles') return [];
       const classification = classifyNativeSubtitleLanguage(descriptor.data.srclang);
@@ -164,6 +184,7 @@ class CoupangPlayStrategy {
       const url = resolveSubtitleUrl(descriptor.data.src, descriptor.data.sources);
       return url ? [{ ...classification, physicalIdentity: url, url }] : [];
     });
+    return { candidates, playbackResponse: response };
   }
 }
 
@@ -206,3 +227,126 @@ const resolveSubtitleUrl = (src: unknown, sources: unknown) => {
   const url = src ?? fallback;
   return typeof url === 'string' && url.length > 0 ? url : null;
 };
+
+const MARKER_FIELDS = ['force_stop', 'id', 'metadata', 'name', 'time', 'type'] as const;
+const INTRO_MARKER_NAMES = ['skip_intro_start', 'skip_intro_end'] as const;
+type IntroMarkerName = (typeof INTRO_MARKER_NAMES)[number];
+
+interface StrictMarker {
+  index: number;
+  name: IntroMarkerName | 'watch_next';
+  timeSeconds: number;
+}
+
+export const extractWatchNextFenceSeconds = (
+  response: unknown,
+  mediaDurationSeconds: number
+): number | null => {
+  const raw = asRecord(asRecord(asRecord(response)?.data)?.raw);
+  const cuePoints = raw?.cue_points;
+  const rawDuration = raw?.duration;
+  if (
+    !Array.isArray(cuePoints) ||
+    typeof rawDuration !== 'number' ||
+    !Number.isFinite(rawDuration) ||
+    rawDuration < 0 ||
+    !Number.isFinite(mediaDurationSeconds) ||
+    mediaDurationSeconds < 0
+  ) {
+    return null;
+  }
+
+  const normalizedRawDurationSeconds = rawDuration * 0.001;
+  if (!Number.isFinite(normalizedRawDurationSeconds)) return null;
+
+  const rawWatchNextEntries = cuePoints.filter(
+    (value) => asRecord(value)?.name === 'watch_next'
+  );
+  if (rawWatchNextEntries.length !== 1) return null;
+
+  const watchNextIndex = cuePoints.indexOf(rawWatchNextEntries[0]);
+  const watchNext = parseStrictMarker(
+    rawWatchNextEntries[0],
+    watchNextIndex,
+    normalizedRawDurationSeconds,
+    mediaDurationSeconds
+  );
+  if (!watchNext || watchNext.name !== 'watch_next') return null;
+
+  const strictIntroMarkers = cuePoints.flatMap((value, index) => {
+    const name = asRecord(value)?.name;
+    if (!isIntroMarkerName(name)) return [];
+    const marker = parseStrictMarker(
+      value,
+      index,
+      normalizedRawDurationSeconds,
+      mediaDurationSeconds
+    );
+    return marker && marker.name !== 'watch_next' ? [marker] : [];
+  });
+  for (const name of INTRO_MARKER_NAMES) {
+    if (strictIntroMarkers.filter((marker) => marker.name === name).length > 1) return null;
+  }
+
+  const orderedMarkers = [...strictIntroMarkers, watchNext].sort(
+    (left, right) => left.index - right.index
+  );
+  if (
+    orderedMarkers.some(
+      (marker, index) =>
+        index > 0 && marker.timeSeconds < orderedMarkers[index - 1].timeSeconds
+    ) ||
+    strictIntroMarkers.some((marker) => marker.timeSeconds >= watchNext.timeSeconds)
+  ) {
+    return null;
+  }
+
+  const introStart = strictIntroMarkers.find(({ name }) => name === 'skip_intro_start');
+  const introEnd = strictIntroMarkers.find(({ name }) => name === 'skip_intro_end');
+  if (
+    introStart &&
+    introEnd &&
+    !(introStart.timeSeconds < introEnd.timeSeconds &&
+      introEnd.timeSeconds < watchNext.timeSeconds)
+  ) {
+    return null;
+  }
+
+  return watchNext.timeSeconds;
+};
+
+const parseStrictMarker = (
+  value: unknown,
+  index: number,
+  rawDurationSeconds: number,
+  mediaDurationSeconds: number
+): StrictMarker | null => {
+  const marker = asRecord(value);
+  if (
+    !marker ||
+    Object.keys(marker).length !== MARKER_FIELDS.length ||
+    !MARKER_FIELDS.every((field) => field in marker) ||
+    marker.force_stop !== false ||
+    typeof marker.id !== 'string' ||
+    marker.id.length === 0 ||
+    typeof marker.metadata !== 'string' ||
+    (marker.name !== 'watch_next' && !isIntroMarkerName(marker.name)) ||
+    marker.type !== 'CODE' ||
+    typeof marker.time !== 'number' ||
+    !Number.isFinite(marker.time) ||
+    marker.time < 0 ||
+    marker.time > rawDurationSeconds ||
+    marker.time > mediaDurationSeconds
+  ) {
+    return null;
+  }
+  return { index, name: marker.name, timeSeconds: marker.time };
+};
+
+const isIntroMarkerName = (value: unknown): value is IntroMarkerName =>
+  typeof value === 'string' && INTRO_MARKER_NAMES.includes(value as IntroMarkerName);
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
