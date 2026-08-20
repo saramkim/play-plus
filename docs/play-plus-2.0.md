@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-20 — deterministic native SDH fallback verification evidence-equivalence gate 추가
+최종 개정 승인일: 2026-08-20 — deterministic native SDH fallback verification evidence-equivalence 및 artifact-identity provenance gate 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -758,6 +758,14 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
 - episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 두 독립 episode positive와 missing/invalid negative를 확인한다. 마지막 pre-fence Mission, Results, fence 뒤 `Next 10` 부재, explicit `Continue Watching`, bounded clip/replay와 learning seek/repeat, same-document next-episode SPA, advertisement → content, attachment/source/revision drift, 추가 network 0과 새 Storage/permission 0을 확인한다. 이 핵심 row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
 - native SDH fallback 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported movie/episode의 exact-head production extension, install/auth/region/DRM/player/native acquisition, regular positive와 regular-absent exact `<language> sdh` positive를 실제로 확인한다. 대표 changed-snapshot atomic invalidation, current P0 route/source invalidation, 새 Storage/permission 없음, sensitive persistence/relay/logging 없음과 external subtitle lookup 없음도 actual Chrome에서 확인한다.
+
+  Artifact-identity carry-forward는 아래 세 evidence-equivalence axis와 별개의 provenance rule이며 네 번째 evidence-equivalence axis가 아니다. native SDH fallback의 `regular canonical positive`와 `regular-absent exact <language> sdh positive` 두 category-attribution row에만 적용한다.
+
+  실제 category attribution을 직접 PASS한 certified runtime head 이후 final review head까지의 모든 변경이 documentation-only이고 runtime, source, build configuration, manifest, dependency/lockfile, Storage, permission, message 또는 network input을 변경하지 않았으며, 두 head에서 rebuilt production `dist`의 complete file-path + byte digest set이 동일해 Chrome에 로드되는 production artifact가 byte-identical임을 증명한 경우, 이전 certified runtime head의 두 category observation을 final review head에 carry forward할 수 있다.
+
+  carry-forward를 사용할 때 final evidence는 이전 observation head와 final review head를 모두 명시하고 `category attribution carried forward by byte-identical runtime artifact; not re-observed on this head`라고 기록한다. 이전 observation을 final review head에서 새로 수행한 manual PASS로 표현하면 안 된다. Final review head에서는 automated/static/CI gate와 KR/auth/DRM/player, non-empty logical-native projection, representative P0/changed-snapshot/no-churn, existing-replay/no-failure/no-external-lookup, Storage/permission/privacy gate를 다시 PASS해야 한다.
+
+  intervening runtime/source/build/manifest/dependency/lockfile 변경, production artifact digest mismatch, required current-head revalidation의 `NOT RUN | UNKNOWN | FAIL`, 또는 observation provenance 불명확성 중 하나라도 있으면 carry-forward는 무효이며 두 category row는 current-head actual evidence 없이는 acceptance를 막는다. 이 rule은 다른 manual row, episode `watch_next`, 이후 runtime-changing Issue 또는 final integration evidence에 자동으로 확대하지 않는다.
 
   다음 세 불변식은 provider-controlled natural occurrence 또는 browser-observability 한계 때문에 native SDH fallback에 한해서 evidence-equivalence core gate로 검증할 수 있다.
 
