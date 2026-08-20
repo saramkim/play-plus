@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-15 — deterministic native SDH fallback compatibility 계약 추가
+최종 개정 승인일: 2026-08-20 — deterministic native SDH fallback verification evidence-equivalence 및 artifact-identity provenance gate 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -757,12 +757,28 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
 - Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
 - episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 두 독립 episode positive와 missing/invalid negative를 확인한다. 마지막 pre-fence Mission, Results, fence 뒤 `Next 10` 부재, explicit `Continue Watching`, bounded clip/replay와 learning seek/repeat, same-document next-episode SPA, advertisement → content, attachment/source/revision drift, 추가 network 0과 새 Storage/permission 0을 확인한다. 이 핵심 row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
-- native SDH fallback 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported movie/episode의 regular positive와 regular-absent exact `<language> sdh` positive를 확인한다. install/auth/region/DRM/player/native acquisition은 별도 gate로 기록하고, P0/SPA/advertisement 전환, candidate failure isolation, duplicate fail-closed, atomic replacement/revision invalidation, 추가 replay/discover/retry 0과 새 Storage/permission/logging 0을 확인한다. actual coexistence를 관찰하지 못하면 `NOT OBSERVED WITHIN SAMPLE`을 유지하고 precedence는 exact-head fixture로 증명한다. core row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
+- native SDH fallback 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported movie/episode의 exact-head production extension, install/auth/region/DRM/player/native acquisition, regular positive와 regular-absent exact `<language> sdh` positive를 실제로 확인한다. 대표 changed-snapshot atomic invalidation, current P0 route/source invalidation, 새 Storage/permission 없음, sensitive persistence/relay/logging 없음과 external subtitle lookup 없음도 actual Chrome에서 확인한다.
+
+  Artifact-identity carry-forward는 아래 세 evidence-equivalence axis와 별개의 provenance rule이며 네 번째 evidence-equivalence axis가 아니다. native SDH fallback의 `regular canonical positive`와 `regular-absent exact <language> sdh positive` 두 category-attribution row에만 적용한다.
+
+  실제 category attribution을 직접 PASS한 certified runtime head 이후 final review head까지의 모든 변경이 documentation-only이고 runtime, source, build configuration, manifest, dependency/lockfile, Storage, permission, message 또는 network input을 변경하지 않았으며, 두 head에서 rebuilt production `dist`의 complete file-path + byte digest set이 동일해 Chrome에 로드되는 production artifact가 byte-identical임을 증명한 경우, 이전 certified runtime head의 두 category observation을 final review head에 carry forward할 수 있다.
+
+  carry-forward를 사용할 때 final evidence는 이전 observation head와 final review head를 모두 명시하고 `category attribution carried forward by byte-identical runtime artifact; not re-observed on this head`라고 기록한다. 이전 observation을 final review head에서 새로 수행한 manual PASS로 표현하면 안 된다. Final review head에서는 automated/static/CI gate와 KR/auth/DRM/player, non-empty logical-native projection, representative P0/changed-snapshot/no-churn, existing-replay/no-failure/no-external-lookup, Storage/permission/privacy gate를 다시 PASS해야 한다.
+
+  intervening runtime/source/build/manifest/dependency/lockfile 변경, production artifact digest mismatch, required current-head revalidation의 `NOT RUN | UNKNOWN | FAIL`, 또는 observation provenance 불명확성 중 하나라도 있으면 carry-forward는 무효이며 두 category row는 current-head actual evidence 없이는 acceptance를 막는다. 이 rule은 다른 manual row, episode `watch_next`, 이후 runtime-changing Issue 또는 final integration evidence에 자동으로 확대하지 않는다.
+
+  다음 세 불변식은 provider-controlled natural occurrence 또는 browser-observability 한계 때문에 native SDH fallback에 한해서 evidence-equivalence core gate로 검증할 수 있다.
+
+  1. P0 stale acceptance matrix: route/video/content instance, `contentEpoch`, `mediaAttachmentRevision`, lifecycle, source와 request freshness의 모든 stale axis를 exact-head focused tests로 증명하고, actual Chrome에서는 그중 하나 이상의 representative current route 또는 source/P0 invalidation이 stale work를 제거하고 current identity로만 복구되는 것을 확인한다. 모든 stale axis가 한 bounded actual-Chrome sample에서 자연 발생할 필요는 없다.
+  2. Identical accepted snapshot no-op: identical physical identity + category + cue snapshot이 cache, `subtitleRevision`, catalog, clip, seek, repeat 또는 Listening Mission churn을 만들지 않음을 exact-head atomic-store/message-handler/coordinator tests로 증명하고, actual Chrome에서는 bounded steady-state 동안 unexpected revision/source/Mission churn이 없음을 확인한다. advertisement 또는 same-content replay가 자연 발생하지 않으면 그 trigger는 literal `NOT OBSERVED WITHIN SAMPLE`로 남기며 acceptance를 차단하지 않는다.
+  3. One-attempt/no-retry network boundary: selected candidate마다 기존 `src ?? sources[0].src` 한 URL만 한 번 시도하고 second URL, retry, provider/discover lookup, prefetch 또는 interception이 없음을 exact-head fetch-call ledger tests와 source/built-output static audit로 증명한다. actual Chrome에서는 기존 extension playback replay 1회, successful candidate GETs, failed/blocked candidate request 0과 external subtitle lookup 0을 aggregate boundary로 확인한다. Chrome DevTools가 page-player VTT와 content-script VTT initiator를 개별적으로 분리해 표시하는 것은 acceptance requirement가 아니다.
+
+  이 evidence-equivalence는 manual observation을 자동 `PASS`로 바꾸는 waiver가 아니다. 자연 발생하지 않은 advertisement, replay, duplicate, candidate failure 또는 coexistence는 `NOT OBSERVED WITHIN SAMPLE`로 사실대로 남긴다. evidence-equivalence에 필요한 exact-head focused test, fetch-call ledger, static audit, actual representative observation 또는 exact-head CI 중 하나라도 `NOT RUN | UNKNOWN | FAIL`이면 해당 gate는 acceptance를 막는다. deterministic failure/duplicate/coexistence precedence는 exact-head fixture evidence로만 주장하며 provider-wide behavior로 일반화하지 않는다.
 - 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
 
-핵심 actual row가 `NOT RUN` 또는 `UNKNOWN`이면 acceptance를 막는다.
+핵심 actual row의 `FAIL`은 항상 acceptance를 막고, `NOT RUN` 또는 `UNKNOWN`도 원칙적으로 acceptance를 막는다. 예외는 이 canonical section이 feature-specific evidence-equivalence core gate를 명시적으로 정의한 경우뿐이다. 그런 row는 정의된 exact-head deterministic/static evidence와 required actual representative evidence가 모두 `PASS`여야 하며, 어느 구성요소도 생략하거나 waiver로 대체할 수 없다. 자연 발생하지 않은 manual trigger는 `PASS`로 승격하지 않고 `NOT OBSERVED WITHIN SAMPLE`로 남긴다. 이 예외는 native SDH fallback에 위에서 명시한 세 축에만 적용하며 episode `watch_next` fence나 다른 core actual row로 확대하지 않는다.
 
 #### Exact-head 자동화로 인정하는 결정론적 변형
 

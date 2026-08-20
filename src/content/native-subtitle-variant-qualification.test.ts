@@ -1,13 +1,10 @@
 import { languageSchema } from '@storage/v2/schema';
-import type { V2SubtitleCue } from '@storage/v2/type';
 import { LANGUAGES, type Language } from '@utils/constants';
 import {
   playbackContextStatusSchema,
   type PlaybackContextStatus,
 } from '@utils/playback-context';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import { createNativeListeningSourceKey } from '@/listening/domain/source-identity';
 
 import { coupangStrategy } from './coupang-play';
 
@@ -94,31 +91,6 @@ const characterizeUrlShape = ({ sources, src }: QualificationDescriptor): Qualif
   return 'missing-or-invalid';
 };
 
-const characterizeCurrentRetention = (
-  tracks: readonly { lang: string; subtitleData: V2SubtitleCue[] }[]
-) => {
-  const cache: Partial<Record<Language, V2SubtitleCue[]>> = {};
-  const acceptedLanguages: Language[] = [];
-  const droppedLanguageShapes: QualificationLanguageShape[] = [];
-
-  for (const track of tracks) {
-    const language = languageSchema.safeParse(track.lang);
-    if (!language.success) {
-      droppedLanguageShapes.push(characterizeLanguageShape(track.lang));
-      continue;
-    }
-    acceptedLanguages.push(language.data);
-    cache[language.data] = track.subtitleData;
-  }
-
-  return {
-    acceptedLanguages,
-    cache,
-    collisionRisk: new Set(acceptedLanguages).size !== acceptedLanguages.length,
-    droppedLanguageShapes,
-  };
-};
-
 const isObservationBoundToCurrentP0AndSubtitle = (
   start: PlaybackContextStatus,
   acceptance: PlaybackContextStatus
@@ -148,14 +120,6 @@ const isObservationBoundToCurrentP0AndSubtitle = (
     left.subtitleIdentity.support === right.subtitleIdentity.support &&
     left.subtitleIdentity.subtitleRevision === right.subtitleIdentity.subtitleRevision
   );
-};
-
-const settleSiblingTrackFetches = async <T>(tasks: readonly Promise<T>[]) => {
-  const results = await Promise.allSettled(tasks);
-  return {
-    failed: results.filter((result) => result.status === 'rejected').length,
-    fulfilled: results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : [])),
-  };
 };
 
 const createPlaybackResponse = (textTracks: readonly unknown[]) => ({
@@ -291,7 +255,18 @@ describe('native subtitle variant qualification: descriptor shapes', () => {
 describe('native subtitle variant qualification: current production path', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('fetches and parses a regular canonical direct-source track', async () => {
+  it('fails the acquisition closed when the top-level playback envelope is invalid', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(createResponse({ data: { raw: { text_tracks: 'not-an-array' } } }));
+
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
+      'Invalid Coupang Play playback response'
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('classifies an exact canonical language as regular and retains its physical identity', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         createResponse(
@@ -306,18 +281,15 @@ describe('native subtitle variant qualification: current production path', () =>
 
     expect(tracks).toEqual([
       {
-        lang: 'en',
-        subtitleData: [{ end: 2, start: 1, text: 'Synthetic cue' }],
+        category: 'regular',
+        cues: [{ end: 2, start: 1, text: 'Synthetic cue' }],
+        language: 'en',
+        physicalIdentity: 'https://cdn.example/direct.vtt',
       },
     ]);
-    expect(characterizeCurrentRetention(tracks)).toMatchObject({
-      acceptedLanguages: ['en'],
-      collisionRisk: false,
-      droppedLanguageShapes: [],
-    });
   });
 
-  it('fetches an accessibility-like subtitle but exact-language validation drops it', async () => {
+  it('classifies only the exact canonical language plus lowercase sdh suffix as SDH', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         createResponse(
@@ -330,68 +302,25 @@ describe('native subtitle variant qualification: current production path', () =>
 
     const tracks = await coupangStrategy.fetchSubtitles('https://example.com/playback', []);
 
-    expect(tracks).toHaveLength(1);
-    expect(characterizeCurrentRetention(tracks)).toEqual({
-      acceptedLanguages: [],
-      cache: {},
-      collisionRisk: false,
-      droppedLanguageShapes: ['accessibility-like'],
-    });
+    expect(tracks).toEqual([
+      {
+        category: 'sdh',
+        cues: [{ end: 2, start: 1, text: 'Synthetic cue' }],
+        language: 'ko',
+        physicalIdentity: 'https://cdn.example/accessibility.vtt',
+      },
+    ]);
   });
 
-  it('shows the language-keyed cache and native source collision for same-language tracks', async () => {
-    const first = 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nSynthetic first';
-    const second = 'WEBVTT\n\n00:00:03.000 --> 00:00:04.000\nSynthetic second';
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        createResponse(
-          createPlaybackResponse([
-            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/first.vtt' },
-            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/second.vtt' },
-          ])
-        )
-      )
-      .mockResolvedValueOnce(createResponse(first))
-      .mockResolvedValueOnce(createResponse(second));
-
-    const tracks = await coupangStrategy.fetchSubtitles('https://example.com/playback', []);
-    const retention = characterizeCurrentRetention(tracks);
-
-    expect(retention.acceptedLanguages).toEqual(['en', 'en']);
-    expect(retention.collisionRisk).toBe(true);
-    expect(retention.cache.en).toEqual([{ end: 4, start: 3, text: 'Synthetic second' }]);
-    expect(createNativeListeningSourceKey(retention.acceptedLanguages[0])).toBe(
-      createNativeListeningSourceKey(retention.acceptedLanguages[1])
-    );
-  });
-
-  it('drops exact-language case and region variants after their existing fetches', async () => {
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        createResponse(
-          createPlaybackResponse([
-            { kind: 'subtitles', srclang: 'EN', src: 'https://cdn.example/case.vtt' },
-            { kind: 'subtitles', srclang: 'en-US', src: 'https://cdn.example/region.vtt' },
-          ])
-        )
-      )
-      .mockResolvedValueOnce(createResponse(VALID_VTT))
-      .mockResolvedValueOnce(createResponse(VALID_VTT));
-
-    const tracks = await coupangStrategy.fetchSubtitles('https://example.com/playback', []);
-
-    expect(characterizeCurrentRetention(tracks)).toEqual({
-      acceptedLanguages: [],
-      cache: {},
-      collisionRisk: false,
-      droppedLanguageShapes: ['case-variant', 'region-variant'],
-    });
-  });
-
-  it('excludes metadata, captions, and unknown kinds before track fetch', async () => {
+  it('excludes every non-exact language spelling and non-subtitle kind before track fetch', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       createResponse(
         createPlaybackResponse([
+          { kind: 'subtitles', srclang: 'EN', src: 'https://cdn.example/case.vtt' },
+          { kind: 'subtitles', srclang: 'en-US', src: 'https://cdn.example/region.vtt' },
+          { kind: 'subtitles', srclang: 'en SDH', src: 'https://cdn.example/uppercase-sdh.vtt' },
+          { kind: 'subtitles', srclang: 'en sdh ', src: 'https://cdn.example/trailing-space.vtt' },
+          { kind: 'subtitles', srclang: 'en cc', src: 'https://cdn.example/cc.vtt' },
           { kind: 'metadata', sources: [{ src: 'https://cdn.example/metadata.vtt' }] },
           { kind: 'captions', srclang: 'ko', src: 'https://cdn.example/captions.vtt' },
           { kind: 'unknown-kind', srclang: 'en', src: 'https://cdn.example/unknown.vtt' },
@@ -403,36 +332,30 @@ describe('native subtitle variant qualification: current production path', () =>
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('ignores missing, null, and empty language before track fetch', async () => {
+  it('isolates malformed descriptors while retaining a valid sibling', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       createResponse(
         createPlaybackResponse([
-          { kind: 'subtitles', src: 'https://cdn.example/missing.vtt' },
-          { kind: 'subtitles', srclang: null, src: 'https://cdn.example/null.vtt' },
-          { kind: 'subtitles', srclang: '', src: 'https://cdn.example/empty.vtt' },
+          null,
+          42,
+          { kind: 'subtitles', srclang: 42, src: 'https://cdn.example/invalid-language.vtt' },
+          { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/valid.vtt' },
         ])
       )
-    );
+    ).mockResolvedValueOnce(createResponse(VALID_VTT));
 
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([]);
-    expect(fetchMock).toHaveBeenCalledOnce();
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
+      {
+        category: 'regular',
+        cues: [{ end: 2, start: 1, text: 'Synthetic cue' }],
+        language: 'en',
+        physicalIdentity: 'https://cdn.example/valid.vtt',
+      },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('rejects the strict playback envelope when a language has an invalid type', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      createResponse(
-        createPlaybackResponse([
-          { kind: 'subtitles', srclang: 42, src: 'https://cdn.example/invalid.vtt' },
-        ])
-      )
-    );
-
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
-      'Invalid Coupang Play playback response'
-    );
-  });
-
-  it('uses sources fallback only when direct src is nullish', async () => {
+  it('uses exactly direct src or the first sources entry without trying later alternatives', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -440,41 +363,33 @@ describe('native subtitle variant qualification: current production path', () =>
           createPlaybackResponse([
             {
               kind: 'subtitles',
-              sources: [{ src: 'https://cdn.example/fallback.vtt' }],
+              sources: [{ src: 'https://cdn.example/ignored.vtt' }],
+              src: 'https://cdn.example/direct.vtt',
+              srclang: 'en',
+            },
+            {
+              kind: 'subtitles',
+              sources: [
+                { src: 'https://cdn.example/first.vtt' },
+                { src: 'https://cdn.example/second.vtt' },
+              ],
               src: null,
               srclang: 'ko',
             },
           ])
         )
       )
+      .mockResolvedValueOnce(createResponse(VALID_VTT))
       .mockResolvedValueOnce(createResponse(VALID_VTT));
 
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toHaveLength(1);
-    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://cdn.example/fallback.vtt');
-  });
-
-  it('prefers direct src when both direct and fallback sources are present', async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        createResponse(
-          createPlaybackResponse([
-            {
-              kind: 'subtitles',
-              sources: [{ src: 'https://cdn.example/fallback.vtt' }],
-              src: 'https://cdn.example/direct.vtt',
-              srclang: 'ko',
-            },
-          ])
-        )
-      )
-      .mockResolvedValueOnce(createResponse(VALID_VTT));
-
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toHaveLength(1);
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toHaveLength(2);
     expect(fetchMock.mock.calls[1]?.[0]).toBe('https://cdn.example/direct.vtt');
+    expect(fetchMock.mock.calls[2]?.[0]).toBe('https://cdn.example/first.vtt');
+    expect(fetchMock).not.toHaveBeenCalledWith('https://cdn.example/ignored.vtt');
+    expect(fetchMock).not.toHaveBeenCalledWith('https://cdn.example/second.vtt');
   });
 
-  it('does not use a valid sources fallback when direct src is an empty string', async () => {
+  it('does not fall back when direct src is present but empty', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       createResponse(
         createPlaybackResponse([
@@ -492,83 +407,106 @@ describe('native subtitle variant qualification: current production path', () =>
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('drops a subtitle track that has no usable direct or fallback URL', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      createResponse(
-        createPlaybackResponse([
-          { kind: 'subtitles', sources: [], src: null, srclang: 'ko' },
-        ])
-      )
-    );
-
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([]);
-    expect(fetchMock).toHaveBeenCalledOnce();
-  });
-
-  it('returns an empty parsed track and leaves its native source unavailable', async () => {
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        createResponse(
-          createPlaybackResponse([
-            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/empty.vtt' },
-          ])
-        )
-      )
-      .mockResolvedValueOnce(createResponse('WEBVTT\n\nmalformed'));
-
-    const tracks = await coupangStrategy.fetchSubtitles('https://example.com/playback', []);
-    const retention = characterizeCurrentRetention(tracks);
-
-    expect(retention.cache).toEqual({ en: [] });
-    expect(retention.cache.en).toHaveLength(0);
-  });
-
-  it('rejects the acquisition when reading one fetched track fails', async () => {
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        createResponse(
-          createPlaybackResponse([
-            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/unreadable.vtt' },
-          ])
-        )
-      )
-      .mockResolvedValueOnce({
-        text: vi.fn().mockRejectedValue(new Error('Synthetic body read failure')),
-      } as unknown as Response);
-
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
-      'Synthetic body read failure'
-    );
-  });
-
-  it('rejects all current acquisition results when one sibling fetch fails', async () => {
+  it('settles fetch and body-read failures locally and keeps a usable sibling language', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         createResponse(
           createPlaybackResponse([
             { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/fails.vtt' },
-            { kind: 'subtitles', srclang: 'ko', src: 'https://cdn.example/succeeds.vtt' },
+            { kind: 'subtitles', srclang: 'ko', src: 'https://cdn.example/unreadable.vtt' },
+            { kind: 'subtitles', srclang: 'ja', src: 'https://cdn.example/succeeds.vtt' },
+          ])
+        )
+      )
+      .mockRejectedValueOnce(new Error('Synthetic track fetch failure'))
+      .mockResolvedValueOnce({
+        text: vi.fn().mockRejectedValue(new Error('Synthetic body read failure')),
+      } as unknown as Response)
+      .mockResolvedValueOnce(createResponse(VALID_VTT));
+
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
+      {
+        category: 'regular',
+        cues: [{ end: 2, start: 1, text: 'Synthetic cue' }],
+        language: 'ja',
+        physicalIdentity: 'https://cdn.example/succeeds.vtt',
+      },
+    ]);
+  });
+
+  it('prefers one usable regular track over SDH and falls back when regular is unusable', async () => {
+    const regular = 'WEBVTT\n\n00:00:03.000 --> 00:00:04.000\nSynthetic regular';
+    const sdh = 'WEBVTT\n\n00:00:05.000 --> 00:00:06.000\nSynthetic SDH';
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse(
+          createPlaybackResponse([
+            { kind: 'subtitles', srclang: 'en sdh', src: 'https://cdn.example/en-sdh.vtt' },
+            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/en-regular.vtt' },
+            { kind: 'subtitles', srclang: 'ko', src: 'https://cdn.example/ko-empty.vtt' },
+            { kind: 'subtitles', srclang: 'ko sdh', src: 'https://cdn.example/ko-sdh.vtt' },
+          ])
+        )
+      )
+      .mockResolvedValueOnce(createResponse(sdh))
+      .mockResolvedValueOnce(createResponse(regular))
+      .mockResolvedValueOnce(createResponse('WEBVTT\n\nmalformed'))
+      .mockResolvedValueOnce(createResponse(sdh));
+
+    const tracks = await coupangStrategy.fetchSubtitles('https://example.com/playback', []);
+
+    expect(tracks).toMatchObject([
+      {
+        category: 'regular',
+        cues: [{ end: 4, start: 3, text: 'Synthetic regular' }],
+        language: 'en',
+      },
+      {
+        category: 'sdh',
+        cues: [{ end: 6, start: 5, text: 'Synthetic SDH' }],
+        language: 'ko',
+      },
+    ]);
+  });
+
+  it('fails closed for duplicate usable regular or SDH candidates per language', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse(
+          createPlaybackResponse([
+            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/en-first.vtt' },
+            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/en-second.vtt' },
+            { kind: 'subtitles', srclang: 'en sdh', src: 'https://cdn.example/en-sdh.vtt' },
+            { kind: 'subtitles', srclang: 'ko sdh', src: 'https://cdn.example/ko-first.vtt' },
+            { kind: 'subtitles', srclang: 'ko sdh', src: 'https://cdn.example/ko-second.vtt' },
+          ])
+        )
+      )
+      .mockImplementation(() => Promise.resolve(createResponse(VALID_VTT)));
+
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([]);
+  });
+
+  it('counts only usable candidates when deciding whether a regular track is unique', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse(
+          createPlaybackResponse([
+            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/en-fails.vtt' },
+            { kind: 'subtitles', srclang: 'en', src: 'https://cdn.example/en-works.vtt' },
           ])
         )
       )
       .mockRejectedValueOnce(new Error('Synthetic track fetch failure'))
       .mockResolvedValueOnce(createResponse(VALID_VTT));
 
-    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
-      'Synthetic track fetch failure'
-    );
-  });
-
-  it('demonstrates tests-only sibling failure isolation without choosing retry or retention policy', async () => {
-    const isolated = await settleSiblingTrackFetches([
-      Promise.reject(new Error('Synthetic track fetch failure')),
-      Promise.resolve({ category: 'regular', parseNonEmpty: true }),
+    await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toMatchObject([
+      {
+        category: 'regular',
+        language: 'en',
+        physicalIdentity: 'https://cdn.example/en-works.vtt',
+      },
     ]);
-
-    expect(isolated).toEqual({
-      failed: 1,
-      fulfilled: [{ category: 'regular', parseNonEmpty: true }],
-    });
   });
 });
 

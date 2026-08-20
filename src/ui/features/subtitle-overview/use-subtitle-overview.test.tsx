@@ -7,6 +7,7 @@ import type {
   SubtitleOverviewResponse,
   VideoTimeResponse,
 } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 import { createRoot, Root } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,7 @@ import { useSubtitleOverview } from './use-subtitle-overview';
 
 interface MockTabStoreState {
   activeTab: chrome.tabs.Tab | null;
+  playbackContext: PlaybackContextStatus | null;
   tabInfo: TabInfo | null;
 }
 
@@ -21,6 +23,7 @@ const harness = vi.hoisted(() => ({
   sendMessageToTab: vi.fn(),
   state: {
     activeTab: null,
+    playbackContext: null,
     tabInfo: null,
   } as MockTabStoreState,
 }));
@@ -232,6 +235,7 @@ describe('useSubtitleOverview', () => {
   });
 
   it('reloads late native cues when the subtitle revision changes', async () => {
+    harness.state.playbackContext = null;
     const revisedPoll = deferred<SuccessfulVideoTimeMessage>();
     const refreshedSnapshot = deferred<SuccessfulOverviewMessage>();
     harness.sendMessageToTab
@@ -271,6 +275,57 @@ describe('useSubtitleOverview', () => {
     expect(getOutput(container).dataset.status).toBe('ready');
     expect(getOutput(container).dataset.subtitleRevision).toBe('2');
     expect(getOutput(container).dataset.learningCues).toBe('Current cue|Late native cue');
+  });
+
+  it('reloads a published subtitle revision without waiting for the video-time poll', async () => {
+    const refreshedSnapshot = deferred<SuccessfulOverviewMessage>();
+    harness.sendMessageToTab
+      .mockResolvedValueOnce(successfulOverview(makeReady({ subtitleRevision: 1 })))
+      .mockReturnValueOnce(refreshedSnapshot.promise);
+
+    await renderHarness(root);
+    expect(getOutput(container).dataset.status).toBe('ready');
+
+    harness.state.playbackContext = makePlaybackContext(2);
+    await renderHarness(root);
+
+    expect(getOutput(container).dataset.status).not.toBe('ready');
+    expect(getOutput(container).dataset.learningCues).toBeUndefined();
+    expect(harness.sendMessageToTab).toHaveBeenCalledTimes(2);
+    expect(harness.sendMessageToTab).toHaveBeenNthCalledWith(2, 17, 'getSubtitleOverview');
+
+    await act(async () => {
+      refreshedSnapshot.resolve(successfulOverview(makeReady({ subtitleRevision: 2 })));
+      await flushMicrotasks();
+    });
+
+    expect(getOutput(container).dataset.status).toBe('ready');
+    expect(getOutput(container).dataset.subtitleRevision).toBe('2');
+  });
+
+  it('discards a late subtitle snapshot after the published revision changes', async () => {
+    const oldSnapshot = deferred<SuccessfulOverviewMessage>();
+    const currentSnapshot = deferred<SuccessfulOverviewMessage>();
+    harness.sendMessageToTab
+      .mockReturnValueOnce(oldSnapshot.promise)
+      .mockReturnValueOnce(currentSnapshot.promise);
+
+    await renderHarness(root);
+    harness.state.playbackContext = makePlaybackContext(2);
+    await renderHarness(root);
+
+    await act(async () => {
+      oldSnapshot.resolve(successfulOverview(makeReady({ subtitleRevision: 1 })));
+      await flushMicrotasks();
+    });
+    expect(getOutput(container).dataset.status).not.toBe('ready');
+
+    await act(async () => {
+      currentSnapshot.resolve(successfulOverview(makeReady({ subtitleRevision: 2 })));
+      await flushMicrotasks();
+    });
+    expect(getOutput(container).dataset.status).toBe('ready');
+    expect(getOutput(container).dataset.subtitleRevision).toBe('2');
   });
 
   it('cleans up a scheduled poll when the tab disconnects', async () => {
@@ -372,7 +427,26 @@ const resetConnectedTab = () => {
     supportSubtitleId: 'support-1',
     videoStatus: 'detected',
   };
+  harness.state.playbackContext = makePlaybackContext(1);
 };
+
+const makePlaybackContext = (subtitleRevision: number): PlaybackContextStatus => ({
+  contentEpoch: IDENTITY_A.contentEpoch,
+  contentInstanceId: IDENTITY_A.contentInstanceId,
+  learningAvailable: true,
+  lifecycle: 'content',
+  mediaAttachmentRevision: IDENTITY_A.videoRevision,
+  missionResumeRequired: false,
+  routeChangedAt: IDENTITY_A.routeChangedAt,
+  routeKind: 'episode',
+  subtitleIdentity: {
+    learning: 'native:en',
+    subtitleRevision,
+    support: 'native:ko',
+  },
+  videoId: IDENTITY_A.videoId,
+  videoRevision: IDENTITY_A.videoRevision,
+});
 
 interface ReadyOptions {
   identity?: ContentVideoIdentity;

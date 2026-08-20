@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
-import { COUPANG_PLAY_SELECTORS } from '@utils/constants';
-import { parseVTT, SubtitleData } from '@utils/parse';
+import { languageSchema, subtitleCueSchema } from '@storage/v2/schema';
+import { COUPANG_PLAY_SELECTORS, LANGUAGES, type Language } from '@utils/constants';
+import { parseVTT } from '@utils/parse';
 
+import type { NativeSubtitleTrack } from '@/content/features/subtitle/subtitle-store';
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
 
 
@@ -112,11 +114,26 @@ class CoupangPlayStrategy {
     return document.querySelector(COUPANG_PLAY_SELECTORS.progressBar);
   }
 
-  async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
-    const subtitleApiInfoList = await this.fetchVideoMetadata(url, headers);
-    return Promise.all(
-      subtitleApiInfoList.map(async ({ lang, url }) => ({ lang, subtitleData: await this.fetchSubtitle(url) }))
+  async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]): Promise<NativeSubtitleTrack[]> {
+    const candidates = await this.fetchVideoMetadata(url, headers);
+    const settlements = await Promise.allSettled(
+      candidates.map(async ({ category, language, physicalIdentity, url }) => {
+        const cues = subtitleCueSchema.array().parse(await this.fetchSubtitle(url));
+        return cues.length === 0 ? null : { category, cues, language, physicalIdentity };
+      })
     );
+    const usableTracks = settlements.flatMap((settlement) =>
+      settlement.status === 'fulfilled' && settlement.value !== null ? [settlement.value] : []
+    );
+
+    return (Object.keys(LANGUAGES) as Language[]).flatMap((language) => {
+      const languageTracks = usableTracks.filter((track) => track.language === language);
+      const regularTracks = languageTracks.filter((track) => track.category === 'regular');
+      if (regularTracks.length === 1) return regularTracks;
+      if (regularTracks.length > 1) return [];
+      const sdhTracks = languageTracks.filter((track) => track.category === 'sdh');
+      return sdhTracks.length === 1 ? sdhTracks : [];
+    });
   }
 
   private async fetchVideoMetadata(url: string, headerList: chrome.webRequest.HttpHeader[]) {
@@ -128,7 +145,7 @@ class CoupangPlayStrategy {
     return this.extractSubtitleApiInfoFromResponse(await response.json());
   }
 
-  private async fetchSubtitle(url: string): Promise<SubtitleData[]> {
+  private async fetchSubtitle(url: string) {
     const response = await fetch(url);
     return parseVTT(await response.text());
   }
@@ -139,10 +156,13 @@ class CoupangPlayStrategy {
       throw new Error('Invalid Coupang Play playback response');
     }
 
-    return result.data.data.raw.text_tracks.flatMap(({ kind, srclang, src, sources }) => {
-      if (kind !== 'subtitles' || !srclang) return [];
-      const url = src ?? sources?.[0]?.src;
-      return url ? [{ lang: srclang, url }] : [];
+    return result.data.data.raw.text_tracks.flatMap((value) => {
+      const descriptor = playbackTextTrackSchema.safeParse(value);
+      if (!descriptor.success || descriptor.data.kind !== 'subtitles') return [];
+      const classification = classifyNativeSubtitleLanguage(descriptor.data.srclang);
+      if (!classification) return [];
+      const url = resolveSubtitleUrl(descriptor.data.src, descriptor.data.sources);
+      return url ? [{ ...classification, physicalIdentity: url, url }] : [];
     });
   }
 }
@@ -152,14 +172,37 @@ export const coupangStrategy = new CoupangPlayStrategy();
 const playbackResponseSchema = z.object({
   data: z.object({
     raw: z.object({
-      text_tracks: z.array(
-        z.object({
-          kind: z.string(),
-          srclang: z.string().nullish(),
-          src: z.string().nullish(),
-          sources: z.array(z.object({ src: z.string() })).optional(),
-        })
-      ),
+      text_tracks: z.array(z.unknown()),
     }),
   }),
 });
+
+const playbackTextTrackSchema = z
+  .object({
+    kind: z.unknown().optional(),
+    sources: z.unknown().optional(),
+    src: z.unknown().optional(),
+    srclang: z.unknown().optional(),
+  })
+  .passthrough();
+
+const classifyNativeSubtitleLanguage = (value: unknown) => {
+  if (typeof value !== 'string') return null;
+  const regular = languageSchema.safeParse(value);
+  if (regular.success) return { category: 'regular' as const, language: regular.data };
+  if (!value.endsWith(' sdh')) return null;
+  const sdh = languageSchema.safeParse(value.slice(0, -4));
+  return sdh.success ? { category: 'sdh' as const, language: sdh.data } : null;
+};
+
+const resolveSubtitleUrl = (src: unknown, sources: unknown) => {
+  const firstSource = Array.isArray(sources) ? sources[0] : undefined;
+  const fallback =
+    typeof firstSource === 'object' &&
+    firstSource !== null &&
+    'src' in firstSource
+      ? firstSource.src
+      : undefined;
+  const url = src ?? fallback;
+  return typeof url === 'string' && url.length > 0 ? url : null;
+};

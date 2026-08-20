@@ -31,6 +31,9 @@ export type SubtitleOverviewViewState =
 
 export const useSubtitleOverview = () => {
   const activeTab = useTabStore((state) => state.activeTab);
+  const publishedSubtitleRevision = useTabStore(
+    (state) => state.playbackContext?.subtitleIdentity.subtitleRevision
+  );
   const tabInfo = useTabStore((state) => state.tabInfo);
   const [viewState, setViewState] = useState<SubtitleOverviewViewState>({ status: 'loading' });
   const generationRef = useRef(0);
@@ -65,6 +68,7 @@ export const useSubtitleOverview = () => {
                 activeTabUrl,
                 generation,
                 learningSubtitleId,
+                publishedSubtitleRevision,
                 supportSubtitleId,
                 tabId,
                 videoStatus,
@@ -87,6 +91,7 @@ export const useSubtitleOverview = () => {
                 activeTabUrl,
                 generation,
                 learningSubtitleId,
+                publishedSubtitleRevision,
                 supportSubtitleId,
                 tabId,
                 videoStatus,
@@ -105,6 +110,7 @@ export const useSubtitleOverview = () => {
                 activeTabUrl,
                 generation,
                 learningSubtitleId,
+                publishedSubtitleRevision,
                 supportSubtitleId,
                 tabId,
                 videoStatus,
@@ -121,6 +127,7 @@ export const useSubtitleOverview = () => {
       activeTabUrl,
       connectionStatus,
       learningSubtitleId,
+      publishedSubtitleRevision,
       supportSubtitleId,
       videoStatus,
     ]
@@ -235,6 +242,7 @@ export const useSubtitleOverview = () => {
       activeTabUrl,
       connectionStatus,
       learningSubtitleId,
+      publishedSubtitleRevision,
       supportSubtitleId,
       videoStatus,
     }),
@@ -245,6 +253,7 @@ interface CurrentRequestInput {
   activeTabUrl: string | undefined;
   generation: number;
   learningSubtitleId: string | null;
+  publishedSubtitleRevision: number | undefined;
   supportSubtitleId: string | null;
   tabId: number;
   videoStatus?: TabInfo['videoStatus'];
@@ -260,6 +269,8 @@ const isCurrentRequest = (
     current.activeTab?.id === request.tabId &&
     current.activeTab.url === request.activeTabUrl &&
     current.tabInfo?.videoStatus === request.videoStatus &&
+    current.playbackContext?.subtitleIdentity.subtitleRevision ===
+      request.publishedSubtitleRevision &&
     (current.tabInfo?.learningSubtitleId ?? null) === request.learningSubtitleId &&
     (current.tabInfo?.supportSubtitleId ?? null) === request.supportSubtitleId
   );
@@ -273,6 +284,7 @@ interface CurrentViewContext {
   activeTabUrl: string | undefined;
   connectionStatus: TabInfo['connectionStatus'];
   learningSubtitleId: string | null;
+  publishedSubtitleRevision: number | undefined;
   supportSubtitleId: string | null;
   videoStatus: TabInfo['videoStatus'];
 }
@@ -286,11 +298,18 @@ const getSafeViewState = (
   }
   if (current.connectionStatus !== 'connected') return { status: 'loading' };
   if (state.status !== 'ready') return state;
+  if (
+    current.publishedSubtitleRevision !== undefined &&
+    state.snapshot.subtitleRevision !== current.publishedSubtitleRevision
+  ) {
+    return { status: 'stale' };
+  }
 
   const { context } = state;
   return context.tabId === current.activeTabId &&
     context.activeTabUrl === current.activeTabUrl &&
     context.videoStatus === current.videoStatus &&
+    context.publishedSubtitleRevision === current.publishedSubtitleRevision &&
     context.learningSubtitleId === current.learningSubtitleId &&
     context.supportSubtitleId === current.supportSubtitleId
     ? state

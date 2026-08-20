@@ -33,6 +33,7 @@ const VIDEO_ID = '123e4567-e89b-12d3-a456-426614174000';
 const OTHER_VIDEO_ID = '123e4567-e89b-12d3-a456-426614174001';
 const SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000001';
 const SECOND_SUBTITLE_ID = 'subtitle-00000000-0000-4000-8000-000000000002';
+const activeMessageHarnessDisposers = new Set<() => void>();
 
 const createNativeRequest = (requestId = 'request-1', videoId: string | null = VIDEO_ID) => ({
   expectedIdentity: playbackContextController.createIdentity(),
@@ -161,6 +162,8 @@ describe('canonical video lifecycle handler', () => {
 
 describe('canonical content messages', () => {
   beforeEach(() => {
+    for (const dispose of activeMessageHarnessDisposers) dispose();
+    activeMessageHarnessDisposers.clear();
     videoManager.clear();
     useListeningMissionActiveStore.getState().setActive(false);
     document.body.replaceChildren();
@@ -734,6 +737,59 @@ describe('canonical content messages', () => {
     ).toHaveLength(1);
   });
 
+  it.each([
+    ['P0 identity', () => vi.mocked(getCoupangPlayVideoId).mockReturnValue(OTHER_VIDEO_ID)],
+    [
+      'physical subtitle snapshot',
+      () =>
+        useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+          createFetchedNativeTrack('en', [{ start: 0, end: 1, text: 'Replacement cue' }], {
+            physicalIdentity: 'https://synthetic.test/en-replacement.vtt',
+          }),
+        ]),
+    ],
+    [
+      'resolved subtitle source',
+      () =>
+        useSubtitleStore.getState().setRegisteredSelection('learning', {
+          subtitleId: SUBTITLE_ID,
+          cues: [{ start: 0, end: 1, text: 'Registered replacement' }],
+          delay: 0,
+        }),
+    ],
+  ])('fails a completed save response closed after late %s drift', async (_, drift) => {
+    attachVideo(1);
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+      createFetchedNativeTrack('en', [{ start: 0, end: 1, text: 'Original cue' }]),
+    ]);
+    const deferred = createDeferred<never>();
+    vi.mocked(sendMessage).mockReturnValueOnce(deferred.promise);
+    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
+    const { dispatch } = createMessageHarness();
+    const ping = dispatch('pingContent', undefined);
+    const { identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
+
+    const request = dispatch('saveSubtitleOverviewCue', {
+      expectedIdentity: identity,
+      expectedSubtitleRevision: subtitleRevision,
+      learningSourceIndex: 0,
+    });
+
+    expect(sendMessage).toHaveBeenCalledWith('addLearningCard', expect.anything());
+    expect(request.sendResponse).not.toHaveBeenCalled();
+
+    drift();
+    deferred.resolve({ success: true, data: {} } as never);
+
+    await expectResponse(request.sendResponse, {
+      success: true,
+      data: { status: 'stale' },
+    });
+    expect(
+      vi.mocked(sendMessage).mock.calls.filter(([message]) => message === 'addLearningCard')
+    ).toHaveLength(1);
+  });
+
   it('rejects stale guarded seeks and callers without an epoch identity', () => {
     const video = attachVideo(10);
     const { dispatch } = createMessageHarness();
@@ -868,59 +924,76 @@ describe('canonical content messages', () => {
     expect(video.currentTime).toBe(10);
   });
 
-  it('acquires raw native cues for every supported language and ignores unsupported tracks', async () => {
+  it('atomically applies selected native cues for every supported language', async () => {
+    attachVideo(0);
     const languages = Object.keys(LANGUAGES) as Language[];
-    const tracks = languages.map((language, index) => ({
-      lang: language,
-      subtitleData: [{ start: index, end: index + 1, text: language }],
-    }));
+    const tracks = languages.map((language, index) =>
+      createFetchedNativeTrack(language, [{ start: index, end: index + 1, text: language }])
+    );
     const expectedCache = Object.fromEntries(
-      tracks.map(({ lang, subtitleData }) => [lang, subtitleData])
+      tracks.map(({ cues, language }) => [language, cues])
     );
     useSubtitleStore.getState().setNativeCues('ko', [{ start: 0, end: 1, text: 'Stale' }]);
-    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      ...tracks,
-      { lang: 'unsupported', subtitleData: [{ start: 1, end: 2, text: 'Ignored' }] },
-    ]);
-    const { dispatch } = createMessageHarness();
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue(tracks);
+    const coordinator = createListeningSessionCoordinatorMock();
+    const { dispatch } = createMessageHarness(coordinator);
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
     expect(request.result).toBe(true);
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual(expectedCache);
+    expect(coordinator.handlePlaybackContextChange).toHaveBeenCalledOnce();
+    expect(
+      vi.mocked(sendMessage).mock.calls.filter(([message]) => message === 'contentStatus')
+    ).toHaveLength(1);
   });
 
-  it('drops an accessibility-like language identifier after fetch while retaining a canonical sibling', async () => {
-    const canonicalCues = [{ start: 0, end: 1, text: 'Canonical synthetic cue' }];
+  it('keeps an exact SDH fallback under the canonical logical source identity', async () => {
+    attachVideo(0);
+    const cues = [{ start: 0, end: 1, text: 'SDH synthetic cue' }];
     vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      { lang: 'en', subtitleData: canonicalCues },
-      {
-        lang: 'ko sdh',
-        subtitleData: [{ start: 1, end: 2, text: 'Accessibility-like synthetic cue' }],
-      },
+      createFetchedNativeTrack('en', cues, {
+        category: 'sdh',
+        physicalIdentity: 'https://synthetic.test/en-sdh.vtt',
+      }),
     ]);
     const { dispatch } = createMessageHarness();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
     await expectResponse(request.sendResponse, { success: true });
 
-    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: canonicalCues });
-    expect(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data).toMatchObject({
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
+    expect(useSubtitleStore.getState().nativeTrackIdentityCache).toEqual({
+      en: {
+        category: 'sdh',
+        physicalIdentity: 'https://synthetic.test/en-sdh.vtt',
+      },
+    });
+    const pingData = dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data;
+    const overviewData = dispatch('getSubtitleOverview', undefined).sendResponse.mock.calls[0][0].data;
+    expect(pingData).toMatchObject({
       subtitleIdentity: { learning: 'native:en', support: null },
     });
+    expect(overviewData).toMatchObject({
+      tracks: { learning: { source: { kind: 'native', language: 'en' } } },
+    });
+    const relayedBoundary = JSON.stringify({
+      messages: vi.mocked(sendMessage).mock.calls,
+      overview: overviewData,
+      ping: pingData,
+    });
+    expect(relayedBoundary).not.toContain('https://synthetic.test/en-sdh.vtt');
+    expect(relayedBoundary).not.toContain('physicalIdentity');
+    expect(relayedBoundary).not.toContain('"category":"sdh"');
   });
 
-  it('leaves canonical native learning unavailable when only an accessibility-like identifier is fetched', async () => {
+  it('clears stale native learning when the complete selected snapshot is empty', async () => {
+    attachVideo(0);
     useSubtitleStore.getState().setNativeCues('en', [
       { start: 0, end: 1, text: 'Stale synthetic cue' },
     ]);
-    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      {
-        lang: 'ko sdh',
-        subtitleData: [{ start: 1, end: 2, text: 'Accessibility-like synthetic cue' }],
-      },
-    ]);
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([]);
     const { dispatch } = createMessageHarness();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
@@ -933,22 +1006,25 @@ describe('canonical content messages', () => {
     });
   });
 
-  it('collides same-language native tracks in the language-keyed cache and source identity', async () => {
+  it('rejects a duplicate-language adapter result without exposing a partial snapshot', async () => {
+    attachVideo(0);
     const first = [{ start: 0, end: 1, text: 'First synthetic cue' }];
     const second = [{ start: 2, end: 3, text: 'Second synthetic cue' }];
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+      createFetchedNativeTrack('ko', first),
+    ]);
+    const revision = useSubtitleStore.getState().subtitleRevision;
     vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      { lang: 'en', subtitleData: first },
-      { lang: 'en', subtitleData: second },
+      createFetchedNativeTrack('en', first, { physicalIdentity: 'https://synthetic.test/first.vtt' }),
+      createFetchedNativeTrack('en', second, { physicalIdentity: 'https://synthetic.test/second.vtt' }),
     ]);
     const { dispatch } = createMessageHarness();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
-    await expectResponse(request.sendResponse, { success: true });
+    await expectFailure(request.sendResponse);
 
-    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: second });
-    expect(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data).toMatchObject({
-      subtitleIdentity: { learning: 'native:en', support: null },
-    });
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: first });
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(revision);
   });
 
   it('publishes current route capability without revising an identical native replay', async () => {
@@ -964,12 +1040,12 @@ describe('canonical content messages', () => {
       videoId: VIDEO_ID,
       videoRevision: playbackContextController.createIdentity().videoRevision + 1,
     });
-    useSubtitleStore.getState().setNativeCues('en', cues);
+    const currentTrack = createFetchedNativeTrack('en', cues);
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([currentTrack]);
     const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
-    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      { lang: 'en', subtitleData: cues },
-    ]);
-    const { dispatch } = createMessageHarness();
+    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([currentTrack]);
+    const coordinator = createListeningSessionCoordinatorMock();
+    const { dispatch } = createMessageHarness(coordinator);
     const before = dispatch('pingContent', undefined);
     expect(before.sendResponse).toHaveBeenCalledWith({
       success: true,
@@ -980,12 +1056,14 @@ describe('canonical content messages', () => {
       }),
     });
     vi.mocked(sendMessage).mockClear();
+    vi.mocked(coordinator.handlePlaybackContextChange).mockClear();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest());
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
     expect(useSubtitleStore.getState().subtitleRevision).toBe(subtitleRevision);
+    expect(coordinator.handlePlaybackContextChange).not.toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith(
       'contentStatus',
       expect.objectContaining({
@@ -997,11 +1075,16 @@ describe('canonical content messages', () => {
     );
   });
 
-  it('fails native acquisition without retaining a partial cache when a supported body is invalid', async () => {
-    useSubtitleStore.getState().setNativeCues('ko', [{ start: 0, end: 1, text: 'Stale' }]);
+  it('preserves the prior complete snapshot when an invalid adapter result is rejected', async () => {
+    attachVideo(0);
+    const stale = [{ start: 0, end: 1, text: 'Stale' }];
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+      createFetchedNativeTrack('ko', stale),
+    ]);
+    const revision = useSubtitleStore.getState().subtitleRevision;
     vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      { lang: 'en', subtitleData: [{ start: 1, end: 2, text: 'Valid' }] },
-      { lang: 'ja', subtitleData: [{ start: 3, end: 2, text: 'Invalid' }] },
+      createFetchedNativeTrack('en', [{ start: 1, end: 2, text: 'Valid' }]),
+      createFetchedNativeTrack('ja', [{ start: 3, end: 2, text: 'Invalid' }]),
     ]);
     const { dispatch } = createMessageHarness();
 
@@ -1009,7 +1092,8 @@ describe('canonical content messages', () => {
     expect(request.result).toBe(true);
     await expectFailure(request.sendResponse);
 
-    expect(useSubtitleStore.getState().nativeCueCache).toEqual({});
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: stale });
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(revision);
   });
 
   it('keeps native cues when a generic element reset is requested', () => {
@@ -1023,6 +1107,7 @@ describe('canonical content messages', () => {
   });
 
   it('ignores a superseded native response that finishes after the latest request', async () => {
+    attachVideo(0);
     const firstFetch = createDeferred<FetchedSubtitles>();
     const secondFetch = createDeferred<FetchedSubtitles>();
     vi.mocked(coupangStrategy.fetchSubtitles)
@@ -1033,11 +1118,11 @@ describe('canonical content messages', () => {
     const first = dispatch('fetchVideoMetadata', createNativeRequest('request-1'));
     const second = dispatch('fetchVideoMetadata', createNativeRequest('request-2'));
     secondFetch.resolve([
-      { lang: 'en', subtitleData: [{ start: 2, end: 3, text: 'Latest synthetic cue' }] },
+      createFetchedNativeTrack('en', [{ start: 2, end: 3, text: 'Latest synthetic cue' }]),
     ]);
     await expectResponse(second.sendResponse, { success: true });
     firstFetch.resolve([
-      { lang: 'en', subtitleData: [{ start: 0, end: 1, text: 'Older synthetic cue' }] },
+      createFetchedNativeTrack('en', [{ start: 0, end: 1, text: 'Older synthetic cue' }]),
     ]);
     await expectResponse(first.sendResponse, { success: true });
 
@@ -1047,21 +1132,83 @@ describe('canonical content messages', () => {
   });
 
   it('does not apply native cues after navigation to a different video', async () => {
+    attachVideo(0);
     const existing = [{ start: 0, end: 1, text: 'Existing synthetic cue' }];
-    useSubtitleStore.getState().setNativeCues('ko', existing);
-    vi.mocked(getCoupangPlayVideoId).mockReturnValue(OTHER_VIDEO_ID);
-    vi.mocked(coupangStrategy.fetchSubtitles).mockResolvedValue([
-      { lang: 'en', subtitleData: [{ start: 2, end: 3, text: 'Stale synthetic cue' }] },
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+      createFetchedNativeTrack('ko', existing),
     ]);
+    const deferred = createDeferred<FetchedSubtitles>();
+    vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => deferred.promise);
     const { dispatch } = createMessageHarness();
 
     const request = dispatch('fetchVideoMetadata', createNativeRequest('request-1', VIDEO_ID));
+    vi.mocked(getCoupangPlayVideoId).mockReturnValue(OTHER_VIDEO_ID);
+    deferred.resolve([
+      createFetchedNativeTrack('en', [{ start: 2, end: 3, text: 'Stale synthetic cue' }]),
+    ]);
     vi.mocked(sendMessage).mockClear();
     await expectResponse(request.sendResponse, { success: true });
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: existing });
     expect(sendMessage).not.toHaveBeenCalled();
   });
+
+  it('does not apply native cues after subtitle source state changes in flight', async () => {
+    attachVideo(0);
+    const existing = [{ start: 0, end: 1, text: 'Existing synthetic cue' }];
+    useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+      createFetchedNativeTrack('ko', existing),
+    ]);
+    const deferred = createDeferred<FetchedSubtitles>();
+    vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => deferred.promise);
+    const coordinator = createListeningSessionCoordinatorMock();
+    const { dispatch } = createMessageHarness(coordinator);
+
+    const request = dispatch('fetchVideoMetadata', createNativeRequest());
+    useSubtitleStore.getState().setRegisteredSelection('learning', {
+      cues: [{ start: 3, end: 4, text: 'Registered source' }],
+      delay: 0,
+      subtitleId: SUBTITLE_ID,
+    });
+    const revisionAfterSourceChange = useSubtitleStore.getState().subtitleRevision;
+    deferred.resolve([
+      createFetchedNativeTrack('en', [{ start: 2, end: 3, text: 'Stale synthetic cue' }]),
+    ]);
+    await expectResponse(request.sendResponse, { success: true });
+
+    expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: existing });
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(revisionAfterSourceChange);
+    expect(coordinator.handlePlaybackContextChange).toHaveBeenCalledOnce();
+  });
+
+  it.each(['advertisement', 'attachment'] as const)(
+    'does not apply native cues after %s drift in flight',
+    async (drift) => {
+      attachVideo(0);
+      const existing = [{ start: 0, end: 1, text: 'Existing synthetic cue' }];
+      useSubtitleStore.getState().applyNativeSubtitleSnapshot([
+        createFetchedNativeTrack('ko', existing),
+      ]);
+      const deferred = createDeferred<FetchedSubtitles>();
+      vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => deferred.promise);
+      const { dispatch } = createMessageHarness();
+
+      const request = dispatch('fetchVideoMetadata', createNativeRequest());
+      const identity = playbackContextController.createIdentity();
+      playbackContextController.observeLifecycle({
+        lifecycle: drift === 'advertisement' ? 'advertisement' : 'content',
+        url: window.location.href,
+        videoId: drift === 'advertisement' ? null : VIDEO_ID,
+        videoRevision: drift === 'attachment' ? identity.videoRevision + 1 : identity.videoRevision,
+      });
+      deferred.resolve([
+        createFetchedNativeTrack('en', [{ start: 2, end: 3, text: 'Stale synthetic cue' }]),
+      ]);
+      await expectResponse(request.sendResponse, { success: true });
+
+      expect(useSubtitleStore.getState().nativeCueCache).toEqual({ ko: existing });
+    }
+  );
 
   it('sets a registered role with raw cues and a separately validated delay, then refreshes it', async () => {
     const initialCues = [{ start: 10, end: 11, text: 'Initial' }];
@@ -1131,6 +1278,7 @@ describe('canonical content messages', () => {
   });
 
   it('returns true and responds exactly once for every asynchronous failure', async () => {
+    attachVideo(0);
     vi.mocked(coupangStrategy.fetchSubtitles).mockRejectedValue(new Error('network'));
     useSubtitleStore.getState().setRegisteredSelection('learning', {
       subtitleId: SUBTITLE_ID,
@@ -1249,6 +1397,18 @@ type CapturedRequest = {
 
 type FetchedSubtitles = Awaited<ReturnType<typeof coupangStrategy.fetchSubtitles>>;
 
+const createFetchedNativeTrack = (
+  language: Language,
+  cues: FetchedSubtitles[number]['cues'],
+  overrides: Partial<FetchedSubtitles[number]> = {}
+): FetchedSubtitles[number] => ({
+  category: 'regular',
+  cues,
+  language,
+  physicalIdentity: `https://synthetic.test/${language}.vtt`,
+  ...overrides,
+});
+
 type CapturedListener = (request: CapturedRequest) => true | void;
 
 const createMessageHarness = (
@@ -1261,11 +1421,16 @@ const createMessageHarness = (
     listener = callback as CapturedListener;
     return { remove };
   });
-  const dispose = initializeMessageListener({
+  const disposeListener = initializeMessageListener({
     createVideoLifecycleMonitor: () => monitor as never,
     listeningSessionCoordinator,
     registerMessageListener: registerMessageListener as never,
   });
+  const dispose = () => {
+    disposeListener();
+    activeMessageHarnessDisposers.delete(dispose);
+  };
+  activeMessageHarnessDisposers.add(dispose);
 
   return {
     dispose,

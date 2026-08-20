@@ -574,6 +574,138 @@ describe('listening session coordinator', () => {
   );
 
   it.each(['source', 'revision'] as const)(
+    'invalidates immediately when the %s changes during the content lifecycle',
+    async (change) => {
+      const harness = create({ paused: false, currentTime: 7, playbackRate: 1.5 });
+      const catalog = await getReadyCatalog(harness.coordinator);
+      const begun = await beginFirst(harness.coordinator, catalog);
+      harness.media.setCurrentTime(2);
+      harness.updateContext((context) => ({
+        ...context,
+        ...(change === 'revision'
+          ? {
+              playbackContext: {
+                ...context.playbackContext,
+                subtitleIdentity: {
+                  ...context.playbackContext.subtitleIdentity,
+                  subtitleRevision: context.subtitleRevision + 1,
+                },
+              },
+              subtitleRevision: context.subtitleRevision + 1,
+            }
+          : {
+              learning: context.learning
+                ? { ...context.learning, sourceKey: REGISTERED_SOURCE_KEY }
+                : null,
+              playbackContext: {
+                ...context.playbackContext,
+                subtitleIdentity: {
+                  ...context.playbackContext.subtitleIdentity,
+                  learning: REGISTERED_SOURCE_KEY,
+                },
+              },
+            }),
+      }));
+
+      harness.coordinator.handlePlaybackContextChange();
+      await flushPromises();
+
+      expect(harness.media.getCurrentTime()).toBe(7);
+      expect(harness.media.getPlaybackRate()).toBe(1.5);
+      expect(harness.media.getPaused()).toBe(false);
+      expect(harness.getMissionActive()).toBe(false);
+      expect(
+        await harness.coordinator.heartbeat({
+          expectedIdentity: begun.identity,
+          expectedSubtitleRevision: begun.subtitleRevision,
+          sessionId: begun.sessionId,
+        })
+      ).toEqual({ status: 'stale' });
+    }
+  );
+
+  it('releases a stale session without waiting for restore playback to settle', async () => {
+    const restorePlayback = deferred<void>();
+    const harness = create({ paused: false, currentTime: 7, playbackRate: 1.5 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.media.setCurrentTime(2);
+    const play = vi.fn(() => restorePlayback.promise);
+    Object.defineProperty(harness.media.video, 'play', { configurable: true, value: play });
+    harness.updateContext((context) => ({
+      ...context,
+      playbackContext: {
+        ...context.playbackContext,
+        subtitleIdentity: {
+          ...context.playbackContext.subtitleIdentity,
+          subtitleRevision: context.subtitleRevision + 1,
+        },
+      },
+      subtitleRevision: context.subtitleRevision + 1,
+    }));
+
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(play).toHaveBeenCalledOnce();
+    expect(harness.media.getCurrentTime()).toBe(7);
+    expect(harness.media.getPlaybackRate()).toBe(1.5);
+    expect(harness.getMissionActive()).toBe(false);
+    await expect(
+      harness.coordinator.heartbeat({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).resolves.toEqual({ status: 'stale' });
+
+    restorePlayback.resolve();
+    await flushPromises();
+  });
+
+  it('invalidates a changed media identity without seeking the current media', async () => {
+    const harness = create({ paused: false, currentTime: 7, playbackRate: 1.5 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.media.setCurrentTime(2);
+    harness.updateContext((context) => {
+      const identity = {
+        ...context.identity,
+        contentEpoch: context.identity.contentEpoch + 1,
+        contentInstanceId: 'content-2',
+        routeChangedAt: context.identity.routeChangedAt + 1,
+        videoId: 'video-2',
+        videoRevision: context.identity.videoRevision + 1,
+      };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: true,
+          lifecycle: 'content',
+          mediaAttachmentRevision: identity.videoRevision,
+        },
+        watchedUrl: 'https://www.coupangplay.com/play/video-2',
+      };
+    });
+
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(harness.media.getCurrentTime()).toBe(2);
+    expect(harness.media.getPlaybackRate()).toBe(1.5);
+    expect(harness.media.getPaused()).toBe(true);
+    expect(harness.getMissionActive()).toBe(false);
+    expect(
+      await harness.coordinator.heartbeat({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'stale' });
+  });
+
+  it.each(['source', 'revision'] as const)(
     'restores start at exact lease expiry after the %s changes during a slow clip',
     async (change) => {
       const harness = create({ paused: false, currentTime: 7, playbackRate: 1.5 });
@@ -940,6 +1072,46 @@ describe('listening session coordinator', () => {
     expect(harness.getMissionActive()).toBe(false);
   });
 
+  it('returns stale when the subtitle revision changes while a card save is pending', async () => {
+    const persistence = deferred<{ status: 'saved'; card: LearningCard }>();
+    const saveStarted = deferred<void>();
+    let pendingCard: LearningCard | null = null;
+    const saveCard = vi.fn((createCard: () => LearningCard | null | undefined) => {
+      pendingCard = createCard() ?? null;
+      saveStarted.resolve();
+      return pendingCard
+        ? persistence.promise
+        : Promise.resolve({ status: 'card-unavailable' as const });
+    });
+    const harness = create({ saveCard, paused: false, currentTime: 7 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    const pendingSave = harness.coordinator.save({
+      sessionId: begun.sessionId,
+      segmentKey: begun.snapshot.segments[0].segmentKey,
+    });
+    await saveStarted.promise;
+    expect(saveCard).toHaveBeenCalledOnce();
+    harness.updateContext((context) => ({
+      ...context,
+      playbackContext: {
+        ...context.playbackContext,
+        subtitleIdentity: {
+          ...context.playbackContext.subtitleIdentity,
+          subtitleRevision: context.subtitleRevision + 1,
+        },
+      },
+      subtitleRevision: context.subtitleRevision + 1,
+    }));
+
+    harness.coordinator.handlePlaybackContextChange();
+    expect(harness.getMissionActive()).toBe(false);
+
+    if (!pendingCard) throw new Error('Expected a pending learning card');
+    persistence.resolve({ status: 'saved', card: pendingCard });
+    await expect(pendingSave).resolves.toEqual({ status: 'stale' });
+  });
+
   it('freezes one mission across repeated ad observations and resumes only by explicit consent', async () => {
     const harness = create();
     const catalog = await getReadyCatalog(harness.coordinator);
@@ -1252,6 +1424,14 @@ const beginFirst = async (
 const flushPromises = async () => {
   await Promise.resolve();
   await Promise.resolve();
+};
+
+const deferred = <T>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 };
 
 const IDENTITY: ContentVideoIdentity = {
