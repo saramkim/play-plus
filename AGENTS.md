@@ -44,6 +44,16 @@ MV3 경계:
 - 새 추상화보다 기존 패턴을 재사용하고 변경 범위를 최소화한다. 동작 변경에는 가까운 `*.test.ts(x)`를 추가하거나 갱신한다.
 - 완료 보고는 변경 파일, 핵심 동작, 수행한 검증과 남은 수동 검증만 간결하게 적는다.
 
+## Resource and Browser Coordination
+
+- Play Plus 작업의 실제 Chrome, Extension Pages Side Panel 및 Korean VPN 검증은 루트 에이전트가 하나의 전용 `chrome-devtools-kr` 프로필에서 직렬 실행한다.
+- 하위 에이전트는 해당 브라우저 프로필, VPN gateway 또는 실제 브라우저 증거를 병렬로 조작하거나 공유하지 않는다.
+- 다른 Chrome MCP 변형이 명시적으로 필요하면 현재 서버와 gateway를 안전하게 종료한 뒤 교체하며 동시에 등록하지 않는다.
+- Batch Relay의 Issue 순서, 최신-main 검증 및 Play Plus ChatGPT 독립 검토 계약은 자원 제한보다 우선한다.
+- 한 루트 작업의 동시 하위 에이전트는 최대 3개다.
+- 같은 역할의 후속 작업은 기존 에이전트를 재사용하되, 구현에 참여한 에이전트를 같은 변경의 독립 감사자로 사용하지 않는다.
+- 실제 Chrome 검증, GitHub 상태 전이 및 외부 쓰기는 루트 에이전트가 소유한다.
+
 # ChatGPT Collaboration
 
 ChatGPT에서는 `Play Plus` 프로젝트를 사용한다. Codex와 ChatGPT는 다음 역할로 협업한다.
@@ -203,7 +213,7 @@ yarn build:analyze    # 프로덕션 번들 분석
 
 ## Chrome DevTools MCP real-extension workflow
 
-- 실제 Chrome 검증의 기본 채널은 전역 `chrome-devtools` MCP다. `yarn build`로 저장소의 canonical stable unpacked output인 `dist/`에 빌드하고, 설치에는 해당 디렉터리의 absolute Windows path를 사용한다.
+- 실제 Chrome 검증의 기본 채널은 전역 `chrome-devtools-kr` MCP다. `yarn build`로 저장소의 canonical stable unpacked output인 `dist/`에 빌드하고, 설치에는 해당 디렉터리의 absolute Windows path를 사용한다.
 - MCP-managed Chrome에서는 `list_extensions`로 manifest/name과 현재 extension ID를 매번 확인한다. Play Plus가 없을 때만 `install_extension`으로 `dist/`를 한 번 설치하고, 이미 설치되어 있으면 이후 빌드마다 `reload_extension`으로 갱신한다. machine-specific extension ID를 tracked file에 기록하지 않는다.
 - `trigger_extension_action` 또는 제품이 지원하는 실제 사용자 동작으로 패널을 열고, browser/extension surface 목록에서 Chrome의 실제 extension side panel을 선택해 검사한다. `chrome-extension://.../index.html`을 일반 탭으로 연 결과는 side-panel 검증 증거가 아니다.
 - 변경 범위에 맞게 실제 side panel과 활성 Coupang Play 탭의 DOM/accessibility snapshot, screenshot, console message, network request, pointer interaction, keyboard interaction과 tab communication 증거를 수집한다.
