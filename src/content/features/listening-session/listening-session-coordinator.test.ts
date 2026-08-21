@@ -1209,15 +1209,25 @@ describe('listening session coordinator', () => {
         playbackContext: {
           ...context.playbackContext,
           ...identity,
-          learningAvailable: true,
+          learningAvailable: false,
           lifecycle: 'content',
           mediaAttachmentRevision: identity.videoRevision,
           missionResumeRequired: true,
         },
-        learningFenceEndMs: 2100,
         video: harness.media.video,
       };
     });
+    harness.coordinator.handlePlaybackContextChange();
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+
+    harness.updateContext((context) => ({
+      ...context,
+      learningFenceEndMs: 2100,
+      playbackContext: {
+        ...context.playbackContext,
+        learningAvailable: true,
+      },
+    }));
     harness.coordinator.handlePlaybackContextChange();
     expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
 
@@ -1235,7 +1245,7 @@ describe('listening session coordinator', () => {
     expect(harness.getMissionActive()).toBe(true);
   });
 
-  it('discards a fenced mission when main content returns without fresh fence evidence', async () => {
+  it('discards a fenced mission when fresh main-content evidence omits the bound fence', async () => {
     const harness = create({ learningFenceEndMs: 2100 });
     const catalog = await getReadyCatalog(harness.coordinator);
     const begun = await beginFirst(harness.coordinator, catalog);

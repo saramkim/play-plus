@@ -1120,7 +1120,19 @@ export const createListeningSessionCoordinator = (
       return;
     }
     if (session.suspendedForAdvertisement) {
-      if (!sameFrozenContext || !isSupportedPlaybackKind(context.playbackContext.routeKind)) {
+      const routeKind = context.playbackContext.routeKind;
+      if (
+        !isSameAdvertisementFreezeContext(session.context, context) ||
+        (routeKind !== 'unknown' && routeKind !== session.context.playbackContext.routeKind)
+      ) {
+        abandonSessionWithoutSeeking(session);
+        return;
+      }
+      if (
+        lifecycle === 'content' &&
+        context.playbackContext.learningAvailable &&
+        !sameFrozenContext
+      ) {
         abandonSessionWithoutSeeking(session);
       }
       return;
@@ -1230,10 +1242,8 @@ const isSameFrozenContext = (
   right: ListeningSessionContext
 ) =>
   isSameAdvertisementFreezeContext(left, right) &&
+  left.playbackContext.routeKind === right.playbackContext.routeKind &&
   left.learningFenceEndMs === right.learningFenceEndMs;
-
-const isSupportedPlaybackKind = (kind: PlaybackContextStatus['routeKind']) =>
-  kind === 'movie' || kind === 'episode';
 
 const isSameCatalogContext = (
   left: ListeningSessionContext,
