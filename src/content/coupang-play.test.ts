@@ -216,6 +216,95 @@ describe('coupangStrategy playback response adapter', () => {
     );
   });
 
+  it('derives the optional fence from the same replay without changing subtitle settlement', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse({
+          data: {
+            raw: {
+              cue_points: [
+                {
+                  force_stop: false,
+                  id: 'fixture-id',
+                  metadata: 'fixture-metadata',
+                  name: 'watch_next',
+                  time: 500,
+                  type: 'CODE',
+                },
+              ],
+              duration: 600_000,
+              text_tracks: [
+                {
+                  kind: 'subtitles',
+                  srclang: 'en',
+                  src: 'https://cdn.example.com/en.vtt',
+                },
+              ],
+            },
+          },
+        })
+      )
+      .mockResolvedValueOnce(createResponse(VALID_VTT));
+
+    await expect(
+      coupangStrategy.fetchPlaybackData('https://example.com/playback', [], 600)
+    ).resolves.toEqual({
+      subtitles: [
+        {
+          category: 'regular',
+          cues: [{ start: 1, end: 2, text: 'Synthetic cue' }],
+          language: 'en',
+          physicalIdentity: 'https://cdn.example.com/en.vtt',
+        },
+      ],
+      watchNextFenceSeconds: 500,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads the current media duration after candidate settlement', async () => {
+    let mediaDuration = Number.NaN;
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        createResponse({
+          data: {
+            raw: {
+              cue_points: [
+                {
+                  force_stop: false,
+                  id: 'fixture-id',
+                  metadata: 'fixture-metadata',
+                  name: 'watch_next',
+                  time: 500,
+                  type: 'CODE',
+                },
+              ],
+              duration: 600_000,
+              text_tracks: [
+                {
+                  kind: 'subtitles',
+                  srclang: 'en',
+                  src: 'https://cdn.example.com/en.vtt',
+                },
+              ],
+            },
+          },
+        })
+      )
+      .mockImplementationOnce(async () => {
+        mediaDuration = 600;
+        return createResponse(VALID_VTT);
+      });
+
+    await expect(
+      coupangStrategy.fetchPlaybackData(
+        'https://example.com/playback',
+        [],
+        () => mediaDuration
+      )
+    ).resolves.toMatchObject({ watchNextFenceSeconds: 500 });
+  });
+
   it('selects one exact SDH candidate as its canonical logical language', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(

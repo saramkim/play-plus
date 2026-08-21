@@ -12,7 +12,14 @@ import { LearningCueCommand, resolveLearningCueCommand } from '@/content/feature
 import { isListeningMissionActive } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
 import { selectSubtitleTrack, useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
-import { isLearningPlaybackAvailable } from '@/content/playback-context/playback-context-store';
+import {
+  isLearningPlaybackAvailable,
+  usePlaybackContextStore,
+} from '@/content/playback-context/playback-context-store';
+import {
+  getCurrentPlaybackFenceEndMs,
+  isPlaybackIntervalAllowed,
+} from '@/content/playback-context/playback-fence';
 
 type VideoControlSettings = Pick<V2SyncStorage, 'playbackSpeed' | 'shortcuts'>;
 type UserLearningCommand = LearningCueCommand;
@@ -122,11 +129,19 @@ export class VideoController {
       return;
     }
 
+    const playbackContext = usePlaybackContextStore.getState().status;
+    if (!playbackContext) return;
+    const fenceContext = {
+      mediaDurationSeconds: video.duration,
+      nativeTracks: useSubtitleStore.getState().nativeTrackIdentityCache,
+      playbackContext,
+    };
     const result = resolveLearningCueCommand({
       command,
       cues: learning.cues,
       currentTime: video.currentTime,
       delaySeconds: learning.delay,
+      fenceEndMs: getCurrentPlaybackFenceEndMs(fenceContext),
     });
     if (result.status !== 'resolved') {
       showFeedback(
@@ -134,6 +149,12 @@ export class VideoController {
           ? t('v2_no_current_learning_cue')
           : t('v2_no_learning_cue_in_direction')
       );
+      return;
+    }
+    if (
+      !isPlaybackIntervalAllowed(result.cue.startMs, result.cue.endMs, fenceContext)
+    ) {
+      showFeedback(t('v2_no_learning_cue_in_direction'));
       return;
     }
     video.currentTime = result.cue.startMs / 1000;

@@ -65,6 +65,50 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
 | Reload unpacked `dist/` and run signed-in Chrome smoke | PASS | `list_extensions`에서 ID를 동적으로 확인하고 미설치 production `dist/`를 install; MCP reconnect 뒤 목록이 비어 동일 stable build를 reinstall한 다음 persistent 인증 세션의 실제 `/en/play/<video-id>/episode` route, DRM/player, registered subtitle catalog와 실제 Extension Pages Side Panel에서 아래 bounded smoke 수행 |
 
+## Issue #90 episode watch-next learning fence certification record
+
+이 절은 #90 exact review head의 추가 기록이다. raw playback response, marker ID/metadata/time, title/content/account/profile identity, 전체 URL, header/cookie/token, cue 본문·개수·시간과 #89 physical identity는 committed evidence에 기록하지 않는다. 아래 actual Chrome 행은 rebuilt production `dist`, dedicated KR egress, signed-in actual Coupang Play와 action-opened tab-bound Chrome Extension Pages Side Panel에서 직접 확인하기 전까지 `NOT RUN`이며 fixture나 #79 qualification을 실제 `PASS`로 승계하지 않는다.
+
+### Exact-head automated evidence map
+
+| Contract boundary | Exact-head evidence | Result | Evidence / notes |
+| --- | --- | --- | --- |
+| Review-head identity | PR head SHA, #89 squash merge ancestry, clean scoped diff and exact-head CI | PASS | #89 squash merge `f56ad3fd8b83411d79e0b862f2ee0681b1ddefd2`에서 분기한 PR #94이며 runtime correction head `11b5febae55703bb25785eeb2337507f26f492b8`와 final documentation head를 각각 build/reload; 최종 PR head SHA와 terminal CI는 PR body에 기록 |
+| Strict optional projection | `src/content/playback-marker-projection.test.ts`, `src/content/coupang-play.test.ts`: episode candidate shape, raw-duration `0.001` scale/range, current media range, exactly-one raw `watch_next`, exact six fields, malformed/unknown sibling isolation과 candidate settlement 뒤 current media-duration 판정 | PASS | synthetic fixture만 사용하며 raw marker value를 production log/message/Storage로 내보내지 않음 |
+| Intro consistency | marker projection focused suite: malformed/one-sided endpoint isolation, duplicate strict start/end, source-order decrease, endpoint order/equality and terminal overlap | PASS | intro는 consistency check에만 사용하고 skip action/UI를 만들지 않음 |
+| Full transient binding | `src/content/playback-context/playback-fence.test.ts`, message-handler/playback-context/video-lifecycle suites | PASS | episode/content, P0 content/route/video/attachment, logical source, #89 physical category/identity snapshot과 `subtitleRevision` drift를 exact compare하고 non-content에서 폐기 |
+| Whole catalog boundary | `src/listening/domain/segment-catalog.test.ts`, coordinator suite | PASS | 전체 effective closed interval의 end가 fence 안인 segment만 유지하며 crossing/beyond segment를 자르거나 constituent cue를 재사용하지 않음 |
+| Clip/replay boundary | listening coordinator focused suite | PASS | automatic new line, 1.0x replay와 Slow 0.75x의 pre/post-roll stop을 current fence로 cap하고 context drift 시 active clip/session을 stale 처리 |
+| Learning seek/repeat boundary | learning-playback, video-controller, message-handler와 subtitle-overview focused suites | PASS | previous/next/repeat는 current eligible cue set에서 해결하고 post-fence 위치의 explicit previous는 유효한 pre-fence target으로 이동; overview seek는 target 전체 interval을 control 직전에 재검증 |
+| Results and handoff | listening-flow/model, Listening Mission UI와 coordinator end-mode suites | PASS | filtered catalog tail에서는 `Next 10`을 렌더하지 않고 explicit Continue Watching은 기존 `continue-watching` cleanup/handoff만 사용; host UI inspect/click, fence seek 또는 auto-next 없음 |
+| Regression and no expansion | existing #89/P0/native/registered/overview/save/Mission suites plus source/built audit | PASS | message/Storage/schema/migration/manifest/permission/host/CSP/dependency 변경 없음; 새 replay/request/retry/prefetch/interception, raw marker relay/logging과 background/UI marker token 없음 |
+| Full local gates | `yarn type-check`, `yarn lint`, `yarn test:run`, `yarn build`, `git diff --check` | PASS | 104 files / 1,214 tests, production build 성공; 기존 bundle-size warning 3건과 Windows line-ending 안내만 존재 |
+| GitHub exact-head checks | PR required checks terminal success on the same head | NOT RUN | final documentation head push 뒤 terminal result를 PR body에 기록하며 이전 SHA 결과를 승계하지 않음 |
+
+### Actual Korean Chrome required core gate
+
+검증 중에는 raw response/request detail을 relay하거나 파일로 저장하지 않고 in-memory sanitized boolean/counter만 기록한다. 두 번째 independent strict-positive episode는 conditional provider sample이다. 직접 관찰하지 못하면 `NOT OBSERVED WITHIN SAMPLE`로 남기며, canonical positive-sampling coverage가 모두 `PASS`할 때 merge blocker가 아니다. Advertisement evidence는 direct Play Plus `pingContent`/`contentStatus` lifecycle만 인정하고 duration, video presence/shape 또는 host DOM inference를 사용하지 않는다. 그 밖의 모든 core 행은 `PASS`여야 하며 `NOT RUN | UNKNOWN | FAIL`은 #90 merge를 막는다.
+
+| Check | Result | Required observation / evidence |
+| --- | --- | --- |
+| Exact-head extension / KR / auth / DRM / player / native acquisition | PASS | final review head의 production `dist`를 reload하고 action-opened 실제 Extension Pages Side Panel에서 기존 signed-in session, KR egress, episode 본편 ready/time advance/media-error 0과 nonempty current native Overview를 각각 확인 |
+| Independent episode positive A | PASS | 실제 episode 표본 A의 existing extension replay에서 exactly-one strict-valid `watch_next` predicate를 in-memory로 확인하고 fence 밖 Overview seek 거절, post-fence previous 복귀와 next/repeat 경계를 확인 |
+| Independent episode positive B | NOT OBSERVED WITHIN SAMPLE | Bounded live sampling did not produce a second independent complete strict-positive episode. 이는 manual `PASS`가 아니며 exact-head strict projection/identity/consumption matrix, 한 complete actual positive, 실제 missing/invalid/ambiguous negative sampling과 exact-head CI가 canonical positive-sampling coverage를 모두 만족할 때만 non-blocking이다. |
+| Missing or invalid marker negative | PASS | 실제 episode 표본 N은 raw same-name `watch_next`가 없었고 새 replay/current native projection은 정상; A의 이전 fence보다 뒤인 current cue를 repeat/Overview로 제어해 old fence 비승격과 marker-agnostic behavior 확인 |
+| Final pre-fence Mission / Results / no Next 10 | PASS | 표본 A의 fence 직전 current entry로 시작해 마지막 eligible line까지 `Later`로 진행, 정상 Results와 `Next 10` 부재 및 `Continue watching` 존재를 확인 |
+| Explicit Continue Watching | PASS | Results의 explicit action 뒤 Mission UI/ownership이 종료되고 host playback이 current handoff point에서 전진, original rate와 learning controller가 복구되며 backward/fence seek와 host UI click 없음 |
+| Automatic / replay / Slow bounds | PASS | 첫 line 자동 재생, 다음 line 자동 재생, `Listen again`, 실제 0.75× Slow observer 모두 fence 이하에서 종료하고 media error 0 확인 |
+| Previous / next / repeat / overview seek bounds | PASS | post-fence explicit previous는 pre-fence target으로 복귀, next/repeat는 fence 안 유지, fence 밖 Overview row는 current video를 이동시키지 않음; 유효 control은 계속 enabled |
+| Same-document next-episode SPA | PASS | 실제 host Next Episode로 route/attachment가 바뀌고 fresh replay만 수용; active Mission 상태의 same-document history route drift에서도 document는 유지된 채 old Mission text가 즉시 stale 제거됨 |
+| Direct advertisement → content lifecycle | PASS | Exact review runtime에서 Play Plus direct `pingContent`/`contentStatus`가 `advertisement`와 `learningAvailable === false`를 발행한 뒤 supported `episode` / `content`, current identity/source/revision, `learningAvailable === true`와 fresh existing playback replay evidence로 복귀했다. media duration, video presence/shape 또는 host DOM inference는 사용하지 않았다. 이 actual row는 runtime lifecycle 전환을 증명하고, exact-head P1 fence tests는 별도로 non-content에서 기존 fence를 폐기하고 fresh evidence 전에는 복원하지 않음을 증명한다. |
+| Attachment / source / physical snapshot / revision drift | PASS | 실제 SPA의 route/attachment/fresh native snapshot 전환에서 old Mission 제거, UI 학습 source 변경/복원에서 `subtitleRevision` 증가를 확인하고 old fence보다 뒤의 current cue 제어가 허용되어 stale fence/catalog/operation 비승격을 확인 |
+| Network boundary | PASS | 각 관찰 lifecycle의 page playback과 existing extension replay 각 1회만 확인; 추가 playback, discover/retry/prefetch/interception, OpenSubtitles/external subtitle request 0 |
+| Storage / permission / privacy / diagnostics | PASS | 실험 전 local/sync 값을 exact restore하고 key set·permission/origin 불변; persistent/session에 marker/physical/candidate field 0, raw sensitive diagnostic 0, Play Plus source error/warning 0; raw response/file artifact 저장 없음 |
+
+이전에 short media duration 또는 video presence/shape에 근거해 작성한 advertisement evidence는 철회하며 #90 acceptance에 사용하지 않는다.
+
+#90 verification status: **PASS SUBJECT TO FINAL EXACT-HEAD REVIEW**. Final documentation head에서 production `dist`를 다시 build/reload하고 위 core를 모두 재검증한다. GitHub required checks가 같은 final PR head에서 terminal PASS하고 independent ChatGPT가 exact head를 확인하기 전에는 merge-ready로 간주하지 않는다. Release, tag, deployment, Store submission, merge 또는 direct `main` push는 이 기록으로 승인되지 않는다.
+
 ## Issue #89 deterministic native SDH fallback certification record
 
 이 절은 #89 구현 후보만을 위한 추가 기록이다. 최종 review head SHA와 terminal GitHub checks는 PR 본문에도 같은 값으로 기록한다. 아래 행은 해당 exact head에서 새로 실행하거나 실제로 관찰하기 전까지 `NOT RUN`이며, 이전 #76/#66 결과나 qualification 표본을 이번 후보의 `PASS`로 승계하지 않는다. raw playback descriptor, physical candidate identity/category, 전체 URL, header/cookie/token, cue 본문·개수·시간, title, content/account/profile identity와 viewing history는 기록하지 않는다.

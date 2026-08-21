@@ -121,6 +121,7 @@ export interface ListeningSessionLearningTrack extends ListeningSessionTrack {
 export interface ListeningSessionContext {
   identity: ContentVideoIdentity;
   learning: ListeningSessionLearningTrack | null;
+  learningFenceEndMs: number | null;
   playbackContext: PlaybackContextStatus;
   subtitleRevision: number;
   support: ListeningSessionTrack | null;
@@ -152,6 +153,7 @@ export interface ListeningSessionCoordinator {
   play: (params: PlayListeningSegmentParams) => Promise<PlayListeningSegmentResponse>;
   save: (params: SaveListeningSegmentParams) => Promise<SaveListeningSegmentResponse>;
   end: (params: EndListeningSessionParams) => Promise<EndListeningSessionResponse>;
+  handlePlaybackFenceEvidenceSettled: () => void;
   handlePlaybackContextChange: () => void;
   isAdvertisementResumeRequired: () => boolean;
   resumeAfterAdvertisement: (
@@ -202,6 +204,7 @@ interface ActiveListeningSession {
   sessionId: string;
   snapshot: ListeningSessionSnapshot;
   suspendedForAdvertisement: boolean;
+  playbackFenceEvidenceSettledAfterAdvertisement: boolean;
   video: HTMLVideoElement;
 }
 
@@ -265,7 +268,8 @@ export const createListeningSessionCoordinator = (
   ) =>
     canSafelyRestoreCapturedVideo(session, context) &&
     context.subtitleRevision === session.context.subtitleRevision &&
-    context.learning?.sourceKey === session.context.learning.sourceKey;
+    context.learning?.sourceKey === session.context.learning.sourceKey &&
+    context.learningFenceEndMs === session.context.learningFenceEndMs;
 
   const safelyClearSuppression = () => {
     try {
@@ -461,6 +465,7 @@ export const createListeningSessionCoordinator = (
 
       const catalog = freezeCatalog(
         await buildListeningSegmentCatalog({
+          fenceEndMs: context.learningFenceEndMs,
           learningCues: context.learning.cues,
           learningDelaySeconds: context.learning.delaySeconds,
           sourceKey: context.learning.sourceKey,
@@ -613,6 +618,7 @@ export const createListeningSessionCoordinator = (
         sessionId,
         snapshot,
         suspendedForAdvertisement: false,
+        playbackFenceEvidenceSettledAfterAdvertisement: true,
         video: context.video,
       };
       startedSession = session;
@@ -657,6 +663,7 @@ export const createListeningSessionCoordinator = (
 
     try {
       const catalog = await buildListeningSegmentCatalog({
+        fenceEndMs: validation.context.learningFenceEndMs,
         learningCues: validation.context.learning.cues,
         learningDelaySeconds: validation.context.learning.delaySeconds,
         sourceKey: validation.context.learning.sourceKey,
@@ -777,7 +784,11 @@ export const createListeningSessionCoordinator = (
       ({ segmentKey }) => segmentKey === segment.segmentKey
     );
     const nextSegment = session.catalog[catalogIndex + 1];
-    const stopMs = getClipStopMs(segment, nextSegment);
+    const stopMs = getClipStopMs(
+      segment,
+      nextSegment,
+      session.context.learningFenceEndMs
+    );
     const startSeconds = Math.max(0, segment.startMs - LISTENING_CLIP_PREROLL_MS) / 1000;
     const stopSeconds = Math.max(0, stopMs) / 1000;
     const generation = ++clipGeneration;
@@ -1101,18 +1112,36 @@ export const createListeningSessionCoordinator = (
     const sameFrozenContext = isSameFrozenContext(session.context, context);
     const lifecycle = context.playbackContext.lifecycle;
     if (lifecycle === 'advertisement' || lifecycle === 'transitioning') {
-      if (!sameFrozenContext) {
+      if (!isSameAdvertisementFreezeContext(session.context, context)) {
         abandonSessionWithoutSeeking(session);
         return;
       }
       if (!session.suspendedForAdvertisement) {
         session.suspendedForAdvertisement = true;
+        session.playbackFenceEvidenceSettledAfterAdvertisement =
+          session.context.learningFenceEndMs === null;
         suspendActiveClip();
       }
       return;
     }
     if (session.suspendedForAdvertisement) {
-      if (!sameFrozenContext || !isSupportedPlaybackKind(context.playbackContext.routeKind)) {
+      const routeKind = context.playbackContext.routeKind;
+      if (
+        !isSameAdvertisementFreezeContext(session.context, context) ||
+        (routeKind !== 'unknown' && routeKind !== session.context.playbackContext.routeKind)
+      ) {
+        abandonSessionWithoutSeeking(session);
+        return;
+      }
+      const freshContextCanBeValidated =
+        session.context.learningFenceEndMs === null
+          ? context.playbackContext.learningAvailable
+          : session.playbackFenceEvidenceSettledAfterAdvertisement;
+      if (
+        lifecycle === 'content' &&
+        freshContextCanBeValidated &&
+        !sameFrozenContext
+      ) {
         abandonSessionWithoutSeeking(session);
       }
       return;
@@ -1128,6 +1157,13 @@ export const createListeningSessionCoordinator = (
       }
       stopAndReleaseSessionWithoutSeeking(session, context);
     }
+  };
+
+  const handlePlaybackFenceEvidenceSettled = () => {
+    const session = activeSession;
+    if (!session?.suspendedForAdvertisement) return;
+    session.playbackFenceEvidenceSettledAfterAdvertisement = true;
+    handlePlaybackContextChange();
   };
 
   const resumeAfterAdvertisement = async (
@@ -1152,6 +1188,12 @@ export const createListeningSessionCoordinator = (
     }
     if (!context.video || !dependencies.isCurrentVideo(context.video)) {
       return { status: 'no-video' };
+    }
+    if (
+      session.context.learningFenceEndMs !== null &&
+      !session.playbackFenceEvidenceSettledAfterAdvertisement
+    ) {
+      return { status: 'stale' };
     }
     if (
       !context.playbackContext.learningAvailable ||
@@ -1179,6 +1221,7 @@ export const createListeningSessionCoordinator = (
     getCatalog,
     begin,
     heartbeat,
+    handlePlaybackFenceEvidenceSettled,
     play,
     save,
     end,
@@ -1204,7 +1247,7 @@ const isSameIdentity = (left: ContentVideoIdentity, right: ContentVideoIdentity)
   left.videoId === right.videoId &&
   left.videoRevision === right.videoRevision;
 
-const isSameFrozenContext = (
+const isSameAdvertisementFreezeContext = (
   left: ListeningSessionContext,
   right: ListeningSessionContext
 ) =>
@@ -1217,8 +1260,13 @@ const isSameFrozenContext = (
   left.playbackContext.subtitleIdentity.support ===
     right.playbackContext.subtitleIdentity.support;
 
-const isSupportedPlaybackKind = (kind: PlaybackContextStatus['routeKind']) =>
-  kind === 'movie' || kind === 'episode';
+const isSameFrozenContext = (
+  left: ListeningSessionContext,
+  right: ListeningSessionContext
+) =>
+  isSameAdvertisementFreezeContext(left, right) &&
+  left.playbackContext.routeKind === right.playbackContext.routeKind &&
+  left.learningFenceEndMs === right.learningFenceEndMs;
 
 const isSameCatalogContext = (
   left: ListeningSessionContext,
@@ -1227,7 +1275,8 @@ const isSameCatalogContext = (
   left.video === right.video &&
   isSameIdentity(left.identity, right.identity) &&
   left.subtitleRevision === right.subtitleRevision &&
-  left.learning?.sourceKey === right.learning?.sourceKey;
+  left.learning?.sourceKey === right.learning?.sourceKey &&
+  left.learningFenceEndMs === right.learningFenceEndMs;
 
 const selectRequestedSegments = (
   catalog: readonly ListeningPracticeSegment[],
@@ -1311,9 +1360,12 @@ const createUniqueSessionId = (
 
 const getClipStopMs = (
   segment: ListeningPracticeSegment,
-  nextSegment: ListeningPracticeSegment | undefined
+  nextSegment: ListeningPracticeSegment | undefined,
+  fenceEndMs: number | null
 ) => {
   const postrollEnd = segment.endMs + LISTENING_CLIP_POSTROLL_MS;
-  if (!nextSegment) return postrollEnd;
-  return Math.max(segment.endMs, Math.min(postrollEnd, nextSegment.startMs));
+  const nextBoundedEnd = nextSegment
+    ? Math.max(segment.endMs, Math.min(postrollEnd, nextSegment.startMs))
+    : postrollEnd;
+  return fenceEndMs === null ? nextBoundedEnd : Math.min(nextBoundedEnd, fenceEndMs);
 };

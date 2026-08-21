@@ -56,6 +56,7 @@ type TerminalDifficultDetail = {
 };
 
 export interface ListeningMissionProps {
+  canStartNextMission?: boolean;
   snapshot: ListeningMissionSnapshot;
   controller: ListeningMissionController;
   getPracticedAt: () => string;
@@ -65,6 +66,7 @@ export interface ListeningMissionProps {
 }
 
 export function ListeningMission({
+  canStartNextMission = true,
   snapshot,
   controller,
   getPracticedAt,
@@ -823,6 +825,7 @@ export function ListeningMission({
         </section>
       ) : view.phase === 'results' ? (
         <Results
+          canStartNextMission={canStartNextMission}
           difficultFeedback={difficultFeedback}
           difficultPending={difficultPending}
           difficultSaveRef={difficultSaveRef}
@@ -1131,6 +1134,7 @@ function ActiveLine({
 }
 
 function Results({
+  canStartNextMission,
   difficultFeedback,
   difficultPending,
   difficultSaveRef,
@@ -1147,6 +1151,7 @@ function Results({
   onToggleDifficult,
   onRetryEnd,
 }: {
+  canStartNextMission: boolean;
   difficultFeedback?: DifficultFeedback;
   difficultPending: boolean;
   difficultSaveRef: React.RefObject<HTMLButtonElement | null>;
@@ -1305,9 +1310,11 @@ function Results({
       )}
 
       <div className='grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2'>
-        <Button className={ACTION_CLASS} disabled={endActionsDisabled} onClick={onNextMission}>
-          {t('v2_listening_mission_next_10')}
-        </Button>
+        {canStartNextMission && (
+          <Button className={ACTION_CLASS} disabled={endActionsDisabled} onClick={onNextMission}>
+            {t('v2_listening_mission_next_10')}
+          </Button>
+        )}
         <Button
           className={ACTION_CLASS}
           variant='outline'

@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-20 — deterministic native SDH fallback verification evidence-equivalence 및 artifact-identity provenance gate 추가
+최종 개정 승인일: 2026-08-21 — episode watch-next positive sampling 및 direct advertisement lifecycle gate 정정
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -756,7 +756,24 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - signed-in supported Coupang Play route에서 extension install/reload, active-tab 통신, DRM/player 접근, native와 registered learning/support source, platform-caption 비간섭과 기존 네 destination을 확인한다.
 - 후속 Issue가 이 조사 data를 사용하도록 별도 승인된 경우에도, Coupang Play 페이지에서 API·DOM data를 직접 관찰한 조사는 데이터의 존재와 현재 형태에 대한 증거일 뿐이다. rebuilt unpacked Play Plus가 같은 값을 안전하게 획득하고 exact tab·document·route·video identity와 광고·SPA 전환을 격리한다는 actual Chrome smoke를 대신하지 않는다.
 - Playback Context 구현은 supported movie/episode, 실제 advertisement → main-content 전환과 SPA content change에서 exact route kind, truthful lifecycle, current epoch/attachment/source/revision binding, fail-closed controls, ad-data exclusion, ordinary cue/follow 복구와 Listening Mission explicit resume를 실제 Side Panel에서 확인한다. trailer/channel/highlight/unknown 표본이 도달 불가능하면 해당 optional row는 `NOT RUN`으로 남긴다.
-- episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 두 독립 episode positive와 missing/invalid negative를 확인한다. 마지막 pre-fence Mission, Results, fence 뒤 `Next 10` 부재, explicit `Continue Watching`, bounded clip/replay와 learning seek/repeat, same-document next-episode SPA, advertisement → content, attachment/source/revision drift, 추가 network 0과 새 Storage/permission 0을 확인한다. 이 핵심 row의 `NOT RUN | UNKNOWN | FAIL`은 해당 implementation acceptance를 막는다.
+- episode `watch_next` fence 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported episode의 strict-valid `watch_next` positive를 최소 한 실제 episode에서 end-to-end로 확인한다. 이 actual positive는 current P0/#89 identity에 묶인 fence, whole-interval Mission catalog, automatic/replay/Slow clip bound, previous/next/repeat와 subtitle-row seek bound, 마지막 pre-fence Results, fence 뒤 `Next 10` 부재와 explicit `Continue Watching` cleanup/handoff를 함께 통과해야 한다.
+
+  두 번째 독립 strict-positive episode는 별도의 product safety axis가 아니라 provider sampling redundancy다. 다음 positive-sampling coverage가 모두 `PASS`하면 두 번째 natural positive는 acceptance 필수가 아니다.
+
+  - exact-head strict projection matrix: raw-duration `0.001` scale/range, exactly-one raw `watch_next`, exact six-field shape/type/value/range, intro consistency와 malformed/unknown sibling isolation
+  - exact-head P0/content/video/attachment/source/#89 physical snapshot/`subtitleRevision` observation·consumption binding matrix
+  - exact-head whole-interval catalog, clip/replay/Slow, previous/next/repeat, subtitle-row seek, Results/`Next 10`와 Continue Watching matrix
+  - 최소 한 actual strict-positive episode의 complete end-to-end `PASS`
+  - 실제 missing/invalid/ambiguous episode 표본에서 marker-agnostic behavior와 stale positive non-inheritance 확인
+  - exact-head full automated/static gate와 CI `PASS`
+
+  bounded live sample에서 두 번째 strict-positive episode가 나오지 않으면 literal `NOT OBSERVED WITHIN SAMPLE`로 남기며 manual `PASS`로 승격하지 않고 acceptance를 막지 않는다.
+
+  advertisement → content는 이 sampling rule과 별개의 mandatory runtime safety gate다. 광고 여부는 media duration, video presence/shape, host DOM copy 또는 유사 heuristic으로 판정하지 않는다. Actual Chrome에서는 Play Plus가 직접 발행하는 current `pingContent`/`contentStatus` lifecycle에서 `advertisement`와 `learningAvailable === false`를 관찰하고, 이후 current supported episode의 `content`, current identity/source/`subtitleRevision`, `learningAvailable === true`와 fresh existing playback replay evidence로 복귀하는 것을 확인한다.
+
+  P1-specific stale-fence safety는 exact-head matrix에서 pre-existing fence가 `advertisement | waiting | placeholder | transitioning` 진입 즉시 폐기되고 lifecycle이 다시 `content`가 되었다는 사실만으로 복원되지 않으며 fresh current replay evidence가 있어야만 새 fence가 생김을 증명한다. Actual advertisement가 Mission 시작 전에 발생해도 이 direct lifecycle gate를 만족할 수 있다. Existing P0 actual-Chrome evidence가 active Mission의 advertisement suspend, `missionResumeRequired`, same-content return과 explicit resume semantics를 이미 증명한 경우 #90은 그 active-Mission cycle 자체를 다시 mandatory actual로 반복할 필요가 없다. #90 exact-head regression은 해당 P0 semantics를 계속 `PASS`해야 한다.
+
+  same-document next-episode SPA, attachment/source/revision drift, 추가 network 0, 새 Storage/permission 0과 sensitive marker/provider logging 0은 계속 actual core gate다. Mandatory actual row의 `NOT RUN | UNKNOWN | FAIL`은 acceptance를 막지만, 위에서 conditional sample로 분류한 두 번째 strict-positive episode의 `NOT OBSERVED WITHIN SAMPLE`은 blocker가 아니다.
 - native SDH fallback 구현은 rebuilt production `dist`의 action-opened, tab-bound Chrome Extension Pages Side Panel에서 signed-in KR supported movie/episode의 exact-head production extension, install/auth/region/DRM/player/native acquisition, regular positive와 regular-absent exact `<language> sdh` positive를 실제로 확인한다. 대표 changed-snapshot atomic invalidation, current P0 route/source invalidation, 새 Storage/permission 없음, sensitive persistence/relay/logging 없음과 external subtitle lookup 없음도 actual Chrome에서 확인한다.
 
   Artifact-identity carry-forward는 아래 세 evidence-equivalence axis와 별개의 provenance rule이며 네 번째 evidence-equivalence axis가 아니다. native SDH fallback의 `regular canonical positive`와 `regular-absent exact <language> sdh positive` 두 category-attribution row에만 적용한다.

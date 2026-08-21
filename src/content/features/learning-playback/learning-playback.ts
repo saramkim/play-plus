@@ -20,6 +20,7 @@ interface ResolveLearningCueCommandInput {
   cues: V2SubtitleCue[];
   currentTime: number;
   delaySeconds?: number;
+  fenceEndMs?: number | null;
 }
 
 export const resolveLearningCueCommand = ({
@@ -27,8 +28,11 @@ export const resolveLearningCueCommand = ({
   cues,
   currentTime,
   delaySeconds = 0,
+  fenceEndMs = null,
 }: ResolveLearningCueCommandInput): LearningCueCommandResult => {
-  const resolvedCues = resolveNonEmptyCues(cues, delaySeconds);
+  const resolvedCues = resolveNonEmptyCues(cues, delaySeconds).filter(
+    ({ endMs }) => fenceEndMs === null || endMs <= fenceEndMs
+  );
   const currentTimeMs = toMilliseconds(currentTime);
   const anchor = findLearningCueAnchor(resolvedCues, currentTimeMs);
 

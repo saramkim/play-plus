@@ -357,6 +357,23 @@ describe('ListeningMission isolated UI', () => {
     expect(container.textContent).toContain('v2_listening_mission_stars:');
     expect(container.textContent?.toLowerCase()).not.toContain('share');
     expect(container.textContent?.toLowerCase()).not.toContain('leaderboard');
+
+    await act(async () => {
+      root?.render(
+        <ListeningMission
+          canStartNextMission={false}
+          controller={harness.controller}
+          getPracticedAt={harness.getPracticedAt}
+          onExit={harness.onExit}
+          onNextMission={harness.onNextMission}
+          onOwnershipChange={harness.onOwnershipChange}
+          snapshot={snapshot(2, { support: true })}
+        />
+      );
+      await Promise.resolve();
+    });
+    expect(container.textContent).not.toContain('v2_listening_mission_next_10');
+    expect(container.textContent).toContain('v2_listening_mission_continue_watching');
   });
 
   it('stays isolated from production mounts and never sends typed answer text', async () => {

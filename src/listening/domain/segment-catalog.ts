@@ -51,6 +51,7 @@ export interface ListeningCatalogProgressItem {
 }
 
 interface BuildListeningSegmentCatalogInput {
+  fenceEndMs?: number | null;
   learningCues: readonly V2SubtitleCue[];
   learningDelaySeconds?: number;
   sourceKey: ListeningSourceKey;
@@ -76,6 +77,7 @@ const completionPunctuationPattern = /[.?!。？！]$/u;
 const dialoguePrefixPattern = /^[-–—](?=.*[\p{L}\p{N}])/u;
 
 export const buildListeningSegmentCatalog = async ({
+  fenceEndMs = null,
   learningCues,
   learningDelaySeconds = 0,
   sourceKey: sourceKeyValue,
@@ -97,7 +99,9 @@ export const buildListeningSegmentCatalog = async ({
       },
     };
   });
-  const drafts = createListeningSegmentDrafts(preparedCues);
+  const drafts = createListeningSegmentDrafts(preparedCues).filter(
+    ({ endMs }) => fenceEndMs === null || endMs <= fenceEndMs
+  );
   const supportAlignment = createSupportAlignmentIndex(
     [...supportCues],
     supportDelaySeconds
