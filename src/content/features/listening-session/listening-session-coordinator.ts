@@ -153,6 +153,7 @@ export interface ListeningSessionCoordinator {
   play: (params: PlayListeningSegmentParams) => Promise<PlayListeningSegmentResponse>;
   save: (params: SaveListeningSegmentParams) => Promise<SaveListeningSegmentResponse>;
   end: (params: EndListeningSessionParams) => Promise<EndListeningSessionResponse>;
+  handlePlaybackFenceEvidenceSettled: () => void;
   handlePlaybackContextChange: () => void;
   isAdvertisementResumeRequired: () => boolean;
   resumeAfterAdvertisement: (
@@ -203,6 +204,7 @@ interface ActiveListeningSession {
   sessionId: string;
   snapshot: ListeningSessionSnapshot;
   suspendedForAdvertisement: boolean;
+  playbackFenceEvidenceSettledAfterAdvertisement: boolean;
   video: HTMLVideoElement;
 }
 
@@ -616,6 +618,7 @@ export const createListeningSessionCoordinator = (
         sessionId,
         snapshot,
         suspendedForAdvertisement: false,
+        playbackFenceEvidenceSettledAfterAdvertisement: true,
         video: context.video,
       };
       startedSession = session;
@@ -1115,6 +1118,8 @@ export const createListeningSessionCoordinator = (
       }
       if (!session.suspendedForAdvertisement) {
         session.suspendedForAdvertisement = true;
+        session.playbackFenceEvidenceSettledAfterAdvertisement =
+          session.context.learningFenceEndMs === null;
         suspendActiveClip();
       }
       return;
@@ -1130,7 +1135,7 @@ export const createListeningSessionCoordinator = (
       }
       if (
         lifecycle === 'content' &&
-        context.playbackContext.learningAvailable &&
+        session.playbackFenceEvidenceSettledAfterAdvertisement &&
         !sameFrozenContext
       ) {
         abandonSessionWithoutSeeking(session);
@@ -1148,6 +1153,13 @@ export const createListeningSessionCoordinator = (
       }
       stopAndReleaseSessionWithoutSeeking(session, context);
     }
+  };
+
+  const handlePlaybackFenceEvidenceSettled = () => {
+    const session = activeSession;
+    if (!session?.suspendedForAdvertisement) return;
+    session.playbackFenceEvidenceSettledAfterAdvertisement = true;
+    handlePlaybackContextChange();
   };
 
   const resumeAfterAdvertisement = async (
@@ -1172,6 +1184,12 @@ export const createListeningSessionCoordinator = (
     }
     if (!context.video || !dependencies.isCurrentVideo(context.video)) {
       return { status: 'no-video' };
+    }
+    if (
+      session.context.learningFenceEndMs !== null &&
+      !session.playbackFenceEvidenceSettledAfterAdvertisement
+    ) {
+      return { status: 'stale' };
     }
     if (
       !context.playbackContext.learningAvailable ||
@@ -1199,6 +1217,7 @@ export const createListeningSessionCoordinator = (
     getCatalog,
     begin,
     heartbeat,
+    handlePlaybackFenceEvidenceSettled,
     play,
     save,
     end,

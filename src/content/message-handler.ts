@@ -143,7 +143,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
         sendResponse(toDetectionResponse(videoLifecycleMonitor.refresh()));
         break;
       case 'fetchVideoMetadata':
-        return respond(sendResponse, () => handleFetchVideoMetadata(params));
+        return respond(sendResponse, () => handleFetchVideoMetadata(params, sessionCoordinator));
       case 'playVideo':
         sendResponse({ success: true, data: handlePlayVideo(params) });
         break;
@@ -238,13 +238,16 @@ const handleResetElement = () => {
   elementStore.reset();
 };
 
-const handleFetchVideoMetadata = async ({
-  expectedIdentity,
-  headers,
-  requestId,
-  url,
-  videoId,
-}: MessageSchema['fetchVideoMetadata']['params']) => {
+const handleFetchVideoMetadata = async (
+  {
+    expectedIdentity,
+    headers,
+    requestId,
+    url,
+    videoId,
+  }: MessageSchema['fetchVideoMetadata']['params'],
+  sessionCoordinator: ListeningSessionCoordinator
+) => {
   if (
     !isValidContentVideoIdentity(expectedIdentity) ||
     !isLiveVideoIdentityCurrent(expectedIdentity)
@@ -298,6 +301,7 @@ const handleFetchVideoMetadata = async ({
     acquisition.watchNextFenceSeconds,
     createPlaybackFenceContext(finalStatus, finalVideo)
   );
+  sessionCoordinator.handlePlaybackFenceEvidenceSettled();
   if (
     !snapshotChanged &&
     (statusBeforeEvidence.routeKind !== acceptanceStatus.routeKind ||

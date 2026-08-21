@@ -1209,7 +1209,7 @@ describe('listening session coordinator', () => {
         playbackContext: {
           ...context.playbackContext,
           ...identity,
-          learningAvailable: false,
+          learningAvailable: true,
           lifecycle: 'content',
           mediaAttachmentRevision: identity.videoRevision,
           missionResumeRequired: true,
@@ -1219,6 +1219,20 @@ describe('listening session coordinator', () => {
     });
     harness.coordinator.handlePlaybackContextChange();
     expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+    expect(
+      await harness.coordinator.heartbeat({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'alive' });
+    await expect(
+      harness.coordinator.resumeAfterAdvertisement({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).resolves.toEqual({ status: 'stale' });
 
     harness.updateContext((context) => ({
       ...context,
@@ -1228,7 +1242,7 @@ describe('listening session coordinator', () => {
         learningAvailable: true,
       },
     }));
-    harness.coordinator.handlePlaybackContextChange();
+    harness.coordinator.handlePlaybackFenceEvidenceSettled();
     expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
 
     const resumed = await harness.coordinator.resumeAfterAdvertisement({
@@ -1245,58 +1259,62 @@ describe('listening session coordinator', () => {
     expect(harness.getMissionActive()).toBe(true);
   });
 
-  it('discards a fenced mission when fresh main-content evidence omits the bound fence', async () => {
-    const harness = create({ learningFenceEndMs: 2100 });
-    const catalog = await getReadyCatalog(harness.coordinator);
-    const begun = await beginFirst(harness.coordinator, catalog);
-    harness.updateContext((context) => {
-      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
-      return {
-        ...context,
-        identity,
-        learningFenceEndMs: null,
-        playbackContext: {
-          ...context.playbackContext,
-          ...identity,
-          learningAvailable: false,
-          lifecycle: 'advertisement',
-          mediaAttachmentRevision: identity.videoRevision,
-          missionResumeRequired: true,
-        },
-        video: null,
-      };
-    });
-    harness.coordinator.handlePlaybackContextChange();
-    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+  it.each([null, 2000])(
+    'discards a fenced mission when fresh main-content evidence settles with fence %s',
+    async (settledFenceEndMs) => {
+      const harness = create({ learningFenceEndMs: 2100 });
+      const catalog = await getReadyCatalog(harness.coordinator);
+      const begun = await beginFirst(harness.coordinator, catalog);
+      harness.updateContext((context) => {
+        const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+        return {
+          ...context,
+          identity,
+          learningFenceEndMs: null,
+          playbackContext: {
+            ...context.playbackContext,
+            ...identity,
+            learningAvailable: false,
+            lifecycle: 'advertisement',
+            mediaAttachmentRevision: identity.videoRevision,
+            missionResumeRequired: true,
+          },
+          video: null,
+        };
+      });
+      harness.coordinator.handlePlaybackContextChange();
+      expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
 
-    harness.updateContext((context) => {
-      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
-      return {
-        ...context,
-        identity,
-        playbackContext: {
-          ...context.playbackContext,
-          ...identity,
-          learningAvailable: true,
-          lifecycle: 'content',
-          mediaAttachmentRevision: identity.videoRevision,
-          missionResumeRequired: true,
-        },
-        video: harness.media.video,
-      };
-    });
-    harness.coordinator.handlePlaybackContextChange();
+      harness.updateContext((context) => {
+        const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+        return {
+          ...context,
+          identity,
+          learningFenceEndMs: settledFenceEndMs,
+          playbackContext: {
+            ...context.playbackContext,
+            ...identity,
+            learningAvailable: true,
+            lifecycle: 'content',
+            mediaAttachmentRevision: identity.videoRevision,
+            missionResumeRequired: true,
+          },
+          video: harness.media.video,
+        };
+      });
+      harness.coordinator.handlePlaybackFenceEvidenceSettled();
 
-    expect(harness.getMissionActive()).toBe(false);
-    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
-    await expect(
-      harness.coordinator.resumeAfterAdvertisement({
-        expectedIdentity: begun.identity,
-        expectedSubtitleRevision: begun.subtitleRevision,
-        sessionId: begun.sessionId,
-      })
-    ).resolves.toEqual({ status: 'stale' });
-  });
+      expect(harness.getMissionActive()).toBe(false);
+      expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
+      await expect(
+        harness.coordinator.resumeAfterAdvertisement({
+          expectedIdentity: begun.identity,
+          expectedSubtitleRevision: begun.subtitleRevision,
+          sessionId: begun.sessionId,
+        })
+      ).resolves.toEqual({ status: 'stale' });
+    }
+  );
 
   it('discards a frozen mission when the logical content changes during transition', async () => {
     const harness = create();

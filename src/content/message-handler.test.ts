@@ -1110,6 +1110,7 @@ describe('canonical content messages', () => {
 
     expect(useSubtitleStore.getState().nativeCueCache).toEqual({ en: cues });
     expect(useSubtitleStore.getState().subtitleRevision).toBe(subtitleRevision);
+    expect(coordinator.handlePlaybackFenceEvidenceSettled).toHaveBeenCalledOnce();
     expect(coordinator.handlePlaybackContextChange).not.toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith(
       'contentStatus',
@@ -1496,6 +1497,7 @@ const createListeningSessionCoordinatorMock = (): ListeningSessionCoordinator =>
   dispose: vi.fn(),
   end: vi.fn(async () => ({ status: 'already-ended' as const })),
   getCatalog: vi.fn(async () => ({ status: 'no-video' as const })),
+  handlePlaybackFenceEvidenceSettled: vi.fn(),
   handlePlaybackContextChange: vi.fn(),
   heartbeat: vi.fn(async () => ({ status: 'alive' as const })),
   isAdvertisementResumeRequired: vi.fn(() => false),
