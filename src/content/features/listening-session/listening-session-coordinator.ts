@@ -1133,9 +1133,13 @@ export const createListeningSessionCoordinator = (
         abandonSessionWithoutSeeking(session);
         return;
       }
+      const freshContextCanBeValidated =
+        session.context.learningFenceEndMs === null
+          ? context.playbackContext.learningAvailable
+          : session.playbackFenceEvidenceSettledAfterAdvertisement;
       if (
         lifecycle === 'content' &&
-        session.playbackFenceEvidenceSettledAfterAdvertisement &&
+        freshContextCanBeValidated &&
         !sameFrozenContext
       ) {
         abandonSessionWithoutSeeking(session);

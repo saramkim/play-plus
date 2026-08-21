@@ -1316,6 +1316,74 @@ describe('listening session coordinator', () => {
     }
   );
 
+  it('keeps an unfenced mission suspended while the existing route replay is pending', async () => {
+    const harness = create();
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: false,
+          lifecycle: 'advertisement',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: true,
+        },
+        video: null,
+      };
+    });
+    harness.coordinator.handlePlaybackContextChange();
+
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: false,
+          lifecycle: 'content',
+          mediaAttachmentRevision: identity.videoRevision,
+          routeKind: 'unknown',
+        },
+        video: harness.media.video,
+      };
+    });
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+    expect(
+      await harness.coordinator.heartbeat({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).toEqual({ status: 'alive' });
+
+    harness.updateContext((context) => ({
+      ...context,
+      playbackContext: {
+        ...context.playbackContext,
+        learningAvailable: true,
+        routeKind: 'episode',
+      },
+    }));
+    harness.coordinator.handlePlaybackContextChange();
+
+    await expect(
+      harness.coordinator.resumeAfterAdvertisement({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).resolves.toMatchObject({ status: 'resumed' });
+  });
+
   it('discards a frozen mission when the logical content changes during transition', async () => {
     const harness = create();
     const catalog = await getReadyCatalog(harness.coordinator);
