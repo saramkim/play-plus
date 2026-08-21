@@ -1109,7 +1109,7 @@ export const createListeningSessionCoordinator = (
     const sameFrozenContext = isSameFrozenContext(session.context, context);
     const lifecycle = context.playbackContext.lifecycle;
     if (lifecycle === 'advertisement' || lifecycle === 'transitioning') {
-      if (!sameFrozenContext) {
+      if (!isSameAdvertisementFreezeContext(session.context, context)) {
         abandonSessionWithoutSeeking(session);
         return;
       }
@@ -1212,7 +1212,7 @@ const isSameIdentity = (left: ContentVideoIdentity, right: ContentVideoIdentity)
   left.videoId === right.videoId &&
   left.videoRevision === right.videoRevision;
 
-const isSameFrozenContext = (
+const isSameAdvertisementFreezeContext = (
   left: ListeningSessionContext,
   right: ListeningSessionContext
 ) =>
@@ -1222,9 +1222,15 @@ const isSameFrozenContext = (
   left.identity.videoId === right.identity.videoId &&
   left.subtitleRevision === right.subtitleRevision &&
   left.learning?.sourceKey === right.learning?.sourceKey &&
-  left.learningFenceEndMs === right.learningFenceEndMs &&
   left.playbackContext.subtitleIdentity.support ===
     right.playbackContext.subtitleIdentity.support;
+
+const isSameFrozenContext = (
+  left: ListeningSessionContext,
+  right: ListeningSessionContext
+) =>
+  isSameAdvertisementFreezeContext(left, right) &&
+  left.learningFenceEndMs === right.learningFenceEndMs;
 
 const isSupportedPlaybackKind = (kind: PlaybackContextStatus['routeKind']) =>
   kind === 'movie' || kind === 'episode';

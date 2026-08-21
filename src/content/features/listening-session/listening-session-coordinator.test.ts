@@ -1160,7 +1160,7 @@ describe('listening session coordinator', () => {
   });
 
   it('freezes one mission across repeated ad observations and resumes only by explicit consent', async () => {
-    const harness = create();
+    const harness = create({ learningFenceEndMs: 2100 });
     const catalog = await getReadyCatalog(harness.coordinator);
     const begun = await beginFirst(harness.coordinator, catalog);
     harness.updateContext((context) => {
@@ -1176,6 +1176,7 @@ describe('listening session coordinator', () => {
           mediaAttachmentRevision: identity.videoRevision,
           missionResumeRequired: true,
         },
+        learningFenceEndMs: null,
         video: null,
       };
     });
@@ -1213,6 +1214,7 @@ describe('listening session coordinator', () => {
           mediaAttachmentRevision: identity.videoRevision,
           missionResumeRequired: true,
         },
+        learningFenceEndMs: 2100,
         video: harness.media.video,
       };
     });
@@ -1231,6 +1233,59 @@ describe('listening session coordinator', () => {
     });
     expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
     expect(harness.getMissionActive()).toBe(true);
+  });
+
+  it('discards a fenced mission when main content returns without fresh fence evidence', async () => {
+    const harness = create({ learningFenceEndMs: 2100 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const begun = await beginFirst(harness.coordinator, catalog);
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        learningFenceEndMs: null,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: false,
+          lifecycle: 'advertisement',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: true,
+        },
+        video: null,
+      };
+    });
+    harness.coordinator.handlePlaybackContextChange();
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(true);
+
+    harness.updateContext((context) => {
+      const identity = { ...context.identity, videoRevision: context.identity.videoRevision + 1 };
+      return {
+        ...context,
+        identity,
+        playbackContext: {
+          ...context.playbackContext,
+          ...identity,
+          learningAvailable: true,
+          lifecycle: 'content',
+          mediaAttachmentRevision: identity.videoRevision,
+          missionResumeRequired: true,
+        },
+        video: harness.media.video,
+      };
+    });
+    harness.coordinator.handlePlaybackContextChange();
+
+    expect(harness.getMissionActive()).toBe(false);
+    expect(harness.coordinator.isAdvertisementResumeRequired()).toBe(false);
+    await expect(
+      harness.coordinator.resumeAfterAdvertisement({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })
+    ).resolves.toEqual({ status: 'stale' });
   });
 
   it('discards a frozen mission when the logical content changes during transition', async () => {
