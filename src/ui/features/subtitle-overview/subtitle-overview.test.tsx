@@ -342,13 +342,18 @@ describe('SubtitleOverview', () => {
     expect(detail?.textContent).toContain('Alpha sentence');
     expect(detail?.textContent).toContain('Support for alpha');
     expect(detail?.textContent).toContain('00:01–00:02');
-    expect(detail?.className.split(' ')).toEqual(
+    expect(detail?.className.split(' ')).not.toContain('overflow-y-auto');
+
+    const scrollOwner = detail?.querySelector<HTMLElement>(
+      "[data-subtitle-overview-tooltip-scroll='true']"
+    );
+    expect(scrollOwner?.className.split(' ')).toEqual(
       expect.arrayContaining([
         'max-h-[min(calc(100dvh_-_1rem),var(--radix-tooltip-content-available-height))]',
         'overflow-y-auto',
-        'break-words',
       ])
     );
+    expect(detail?.className.split(' ')).toContain('break-words');
   });
 
   it('filters in source order without resetting measured row heights and scrolls to the top', () => {

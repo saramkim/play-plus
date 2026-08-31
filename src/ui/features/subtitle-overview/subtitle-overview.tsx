@@ -783,18 +783,23 @@ function ReadyOverview({
                       <TooltipContent
                         side='top'
                         align='start'
-                        className='max-h-[min(calc(100dvh_-_1rem),var(--radix-tooltip-content-available-height))] max-w-[min(20rem,calc(100vw_-_1rem))] overflow-y-auto whitespace-normal break-words text-left text-pretty'
+                        className='max-w-[min(20rem,calc(100vw_-_1rem))] p-0 whitespace-normal break-words text-left text-pretty'
                       >
-                        <span className='block'>{row.cue.text}</span>
-                        {row.alignedSupport && (
-                          <span className='mt-1 block text-primary-foreground/80'>
-                            {row.alignedSupport.text}
+                        <div
+                          className='max-h-[min(calc(100dvh_-_1rem),var(--radix-tooltip-content-available-height))] overflow-y-auto px-3 py-1.5'
+                          data-subtitle-overview-tooltip-scroll='true'
+                        >
+                          <span className='block'>{row.cue.text}</span>
+                          {row.alignedSupport && (
+                            <span className='mt-1 block text-primary-foreground/80'>
+                              {row.alignedSupport.text}
+                            </span>
+                          )}
+                          <span className='mt-1 block text-[11px] text-primary-foreground/70'>
+                            {formatTimestamp(row.cue.startTime)}–
+                            {formatTimestamp(row.cue.endTime)}
                           </span>
-                        )}
-                        <span className='mt-1 block text-[11px] text-primary-foreground/70'>
-                          {formatTimestamp(row.cue.startTime)}–
-                          {formatTimestamp(row.cue.endTime)}
-                        </span>
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                     {canSave && (
