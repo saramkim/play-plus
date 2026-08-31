@@ -130,6 +130,7 @@ describe('Listening Learning production flow', () => {
 
     const confirmation = getSpokenLanguageConfirmation();
     expect(confirmation.checked).toBe(false);
+    expect(confirmation.id).toBe('listening-spoken-language-confirmation');
     expect(getButton('v2_listening_landing_continue').disabled).toBe(true);
     expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
     expect(container.textContent).toContain('v2_listening_landing_spoken_language_title');

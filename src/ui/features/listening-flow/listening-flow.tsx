@@ -1088,6 +1088,7 @@ function LandingContent({
             disabled={
               !spokenLanguageConfirmationAvailable || beginPending || resetOpen || resetPending
             }
+            id='listening-spoken-language-confirmation'
             type='checkbox'
             onChange={(event) => onSpokenLanguageConfirmationChange(event.target.checked)}
           />
