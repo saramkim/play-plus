@@ -929,7 +929,7 @@
                                  "message":  "다음 학습 자막"
                              },
     "v2_repeat_current_learning_cue":  {
-                                           "message":  "현재 학습 자막 다시 재생"
+                                           "message":  "현재 학습 문장 다시 재생"
                                        },
     "v2_show_learning_controls":  {
                                       "message":  "학습 컨트롤 표시"
@@ -1005,7 +1005,7 @@
     "v2_listening_advertisement_description": { "message": "미션 재생을 일시 중지했습니다. 광고 영상, 시각과 자막은 학습에 사용하지 않습니다." },
     "v2_listening_advertisement_returned_title": { "message": "광고가 끝났어요" },
     "v2_listening_advertisement_returned_description": { "message": "진행 중이던 미션은 그대로 있습니다. 현재 본편 영상에서 계속하려면 직접 선택하세요." },
-    "v2_listening_advertisement_continue": { "message": "광고가 끝났어요 · 계속" },
+    "v2_listening_advertisement_continue": { "message": "미션으로 돌아가기" },
     "v2_listening_advertisement_resume_error": { "message": "현재 영상에서 미션을 다시 시작하지 못했습니다." },
     "v2_listening_landing_no_video_title": { "message": "준비된 영상이 없습니다" },
     "v2_listening_landing_no_video_description": { "message": "지원되는 쿠팡플레이 영상을 재생한 뒤 다시 시도하세요." },
@@ -1024,6 +1024,13 @@
     "v2_listening_landing_not_practiced": { "message": "아직 연습하지 않음" },
     "v2_listening_landing_support_available": { "message": "문장을 공개할 때 신뢰할 수 있는 도움 문장을 함께 볼 수 있습니다." },
     "v2_listening_landing_caption_reminder": { "message": "쿠팡플레이 자막이 보인다면 시작하기 전에 플레이어에서 직접 꺼 주세요." },
+    "v2_listening_landing_spoken_language_title": { "message": "음성 언어 확인" },
+    "v2_listening_landing_spoken_language_description": { "message": "Play Plus는 영상의 실제 음성 언어를 자동으로 확인할 수 없습니다. 시작하기 전에 주된 음성을 직접 확인해 주세요." },
+    "v2_listening_landing_spoken_language_checkbox": {
+      "message": "이 영상의 주된 음성이 학습 언어 ‘$1’인지 확인했어요.",
+      "placeholders": { "language": { "content": "$1" } }
+    },
+    "v2_listening_landing_spoken_language_reset": { "message": "영상이나 학습 자막이 바뀌었습니다. 음성 언어를 다시 확인해 주세요." },
     "v2_listening_landing_continue": { "message": "계속하기" },
     "v2_listening_landing_start_current": { "message": "현재 위치에서 시작" },
     "v2_listening_landing_current_unavailable": { "message": "현재 위치나 그 이후에 연습할 문장이 없습니다." },
@@ -1086,6 +1093,11 @@
     "v2_listening_mission_correct": { "message": "정답이에요" },
     "v2_listening_mission_almost": { "message": "거의 맞았어요. 차이가 작으니 답을 고쳐 보세요." },
     "v2_listening_mission_try_again": { "message": "다시 시도해 보세요. 답을 고치거나 힌트를 사용할 수 있습니다." },
+    "v2_listening_mission_scaffold_heading": { "message": "맞춘 부분" },
+    "v2_listening_mission_scaffold_blank": {
+      "message": "$1글자 빈칸",
+      "placeholders": { "count": { "content": "$1" } }
+    },
     "v2_listening_mission_answer_heading": { "message": "정답" },
     "v2_listening_mission_support_heading": { "message": "도움 문장" },
     "v2_listening_mission_next": { "message": "다음" },

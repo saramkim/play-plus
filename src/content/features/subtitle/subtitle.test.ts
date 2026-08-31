@@ -23,7 +23,7 @@ describe('canonical subtitle presentation', () => {
     vi.clearAllMocks();
   });
 
-  it('applies a registered delay exactly once and renders cue text as text', () => {
+  it('applies a registered delay exactly once and renders plain text', () => {
     const store = useSubtitleStore.getState();
     store.setSettings({
       learningProfile: { learningLanguage: 'en', supportLanguage: null },
@@ -31,16 +31,44 @@ describe('canonical subtitle presentation', () => {
     });
     store.setRegisteredSelection('learning', {
       subtitleId: registeredSubtitleId,
-      cues: [{ start: 10, end: 11, text: '<img src=x onerror=alert(1)>Learning' }],
+      cues: [
+        {
+          start: 10,
+          end: 11,
+          text: '<img src="https://example.invalid/pixel" alt="1 > 0"><b>Registered &amp; safe</b>',
+        },
+      ],
       delay: 2,
     });
 
     syncSubtitles(12.5, true);
 
     const learningElement = elementStore.getSubtitleElement('learning');
-    expect(learningElement.textContent).toBe('<img src=x onerror=alert(1)>Learning');
+    expect(learningElement.textContent).toBe('Registered & safe');
     expect(learningElement.querySelector('img')).toBeNull();
+    expect(learningElement.querySelector('b')).toBeNull();
     expect(elementStore.getSubtitleElement('support').textContent).toBe('');
+  });
+
+  it('renders native markup and entities as plain text while preserving lines and empty cues', () => {
+    const store = useSubtitleStore.getState();
+    store.setNativeCues('en', [
+      { start: 1, end: 2, text: '<i>Native &amp; learning</i>' },
+      { start: 3, end: 4, text: '<i>First line</i>\nsecond line' },
+      { start: 5, end: 6, text: '<i></i>' },
+    ]);
+
+    const learningElement = elementStore.getSubtitleElement('learning');
+
+    syncSubtitles(1.5, true);
+    expect(learningElement.textContent).toBe('Native & learning');
+    expect(learningElement.querySelector('i')).toBeNull();
+
+    syncSubtitles(3.5);
+    expect(learningElement.textContent).toBe('First line\nsecond line');
+
+    syncSubtitles(5.5);
+    expect(learningElement.textContent).toBe('');
   });
 
   it('clears hidden roles and visible roles without a current cue', () => {

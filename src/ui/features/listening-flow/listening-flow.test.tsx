@@ -3,6 +3,7 @@ import { act } from 'react';
 import { listeningSegmentKeySchema } from '@storage/v2/schema';
 import type { ListeningProgressV1 } from '@storage/v2/type';
 import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
@@ -122,6 +123,283 @@ describe('Listening Learning production flow', () => {
 
     expect(container.textContent).toContain(expectedKey);
     expect(container.querySelector("[data-testid='learning-settings']")).not.toBeNull();
+  });
+
+  it('requires an explicit localized spoken-language confirmation before either start action', async () => {
+    await renderFlow(() => transport, false);
+
+    const confirmation = getSpokenLanguageConfirmation();
+    expect(confirmation.checked).toBe(false);
+    expect(getButton('v2_listening_landing_continue').disabled).toBe(true);
+    expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
+    expect(container.textContent).toContain('v2_listening_landing_spoken_language_title');
+    expect(container.textContent).toContain('v2_listening_landing_spoken_language_description');
+    expect(chrome.i18n.getMessage).toHaveBeenCalledWith('english', []);
+    expect(chrome.i18n.getMessage).toHaveBeenCalledWith(
+      'v2_listening_landing_spoken_language_checkbox',
+      ['english']
+    );
+
+    await act(async () => confirmation.click());
+    expect(confirmation.checked).toBe(true);
+    expect(getButton('v2_listening_landing_continue').disabled).toBe(false);
+    expect(getButton('v2_listening_landing_start_current').disabled).toBe(false);
+    expect(transport.beginSession).not.toHaveBeenCalled();
+  });
+
+  it('retains confirmation across current-time/progress refresh and same-context mission return', async () => {
+    await renderFlow();
+    expect(getSpokenLanguageConfirmation().checked).toBe(true);
+    vi.mocked(transport.getCatalog).mockResolvedValue({ ...CATALOG, currentTime: 7.25 });
+
+    await act(async () => {
+      root.render(<ListeningLearningPage progressRevision={1} settingsStore={SETTINGS_STORE} transportFactory={() => transport} />);
+      await flush();
+    });
+    expect(getSpokenLanguageConfirmation().checked).toBe(true);
+
+    await act(async () => {
+      SETTINGS_STORE.setState({
+        learningProfile: { learningLanguage: 'en', supportLanguage: 'ja' },
+      });
+      await flush();
+    });
+    expect(getSpokenLanguageConfirmation().checked).toBe(true);
+
+    await act(async () => getButton('v2_listening_landing_continue').click());
+    if (!harness.missionProps) throw new Error('Expected active mission');
+    await act(async () => {
+      harness.missionProps?.onExit();
+      await flush();
+    });
+    expect(getSpokenLanguageConfirmation().checked).toBe(true);
+  });
+
+  it('requires spoken-language confirmation again after a Side Panel component remount', async () => {
+    await renderFlow();
+    expect(getSpokenLanguageConfirmation().checked).toBe(true);
+
+    act(() => root.unmount());
+    rootMounted = false;
+    root = createRoot(container);
+    rootMounted = true;
+    await renderFlow(() => transport, false);
+
+    expect(getSpokenLanguageConfirmation().checked).toBe(false);
+    expect(getButton('v2_listening_landing_continue').disabled).toBe(true);
+    expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
+  });
+
+  it.each([
+    'active-tab',
+    'content-instance',
+    'route-identity',
+    'video-identity',
+    'media-attachment',
+    'learning-source',
+    'learning-language',
+    'subtitle-revision',
+  ] as const)('clears confirmation and recovers start focus after a %s change', async (axis) => {
+    await renderFlow();
+    getButton('v2_listening_landing_continue').focus();
+    let nextCatalog: Extract<
+      Awaited<ReturnType<ListeningMissionTransport['getCatalog']>>,
+      { status: 'ready' }
+    > = CATALOG;
+    let nextPlaybackContext: PlaybackContextStatus = PLAYBACK_CONTEXT;
+
+    if (axis === 'content-instance') {
+      nextCatalog = {
+        ...CATALOG,
+        identity: { ...CATALOG.identity, contentInstanceId: 'content-b' },
+      };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        contentInstanceId: 'content-b',
+      };
+    } else if (axis === 'route-identity') {
+      nextCatalog = {
+        ...CATALOG,
+        identity: { ...CATALOG.identity, routeChangedAt: 2 },
+      };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        routeChangedAt: 2,
+        routeKind: 'movie',
+      };
+    } else if (axis === 'video-identity') {
+      nextCatalog = {
+        ...CATALOG,
+        identity: { ...CATALOG.identity, videoId: 'video-b' },
+        videoId: 'video-b',
+      };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        videoId: 'video-b',
+      };
+    } else if (axis === 'media-attachment') {
+      nextCatalog = {
+        ...CATALOG,
+        identity: { ...CATALOG.identity, videoRevision: 3 },
+      };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        mediaAttachmentRevision: 3,
+        videoRevision: 3,
+      };
+    } else if (axis === 'learning-source') {
+      nextCatalog = { ...CATALOG, sourceKey: REGISTERED_SOURCE_KEY };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        subtitleIdentity: {
+          ...PLAYBACK_CONTEXT.subtitleIdentity,
+          learning: REGISTERED_SOURCE_KEY,
+        },
+      };
+    } else if (axis === 'learning-language') {
+      nextCatalog = { ...CATALOG, sourceKey: 'native:ja' };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        subtitleIdentity: { ...PLAYBACK_CONTEXT.subtitleIdentity, learning: 'native:ja' },
+      };
+    } else if (axis === 'subtitle-revision') {
+      nextCatalog = { ...CATALOG, subtitleRevision: 4 };
+      nextPlaybackContext = {
+        ...PLAYBACK_CONTEXT,
+        subtitleIdentity: { ...PLAYBACK_CONTEXT.subtitleIdentity, subtitleRevision: 4 },
+      };
+    }
+    vi.mocked(transport.getCatalog).mockResolvedValue(nextCatalog);
+
+    await act(async () => {
+      if (axis === 'active-tab') {
+        useTabStore.setState({ activeTab: { id: 18 } as chrome.tabs.Tab });
+      } else if (axis === 'learning-language') {
+        SETTINGS_STORE.setState({
+          learningProfile: { learningLanguage: 'ja', supportLanguage: 'ko' },
+        });
+        useTabStore.setState({ playbackContext: nextPlaybackContext });
+      } else {
+        useTabStore.setState({ playbackContext: nextPlaybackContext });
+      }
+      await flush();
+    });
+    await act(async () => await flushAnimationFrame());
+
+    expect(getSpokenLanguageConfirmation().checked).toBe(false);
+    expect(getButton('v2_listening_landing_continue').disabled).toBe(true);
+    expect(container.textContent).toContain('v2_listening_landing_spoken_language_reset');
+    expect(document.activeElement).toBe(getSpokenLanguageConfirmation());
+    expect(transport.beginSession).not.toHaveBeenCalled();
+  });
+
+  it('does not steal focus when the user moves elsewhere before the rebound catalog is ready', async () => {
+    const reboundCatalog = deferred<
+      Awaited<ReturnType<ListeningMissionTransport['getCatalog']>>
+    >();
+    const nextCatalog = {
+      ...CATALOG,
+      identity: { ...CATALOG.identity, contentInstanceId: 'content-b' },
+    };
+    vi.mocked(transport.getCatalog)
+      .mockResolvedValueOnce(CATALOG)
+      .mockReturnValueOnce(reboundCatalog.promise);
+    await renderFlow();
+    getButton('v2_listening_landing_continue').focus();
+
+    await act(async () => {
+      useTabStore.setState({
+        playbackContext: {
+          ...PLAYBACK_CONTEXT,
+          contentInstanceId: 'content-b',
+        },
+      });
+      await flush();
+    });
+
+    const settings = container.querySelector<HTMLElement>("[data-testid='learning-settings']");
+    if (!settings) throw new Error('Expected learning settings');
+    settings.tabIndex = 0;
+    settings.focus();
+    expect(document.activeElement).toBe(settings);
+
+    act(() => reboundCatalog.resolve(nextCatalog));
+    await act(async () => {
+      await flush();
+      await flushAnimationFrame();
+    });
+
+    expect(getSpokenLanguageConfirmation().checked).toBe(false);
+    expect(document.activeElement).toBe(settings);
+  });
+
+  it('recovers start focus after a transient no-video context resolves to a new binding', async () => {
+    const nextCatalog = {
+      ...CATALOG,
+      identity: { ...CATALOG.identity, contentInstanceId: 'content-b' },
+    };
+    vi.mocked(transport.getCatalog)
+      .mockResolvedValueOnce(CATALOG)
+      .mockResolvedValue(nextCatalog);
+    await renderFlow();
+    const start = getButton('v2_listening_landing_continue');
+    start.focus();
+
+    await act(async () => {
+      useTabStore.setState({
+        playbackContext: {
+          ...PLAYBACK_CONTEXT,
+          contentInstanceId: 'content-transition',
+          learningAvailable: false,
+          subtitleIdentity: {
+            learning: null,
+            subtitleRevision: PLAYBACK_CONTEXT.subtitleIdentity.subtitleRevision + 1,
+            support: null,
+          },
+          videoId: null,
+        },
+      });
+      await flush();
+    });
+    start.blur();
+    expect(document.activeElement).toBe(document.body);
+
+    await act(async () => {
+      useTabStore.setState({
+        playbackContext: {
+          ...PLAYBACK_CONTEXT,
+          contentInstanceId: 'content-b',
+        },
+      });
+      await flush();
+      await flush();
+    });
+    await act(async () => await flushAnimationFrame());
+    await act(async () => await flush());
+
+    const reboundConfirmation = getSpokenLanguageConfirmation();
+    expect(reboundConfirmation.checked).toBe(false);
+    expect(document.activeElement).toBe(reboundConfirmation);
+  });
+
+  it('keeps native confirmation closed while UI language is ahead of content source', async () => {
+    await renderFlow();
+
+    await act(async () => {
+      SETTINGS_STORE.setState({
+        learningProfile: { learningLanguage: 'ja', supportLanguage: 'ko' },
+      });
+      await flush();
+    });
+
+    const confirmation = getSpokenLanguageConfirmation();
+    expect(confirmation.checked).toBe(false);
+    expect(confirmation.disabled).toBe(true);
+    expect(getButton('v2_listening_landing_continue').disabled).toBe(true);
+    expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
+
+    await act(async () => confirmation.click());
+    expect(transport.beginSession).not.toHaveBeenCalled();
   });
 
   it('reloads an idle native catalog when the selected learning language changes', async () => {
@@ -328,6 +606,87 @@ describe('Listening Learning production flow', () => {
     });
     expect(usePageStore.getState().navigationLocked).toBe(false);
     expect(container.textContent).not.toContain('v2_listening_landing_starting');
+  });
+
+  it('rejects a registered-source begin snapshot bound to another learning language', async () => {
+    const registeredCatalog = { ...CATALOG, sourceKey: REGISTERED_SOURCE_KEY };
+    useTabStore.setState({
+      playbackContext: {
+        ...PLAYBACK_CONTEXT,
+        subtitleIdentity: {
+          ...PLAYBACK_CONTEXT.subtitleIdentity,
+          learning: REGISTERED_SOURCE_KEY,
+        },
+      },
+    });
+    vi.mocked(transport.getCatalog).mockResolvedValue(registeredCatalog);
+    vi.mocked(transport.beginSession).mockResolvedValue({
+      ...READY_SESSION,
+      snapshot: {
+        ...READY_SESSION.snapshot,
+        learningLanguage: 'ja',
+        sourceKey: REGISTERED_SOURCE_KEY,
+        segments: READY_SESSION.snapshot.segments.map((segment) => ({
+          ...segment,
+          sourceKey: REGISTERED_SOURCE_KEY,
+        })),
+      },
+    });
+    await renderFlow();
+
+    await act(async () => {
+      getButton('v2_listening_landing_continue').click();
+      await flush();
+    });
+
+    expect(controller.dispose).toHaveBeenCalledOnce();
+    expect(container.querySelector("[data-testid='active-mission']")).toBeNull();
+    expect(getSpokenLanguageConfirmation().checked).toBe(false);
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+  });
+
+  it.each([
+    {
+      axis: 'snapshot source',
+      response: {
+        ...READY_SESSION,
+        snapshot: { ...READY_SESSION.snapshot, sourceKey: 'native:ja' as const },
+      },
+    },
+    {
+      axis: 'snapshot video',
+      response: {
+        ...READY_SESSION,
+        snapshot: { ...READY_SESSION.snapshot, videoId: 'video-b' },
+      },
+    },
+    {
+      axis: 'subtitle revision',
+      response: { ...READY_SESSION, subtitleRevision: 4 },
+    },
+    {
+      axis: 'content identity',
+      response: {
+        ...READY_SESSION,
+        identity: { ...READY_SESSION.identity, contentEpoch: 2 },
+      },
+    },
+  ] satisfies readonly {
+    axis: string;
+    response: Extract<BeginListeningSessionResponse, { status: 'ready' }>;
+  }[])('rejects a ready begin response with stale $axis binding', async ({ response }) => {
+    vi.mocked(transport.beginSession).mockResolvedValue(response);
+    await renderFlow();
+
+    await act(async () => {
+      getButton('v2_listening_landing_continue').click();
+      await flush();
+    });
+
+    expect(controller.dispose).toHaveBeenCalledOnce();
+    expect(container.querySelector("[data-testid='active-mission']")).toBeNull();
+    expect(getSpokenLanguageConfirmation().checked).toBe(false);
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 
   it('keeps a pending begin lock through unmount until late ready disposal settles', async () => {
@@ -598,6 +957,8 @@ describe('Listening Learning production flow', () => {
 
   it('keeps the mission hidden through an ad and requires explicit same-content resume', async () => {
     await startReadyMission();
+    const initialBoundContextKey = harness.missionProps?.boundContextKey;
+    expect(initialBoundContextKey).toBeTypeOf('string');
     const interrupted = {
       ...PLAYBACK_CONTEXT,
       learningAvailable: false,
@@ -613,6 +974,7 @@ describe('Listening Learning production flow', () => {
       await flush();
     });
     expect(container.textContent).toContain('v2_listening_advertisement_title');
+    expect(harness.missionProps?.boundContextKey).not.toBe(initialBoundContextKey);
     expect(
       container
         .querySelector("[data-testid='active-mission']")
@@ -660,11 +1022,23 @@ describe('Listening Learning production flow', () => {
     expect(container.querySelector('[data-scroll-owner="learning"]')?.className).toContain('overflow-x-hidden');
   });
 
-  const renderFlow = async (factory: (tabId: number) => ListeningMissionTransport = () => transport) => {
+  const renderFlow = async (
+    factory: (tabId: number) => ListeningMissionTransport = () => transport,
+    confirmSpokenLanguage = true
+  ) => {
     await act(async () => {
       root.render(<ListeningLearningPage progressRevision={0} settingsStore={SETTINGS_STORE} transportFactory={factory} />);
       await flush();
     });
+    const confirmation = container.querySelector("[data-testid='spoken-language-confirmation']");
+    if (
+      confirmSpokenLanguage &&
+      confirmation instanceof HTMLInputElement &&
+      !confirmation.checked &&
+      !confirmation.disabled
+    ) {
+      await act(async () => confirmation.click());
+    }
   };
 
   const startReadyMission = async () => {
@@ -687,6 +1061,14 @@ describe('Listening Learning production flow', () => {
     if (!(button instanceof HTMLButtonElement)) throw new Error(`Expected button: ${name}`);
     return button;
   };
+
+  const getSpokenLanguageConfirmation = () => {
+    const confirmation = container.querySelector("[data-testid='spoken-language-confirmation']");
+    if (!(confirmation instanceof HTMLInputElement)) {
+      throw new Error('Expected spoken-language confirmation');
+    }
+    return confirmation;
+  };
 });
 
 const createController = (): ListeningSessionController => ({
@@ -704,6 +1086,8 @@ const createController = (): ListeningSessionController => ({
 const SEGMENT_KEYS = Array.from({ length: 12 }, (_, index) =>
   listeningSegmentKeySchema.parse(`segment-v1-${index.toString(16).padStart(64, '0')}`)
 );
+const REGISTERED_SOURCE_KEY =
+  'registered:subtitle-00000000-0000-4000-8000-000000000000' as const;
 
 const CATALOG = {
   currentTime: 5.1,

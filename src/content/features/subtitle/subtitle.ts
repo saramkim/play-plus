@@ -1,6 +1,6 @@
 import { createV2SyncStorage, V2SyncStorageChanges } from '@storage/v2/sync-storage';
-import { V2SyncStorage } from '@storage/v2/type';
-import { findSubtitle } from '@utils/helper';
+import type { V2SubtitleCue, V2SyncStorage } from '@storage/v2/type';
+import { findSubtitle, stripTags } from '@utils/helper';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
@@ -14,6 +14,8 @@ import { applySubtitleStyles } from '@/content/features/subtitle/subtitle-utils'
 import { isLearningPlaybackAvailable } from '@/content/playback-context/playback-context-store';
 
 type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay'>;
+
+const plainSubtitleTextCache = new WeakMap<V2SubtitleCue, string>();
 
 export async function initializeSubtitleSync() {
   const storage = createV2SyncStorage(chrome.storage.sync);
@@ -91,9 +93,20 @@ export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
 
     const { cues, delay } = selectSubtitleTrack(state, role);
     const cue = findSubtitle(cues, currentTime - delay);
-    subtitleElement.textContent = cue?.text ?? '';
+    subtitleElement.textContent = getPlainSubtitleText(cue);
   }
 }
+
+const getPlainSubtitleText = (cue: V2SubtitleCue | undefined) => {
+  if (cue === undefined) return '';
+
+  const cachedText = plainSubtitleTextCache.get(cue);
+  if (cachedText !== undefined) return cachedText;
+
+  const plainText = stripTags(cue.text);
+  plainSubtitleTextCache.set(cue, plainText);
+  return plainText;
+};
 
 const getChangedSettings = (changes: V2SyncStorageChanges): Partial<SubtitleSettings> => {
   if (changes.learningProfile && changes.learningProfile.newValue === undefined) {

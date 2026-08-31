@@ -168,7 +168,9 @@ describe('ListeningMission asynchronous controller contract', () => {
       harness.playSegment.mockImplementationOnce(() => pending.promise);
 
       await renderMission(root, harness, snapshot(1));
-      const playbackStatus = container.querySelector("p[role='status'].sr-only");
+      const playbackStatus = container.querySelector(
+        "[data-testid='listening-playback-status']"
+      );
       expect(playbackStatus?.textContent).toBe('v2_listening_mission_playing');
 
       await click(getButton(container, 'v2_listening_mission_later'));

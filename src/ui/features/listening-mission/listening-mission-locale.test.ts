@@ -70,6 +70,24 @@ describe('Listening Mission locale contract', () => {
     }
   });
 
+  it('keeps confirmation, scaffold, replay, and advertisement-return copy truthful', () => {
+    expect(en.v2_listening_landing_spoken_language_description.message).toContain(
+      'cannot automatically confirm'
+    );
+    expect(ko.v2_listening_landing_spoken_language_description.message).toContain(
+      '자동으로 확인할 수 없습니다'
+    );
+    expect(en.v2_listening_landing_spoken_language_checkbox.placeholders).toEqual({
+      language: { content: '$1' },
+    });
+    expect(en.v2_listening_mission_scaffold_heading.message).toBe('Matched parts');
+    expect(ko.v2_listening_mission_scaffold_heading.message).toBe('맞춘 부분');
+    expect(en.v2_repeat_current_learning_cue.message).toBe('Replay current learning line');
+    expect(ko.v2_repeat_current_learning_cue.message).toBe('현재 학습 문장 다시 재생');
+    expect(en.v2_listening_advertisement_continue.message).toBe('Return to mission');
+    expect(ko.v2_listening_advertisement_continue.message).toBe('미션으로 돌아가기');
+  });
+
   it('does not introduce deferred statistics, ranking, or sharing language', () => {
     const englishCopy = missionKeys(en).map((key) => en[key].message).join(' ');
     const koreanCopy = missionKeys(ko).map((key) => ko[key].message).join(' ');

@@ -7,6 +7,7 @@ import {
 } from 'react';
 
 import type { ListeningProgressV1 } from '@storage/v2/type';
+import { LANGUAGES, type Language } from '@utils/constants';
 import { t } from '@utils/i18n';
 import type { BeginListeningSessionResponse } from '@utils/message/type';
 import type { PlaybackContextStatus } from '@utils/playback-context';
@@ -108,6 +109,8 @@ export function ListeningLearningPage({
   const [announcement, setAnnouncement] = useState<string>();
   const [beginError, setBeginError] = useState<string>();
   const [beginPending, setBeginPending] = useState(false);
+  const [confirmedSpokenLanguageContextKey, setConfirmedSpokenLanguageContextKey] =
+    useState<string>();
   const [fatalReason, setFatalReason] = useState<ListeningSessionFatalReason>();
   const [fatalTeardown, setFatalTeardown] = useState<FatalTeardownState>();
   const [landing, setLanding] = useState<LandingState>({ kind: 'loading' });
@@ -122,26 +125,76 @@ export function ListeningLearningPage({
   const beginGenerationRef = useRef(0);
   const beginPendingRef = useRef(false);
   const beginReleaseRef = useRef<(() => void) | undefined>(undefined);
+  const confirmedSpokenLanguageContextKeyRef = useRef<string | undefined>(undefined);
+  const continueStartRef = useRef<HTMLButtonElement>(null);
   const currentResetTriggerRef = useRef<HTMLButtonElement>(null);
+  const currentStartRef = useRef<HTMLButtonElement>(null);
   const fatalHandlerRef = useRef<
     ((sessionId: string, reason: ListeningSessionFatalReason) => void) | undefined
   >(undefined);
+  const focusCaptureContextKeyRef = useRef<string | null | undefined>(null);
+  const pendingSpokenLanguageFocusContextKeyRef = useRef<string | null | undefined>(
+    undefined
+  );
+  const learningLanguageRef = useRef(learningLanguage);
   const loadGenerationRef = useRef(0);
   const mountedRef = useRef(true);
   const nextAfterRef = useRef<ActiveMission['finalSegmentKey'] | undefined>(undefined);
   const ownershipRef = useRef(false);
+  const playbackContextRef = useRef(playbackContext);
   const resetAllTriggerRef = useRef<HTMLButtonElement>(null);
   const readyVideoIdRef = useRef<string | undefined>(undefined);
   const resetRequestRef = useRef<ResetRequest | undefined>(undefined);
   const resetSuccessFocusRef = useRef<ResetTarget | undefined>(undefined);
   const resetPendingRef = useRef(false);
   const releaseNavigationLockRef = useRef<(() => void) | undefined>(undefined);
+  const shouldFocusSpokenLanguageConfirmationRef = useRef(false);
+  const spokenLanguageConfirmationRef = useRef<HTMLInputElement>(null);
+  const spokenLanguageContextKeyRef = useRef<string | undefined>(undefined);
   const transportRef = useRef(transport);
   const tabContextKeyRef = useRef(tabContextKey);
   const teardownGenerationRef = useRef(0);
   const teardownRef = useRef(false);
   const startSelectionGenerationRef = useRef(0);
+  const spokenLanguageContextKey = createSpokenLanguageContextKey(
+    activeTabId,
+    playbackContext,
+    learningLanguage
+  );
+  const readySpokenLanguageContextKey =
+    landing.kind === 'ready' &&
+    isCatalogBoundToPlaybackContext(landing.catalog, playbackContext, learningLanguage)
+      ? spokenLanguageContextKey
+      : undefined;
+  const spokenLanguageConfirmed =
+    readySpokenLanguageContextKey !== undefined &&
+    confirmedSpokenLanguageContextKey === readySpokenLanguageContextKey;
+  if (
+    confirmedSpokenLanguageContextKey !== undefined &&
+    confirmedSpokenLanguageContextKey !== spokenLanguageContextKey &&
+    focusCaptureContextKeyRef.current !== spokenLanguageContextKey
+  ) {
+    focusCaptureContextKeyRef.current = spokenLanguageContextKey;
+    shouldFocusSpokenLanguageConfirmationRef.current =
+      document.activeElement === continueStartRef.current ||
+      document.activeElement === currentStartRef.current;
+    pendingSpokenLanguageFocusContextKeyRef.current =
+      shouldFocusSpokenLanguageConfirmationRef.current
+        ? (spokenLanguageContextKey ?? null)
+        : undefined;
+  }
+  if (
+    shouldFocusSpokenLanguageConfirmationRef.current &&
+    pendingSpokenLanguageFocusContextKeyRef.current !== undefined &&
+    pendingSpokenLanguageFocusContextKeyRef.current !== spokenLanguageContextKey
+  ) {
+    pendingSpokenLanguageFocusContextKeyRef.current = spokenLanguageContextKey ?? null;
+  }
   acquireNavigationLockRef.current = acquireNavigationLock;
+  confirmedSpokenLanguageContextKeyRef.current = confirmedSpokenLanguageContextKey;
+  learningLanguageRef.current = learningLanguage;
+  playbackContextRef.current = playbackContext;
+  spokenLanguageContextKeyRef.current = spokenLanguageContextKey;
   transportRef.current = transport;
   tabContextKeyRef.current = tabContextKey;
   resetRequestRef.current = resetRequest;
@@ -229,8 +282,17 @@ export function ListeningLearningPage({
       segmentKeys: readonly ReadyListeningCatalog['segments'][number]['segmentKey'][]
     ) => {
       const startTabId = activeTabId;
+      const startLearningLanguage = learningLanguageRef.current;
+      const startSpokenLanguageContextKey = spokenLanguageContextKeyRef.current;
       if (
         startTabId === undefined ||
+        startSpokenLanguageContextKey === undefined ||
+        confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
+        !isCatalogBoundToPlaybackContext(
+          catalog,
+          playbackContextRef.current,
+          startLearningLanguage
+        ) ||
         segmentKeys.length === 0 ||
         beginPendingRef.current ||
         resetPendingRef.current ||
@@ -254,12 +316,17 @@ export function ListeningLearningPage({
         response = { status: 'error' };
       }
 
-      const staleRequest =
+      const obsoleteRequest =
         !mountedRef.current ||
         generation !== beginGenerationRef.current ||
         tabContextKeyRef.current !== startTabContextKey ||
+        spokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
+        confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
         transportRef.current !== currentTransport;
-      if (staleRequest) {
+      const staleReadyResponse =
+        response.status === 'ready' &&
+        !isReadyBeginResponseBoundToCatalog(response, catalog, startLearningLanguage);
+      if (obsoleteRequest || staleReadyResponse) {
         let ownedCurrentBeginLock = false;
         try {
           if (response.status === 'ready') {
@@ -277,7 +344,16 @@ export function ListeningLearningPage({
         }
         if (ownedCurrentBeginLock) {
           beginPendingRef.current = false;
-          if (mountedRef.current) setBeginPending(false);
+          if (mountedRef.current) {
+            setBeginPending(false);
+            if (!obsoleteRequest && staleReadyResponse) {
+              confirmedSpokenLanguageContextKeyRef.current = undefined;
+              setConfirmedSpokenLanguageContextKey(undefined);
+              setAnnouncement(t('v2_listening_landing_spoken_language_reset'));
+              setBeginError(t('v2_listening_landing_begin_stale'));
+              setReloadRevision((revision) => revision + 1);
+            }
+          }
         }
         return;
       }
@@ -356,8 +432,12 @@ export function ListeningLearningPage({
 
   const startFreshMission = useCallback(async (mode: 'continue' | 'current') => {
     const currentTransport = transportRef.current;
+    const startLearningLanguage = learningLanguageRef.current;
+    const startSpokenLanguageContextKey = spokenLanguageContextKeyRef.current;
     if (
       !currentTransport ||
+      startSpokenLanguageContextKey === undefined ||
+      confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
       beginPendingRef.current ||
       resetPendingRef.current ||
       resetRequestRef.current !== undefined ||
@@ -380,6 +460,8 @@ export function ListeningLearningPage({
         !mountedRef.current ||
         generation !== startSelectionGenerationRef.current ||
         tabContextKeyRef.current !== startTabContextKey ||
+        spokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
+        confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
         transportRef.current !== currentTransport
       ) {
         return;
@@ -391,6 +473,17 @@ export function ListeningLearningPage({
             ? { kind: 'error' }
             : { kind: 'unavailable', status: catalog.status }
         );
+        return;
+      }
+      if (
+        !isCatalogBoundToPlaybackContext(
+          catalog,
+          playbackContextRef.current,
+          startLearningLanguage
+        )
+      ) {
+        setBeginError(t('v2_listening_landing_begin_stale'));
+        setReloadRevision((revision) => revision + 1);
         return;
       }
       setLanding({
@@ -428,6 +521,66 @@ export function ListeningLearningPage({
       }
     }
   }, [startMission]);
+
+  const onSpokenLanguageConfirmationChange = useCallback(
+    (checked: boolean) => {
+      const contextKey = readySpokenLanguageContextKey;
+      const confirmedKey = checked && contextKey ? contextKey : undefined;
+      focusCaptureContextKeyRef.current = null;
+      pendingSpokenLanguageFocusContextKeyRef.current = undefined;
+      shouldFocusSpokenLanguageConfirmationRef.current = false;
+      confirmedSpokenLanguageContextKeyRef.current = confirmedKey;
+      setConfirmedSpokenLanguageContextKey(confirmedKey);
+      if (checked) setAnnouncement(undefined);
+    },
+    [readySpokenLanguageContextKey]
+  );
+
+  useEffect(() => {
+    const confirmedKey = confirmedSpokenLanguageContextKeyRef.current;
+    if (confirmedKey === undefined || confirmedKey === spokenLanguageContextKey) return;
+    confirmedSpokenLanguageContextKeyRef.current = undefined;
+    setConfirmedSpokenLanguageContextKey(undefined);
+    setAnnouncement(t('v2_listening_landing_spoken_language_reset'));
+  }, [spokenLanguageContextKey]);
+
+  useEffect(() => {
+    const pendingFocusContextKey = pendingSpokenLanguageFocusContextKeyRef.current;
+    if (
+      !shouldFocusSpokenLanguageConfirmationRef.current ||
+      readySpokenLanguageContextKey === undefined ||
+      pendingFocusContextKey !== readySpokenLanguageContextKey
+    ) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      if (
+        spokenLanguageContextKeyRef.current !== pendingFocusContextKey ||
+        pendingSpokenLanguageFocusContextKeyRef.current !== pendingFocusContextKey
+      ) {
+        return;
+      }
+      const confirmation = spokenLanguageConfirmationRef.current;
+      if (!confirmation) return;
+      const activeElement = document.activeElement;
+      const canRecoverDroppedStartFocus =
+        activeElement === null ||
+        activeElement === document.body ||
+        activeElement === continueStartRef.current ||
+        activeElement === currentStartRef.current;
+      if (!canRecoverDroppedStartFocus) {
+        pendingSpokenLanguageFocusContextKeyRef.current = undefined;
+        shouldFocusSpokenLanguageConfirmationRef.current = false;
+        return;
+      }
+      confirmation.focus();
+      if (document.activeElement === confirmation) {
+        pendingSpokenLanguageFocusContextKeyRef.current = undefined;
+        shouldFocusSpokenLanguageConfirmationRef.current = false;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [readySpokenLanguageContextKey]);
 
   useEffect(() => {
     if (activeMission || fatalReason || fatalTeardown) return;
@@ -731,6 +884,7 @@ export function ListeningLearningPage({
       <>
         <div className={interrupted ? 'hidden' : 'h-full min-h-0'} inert={interrupted}>
           <ListeningMission
+            boundContextKey={spokenLanguageContextKey}
             canStartNextMission={activeMission.canStartNextMission}
             controller={activeMission.controller}
             getPracticedAt={getPracticedAt}
@@ -762,7 +916,22 @@ export function ListeningLearningPage({
   }
 
   return (
-    <section aria-label={t('v2_nav_learning')} className='h-full min-h-0 min-w-0'>
+    <section
+      aria-label={t('v2_nav_learning')}
+      className='h-full min-h-0 min-w-0'
+      onFocusCapture={(event) => {
+        if (!shouldFocusSpokenLanguageConfirmationRef.current) return;
+        if (
+          event.target === continueStartRef.current ||
+          event.target === currentStartRef.current ||
+          event.target === spokenLanguageConfirmationRef.current
+        ) {
+          return;
+        }
+        pendingSpokenLanguageFocusContextKeyRef.current = undefined;
+        shouldFocusSpokenLanguageConfirmationRef.current = false;
+      }}
+    >
       <div
         className='h-full min-h-0 min-w-0 space-y-4 overflow-x-hidden overflow-y-auto p-4'
         data-scroll-owner='learning'
@@ -786,12 +955,21 @@ export function ListeningLearningPage({
             <LandingContent
               beginError={beginError}
               beginPending={beginPending}
+              confirmationRef={spokenLanguageConfirmationRef}
+              continueStartRef={continueStartRef}
+              currentStartRef={currentStartRef}
               landing={landing}
+              learningLanguage={learningLanguage}
               resetOpen={resetRequest !== undefined}
               resetPending={resetPending}
               onOpenReset={openReset}
               onRetry={() => setReloadRevision((revision) => revision + 1)}
+              onSpokenLanguageConfirmationChange={onSpokenLanguageConfirmationChange}
               onStart={(mode) => void startFreshMission(mode)}
+              spokenLanguageConfirmationAvailable={
+                readySpokenLanguageContextKey !== undefined
+              }
+              spokenLanguageConfirmed={spokenLanguageConfirmed}
               currentResetTriggerRef={currentResetTriggerRef}
               resetAllTriggerRef={resetAllTriggerRef}
             />
@@ -816,25 +994,39 @@ export function ListeningLearningPage({
 function LandingContent({
   beginError,
   beginPending,
+  confirmationRef,
+  continueStartRef,
   currentResetTriggerRef,
+  currentStartRef,
   landing,
+  learningLanguage,
   onOpenReset,
   onRetry,
+  onSpokenLanguageConfirmationChange,
   onStart,
   resetAllTriggerRef,
   resetOpen,
   resetPending,
+  spokenLanguageConfirmationAvailable,
+  spokenLanguageConfirmed,
 }: {
   beginError?: string;
   beginPending: boolean;
+  confirmationRef: React.RefObject<HTMLInputElement | null>;
+  continueStartRef: React.RefObject<HTMLButtonElement | null>;
   currentResetTriggerRef: React.RefObject<HTMLButtonElement | null>;
+  currentStartRef: React.RefObject<HTMLButtonElement | null>;
   landing: LandingState;
+  learningLanguage: Language;
   onOpenReset: (target: ResetTarget) => void;
   onRetry: () => void;
+  onSpokenLanguageConfirmationChange: (checked: boolean) => void;
   onStart: (mode: 'continue' | 'current') => void;
   resetAllTriggerRef: React.RefObject<HTMLButtonElement | null>;
   resetOpen: boolean;
   resetPending: boolean;
+  spokenLanguageConfirmationAvailable: boolean;
+  spokenLanguageConfirmed: boolean;
 }) {
   if (landing.kind === 'loading') {
     return <p role='status' className='flex items-center gap-2 text-wrap text-sm'><LoaderCircleIcon className='size-4 animate-spin' />{t('v2_listening_landing_loading')}</p>;
@@ -876,12 +1068,43 @@ function LandingContent({
       </dl>
       {catalog.supportAvailable && <p className='text-wrap text-xs text-muted-foreground'>{t('v2_listening_landing_support_available')}</p>}
       <p className='text-wrap text-xs text-muted-foreground'>{t('v2_listening_landing_caption_reminder')}</p>
+      <fieldset className='min-w-0 space-y-2 rounded-lg border p-3'>
+        <legend className='px-1 text-sm font-medium'>
+          {t('v2_listening_landing_spoken_language_title')}
+        </legend>
+        <p
+          id='listening-spoken-language-description'
+          className='text-wrap text-xs text-muted-foreground'
+        >
+          {t('v2_listening_landing_spoken_language_description')}
+        </p>
+        <label className='flex min-h-11 min-w-0 items-start gap-3 text-wrap text-sm'>
+          <input
+            ref={confirmationRef}
+            aria-describedby='listening-spoken-language-description'
+            checked={spokenLanguageConfirmed}
+            className='mt-0.5 size-5 shrink-0'
+            data-testid='spoken-language-confirmation'
+            disabled={
+              !spokenLanguageConfirmationAvailable || beginPending || resetOpen || resetPending
+            }
+            type='checkbox'
+            onChange={(event) => onSpokenLanguageConfirmationChange(event.target.checked)}
+          />
+          <span className='min-w-0 [overflow-wrap:anywhere]'>
+            {t(
+              'v2_listening_landing_spoken_language_checkbox',
+              t(LANGUAGES[learningLanguage])
+            )}
+          </span>
+        </label>
+      </fieldset>
       {beginError && <p role='alert' className='text-wrap text-sm text-destructive'>{beginError}</p>}
       <div className='grid min-w-0 gap-2 min-[360px]:grid-cols-2'>
-        <Button className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={beginPending || resetOpen || resetPending} onClick={() => onStart('continue')}>
+        <Button ref={continueStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || beginPending || resetOpen || resetPending} onClick={() => onStart('continue')}>
           {beginPending ? t('v2_listening_landing_starting') : t('v2_listening_landing_continue')}
         </Button>
-        <Button className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!currentAvailable || beginPending || resetOpen || resetPending} variant='outline' onClick={() => onStart('current')}>
+        <Button ref={currentStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || !currentAvailable || beginPending || resetOpen || resetPending} variant='outline' onClick={() => onStart('current')}>
           {t('v2_listening_landing_start_current')}
         </Button>
       </div>
@@ -1068,6 +1291,70 @@ const fatalDescription = (reason: ListeningSessionFatalReason) => {
   if (reason === 'segment-unavailable') return t('v2_listening_landing_fatal_segment_unavailable');
   return t('v2_listening_landing_fatal_error');
 };
+
+const createSpokenLanguageContextKey = (
+  activeTabId: number | undefined,
+  playbackContext: PlaybackContextStatus | null,
+  learningLanguage: Language
+) => {
+  if (
+    activeTabId === undefined ||
+    playbackContext === null ||
+    playbackContext.videoId === null ||
+    playbackContext.subtitleIdentity.learning === null
+  ) {
+    return undefined;
+  }
+  return JSON.stringify([
+    activeTabId,
+    playbackContext.contentEpoch,
+    playbackContext.contentInstanceId,
+    playbackContext.routeChangedAt,
+    playbackContext.routeKind,
+    playbackContext.videoId,
+    playbackContext.videoRevision,
+    playbackContext.mediaAttachmentRevision,
+    playbackContext.subtitleIdentity.learning,
+    learningLanguage,
+    playbackContext.subtitleIdentity.subtitleRevision,
+  ]);
+};
+
+const isCatalogBoundToPlaybackContext = (
+  catalog: ReadyListeningCatalog,
+  playbackContext: PlaybackContextStatus | null,
+  learningLanguage: Language
+) =>
+  playbackContext !== null &&
+  playbackContext.videoId !== null &&
+  playbackContext.subtitleIdentity.learning !== null &&
+  catalog.identity.contentEpoch === playbackContext.contentEpoch &&
+  catalog.identity.contentInstanceId === playbackContext.contentInstanceId &&
+  catalog.identity.routeChangedAt === playbackContext.routeChangedAt &&
+  catalog.identity.videoId === playbackContext.videoId &&
+  catalog.identity.videoRevision === playbackContext.videoRevision &&
+  catalog.identity.videoRevision === playbackContext.mediaAttachmentRevision &&
+  catalog.videoId === playbackContext.videoId &&
+  catalog.sourceKey === playbackContext.subtitleIdentity.learning &&
+  catalog.subtitleRevision === playbackContext.subtitleIdentity.subtitleRevision &&
+  (catalog.sourceKey.startsWith('registered:') ||
+    catalog.sourceKey === `native:${learningLanguage}`);
+
+const isReadyBeginResponseBoundToCatalog = (
+  response: Extract<BeginListeningSessionResponse, { status: 'ready' }>,
+  catalog: ReadyListeningCatalog,
+  learningLanguage: Language
+) =>
+  response.identity.contentEpoch === catalog.identity.contentEpoch &&
+  response.identity.contentInstanceId === catalog.identity.contentInstanceId &&
+  response.identity.routeChangedAt === catalog.identity.routeChangedAt &&
+  response.identity.videoId === catalog.identity.videoId &&
+  response.identity.videoRevision === catalog.identity.videoRevision &&
+  response.subtitleRevision === catalog.subtitleRevision &&
+  response.snapshot.learningLanguage === learningLanguage &&
+  response.snapshot.sourceKey === catalog.sourceKey &&
+  response.snapshot.videoId === catalog.videoId &&
+  response.snapshot.segments.every(({ sourceKey }) => sourceKey === catalog.sourceKey);
 
 const once = (callback: () => void) => {
   let called = false;

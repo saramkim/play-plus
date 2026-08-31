@@ -259,6 +259,16 @@ describe('ListeningMission isolated UI', () => {
     });
 
     const textarea = getTextarea(container);
+    const scaffoldStatus = container.querySelector<HTMLElement>(
+      "[data-testid='submitted-answer-scaffold-status']"
+    );
+    if (!scaffoldStatus) throw new Error('Expected persistent scaffold status');
+    expect(scaffoldStatus.getAttribute('role')).toBe('status');
+    expect(scaffoldStatus.getAttribute('aria-live')).toBe('polite');
+    expect(scaffoldStatus.getAttribute('aria-atomic')).toBe('true');
+    expect(scaffoldStatus.textContent).toBe('');
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
+
     changeTextarea(textarea, 'abcdefghiX');
     dispatchKey(textarea, 'Enter');
     await flush();
@@ -267,8 +277,36 @@ describe('ListeningMission isolated UI', () => {
     expect(feedback?.querySelector('svg')?.className.baseVal).toContain('text-primary');
     expect(getTextarea(container).value).toBe('abcdefghiX');
     expect(document.activeElement).toBe(textarea);
+    const firstScaffold = container.querySelector<HTMLElement>(
+      "[data-testid='submitted-answer-scaffold']"
+    );
+    if (!firstScaffold) throw new Error('Expected submitted-answer scaffold');
+    expect(
+      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
+    ).toBe(scaffoldStatus);
+    expect(scaffoldStatus.textContent).toContain(
+      'v2_listening_mission_scaffold_heading'
+    );
+    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:1');
+    expect(firstScaffold.hasAttribute('aria-live')).toBe(false);
+    expect(firstScaffold.textContent).toContain('v2_listening_mission_scaffold_heading');
+    expect(firstScaffold.querySelector("[aria-hidden='true']")?.textContent).toBe(
+      'abcdefghi＿'
+    );
+    expect(firstScaffold.querySelector('.sr-only')?.textContent).toContain(
+      'v2_listening_mission_scaffold_blank:1'
+    );
+    expect(firstScaffold.querySelector('.sr-only')?.textContent).not.toContain('＿');
+    expect(
+      firstScaffold.compareDocumentPosition(textarea) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
     changeTextarea(textarea, 'abcdefghXY');
+    expect(
+      container
+        .querySelector<HTMLElement>("[data-testid='submitted-answer-scaffold']")
+        ?.querySelector("[aria-hidden='true']")?.textContent
+    ).toBe('abcdefghi＿');
     dispatchKey(textarea, 'Enter');
     await flush();
     feedback = container.querySelector<HTMLElement>("[role='status']:not(.sr-only)");
@@ -276,6 +314,60 @@ describe('ListeningMission isolated UI', () => {
     expect(feedback?.querySelector('svg')?.className.baseVal).toContain('text-destructive');
     expect(getTextarea(container).value).toBe('abcdefghXY');
     expect(document.activeElement).toBe(textarea);
+    const secondScaffold = container.querySelector<HTMLElement>(
+      "[data-testid='submitted-answer-scaffold']"
+    );
+    expect(secondScaffold).toBe(firstScaffold);
+    expect(secondScaffold?.querySelector("[aria-hidden='true']")?.textContent).toBe(
+      'abcdefgh＿＿'
+    );
+    expect(secondScaffold?.querySelector('.sr-only')?.textContent).toContain(
+      'v2_listening_mission_scaffold_blank:2'
+    );
+    expect(
+      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
+    ).toBe(scaffoldStatus);
+    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:2');
+    const secondAnnouncement = scaffoldStatus.firstElementChild;
+
+    dispatchKey(textarea, 'Enter');
+    await flush();
+    expect(
+      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
+    ).toBe(scaffoldStatus);
+    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:2');
+    expect(scaffoldStatus.firstElementChild).not.toBe(secondAnnouncement);
+
+    await click(getButton(container, 'v2_listening_mission_hint'));
+    await click(getButton(container, 'v2_listening_mission_hint'));
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
+    await click(getButton(container, 'v2_listening_mission_reveal'));
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
+  });
+
+  it('clears submitted-answer feedback on context change and allows validated continuation', async () => {
+    const harness = createHarness();
+    const missionSnapshot = snapshot(1);
+    await renderMission(root, harness, missionSnapshot, 'context-a');
+
+    const textarea = getTextarea(container);
+    changeTextarea(textarea, 'wrong');
+    dispatchKey(textarea, 'Enter');
+    await flush();
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
+
+    await renderMission(root, harness, missionSnapshot, 'context-b');
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
+    expect(
+      container.querySelector("[data-testid='submitted-answer-scaffold-status']")?.textContent
+    ).toBe('');
+
+    await renderMission(root, harness, missionSnapshot, 'context-a');
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
+
+    dispatchKey(getTextarea(container), 'Enter');
+    await flush();
+    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
   });
 
   it('wraps deterministic long English, Korean, and no-space text in light and dark hosts', async () => {
@@ -295,6 +387,25 @@ describe('ListeningMission isolated UI', () => {
         },
       ],
     });
+
+    changeTextarea(getTextarea(container), 'wrong');
+    dispatchKey(getTextarea(container), 'Enter');
+    await flush();
+    const scaffold = container.querySelector<HTMLElement>(
+      "[data-testid='submitted-answer-scaffold']"
+    );
+    if (!scaffold) throw new Error('Expected submitted-answer scaffold');
+
+    for (const width of [320, 360, 390]) {
+      container.style.width = `${width}px`;
+      expect(scaffold.className).toContain('min-w-0');
+      expect(scaffold.querySelector("[aria-hidden='true']")?.className).toContain(
+        '[overflow-wrap:anywhere]'
+      );
+      expect(container.querySelectorAll("[data-scroll-owner='listening-mission']")).toHaveLength(1);
+      expect(container.querySelectorAll('[data-scroll-owner] [data-scroll-owner]')).toHaveLength(0);
+      expect(getButton(container, 'v2_listening_mission_hint').disabled).toBe(false);
+    }
 
     await click(getButton(container, 'v2_listening_mission_hint'));
     await click(getButton(container, 'v2_listening_mission_hint'));
@@ -454,12 +565,14 @@ function createHarness() {
 async function renderMission(
   root: Root | undefined,
   harness: MissionHarness,
-  missionSnapshot: ListeningMissionSnapshot
+  missionSnapshot: ListeningMissionSnapshot,
+  boundContextKey?: string
 ) {
   if (!root) throw new Error('Expected a React root');
   await act(async () => {
     root.render(
       <ListeningMission
+        boundContextKey={boundContextKey}
         controller={harness.controller}
         getPracticedAt={harness.getPracticedAt}
         onExit={harness.onExit}

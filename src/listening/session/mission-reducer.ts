@@ -22,6 +22,10 @@ import {
   type ListeningSegmentKey,
   type ListeningSourceKey,
 } from '@/listening/domain/source-identity';
+import {
+  createSubmittedAnswerScaffold,
+  type SubmittedAnswerScaffold,
+} from '@/listening/domain/submitted-answer-scaffold';
 
 import type {
   DifficultSaveResult,
@@ -107,6 +111,7 @@ export type ListeningMissionState = Readonly<{
   savedDifficultSegmentKeys: readonly ListeningSegmentKey[];
   selectedDifficultSegmentKeys: readonly ListeningSegmentKey[];
   snapshot: ListeningMissionSnapshot;
+  submittedAnswerScaffold?: SubmittedAnswerScaffold;
   terminalReason?: ListeningTerminalReason;
 }>;
 
@@ -144,6 +149,7 @@ export type ListeningMissionAction =
   | { type: 'difficult-save-started' }
   | { type: 'difficult-save-completed'; result: DifficultSaveResult }
   | { type: 'apply-difficult-save-result'; result: DifficultSaveResult }
+  | { type: 'submitted-answer-scaffold-cleared' }
   | { type: 'terminal-received'; reason: ListeningTerminalReason }
   | { type: 'invalidate'; reason: ListeningTerminalReason };
 
@@ -199,6 +205,8 @@ export type ListeningMissionView = Readonly<{
   roundPosition: number;
   roundTotal: number;
   selectedDifficultSegmentKeys: readonly ListeningSegmentKey[];
+  submittedAnswerScaffold?: SubmittedAnswerScaffold;
+  submittedAnswerScaffoldRevision?: number;
   summary?: ListeningMissionFirstRoundSummary;
   terminalReason?: ListeningTerminalReason;
 }>;
@@ -281,6 +289,8 @@ export const listeningMissionReducer = (
     case 'difficult-save-completed':
     case 'apply-difficult-save-result':
       return finishDifficultSave(state, action.result);
+    case 'submitted-answer-scaffold-cleared':
+      return clearSubmittedAnswerScaffold(state);
     case 'terminal-received':
     case 'invalidate':
       return invalidateSession(state, action.reason);
@@ -350,6 +360,13 @@ export const selectListeningMissionView = (
         ? state.retrySegmentKeys.length
         : state.snapshot.segments.length,
     selectedDifficultSegmentKeys: state.selectedDifficultSegmentKeys,
+    ...(state.submittedAnswerScaffold === undefined || activeSegment === undefined
+      ? {}
+      : {
+          submittedAnswerScaffold: state.submittedAnswerScaffold,
+          submittedAnswerScaffoldRevision:
+            state.records[activeSegment.segmentKey].submittedAttemptCount,
+        }),
     ...(isSummaryContext(state)
       ? {
           summary: {
@@ -425,6 +442,11 @@ const submitAnswer = (state: ListeningMissionState): ListeningMissionState => {
       currentCombo: 0,
       judgment,
       records: replaceRecord(state, segment.segmentKey, updatedRecord),
+      submittedAnswerScaffold: createSubmittedAnswerScaffold({
+        expected: segment.answerText,
+        learningLanguage: state.snapshot.learningLanguage,
+        submitted: state.draft,
+      }),
     };
   }
 
@@ -453,6 +475,7 @@ const submitAnswer = (state: ListeningMissionState): ListeningMissionState => {
     judgment,
     lineState: 'correct',
     records: replaceRecord(state, segment.segmentKey, updatedRecord),
+    submittedAnswerScaffold: undefined,
   };
 };
 
@@ -483,6 +506,7 @@ const requestHint = (state: ListeningMissionState): ListeningMissionState => {
       judgment: undefined,
       lineState: 'revealed',
       records: replaceRecord(state, segment.segmentKey, updatedRecord),
+      submittedAnswerScaffold: undefined,
     };
   }
 
@@ -780,7 +804,15 @@ const resetActiveLine = (state: ListeningMissionState): ListeningMissionState =>
   draft: '',
   judgment: undefined,
   lineState: 'answering',
+  submittedAnswerScaffold: undefined,
 });
+
+const clearSubmittedAnswerScaffold = (
+  state: ListeningMissionState
+): ListeningMissionState =>
+  state.submittedAnswerScaffold === undefined
+    ? state
+    : { ...state, submittedAnswerScaffold: undefined };
 
 const clearActiveLine = (state: ListeningMissionState): ListeningMissionState => ({
   ...resetActiveLine(state),

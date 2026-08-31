@@ -116,6 +116,7 @@ describe('Listening Mission UI transport', () => {
         success: true,
         data: { ...readySession, subtitleRevision: 4 },
       })
+      .mockResolvedValueOnce({ success: true, data: { status: 'ended' } })
       .mockResolvedValueOnce({
         success: true,
         data: {
@@ -147,6 +148,54 @@ describe('Listening Mission UI transport', () => {
     const controller = transport.createSessionController(readySession, vi.fn());
     await expect(controller.playSegment(SEGMENT_A, 1)).resolves.toEqual({ status: 'error' });
     await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'error' });
+  });
+
+  it('awaits exact stale-ready cleanup before returning stale', async () => {
+    const cleanup = deferred<{ success: true; data: { status: 'ended' } }>();
+    sendTabMessage
+      .mockResolvedValueOnce({ success: true, data: mismatchedReadySession })
+      .mockReturnValueOnce(cleanup.promise);
+    const transport = createTransport();
+
+    const request = transport.beginSession(catalog, [SEGMENT_A]);
+    let settled = false;
+    void request.then(() => {
+      settled = true;
+    });
+    await Promise.resolve();
+
+    expect(settled).toBe(false);
+    expect(sendTabMessage).toHaveBeenNthCalledWith(1, 17, 'beginListeningSession', {
+      expectedIdentity: catalog.identity,
+      expectedSubtitleRevision: catalog.subtitleRevision,
+      segmentKeys: [SEGMENT_A],
+    });
+    expect(sendTabMessage).toHaveBeenNthCalledWith(2, 17, 'endListeningSession', {
+      mode: 'restore-start',
+      sessionId: mismatchedReadySession.sessionId,
+    });
+
+    cleanup.resolve({ success: true, data: { status: 'ended' } });
+    await expect(request).resolves.toEqual({ status: 'stale' });
+    expect(sendTabMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps stale truth when stale-ready cleanup rejects', async () => {
+    sendTabMessage
+      .mockResolvedValueOnce({ success: true, data: mismatchedReadySession })
+      .mockRejectedValueOnce(new Error('cleanup unavailable'));
+    const transport = createTransport();
+
+    await expect(transport.beginSession(catalog, [SEGMENT_A])).resolves.toEqual({
+      status: 'stale',
+    });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 4);
+
+    expect(sendTabMessage).toHaveBeenCalledTimes(2);
+    expect(sendTabMessage).toHaveBeenLastCalledWith(17, 'endListeningSession', {
+      mode: 'restore-start',
+      sessionId: mismatchedReadySession.sessionId,
+    });
   });
 
   it('does not resend a successful progress commit and retries a rejected one without text', async () => {
@@ -486,6 +535,19 @@ const readySession = {
   },
   status: 'ready',
   subtitleRevision: 3,
+} satisfies Extract<BeginListeningSessionResponse, { status: 'ready' }>;
+
+const mismatchedReadySession = {
+  ...readySession,
+  sessionId: 'session-stale-ready',
+  snapshot: {
+    ...readySession.snapshot,
+    segments: readySession.snapshot.segments.map((segment) => ({
+      ...segment,
+      sourceKey: 'registered:subtitle-00000000-0000-4000-8000-000000000000' as const,
+    })),
+    sourceKey: 'registered:subtitle-00000000-0000-4000-8000-000000000000' as const,
+  },
 } satisfies Extract<BeginListeningSessionResponse, { status: 'ready' }>;
 
 const negativeCatalog = {
