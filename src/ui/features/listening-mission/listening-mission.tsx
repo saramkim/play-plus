@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useReducer,
   useRef,
   useState,
@@ -19,6 +20,7 @@ import {
   XIcon,
 } from 'lucide-react';
 
+import type { SubmittedAnswerScaffold } from '@/listening/domain/submitted-answer-scaffold';
 import type {
   DifficultSaveResult,
   ListeningMissionController,
@@ -56,6 +58,7 @@ type TerminalDifficultDetail = {
 };
 
 export interface ListeningMissionProps {
+  boundContextKey?: string;
   canStartNextMission?: boolean;
   snapshot: ListeningMissionSnapshot;
   controller: ListeningMissionController;
@@ -66,6 +69,7 @@ export interface ListeningMissionProps {
 }
 
 export function ListeningMission({
+  boundContextKey,
   canStartNextMission = true,
   snapshot,
   controller,
@@ -137,7 +141,10 @@ export function ListeningMission({
   const resultsCommitStartedRef = useRef(false);
   const previousAnswerVisibleRef = useRef(false);
   const previousPhaseRef = useRef(view.phase);
+  const previousBoundContextKeyRef = useRef(boundContextKey);
   const stateRef = useRef(state);
+
+  const boundContextChanged = boundContextKey !== previousBoundContextKeyRef.current;
 
   activeSegmentKeyRef.current = view.activeSegment?.segmentKey;
   stateRef.current = state;
@@ -160,6 +167,12 @@ export function ListeningMission({
       releaseOwnership();
     };
   }, [onOwnershipChange, releaseOwnership]);
+
+  useLayoutEffect(() => {
+    if (!boundContextChanged) return;
+    previousBoundContextKeyRef.current = boundContextKey;
+    dispatch({ type: 'submitted-answer-scaffold-cleared' });
+  }, [boundContextChanged, boundContextKey]);
 
   const ensureProgressPayload = useCallback(() => {
     if (progressPayloadRef.current) return progressPayloadRef.current;
@@ -764,6 +777,10 @@ export function ListeningMission({
           playbackStatus={playbackStatus}
           retryRound={view.activeRound === 'retry'}
           segment={view.activeSegment}
+          submittedAnswerScaffold={
+            boundContextChanged ? undefined : view.submittedAnswerScaffold
+          }
+          submittedAnswerScaffoldRevision={view.submittedAnswerScaffoldRevision}
           answerVisible={view.answerVisible}
           nextRef={nextRef}
           onDraftChange={(draft) => dispatch({ type: 'draft-updated', draft })}
@@ -846,7 +863,12 @@ export function ListeningMission({
         />
       ) : null}
 
-      <p aria-live='polite' role='status' className='sr-only'>
+      <p
+        aria-live='polite'
+        className='sr-only'
+        data-testid='listening-playback-status'
+        role='status'
+      >
         {playbackStatusText(playbackStatus)}
       </p>
 
@@ -904,6 +926,8 @@ interface ActiveLineProps {
     answerText: string;
     alignedSupport?: { text: string };
   };
+  submittedAnswerScaffold?: SubmittedAnswerScaffold;
+  submittedAnswerScaffoldRevision?: number;
   onCompositionChange: (composing: boolean) => void;
   onDraftChange: (draft: string) => void;
   onHint: () => void;
@@ -932,6 +956,8 @@ function ActiveLine({
   playbackStatus,
   retryRound,
   segment,
+  submittedAnswerScaffold,
+  submittedAnswerScaffoldRevision,
   onCompositionChange,
   onDraftChange,
   onHint,
@@ -943,6 +969,12 @@ function ActiveLine({
   const feedback = judgmentFeedback(judgment);
   const lineCorrect = lineState === 'correct';
   const lineNeedsRetry = lineState === 'revealed' || judgment !== undefined;
+  const submittedAnswerScaffoldAccessibleText = submittedAnswerScaffold
+    ? formatSubmittedAnswerScaffoldAccessibleText(submittedAnswerScaffold)
+    : '';
+  const submittedAnswerScaffoldStatusText = submittedAnswerScaffoldAccessibleText
+    ? `${t('v2_listening_mission_scaffold_heading')} ${submittedAnswerScaffoldAccessibleText}`
+    : '';
   return (
     <section className='flex min-w-0 flex-col gap-4' aria-labelledby='active-line-round'>
       <div className='flex min-w-0 flex-wrap items-center gap-2 text-sm'>
@@ -1021,6 +1053,25 @@ function ActiveLine({
           <label htmlFor={answerId} className='text-wrap text-sm font-medium'>
             {t('v2_listening_mission_answer_label')}
           </label>
+          <p
+            aria-atomic='true'
+            aria-live='polite'
+            className='sr-only'
+            data-testid='submitted-answer-scaffold-status'
+            role='status'
+          >
+            {submittedAnswerScaffoldStatusText && (
+              <span key={submittedAnswerScaffoldRevision}>
+                {submittedAnswerScaffoldStatusText}
+              </span>
+            )}
+          </p>
+          {submittedAnswerScaffold && (
+            <SubmittedAnswerScaffoldRegion
+              accessibleText={submittedAnswerScaffoldAccessibleText}
+              scaffold={submittedAnswerScaffold}
+            />
+          )}
           <textarea
             ref={answerRef}
             id={answerId}
@@ -1129,6 +1180,46 @@ function ActiveLine({
           {t('v2_listening_mission_playback_error')}
         </p>
       )}
+    </section>
+  );
+}
+
+const formatSubmittedAnswerScaffoldAccessibleText = (
+  scaffold: SubmittedAnswerScaffold
+) =>
+  scaffold.parts
+    .map((part) => {
+      if (part.kind === 'blank') {
+        return ` ${t('v2_listening_mission_scaffold_blank', String(part.graphemeCount))} `;
+      }
+      return part.text;
+    })
+    .join('')
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+function SubmittedAnswerScaffoldRegion({
+  accessibleText,
+  scaffold,
+}: {
+  accessibleText: string;
+  scaffold: SubmittedAnswerScaffold;
+}) {
+  const headingId = useId();
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className='min-w-0 rounded-md border bg-muted/30 p-3'
+      data-testid='submitted-answer-scaffold'
+    >
+      <h2 id={headingId} className='text-sm font-medium'>
+        {t('v2_listening_mission_scaffold_heading')}
+      </h2>
+      <p aria-hidden='true' className='mt-1 text-wrap [overflow-wrap:anywhere]'>
+        {scaffold.visualText}
+      </p>
+      <p className='sr-only'>{accessibleText}</p>
     </section>
   );
 }

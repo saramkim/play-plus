@@ -929,7 +929,7 @@
                                  "message":  "Next learning cue"
                              },
     "v2_repeat_current_learning_cue":  {
-                                           "message":  "Repeat current learning cue"
+                                           "message":  "Replay current learning line"
                                        },
     "v2_show_learning_controls":  {
                                       "message":  "Show learning controls"
@@ -1005,7 +1005,7 @@
     "v2_listening_advertisement_description": { "message": "Mission playback is paused. Advertisement media, time, and captions are not used for learning." },
     "v2_listening_advertisement_returned_title": { "message": "The advertisement has ended" },
     "v2_listening_advertisement_returned_description": { "message": "Your mission is still here. Continue explicitly to use the current main-content media." },
-    "v2_listening_advertisement_continue": { "message": "Advertisement ended · Continue" },
+    "v2_listening_advertisement_continue": { "message": "Return to mission" },
     "v2_listening_advertisement_resume_error": { "message": "The mission could not resume on the current media." },
     "v2_listening_landing_no_video_title": { "message": "No video is ready" },
     "v2_listening_landing_no_video_description": { "message": "Start a supported Coupang Play video, then try again." },
@@ -1024,6 +1024,13 @@
     "v2_listening_landing_not_practiced": { "message": "Not practiced yet" },
     "v2_listening_landing_support_available": { "message": "Accepted support sentences are available when a line is revealed." },
     "v2_listening_landing_caption_reminder": { "message": "If Coupang Play captions are visible, turn them off in the player before you begin." },
+    "v2_listening_landing_spoken_language_title": { "message": "Confirm the spoken language" },
+    "v2_listening_landing_spoken_language_description": { "message": "Play Plus cannot automatically confirm the video’s actual spoken language. Check the main speech yourself before starting." },
+    "v2_listening_landing_spoken_language_checkbox": {
+      "message": "I confirmed that this video’s main speech is in $1.",
+      "placeholders": { "language": { "content": "$1" } }
+    },
+    "v2_listening_landing_spoken_language_reset": { "message": "The video or learning subtitle changed. Confirm the spoken language again." },
     "v2_listening_landing_continue": { "message": "Continue" },
     "v2_listening_landing_start_current": { "message": "Start from current position" },
     "v2_listening_landing_current_unavailable": { "message": "There is no current or later practice line at this position." },
@@ -1086,6 +1093,11 @@
     "v2_listening_mission_correct": { "message": "Correct" },
     "v2_listening_mission_almost": { "message": "Almost. The difference is small; revise your answer." },
     "v2_listening_mission_try_again": { "message": "Try again. Revise your answer or use a hint." },
+    "v2_listening_mission_scaffold_heading": { "message": "Matched parts" },
+    "v2_listening_mission_scaffold_blank": {
+      "message": "$1-grapheme blank",
+      "placeholders": { "count": { "content": "$1" } }
+    },
     "v2_listening_mission_answer_heading": { "message": "Answer" },
     "v2_listening_mission_support_heading": { "message": "Support sentence" },
     "v2_listening_mission_next": { "message": "Next" },

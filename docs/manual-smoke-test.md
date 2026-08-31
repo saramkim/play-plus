@@ -65,6 +65,41 @@ Coupang authentication, DRM/player accessibility와 platform subtitle acquisitio
 | Manifest contains only reviewed active permissions, exact OpenSubtitles optional origins and no wildcard | PASS | source/built manifest 모두 `1.11.0`; required host는 Coupang Play 하나, optional host는 exact OpenSubtitles 두 개, CSP·permission·package·Webpack 변경 없음 |
 | Reload unpacked `dist/` and run signed-in Chrome smoke | PASS | `list_extensions`에서 ID를 동적으로 확인하고 미설치 production `dist/`를 install; MCP reconnect 뒤 목록이 비어 동일 stable build를 reinstall한 다음 persistent 인증 세션의 실제 `/en/play/<video-id>/episode` route, DRM/player, registered subtitle catalog와 실제 Extension Pages Side Panel에서 아래 bounded smoke 수행 |
 
+## Issues #96 / #97 working-candidate addendum (2026-08-31)
+
+이 절은 `cde031cf6e4340c234f7201c87441acc7c9c88ec`에서 분기한 #96/#97 PR candidate만 기록한다. 위의 이전 release-candidate 결과를 이번 변경의 증거로 승계하지 않는다. 실제 자막·답·전체 URL, 계정·세션 정보와 VPN relay 식별자는 기록하지 않는다.
+
+### Automated and static evidence
+
+| Check | Result | Evidence / notes |
+| --- | --- | --- |
+| Canonical contract and Issue readback | PASS | `docs/play-plus-2.0.md`에 no-detection, exact confirmation binding, deterministic submitted-answer scaffold와 privacy/verification 경계를 반영; GitHub #96의 Scope/acceptance/validation 세 곳에서 `mediaAttachmentRevision` readback 확인 |
+| `yarn type-check` | PASS | current working tree에서 `yarn.cmd type-check` |
+| Canonical-root lint | PASS | `yarn.cmd eslint . --ignore-pattern ".worktrees/**"`; changed-file focused lint도 PASS |
+| Literal `yarn lint` | FAIL | 제품 코드 오류가 아니라 저장소 내부의 기존 `.worktrees/**`와 그 generated SDK/`dist`까지 재귀 탐색해 실패; 이 결과를 canonical-root lint PASS로 바꾸어 기록하지 않음 |
+| Focused #96 / #97 suites | PASS | 9 files / 169 tests: safe markup decoder, subtitle renderer, submitted-answer LCS, reducer, transport cleanup, landing flow, Mission UI/async와 locale contract |
+| Full root test suite | PASS | `yarn.cmd test:run --exclude ".worktrees/**"`: 106 files / 1,256 tests |
+| Literal `yarn test:run` | FAIL | 345 files / 3,062 tests 중 66 failures가 모두 저장소 내부의 기존 `.worktrees/learning-controls-cleanup`, `.worktrees/library-density-editor`, `.worktrees/subtitle-manage-density`에 한정됨; root-owned suite 결과를 이 literal command의 PASS로 대체하지 않음 |
+| Production build | PASS | `yarn.cmd build`; 기존 asset/entrypoint size warning 3개, build locale와 source locale SHA-256 일치 |
+| `git diff --check` | PASS | whitespace error 없음; Windows line-ending 안내만 출력 |
+| Static privacy/config boundary | PASS | background/Storage/message에 confirmation/scaffold token 0, manifest/package/Webpack diff 0, 새 permission/network/schema/dependency 없음; raw subtitle markup은 non-DOM tag scanner만 통과하고 entity-only detached text fragment에는 raw cue를 전달하지 않음 |
+
+### Actual Chrome required observations
+
+| Check | Result | Required observation / evidence |
+| --- | --- | --- |
+| Exact extension / KR / auth / DRM / player | PASS | rebuilt production `dist`의 enabled v1.11.0 extension을 dedicated `chrome-devtools-kr`에 reload. gateway start에서 KR egress, unchanged/distinct host route와 exact Coupang login preflight를 통과했고, 기존 인증 세션의 supported episode에서 video `readyState: 4`, 재생 중, media error 없음과 action-opened actual Extension Pages Side Panel을 확인 |
+| Spoken-language start gate | PASS | actual EN Side Panel에서 자동 음성 언어 판정 불가 설명과 English 학습 언어 confirmation copy를 확인. 확인 전 두 start action disabled, 확인 뒤 enabled, component remount 뒤 unchecked/disabled reset을 확인했고 final build의 checkbox `id`도 readback |
+| Confirmation context matrix | NOT RUN | actual Side Panel remount reset subset은 PASS. active tab/content instance/route/video/`mediaAttachmentRevision`/learning source/language/`subtitleRevision` 변경 전체와 current-time/progress-only refresh, same-context return retention은 이번 bounded run에서 수행하지 않음 |
+| Submitted-answer scaffold | NOT RUN | final build의 actual Mission에서 model-authored 1-character non-exact submit 뒤 scaffold structure, accessible/visual split, unchanged focused draft, edit 중 fixed scaffold와 Hint 유지, Later 뒤 scaffold/draft clear와 textarea focus는 PASS. no-space grapheme LCS, 실제 IME, next-submit recompute, Hint score 불변과 나머지 lifecycle matrix는 수행하지 않음 |
+| Confirmation/scaffold privacy | NOT RUN | actual Mission remount 뒤 local/sync/session에서 forbidden transient property와 model-authored draft marker 0, Side Panel network는 extension-owned 6 requests만 200, service worker error/warn/issue 0인 subset은 PASS. direct message payload와 player/content/page console 전체 검사는 수행하지 않음 |
+| Native and registered on-video markup | NOT RUN | actual current native learning/support overlay의 non-empty representative cue는 text node only, child formatting element 0, literal `<i>`/`<b>` marker 0인 subset을 확인. source cue 자체가 raw markup을 포함했다는 증거와 registered tagged source, delay·Mission suppression/restoration matrix는 수행하지 않음 |
+| One-shot replay wording and behavior | NOT RUN | actual EN Side Panel과 expanded on-video control에서 `Replay current learning line` copy를 확인했고 current cue 시작으로 backward seek 1회, `paused: false`, media error 없음과 20 post-seek sample의 추가 backward jump 0을 확인. gateway 표본에서 이후 media buffering이 지속되어 충분한 forward progression은 확인하지 못함 |
+| Advertisement return wording and behavior | NOT OBSERVED WITHIN SAMPLE | exact-head player의 bounded 12-second observation에서 advertisement overlay가 발생하지 않아 actual return action은 실행하지 않음. locale/behavior fixture 결과를 natural advertisement PASS로 대체하지 않음 |
+| Full subtitles transient scrollbar owner | NOT RUN | actual Extension Pages target의 Full subtitles 화면에서 materialize된 seek button 25개를 DevTools-emulated 360/390px viewport로 구조 측정. programmatic focus에서는 tooltip이 열리지 않았고, DOM-dispatched pointer event로 열린 tooltip 전후 document/body/main/list owner 치수·viewport inset은 불변, tooltip은 227×67이며 내부 overflow가 없었음. 이는 실제 hardware pointer/CSS `:hover`와 transient scrollbar paint를 실행한 증거가 아니므로 실제 mouse-hover 현상과 scroll owner 판정은 `NOT RUN` |
+
+2026-08-31 사용자의 명시 승인 뒤 전용 한국 gateway를 시작했고 readiness/KR/host-isolation/Coupang preflight를 모두 통과한 뒤 위 bounded actual run만 수행했다. Windows host route는 변경되지 않았고 검증 종료 뒤 공식 stop/status 경로에서 gateway `active: false`를 확인했다. raw cue, answer, watched URL, account/session detail, IP와 relay 식별자는 evidence에 기록하지 않았다.
+
 ## Issue #90 episode watch-next learning fence certification record
 
 이 절은 #90 exact review head의 추가 기록이다. raw playback response, marker ID/metadata/time, title/content/account/profile identity, 전체 URL, header/cookie/token, cue 본문·개수·시간과 #89 physical identity는 committed evidence에 기록하지 않는다. 아래 actual Chrome 행은 rebuilt production `dist`, dedicated KR egress, signed-in actual Coupang Play와 action-opened tab-bound Chrome Extension Pages Side Panel에서 직접 확인하기 전까지 `NOT RUN`이며 fixture나 #79 qualification을 실제 `PASS`로 승계하지 않는다.

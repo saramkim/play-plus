@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-08-21 — episode watch-next positive sampling 및 direct advertisement lifecycle gate 정정
+최종 개정 승인일: 2026-08-31 — Listening Mission 음성 언어 확인 및 제출 후 matched-part feedback 추가
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -345,14 +345,23 @@ Answer comparison은 markup과 complete supported wrapper span을 제거한 뒤 
 - non-exact 답은 grapheme-level Levenshtein distance가 `max(1, floor(max(expectedLength, actualLength) × 0.15))` 이하일 때만 `almost`, 그 밖에는 `try again`이다.
 - `almost`와 `try again`은 이후 exact 제출 전에는 문장을 clear하지 않는다. contraction, synonym, translation, semantic similarity 또는 AI 판정은 사용하지 않는다.
 
-Text hint는 typed draft와 무관하게 normalized expected answer만 사용하고, single mask glyph `＿`를 쓴다.
+명시적 Text hint는 typed draft와 무관하게 normalized expected answer만 사용하고, single mask glyph `＿`를 쓴다.
 
 1. **Shape**: whitespace position은 보존하고 모든 non-whitespace grapheme을 `＿`로 바꾼다.
 2. **First graphemes**: token이 둘 이상이면 각 whitespace-delimited token의 첫 grapheme만 보이고 나머지를 mask한다. token이 하나뿐인 no-space text는 grapheme index `0, 4, 8, ...`만 보인다.
 3. **Support**: accepted aligned support가 있을 때만 보여 준다. 없으면 이 level을 건너뛴다.
 4. **Answer Reveal**: full learning answer를 보여 준다.
 
-Hint는 draft와 token을 맞춰 `resolved` portion을 추론하지 않는다. text hint는 즉시 사용할 수 있고 judgment feedback도 현재 opened hint level을 넘는 expected grapheme을 누설하지 않는다. audio control은 text hint가 아니며 즉시 사용할 수 있고 횟수 제한이나 score penalty가 없다.
+명시적 Hint는 draft와 token을 맞춰 `resolved` portion을 추론하지 않는다. text hint는 즉시 사용할 수 있고 audio control은 text hint가 아니며 즉시 사용할 수 있고 횟수 제한이나 score penalty가 없다.
+
+유일한 예외인 **submitted-answer matched-part scaffold**는 non-exact 제출 직후에만 만드는 자동 feedback이다. expected와 제출 답을 위의 normalized readable form으로 만든 뒤 expected에 whitespace-delimited token이 둘 이상이면 exact-token longest common subsequence, whitespace가 없는 text이면 Unicode grapheme longest common subsequence를 사용한다. equal-length LCS가 여러 개면 더 이른 expected position, 그다음 더 이른 submitted position을 우선하는 deterministic tie-break를 적용한다. matched expected token 또는 grapheme은 expected position에 보이고 unmatched expected grapheme은 `＿`로 남으며 extra submitted unit은 표시하지 않는다.
+
+- scaffold는 제출 시점에만 계산하고 사용자가 draft를 편집하는 동안 바꾸지 않으며 다음 non-exact 제출에서만 다시 계산한다.
+- scaffold는 textarea 바로 위의 별도 read-only answer frame이다. textarea의 원래 draft를 normalize, 대체 또는 자동 수정하지 않는다.
+- scaffold는 explicit Hint level, `activeHintStep`, `highestTextHintLevel` 또는 `usedTextHint`를 바꾸지 않는다. non-exact submission 자체가 이미 combo를 끊고 retry candidate와 first-submission evidence를 결정하므로 추가 score penalty를 만들지 않는다.
+- exact, Reveal, `Later`, new line, round transition/end, unmount, terminal invalidation 또는 bound mission context 변경 시 scaffold를 제거한다.
+- submitted/normalized actual text history를 만들지 않고 current derived matched expected positions 또는 mask만 transient reducer/component memory에 둘 수 있다.
+- repeated token/grapheme, insertion, omission, punctuation/case/width normalization, Korean과 no-space text의 tie-break를 fixture로 고정한다.
 
 - first round는 모든 선택 segment를 source 순서로 한 번 방문한다.
 - 첫 제출이 non-exact이거나 text hint, `Later` 또는 Answer Reveal을 사용한 line은 retry candidate다.
@@ -598,11 +607,12 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 제품 용어는 `학습 자막/문장`과 `도움 자막/문장`을 사용한다. 정상 v2 UI에서 `메인/서브`, `primary/secondary`를 사용자 역할명으로 노출하지 않는다.
 - Listening Mission에서도 사용자는 연습 단위를 `문장` 또는 `line`으로만 본다. internal `practice segment`, source index와 hash identity를 UI jargon으로 노출하지 않는다.
 - Learning idle 화면은 Listening Mission entry와 exact current video/source progress를 기존 settings 앞에 보여 준다. no video, stable video identity unavailable, no learning track, no eligible segment, first use, existing progress, loading과 recoverable error를 사실대로 구분한다.
-- mission entry는 `Continue`와 `Start from current position`, current catalog 기준 cleared/mastered 수, 최근 practice와 best combo를 제공한다. aligned support가 있을 때만 support availability를 말하고 Coupang Play caption이 보이면 사용자가 끄도록 안내하되 자동 감지·조작을 주장하지 않는다.
+- mission entry는 `Continue`와 `Start from current position`, current catalog 기준 cleared/mastered 수, 최근 practice와 best combo를 제공한다. aligned support가 있을 때만 support availability를 말하고 Coupang Play caption이 보이면 사용자가 끄도록 안내하되 자동 감지·조작을 주장하지 않는다. Play Plus가 영상의 실제 음성 언어를 자동 확인할 수 없다고 사실대로 설명하고, 사용자가 주된 음성이 localized learning language와 같음을 explicit checkbox로 확인하기 전에는 두 start action을 비활성화한다. 이 confirmation을 audio, metadata, subtitle text, Coupang Play DOM/player caption 또는 기존 runtime signal에서 감지·추론하지 않는다.
+- spoken-language confirmation은 current Side Panel memory에만 두며 exact active tab, content instance, video/route identity, `mediaAttachmentRevision`, learning source key, learning language와 subtitle revision에 bind한다. 어느 bound field든 바뀌면 즉시 unchecked로 되돌리고 localized status로 재확인을 알린다. 그 순간 focus가 비활성화되는 start action에 있었다면 confirmation control로 옮기고 다른 focus는 강제로 이동하지 않는다. current-time/progress-only update와 unrelated render는 confirmation을 지우지 않고 same-context mission return은 유지할 수 있지만 Side Panel remount에서는 다시 확인한다. stale/delayed begin response는 obsolete confirmation으로 mission을 시작할 수 없다.
 - active mission은 기존 네 destination의 Header를 유지하되 one navigation token으로 destination 이동을 잠그고, idle Learning settings 대신 하나의 mission scroll owner만 보여 준다. 명시적 Exit는 항상 접근 가능해야 하며 terminal cleanup 뒤 exact token을 해제한다.
-- active line은 round와 `current / total`, positive combo, non-color-only state, listen instruction, `Listen again`, `Slow 0.75×`, real multiline answer field, Submit, next Hint, Later, feedback/status, correct/Reveal 뒤 answer/support와 explicit Next를 제공한다.
-- Enter는 submit, Shift+Enter는 line break이며 IME composition 중 Enter는 submit하지 않는다. non-exact draft는 transient memory에서 수정 가능하게 유지하고 new line의 successful automatic playback 뒤 answer field에 focus한다.
-- hint와 judgment, playback, progress error, unsaved warning, stale/fatal state와 difficult-save result는 screen reader에 사실대로 announce한다. correct/Reveal은 자동 advance하지 않고 phase, dialog와 error 뒤 안정된 focus target을 제공한다.
+- active line은 round와 `current / total`, positive combo, non-color-only state, listen instruction, `Listen again`, `Slow 0.75×`, real multiline answer field, Submit, next Hint, Later, feedback/status, correct/Reveal 뒤 answer/support와 explicit Next를 제공한다. non-exact 제출 뒤에는 다음 제출 전까지 고정된 matched-part scaffold를 textarea 바로 위에 보여 준다.
+- Enter는 submit, Shift+Enter는 line break이며 IME composition 중 Enter는 submit하지 않는다. non-exact draft와 textarea focus는 transient memory에서 그대로 수정 가능하게 유지하고 new line의 successful automatic playback 뒤 answer field에 focus한다.
+- hint와 matched-part scaffold, judgment, playback, progress error, unsaved warning, stale/fatal state와 difficult-save result는 screen reader에 사실대로 announce한다. scaffold는 명확한 read-only region title을 갖고 matched text와 localized `N grapheme blank` 의미를 제공하며 visual underscore를 문자별로 읽게 하지 않는다. 제출 뒤 한 번만 announce하고 typing 중 live update하지 않으며 색상만으로 matched/unmatched를 구분하지 않는다. correct/Reveal은 자동 advance하지 않고 phase, dialog와 error 뒤 안정된 focus target을 제공한다.
 - first-round summary는 first-submission exact 수, retry candidate 수와 best combo를 보여 주고 optional one retry와 `View results now`를 제공한다. Results는 1–3 stars, optional Perfect, cleared/total, first-submission exact, retry outcome, best combo와 progress-save state만 보여 주며 history, streak, daily total, rank와 share를 만들지 않는다.
 - difficult candidate checkbox는 모두 처음에 선택되지 않는다. selected-only save, no-selection no-op, retryable partial failure와 terminal partial failure를 구분하고 이미 저장한 성공을 잃었다고 표시하지 않는다.
 - progress write failure 뒤 primary `Retry saving progress`와 secondary `Exit without saving this progress`를 정확한 순서로 제공한다. discard는 이번 unsaved progress만 잃고 이전 persisted progress는 남는다는 문구, mid-mission `restore-start`와 Results `complete-stay`를 사용한다.
@@ -625,7 +635,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 학습 카드와 등록 자막은 사용자의 브라우저에 로컬로 저장한다.
 - Listening Mission의 segmenting, answer comparison, hint, score와 transient session state는 모두 로컬에서 처리한다.
 - raw cue array, catalog body, immutable mission snapshot, 아직 저장하지 않은 segment text와 typed answer는 active tab의 direct UI-content transient boundary에만 존재한다. background message, tab store, `listeningProgress`, 추가 Storage, network, telemetry, diagnostics, log, error, URL, DOM attribute 또는 committed evidence payload로 보내거나 복제하지 않는다.
-- typed answer text는 current component/reducer memory와 input/draft-update/submit action 안에서 judgment에 필요한 동안만 존재한다. external/serialized/controller/message/storage payload와 chronological attempt history에는 포함하지 않는다.
+- typed answer text는 current component/reducer memory와 input/draft-update/submit action 안에서 judgment와 current submitted-answer scaffold 계산에 필요한 동안만 존재한다. submitted/normalized actual answer history를 만들지 않고 current derived matched expected positions 또는 mask만 transient하게 둘 수 있다. confirmation, draft, submission, scaffold와 derived alignment는 external/serialized/controller/background message, Storage, network, telemetry, diagnostics, log, error, URL, DOM attribute 또는 committed evidence payload에 포함하지 않는다.
 - sole text-bearing 예외는 사용자가 Results에서 명시적으로 선택한 segment다. content가 current session/source/revision을 다시 검증해 canonical `LearningCard`로 변환한 뒤에만 기존 validated card-storage message와 `chrome.storage.local`의 `learningCards` path를 사용할 수 있다. 이 예외는 raw cue/catalog relay, mission snapshot persistence 또는 typed-answer 전송을 허용하지 않는다.
 - `listeningProgress`는 §3.5의 numeric/state/timestamp identity facts만 저장한다. full watched URL, subtitle/support text, answer draft, history, star와 per-attempt text는 허용하지 않는다.
 - 2.0 핵심 흐름은 계정과 외부 자막 공급자 없이 작동해야 한다. OpenSubtitles는 사용자가 명시적으로 검색·추가할 때만 사용하는 승인된 예외다.
@@ -717,8 +727,10 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - 수천 cue와 여러 줄·다국어 문장에서 가상 목록이 하나의 scroll owner를 유지하고 검색 전후에도 행이 겹치지 않으며, 늦은 native cue 도착과 tab·SPA route·content instance·video·자막 revision 변경이 자동 반영되고 이전 snapshot이 새 영상을 노출·제어·저장하지 않는다.
 - 전체 자막 snapshot과 재생 시각은 영속 저장·background relay·외부 전송·본문 logging 없이 활성 tab에서만 일시적으로 사용된다.
 - Learning은 정확히 네 destination 안에서 current video/source의 Listening Mission entry와 factual progress를 제공하고, current position 또는 Continue부터 source 순서의 최대 10 segment를 선택하며 마지막 mission은 더 짧을 수 있다.
+- mission entry는 명시적 spoken-language confirmation 전 두 start action을 막고 exact tab/content/video/`mediaAttachmentRevision`/source/language/revision 변경마다 reset한다. current-time/progress-only update와 same-context return은 confirmation을 유지할 수 있고 Side Panel remount는 다시 확인하며 stale begin response는 mission을 시작하지 못한다.
 - wrapper cleanup, separator, greedy grouping, no-split/omission, timing/grapheme boundary와 versioned identity가 §5.1과 일치하고 delay/support 변화만으로 progress key가 바뀌지 않는다.
-- multilingual answer normalization, exact/almost threshold, draft-independent Shape/First-graphemes mask, support skip와 Reveal이 deterministic하고 typed draft에서 expected token을 추론하지 않는다.
+- multilingual answer normalization, exact/almost threshold, support skip와 Reveal이 deterministic하다. 명시적 Shape/First-graphemes Hint만 typed draft와 무관하고 expected token을 추론하지 않는다.
+- non-exact submitted-answer scaffold는 whitespace sentence의 exact-token LCS와 no-space text의 grapheme LCS, 더 이른 expected position 뒤 더 이른 submitted position tie-break를 재현한다. typing 중에는 고정되어 draft와 textarea focus를 보존하고 다음 non-exact 제출에서만 다시 계산하며 score/explicit Hint state를 바꾸지 않는다. exact, Reveal, `Later`, new line, round transition/end, unmount, terminal invalidation과 bound context 변경에서 제거된다.
 - first round, optional one retry, combo, 1–3 stars, Perfect와 difficult candidates가 계약과 일치한다. `Later`/Reveal-only visit은 `totalAttempts: 0`을 기록할 수 있고 retry clear는 mastered를 소급하지 않는다.
 - mission은 exact current video state를 capture하고 Play Plus overlay/controller만 transiently suppress한다. 1.0×/0.75× clip, pre/post-roll cap, 모든 end mode, 5초 heartbeat/15초 lease와 route/video/source/revision invalidation이 old text나 media command를 새 video에 적용하지 않고 정상·emergency cleanup을 수행한다.
 - locale/suffix-tolerant route parser 지원을 좁히지 않으면서 parser support와 learning eligibility를 분리한다. exact `routeKind`, lifecycle, `contentEpoch`, 기존 `videoRevision` 기반 media attachment revision과 subtitle/source identity가 독립적으로 검증되고, supported `movie | episode`의 current `content` attachment에서만 learning capability가 열린다.
@@ -743,7 +755,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
 - `yarn build`
 - deterministic wrapper/greedy segmenter, source/key identity, current/gap/Continue selection, answer threshold, exact hint mask, retry/result와 `totalAttempts: 0` focused suites
 - strict progress schema/default/migration/readback/serialized mutation/reset/failure-recovery suites와 production activation/import audit
-- mission reducer/component transient-draft, controller union, async race, IME, focus, accessibility, progress-failure/discard, difficult-save와 320/360/390 geometry suites
+- mission entry의 transient spoken-language confirmation/context-reset/stale-begin, reducer/component의 deterministic token/grapheme LCS scaffold, transient-draft, score invariance, lifecycle clearing, controller union, async race, IME, focus, accessibility, progress-failure/discard, difficult-save와 320/360/390 geometry suites
 - direct UI-content catalog/session, content playback/restore/lease/suppression, background progress readiness, Learning landing/lock/Next 10/reset/save와 external storage-change integration suites
 - source와 built output에서 typed answer persistence/logging, forbidden raw cue/catalog background relay, microphone/speech/AI, telemetry, account/payment, new network/permission/host/CSP, fifth destination와 release/version change가 없음을 audit한다. explicit canonical LearningCard save exception은 forbidden relay로 오탐하지 않는다.
 
@@ -791,7 +803,7 @@ Listening Mission executable work는 이 canonical amendment가 reviewed·merged
   3. One-attempt/no-retry network boundary: selected candidate마다 기존 `src ?? sources[0].src` 한 URL만 한 번 시도하고 second URL, retry, provider/discover lookup, prefetch 또는 interception이 없음을 exact-head fetch-call ledger tests와 source/built-output static audit로 증명한다. actual Chrome에서는 기존 extension playback replay 1회, successful candidate GETs, failed/blocked candidate request 0과 external subtitle lookup 0을 aggregate boundary로 확인한다. Chrome DevTools가 page-player VTT와 content-script VTT initiator를 개별적으로 분리해 표시하는 것은 acceptance requirement가 아니다.
 
   이 evidence-equivalence는 manual observation을 자동 `PASS`로 바꾸는 waiver가 아니다. 자연 발생하지 않은 advertisement, replay, duplicate, candidate failure 또는 coexistence는 `NOT OBSERVED WITHIN SAMPLE`로 사실대로 남긴다. evidence-equivalence에 필요한 exact-head focused test, fetch-call ledger, static audit, actual representative observation 또는 exact-head CI 중 하나라도 `NOT RUN | UNKNOWN | FAIL`이면 해당 gate는 acceptance를 막는다. deterministic failure/duplicate/coexistence precedence는 exact-head fixture evidence로만 주장하며 provider-wide behavior로 일반화하지 않는다.
-- 대표 Listening Mission에서 entry/source truth, automatic/replay/slow playback, answer와 실제 IME, hint/Reveal/Later, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 typed answer/raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
+- 대표 Listening Mission에서 explicit spoken-language confirmation 전 start gate, localized language copy, exact tab/content/video/attachment/source/language/revision 변경 뒤 reset/announcement/conditional focus, same-context return과 Side Panel remount를 확인한다. whitespace와 no-space non-exact answer에서 fixed matched-part scaffold, retained draft와 실제 IME, next-submit recomputation, Hint/Reveal/Later/new-line/round/terminal/context cleanup, automatic/replay/slow playback, retry/Results, explicit difficult save, progress/reset failure와 truthful discard, end/restoration, lease와 실제 route invalidation을 확인한다. Network, Chrome Storage와 log inspection으로 confirmation, typed answer, normalized actual, scaffold, derived alignment와 raw mission text가 전송·영속화되지 않고 explicit selected segment만 canonical `LearningCard`로 저장되는 예외를 확인한다.
 - 실제 Chrome이 제공하는 최소 side panel 폭에서 keyboard, scroll, focus, overflow와 주요 Learning/Subtitles/Library/Review/OpenSubtitles 회귀를 확인한다.
 - 첫 명시적 OpenSubtitles 검색 전 request 0건과 exact optional permission을 확인하고, 사용자 소유의 등록된 Play Plus Consumer와 app identifier로 로그인/JWT 없는 direct search, 선택한 한 결과의 direct download·strict 등록, 자동 역할 미적용, same-session cache와 keyless fail-closed를 실제 Chrome에서 확인한다.
 

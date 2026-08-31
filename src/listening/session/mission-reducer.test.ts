@@ -215,6 +215,117 @@ describe('Listening Mission first round', () => {
     });
   });
 
+  it('keeps one submitted-answer scaffold fixed while editing and recomputes it only on submit', () => {
+    const base = snapshot(1);
+    let state = createListeningMissionState({
+      ...base,
+      segments: [{ ...base.segments[0], answerText: 'we really like tea' }],
+    });
+    state = reduce(
+      state,
+      { type: 'update-draft', draft: 'we realy like tea' },
+      { type: 'submit-answer' }
+    );
+    const firstScaffold = state.submittedAnswerScaffold;
+    if (!firstScaffold) throw new Error('Expected a submitted-answer scaffold');
+
+    expect(selectListeningMissionView(state)).toMatchObject({
+      draft: 'we realy like tea',
+      judgment: 'almost',
+      submittedAnswerScaffold: firstScaffold,
+      submittedAnswerScaffoldRevision: 1,
+    });
+    expect(firstScaffold).toMatchObject({ strategy: 'token-lcs' });
+    expect(state).toMatchObject({ activeHintStep: 0, currentCombo: 0 });
+    expect(state.records[key(0)]).toMatchObject({
+      highestTextHintLevel: 0,
+      usedTextHint: false,
+    });
+
+    state = reduce(state, { type: 'update-draft', draft: 'we really like' });
+    expect(state.draft).toBe('we really like');
+    expect(state.submittedAnswerScaffold).toBe(firstScaffold);
+
+    state = reduce(state, { type: 'submit-answer' });
+    expect(state.submittedAnswerScaffold).not.toBe(firstScaffold);
+    expect(state.submittedAnswerScaffold?.visualText).not.toBe(firstScaffold.visualText);
+    expect(selectListeningMissionView(state).submittedAnswerScaffoldRevision).toBe(2);
+    expect(state.records[key(0)]).toMatchObject({
+      highestTextHintLevel: 0,
+      submittedAttemptCount: 2,
+      usedTextHint: false,
+    });
+  });
+
+  it('clears the submitted-answer scaffold at every answer lifecycle boundary', () => {
+    const makeSubmitted = () =>
+      reduce(
+        createListeningMissionState(snapshot(2)),
+        { type: 'update-draft', draft: 'wrong' },
+        { type: 'submit-answer' }
+      );
+
+    let exact = makeSubmitted();
+    exact = answerCurrent(exact);
+    expect(exact.submittedAnswerScaffold).toBeUndefined();
+
+    let revealed = makeSubmitted();
+    revealed = revealCurrent(revealed);
+    expect(revealed.submittedAnswerScaffold).toBeUndefined();
+
+    let later = makeSubmitted();
+    later = reduce(later, { type: 'later' });
+    expect(later.submittedAnswerScaffold).toBeUndefined();
+
+    let roundEnd = reduce(
+      createListeningMissionState(snapshot(1)),
+      { type: 'update-draft', draft: 'wrong' },
+      { type: 'submit-answer' },
+      { type: 'later' }
+    );
+    expect(roundEnd.phase).toBe('first-round-summary');
+    expect(roundEnd.submittedAnswerScaffold).toBeUndefined();
+    roundEnd = reduce(roundEnd, { type: 'view-results' });
+    expect(roundEnd.phase).toBe('results');
+    expect(roundEnd.submittedAnswerScaffold).toBeUndefined();
+
+    let nextLine = makeSubmitted();
+    nextLine = answerCurrent(nextLine);
+    nextLine = reduce(nextLine, { type: 'next-line' });
+    expect(nextLine.submittedAnswerScaffold).toBeUndefined();
+
+    let terminal = makeSubmitted();
+    terminal = reduce(terminal, { type: 'invalidate', reason: 'stale' });
+    expect(terminal.submittedAnswerScaffold).toBeUndefined();
+
+    let contextChanged = makeSubmitted();
+    contextChanged = reduce(contextChanged, {
+      type: 'submitted-answer-scaffold-cleared',
+    });
+    expect(contextChanged.submittedAnswerScaffold).toBeUndefined();
+  });
+
+  it('preserves the scaffold through explicit non-Reveal hints and exit cancellation', () => {
+    let state = reduce(
+      createListeningMissionState(snapshot(1)),
+      { type: 'update-draft', draft: 'wrong' },
+      { type: 'submit-answer' }
+    );
+    const scaffold = state.submittedAnswerScaffold;
+    state = reduce(
+      state,
+      { type: 'use-next-hint' },
+      { type: 'open-exit' },
+      { type: 'continue-mission' }
+    );
+
+    expect(state.submittedAnswerScaffold).toBe(scaffold);
+    expect(state.records[key(0)]).toMatchObject({
+      highestTextHintLevel: 1,
+      usedTextHint: true,
+    });
+  });
+
   it('increments combo only for a hint-free exact first submission and keeps the best', () => {
     let state = createListeningMissionState(snapshot(4));
     state = answerCurrent(state);
@@ -501,7 +612,12 @@ describe('Listening Mission progress and privacy', () => {
     let state = createListeningMissionState(snapshot(3));
     state = answerCurrent(state);
     state = reduce(state, { type: 'next-line' }, { type: 'later' });
-    state = reduce(state, { type: 'update-draft', draft: 'PRIVATE-TYPED-SENTINEL' });
+    state = reduce(
+      state,
+      { type: 'update-draft', draft: 'PRIVATE-TYPED-SENTINEL' },
+      { type: 'submit-answer' }
+    );
+    expect(state.submittedAnswerScaffold).toBeDefined();
 
     const result = createListeningMissionProgressResult(state, PRACTICED_AT);
     expect(result).toEqual({
@@ -533,6 +649,7 @@ describe('Listening Mission progress and privacy', () => {
     ]);
     expect(JSON.stringify(result)).not.toContain('PRIVATE-TYPED-SENTINEL');
     expect(JSON.stringify(result)).not.toContain('answerText');
+    expect(JSON.stringify(result)).not.toContain('submittedAnswerScaffold');
     expect(JSON.stringify(result)).not.toContain('support');
   });
 

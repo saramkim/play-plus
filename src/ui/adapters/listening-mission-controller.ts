@@ -294,6 +294,21 @@ export const createListeningMissionTransport = (
             segmentKeys
           ))
       ) {
+        try {
+          await createListeningSessionController({
+            clearInterval: dependencies.clearInterval,
+            identity: parsed.data.identity,
+            onFatal: () => undefined,
+            sendRuntimeMessage: dependencies.sendRuntimeMessage,
+            sendTabMessage: dependencies.sendTabMessage,
+            sessionId: parsed.data.sessionId,
+            setInterval: dependencies.setInterval,
+            subtitleRevision: parsed.data.subtitleRevision,
+            tabId,
+          }).dispose();
+        } catch {
+          // The content-side lease remains the fallback when best-effort cleanup rejects.
+        }
         return { status: 'stale' };
       }
       return parsed.data;

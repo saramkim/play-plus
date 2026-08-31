@@ -89,9 +89,95 @@ export const isInTimeRange = (start: number, end: number, time: number, precisio
 };
 
 export const stripTags = (line: string): string => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div>${line}</div>`, 'text/html');
-  return doc.body.textContent?.trim() ?? '';
+  return decodeHtmlEntities(removeMarkupTags(line)).trim();
+};
+
+const HTML_ENTITY_PATTERN = /&(?:#(?:[xX][\dA-Fa-f]+|\d+)|[A-Za-z][\dA-Za-z]*);?/gu;
+const HTML_TAG_NAME_CHARACTER_PATTERN = /[\dA-Za-z:-]/u;
+const HTML_TAG_NAME_START_PATTERN = /[A-Za-z]/u;
+
+const removeMarkupTags = (input: string): string => {
+  let plainText = '';
+  let textStart = 0;
+  let cursor = 0;
+
+  while (cursor < input.length) {
+    if (input[cursor] !== '<') {
+      cursor += 1;
+      continue;
+    }
+
+    const tagEnd = findMarkupTagEnd(input, cursor);
+    if (tagEnd === undefined) {
+      cursor += 1;
+      continue;
+    }
+
+    plainText += input.slice(textStart, cursor);
+    cursor = tagEnd;
+    textStart = tagEnd;
+  }
+
+  return plainText + input.slice(textStart);
+};
+
+const findMarkupTagEnd = (input: string, start: number): number | undefined => {
+  if (input.startsWith('<!--', start)) {
+    const commentEnd = input.indexOf('-->', start + 4);
+    return commentEnd === -1 ? undefined : commentEnd + 3;
+  }
+
+  let cursor = start + 1;
+  if (input[cursor] === '!' || input[cursor] === '?') {
+    return findClosingAngleBracket(input, cursor + 1);
+  }
+  if (input[cursor] === '/') cursor += 1;
+  if (!HTML_TAG_NAME_START_PATTERN.test(input[cursor] ?? '')) return undefined;
+
+  cursor += 1;
+  while (HTML_TAG_NAME_CHARACTER_PATTERN.test(input[cursor] ?? '')) cursor += 1;
+
+  const boundary = input[cursor];
+  if (
+    boundary !== '>' &&
+    boundary !== '/' &&
+    boundary !== '.' &&
+    !/\s/u.test(boundary ?? '')
+  ) {
+    return undefined;
+  }
+
+  return findClosingAngleBracket(input, cursor);
+};
+
+const findClosingAngleBracket = (input: string, start: number): number | undefined => {
+  let quote: '"' | "'" | undefined;
+
+  for (let cursor = start; cursor < input.length; cursor += 1) {
+    const character = input[cursor];
+    if (quote !== undefined) {
+      if (character === quote) quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === '>') return cursor + 1;
+  }
+
+  return undefined;
+};
+
+const decodeHtmlEntities = (input: string): string => {
+  let decoder: Range | undefined;
+
+  return input.replace(HTML_ENTITY_PATTERN, (entity) => {
+    // Only one alphanumeric entity token crosses this boundary. Decoding it in
+    // a detached fragment can only produce text and never parses raw cue markup.
+    decoder ??= document.createRange();
+    return decoder.createContextualFragment(entity).textContent ?? entity;
+  });
 };
 
 export const round = (value: number, decimals = 1) => Number(value.toFixed(decimals));
