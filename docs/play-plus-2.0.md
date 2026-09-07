@@ -296,6 +296,7 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 - 기본은 **방금 문장 듣기**다. 진입 시각 이하에서 전체 segment가 끝난 후보 중 종료가 가장 가까운 문장을 고른다. 같은 종료면 늦은 시작, 그다음 작은 source index를 우선한다.
 - 최근성 상한은 **10,000ms**다. 최대 segment 9,000ms와 짧은 반응 여유를 바탕으로 정한 초기값이며 학습 효과 근거가 아니다. 가까운 완료 문장이 없으면 시청을 계속하거나 이전 문장을 직접 고른다. 미래/진행 중/임의의 오래된 문장을 자동 선택하지 않는다.
 - 직접 고른 과거 문장은 기본보다 우선한다. picker에는 최초 진입 cutoff 이하에서 전체 구간이 끝난 문장만 보인다. 재생·공개·재선택으로 cutoff를 늘리지 않는다. 과거 시각을 실제 시청의 증거로 표현하지 않는다.
+- 최초 cutoff는 fresh catalog 요청을 content가 처리할 때 비동기 catalog 생성 전에 숫자로 고정한다. 복귀용 미디어 상태는 begin이 실제 재생 소유권을 획득하기 직전에 한 번 capture하며 이후 문장 선택으로 바꾸지 않는다.
 - content가 cutoff와 key를 재검증한다. ephemeral snapshot은 최근 과거 후보 최대 20,000개만 포함한다. 선택은 수동이며 자동 다음 문장/회차와 고정 3/10개 할당량은 없다.
 - 일반 전체 자막 탐색은 유지한다. 최초 capture한 재생 상태는 같은 연습 내 재선택으로 갱신하지 않는다.
 
@@ -709,8 +710,8 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - Mission catalog는 전체 effective interval이 fence 안에서 끝나는 segment만 포함한다. clip은 최초 cutoff와 fence 안에서만 재생하고 종료 시 최초 capture를 복원하되 이후 사용자 선택을 덮어쓰지 않는다.
 - native subtitle candidate는 exact `kind === "subtitles"`와 case-sensitive `L` 또는 `<L> sdh`만 사용한다. 각 body fetch·read·parse와 non-empty 결과를 독립적으로 settle한 뒤 language별 exactly-one regular를 우선하고, regular가 없을 때 exactly-one SDH만 같은 `native:<language>` fallback으로 선택한다. regular 또는 SDH duplicate는 order/default/label 추론 없이 그 언어를 unavailable로 만들며 regular duplicate에서 SDH로 내려가지 않는다.
 - native cue cache는 P0/SPA/advertisement/source identity를 acceptance 직전에 재검증한 complete temporary result로 한 번에 교체한다. physical category 또는 cue snapshot 변화는 subtitle-bound work와 `subtitleRevision`을 원자적으로 invalidate하고, identical accepted snapshot은 revision churn을 만들지 않는다. variant source, preference, progress namespace, Storage/schema 또는 새 network path는 없다.
-- progress는 exact namespace와 monotonic state만 저장하고 current catalog에서 denominator를 계산한다. record/reset failure는 기존 data를 보존하며 Retry와 truthful discard escape가 각각 `restore-start`/`complete-stay`로 lock, heartbeat, observer, rate와 suppression을 즉시 정리한다.
-- difficult segment는 처음에 선택되지 않고 explicit selected-only action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
+- 이전 progress의 namespace와 의미를 보존하고 새 연습은 기록하지 않는다. 이전 기록 reset failure는 데이터를 보존하며 재시도/취소할 수 있다. 연습 종료와 terminal cleanup은 restore-start 경로로 lock, heartbeat, observer와 suppression을 정리하고 새 사용자 선택을 우선한다.
+- 현재 문장 저장의 명시적 action만 content에서 canonical `LearningCard`로 변환한다. raw catalog/mission/typed-answer data는 background나 progress storage에 들어가지 않으며 repeated explicit save는 distinct card다.
 - 백업, 독립 분석·통계와 그 밖에 연기한 기능은 UI, 네트워크 동작과 권한에 노출되지 않는다.
 
 ### 9.4 Verification gate

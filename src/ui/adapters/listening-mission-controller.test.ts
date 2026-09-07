@@ -237,7 +237,7 @@ describe('Listening Mission UI transport', () => {
     await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
 
     expect(sendTabMessage).toHaveBeenCalledOnce();
-    expect(terminal).not.toHaveBeenCalled();
+    expect(terminal).toHaveBeenCalledOnce();
   });
 
   it.each(['stale', 'no-video', 'segment-unavailable'] as const)(
@@ -322,7 +322,26 @@ describe('Listening Mission UI transport', () => {
     await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
 
     expect(sendTabMessage).toHaveBeenCalledOnce();
+    expect(terminal).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a late terminal save after an end attempt and keeps retry recovery alive', async () => {
+    const terminal = vi.fn();
+    const save = deferred<{ success: true; data: { status: 'stale' } }>();
+    sendTabMessage.mockImplementation((_tabId, message) => {
+      if (message === 'saveListeningSegment') return save.promise;
+      if (message === 'endListeningSession') return Promise.resolve({ success: true, data: { status: 'error' } });
+      return Promise.resolve({ success: true, data: { status: 'alive' } });
+    });
+    const controller = createController(terminal);
+    controller.startHeartbeat();
+    const pending = controller.saveDifficultSegments([SEGMENT_A]);
+    await controller.endSession('restore-start');
+    save.resolve({ success: true, data: { status: 'stale' } });
+    await pending;
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS);
     expect(terminal).not.toHaveBeenCalled();
+    expect(sendTabMessage.mock.calls.filter(([, message]) => message === 'heartbeatListeningSession')).toHaveLength(1);
   });
 
   it('stops heartbeat on end and returns an idempotent exact-session status', async () => {

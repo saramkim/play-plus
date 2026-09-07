@@ -376,6 +376,7 @@ export const createListeningSessionController = ({
   let heartbeatGeneration = 0;
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
   let playRequestGeneration = 0;
+  let saveRequestGeneration = 0;
 
   const stopHeartbeat = () => {
     heartbeatGeneration += 1;
@@ -384,7 +385,7 @@ export const createListeningSessionController = ({
   };
 
   const reportFatal = (reason: ListeningSessionFatalReason) => {
-    if (disposed || fatalReported || endCompleted) return;
+    if (disposed || fatalReported || endCompleted || endRequest) return;
     fatalReported = true;
     stopHeartbeat();
     onFatal(reason);
@@ -419,6 +420,8 @@ export const createListeningSessionController = ({
 
   const resumeAfterAdvertisement = async () => {
     if (disposed || endCompleted || fatalReported) return 'stale' as const;
+    playRequestGeneration += 1;
+    saveRequestGeneration += 1;
     try {
       const response = await sendTabMessage(
         tabId,
@@ -460,7 +463,7 @@ export const createListeningSessionController = ({
         requestGeneration === playRequestGeneration &&
         isTerminalListeningStatus(parsed.data.status)
       ) {
-        stopHeartbeat();
+        reportFatal(parsed.data.status);
       }
       return parsed.data;
     } catch {
@@ -474,6 +477,7 @@ export const createListeningSessionController = ({
   ): Promise<EndSessionResult> => {
     if (endCompleted) return { status: 'already-ended' };
     playRequestGeneration += 1;
+    saveRequestGeneration += 1;
     stopHeartbeat();
     try {
       const response = await sendTabMessage(tabId, 'endListeningSession', { mode, sessionId });
@@ -510,6 +514,7 @@ export const createListeningSessionController = ({
   };
 
   const saveDifficultSegments = async (segmentKeys: string[]): Promise<DifficultSaveResult> => {
+    const requestGeneration = ++saveRequestGeneration;
     const saved: string[] = [];
     const retryableFailures: DifficultSaveResult['retryableFailures'] = [];
 
@@ -540,7 +545,7 @@ export const createListeningSessionController = ({
       } else if (status === 'busy' || status === 'error') {
         retryableFailures.push({ reason: status, segmentKey });
       } else {
-        stopHeartbeat();
+        if (requestGeneration === saveRequestGeneration) reportFatal(status);
         return {
           retryableFailures,
           saved,

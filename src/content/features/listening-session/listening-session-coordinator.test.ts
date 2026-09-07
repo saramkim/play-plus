@@ -93,7 +93,7 @@ describe('listening session coordinator', () => {
     });
   });
 
-  it('begins only an exact 1-10 consecutive immutable snapshot and captures media once', async () => {
+  it('begins only an exact ordered immutable past snapshot and captures media once', async () => {
     const harness = create({ paused: false, playbackRate: 1.5, currentTime: 8, support: true });
     const catalog = await getReadyCatalog(harness.coordinator);
     const keys = catalog.segments.map(({ segmentKey }) => segmentKey);
@@ -163,6 +163,65 @@ describe('listening session coordinator', () => {
       })
     ).toEqual({ status: 'busy' });
   });
+
+  it('freezes the fresh request time before asynchronous catalog construction', async () => {
+    const harness = create({ currentTime: 2.5, paused: false });
+    const pending = getReadyCatalog(harness.coordinator);
+    harness.media.setCurrentTime(7);
+    const catalog = await pending;
+    expect(catalog.currentTime).toBe(2.5);
+    expect(await beginRawFirst(harness.coordinator, catalog, 2)).toEqual({ status: 'segment-unavailable' });
+    const session = await beginFirst(harness.coordinator, catalog);
+    expect(session.snapshot.segments).toHaveLength(1);
+    const clip = harness.coordinator.play({ sessionId: session.sessionId, segmentKey: session.snapshot.segments[0].segmentKey, rate: 1 });
+    await flushPromises();
+    await harness.coordinator.end({ sessionId: session.sessionId, mode: 'restore-start' });
+    await clip;
+    expect(harness.media.getCurrentTime()).toBe(7);
+  });
+
+  it.each(['replay', 'exit', 'seek', 'advertisement'] as const)(
+    'ignores a pending clip play rejection after %s changes ownership',
+    async (change) => {
+      const harness = create({ currentTime: 8, paused: false, playbackRate: 1.5 });
+      const session = await beginFirst(harness.coordinator, await getReadyCatalog(harness.coordinator));
+      let rejectPlay!: (reason: Error) => void;
+      const started = deferred<void>();
+      harness.media.play.mockImplementationOnce(() => {
+        started.resolve();
+        return new Promise<void>((_resolve, reject) => { rejectPlay = reject; });
+      });
+      const params = { sessionId: session.sessionId, segmentKey: session.snapshot.segments[0].segmentKey, rate: 1 as const };
+      const oldClip = harness.coordinator.play(params);
+      await started.promise;
+      let newClip: ReturnType<typeof harness.coordinator.play> | undefined;
+      if (change === 'replay') {
+        newClip = harness.coordinator.play({ ...params, rate: 0.75 });
+        await vi.waitFor(() => expect(harness.media.getPaused()).toBe(false));
+      } else if (change === 'exit') {
+        await harness.coordinator.end({ sessionId: session.sessionId, mode: 'restore-start' });
+      } else if (change === 'seek') {
+        harness.media.setCurrentTime(25);
+        harness.media.video.dispatchEvent(new Event('seeking'));
+      } else {
+        harness.updateContext((context) => ({
+          ...context, video: null,
+          playbackContext: { ...context.playbackContext, lifecycle: 'advertisement', learningAvailable: false, missionResumeRequired: true },
+        }));
+        harness.coordinator.handlePlaybackContextChange();
+      }
+      const before = [harness.media.pause.mock.calls.length, harness.media.getCurrentTime(), harness.media.getPlaybackRate(), harness.media.getPaused()];
+      rejectPlay(new Error('obsolete playback rejected'));
+      await oldClip;
+      await flushPromises();
+      expect([harness.media.pause.mock.calls.length, harness.media.getCurrentTime(), harness.media.getPlaybackRate(), harness.media.getPaused()]).toEqual(before);
+      if (newClip) {
+        harness.media.setCurrentTime(2.35);
+        harness.media.video.dispatchEvent(new Event('timeupdate'));
+        await expect(newClip).resolves.toEqual({ status: 'played' });
+      }
+    }
+  );
 
   it('accepts more than ten past candidates but rejects partly finished and future segments', async () => {
     const harness = create({

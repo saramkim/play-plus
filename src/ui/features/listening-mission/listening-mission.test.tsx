@@ -165,6 +165,50 @@ describe('One-line listening practice', () => {
     expect(container.textContent).toContain('v2_listening_comparison_different');
   });
 
+  it('suppresses only the composition commit Enter and allows the next intentional Enter', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    const textarea = type('기차');
+    let frame!: () => void;
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => { frame = callback; return 1; });
+    act(() => {
+      textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    });
+    const commit = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    act(() => textarea.dispatchEvent(commit));
+    expect(commit.defaultPrevented).toBe(true);
+    expect(container.textContent).not.toContain('v2_listening_comparison_different');
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })));
+    act(() => frame());
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+  });
+
+  it.each(['frame', 'other-key', 'blur', 'hide'] as const)('clears a non-Enter composition completion on %s before intentional comparison', async (finish) => {
+    await render();
+    await click('v2_listening_type_optional');
+    let textarea = type('기차');
+    let frame!: () => void;
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => { frame = callback; return 1; });
+    act(() => {
+      textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    });
+    if (finish === 'frame') act(() => frame());
+    if (finish === 'other-key') act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })));
+    if (finish === 'blur') act(() => textarea.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
+    if (finish === 'hide') {
+      act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+      await click('v2_listening_hide_replay');
+      await click('v2_listening_type_optional');
+      textarea = container.querySelector('textarea')!;
+      expect(textarea.value).toBe('기차');
+    }
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+  });
+
   it('allows exit during playback without saving progress and ignores the late replay response', async () => {
     const replay = deferred<PlaySegmentResult>();
     vi.mocked(controller.playSegment).mockReturnValue(replay.promise);
@@ -222,6 +266,7 @@ describe('One-line listening practice', () => {
   it.each([320, 360, 390])('has one scroll owner and reachable actions at %ipx', async (width) => {
     container.style.width = width + 'px';
     await render();
+    expect(container.querySelector('section')?.classList.contains('whitespace-normal')).toBe(true);
     expect(container.querySelectorAll('[data-scroll-owner]')).toHaveLength(1);
     for (const node of Array.from(container.querySelectorAll('button'))) expect(node.className).toContain('min-h-11');
   });

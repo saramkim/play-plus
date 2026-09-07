@@ -18,6 +18,7 @@ const PICKER_PAGE_SIZE = 40;
 export interface ListeningMissionProps {
   boundContextKey?: string;
   initialSegmentKey?: string;
+  interrupted?: boolean;
   snapshot: ListeningMissionSnapshot;
   controller: ListeningMissionController;
   onExit: () => void;
@@ -25,7 +26,7 @@ export interface ListeningMissionProps {
 }
 
 export function ListeningMission({
-  boundContextKey, initialSegmentKey, snapshot, controller, onExit, onOwnershipChange,
+  boundContextKey, initialSegmentKey, interrupted = false, snapshot, controller, onExit, onOwnershipChange,
 }: ListeningMissionProps) {
   const [selectedKey, setSelectedKey] = useState(initialSegmentKey);
   const [picking, setPicking] = useState(!initialSegmentKey);
@@ -49,6 +50,9 @@ export function ListeningMission({
   const savingRef = useRef(false);
   const composing = useRef(false);
   const compositionEnded = useRef(false);
+  const compositionGeneration = useRef(0);
+  const interruptedRef = useRef(interrupted);
+  interruptedRef.current = interrupted;
   const heading = useRef<HTMLHeadingElement>(null);
   const exitButton = useRef<HTMLButtonElement>(null);
   const answer = useRef<HTMLTextAreaElement>(null);
@@ -68,6 +72,7 @@ export function ListeningMission({
   }, []);
 
   const play = useCallback(async (key: string, rate: 1 | 0.75, blind: boolean) => {
+    if (interruptedRef.current) return;
     const request = ++generation.current;
     const visibility = visibilityGeneration.current;
     setPlaying(true);
@@ -75,7 +80,7 @@ export function ListeningMission({
     setBlindCompleted(false);
     try {
       const result = await controller.playSegment(key, rate);
-      if (!mounted.current || request !== generation.current || endingRef.current) return;
+      if (!mounted.current || request !== generation.current || endingRef.current || interruptedRef.current) return;
       setPlaying(false);
       if (result.status === 'played') {
         if (blind && visibility === visibilityGeneration.current) {
@@ -84,14 +89,21 @@ export function ListeningMission({
         }
       } else if (result.status !== 'suspended') setPlayError(true);
     } catch {
-      if (mounted.current && request === generation.current && !endingRef.current) {
+      if (mounted.current && request === generation.current && !endingRef.current && !interruptedRef.current) {
         setPlaying(false);
         setPlayError(true);
       }
     }
   }, [controller]);
 
+  const resetComposition = () => {
+    compositionGeneration.current += 1;
+    composing.current = false;
+    compositionEnded.current = false;
+  };
+
   useEffect(() => {
+    resetComposition();
     visibilityGeneration.current += 1;
     setRevealed(false);
     setTyping(false);
@@ -105,6 +117,22 @@ export function ListeningMission({
     return () => { generation.current += 1; };
   }, [selectedKey, boundContextKey, play]);
 
+  useEffect(() => {
+    if (!interrupted) {
+      heading.current?.focus();
+      return;
+    }
+    generation.current += 1;
+    visibilityGeneration.current += 1;
+    resetComposition();
+    setPlaying(false);
+    setBlindCompleted(false);
+    setRevealed(false);
+    setTyping(false);
+    setFeedback(undefined);
+    setScaffold(undefined);
+  }, [interrupted]);
+
   const exposeText = () => {
     visibilityGeneration.current += 1;
     setBlindCompleted(false);
@@ -117,6 +145,7 @@ export function ListeningMission({
   };
   const hideAndReplay = (rate: 1 | 0.75 = 1) => {
     if (!selected || endingRef.current) return;
+    resetComposition();
     visibilityGeneration.current += 1;
     flushSync(() => {
       setRevealed(false);
@@ -179,7 +208,7 @@ export function ListeningMission({
   const past = [...snapshot.segments].reverse();
   const page = past.slice(pickerPage * PICKER_PAGE_SIZE, (pickerPage + 1) * PICKER_PAGE_SIZE);
   return (
-    <section className='flex h-full min-h-0 min-w-0 flex-col overflow-hidden' aria-labelledby='listening-practice-title'>
+    <section className='flex h-full min-h-0 min-w-0 flex-col overflow-hidden whitespace-normal' aria-labelledby='listening-practice-title'>
       <header className='flex shrink-0 flex-wrap items-center justify-between gap-2 border-b p-3'>
         <h1 id='listening-practice-title' ref={heading} tabIndex={-1} className='text-base font-semibold'>{t('v2_listening_landing_title')}</h1>
         <Button ref={exitButton} className={ACTION_CLASS} disabled={ending} variant={blindCompleted ? 'default' : 'outline'} onClick={() => void exit()}>
@@ -239,12 +268,26 @@ export function ListeningMission({
                 <textarea ref={answer} id={answerId} aria-describedby={answerId + '-help'} value={draft} disabled={ending} rows={3}
                   className='block min-h-24 w-full min-w-0 resize-y rounded-md border bg-background p-3 text-base'
                   onChange={(event) => setDraft(event.target.value)}
-                  onCompositionStart={() => { composing.current = true; }}
-                  onCompositionEnd={() => { composing.current = false; compositionEnded.current = true; }}
-                  onKeyUp={(event) => { if (event.key === 'Enter') compositionEnded.current = false; }}
+                  onCompositionStart={() => { resetComposition(); composing.current = true; }}
+                  onCompositionEnd={() => {
+                    composing.current = false;
+                    compositionEnded.current = true;
+                    const current = ++compositionGeneration.current;
+                    requestAnimationFrame(() => {
+                      if (current === compositionGeneration.current) compositionEnded.current = false;
+                    });
+                  }}
+                  onKeyUp={() => { compositionEnded.current = false; }}
+                  onBlur={resetComposition}
                   onKeyDown={(event) => {
+                    if (event.key !== 'Enter') compositionEnded.current = false;
                     if (event.key !== 'Enter' || event.shiftKey) return;
-                    if (event.nativeEvent.isComposing || composing.current || compositionEnded.current || event.nativeEvent.keyCode === 229) return;
+                    if (event.nativeEvent.isComposing || composing.current || event.nativeEvent.keyCode === 229) return;
+                    if (compositionEnded.current) {
+                      compositionEnded.current = false;
+                      event.preventDefault();
+                      return;
+                    }
                     event.preventDefault(); compare();
                   }} />
                 <Button className={ACTION_CLASS} disabled={ending || !draft.trim()} variant='outline' onClick={compare}>{t('v2_listening_compare')}</Button>

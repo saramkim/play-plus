@@ -919,7 +919,8 @@ describe('Listening Learning production flow', () => {
       await flush();
     });
     expect(container.textContent).toContain('v2_listening_advertisement_title');
-    expect(harness.missionProps?.boundContextKey).not.toBe(initialBoundContextKey);
+    expect(harness.missionProps?.boundContextKey).toBe(initialBoundContextKey);
+    expect(harness.missionProps?.interrupted).toBe(true);
     expect(
       container
         .querySelector("[data-testid='active-mission']")

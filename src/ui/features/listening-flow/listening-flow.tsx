@@ -866,7 +866,8 @@ export function ListeningLearningPage({
       <>
         <div className={interrupted ? 'hidden' : 'h-full min-h-0'} inert={interrupted}>
           <ListeningMission
-            boundContextKey={spokenLanguageContextKey}
+            boundContextKey={activeMission.sessionId}
+            interrupted={interrupted}
             initialSegmentKey={activeMission.initialSegmentKey}
             controller={activeMission.controller}
             snapshot={activeMission.snapshot}

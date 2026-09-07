@@ -174,6 +174,7 @@ interface ReadyListeningSessionContext extends ListeningSessionContext {
 interface PreparedCatalog {
   catalog: readonly ListeningPracticeSegment[];
   context: ReadyListeningSessionContext;
+  requestedCurrentTime: number;
 }
 
 type CatalogPreparationResult =
@@ -495,6 +496,7 @@ export const createListeningSessionCoordinator = (
         return { status: 'no-learning-track' };
       }
 
+      const requestedCurrentTime = context.video.currentTime;
       const catalog = freezeCatalog(
         await buildListeningSegmentCatalog({
           fenceEndMs: context.learningFenceEndMs,
@@ -519,6 +521,7 @@ export const createListeningSessionCoordinator = (
         prepared: {
           catalog,
           context: context as ReadyListeningSessionContext,
+          requestedCurrentTime,
         },
       };
     } catch {
@@ -539,7 +542,7 @@ export const createListeningSessionCoordinator = (
       subtitleRevision: context.subtitleRevision,
       videoId: context.identity.videoId,
       sourceKey: context.learning.sourceKey,
-      currentTime: context.video.currentTime,
+      currentTime: result.prepared.requestedCurrentTime,
       segmenterVersion: LISTENING_SEGMENTER_VERSION,
       supportAvailable: catalog.some(({ alignedSupport }) => alignedSupport !== undefined),
       segments: catalog.map(({ endMs, segmentKey, startMs }) => ({
@@ -1003,6 +1006,10 @@ export const createListeningSessionCoordinator = (
             scheduleFrame();
           },
           () => {
+            if (!isLive()) {
+              settle({ status: 'stale' });
+              return;
+            }
             media.pause();
             settle({ status: 'error' });
           }
