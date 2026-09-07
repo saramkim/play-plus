@@ -155,7 +155,7 @@ describe('actual listening flow, mission and adapter integration', () => {
     }
   );
 
-  it('preserves the same-line draft through ad attachments without hidden autoplay or completion', async () => {
+  it.each(['broadcast-first', 'response-first'])('preserves the ad draft with %s without early interaction, autoplay or completion', async (order) => {
     await start();
     await click('v2_listening_type_optional');
     type('my retained draft');
@@ -173,13 +173,71 @@ describe('actual listening flow, mission and adapter integration', () => {
     const resume = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
     send.mockReturnValueOnce(resume.promise);
     await click('v2_listening_advertisement_continue');
-    await act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false } }));
-    await act(async () => resume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision } }));
+    const broadcast = () => act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false } }));
+    const respond = () => act(async () => resume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision } }));
+    await (order === 'broadcast-first' ? broadcast() : respond());
+    expect(container.querySelector('[inert]')).not.toBeNull();
+    await (order === 'broadcast-first' ? respond() : broadcast());
+    expect(container.querySelector('[inert]')).toBeNull();
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount);
     await click('v2_listening_type_optional');
     expect(container.querySelector('textarea')?.value).toBe('my retained draft');
     await click('v2_listening_hide_replay');
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount + 1);
+  });
+
+  it.each(['attachment', 'response-identity', 'response-revision'])('rejects %s replacement during resume instead of adopting a new binding', async (axis) => {
+    await start();
+    await click('v2_listening_reveal');
+    const returned: PlaybackContextStatus = { ...PLAYBACK_CONTEXT, missionResumeRequired: true, videoRevision: 4, mediaAttachmentRevision: 4 };
+    await act(async () => useTabStore.setState({ playbackContext: returned }));
+    const resume = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
+    send.mockReturnValueOnce(resume.promise);
+    await click('v2_listening_advertisement_continue');
+    await act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false, videoRevision: axis === 'attachment' ? 5 : 4, mediaAttachmentRevision: axis === 'attachment' ? 5 : 4 } }));
+    if (axis === 'attachment') expect(container.querySelector('#listening-practice-title')).toBeNull();
+    await act(async () => resume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: axis === 'response-identity' ? 5 : 4 }, subtitleRevision: axis === 'response-revision' ? 4 : 3 } }));
+    expect(container.querySelector('#listening-practice-title')).toBeNull();
+    expect(container.textContent).not.toContain('fixture line');
+    expect(send).toHaveBeenCalledWith(17, 'endListeningSession', { mode: 'restore-start', sessionId: 'session-a' });
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+  });
+
+  it.each(['before-next-request', 'during-next-request'])('discards an old resume token and ignores its late response %s', async (order) => {
+    await start();
+    const returned: PlaybackContextStatus = { ...PLAYBACK_CONTEXT, missionResumeRequired: true, videoRevision: 4, mediaAttachmentRevision: 4 };
+    await act(async () => useTabStore.setState({ playbackContext: returned }));
+    const oldResume = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
+    send.mockReturnValueOnce(oldResume.promise);
+    await click('v2_listening_advertisement_continue');
+    await act(async () => useTabStore.setState({ playbackContext: { ...returned, contentEpoch: 2 } }));
+    expect(container.querySelector('#listening-practice-title')).toBeNull();
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+
+    const respondLate = () => act(async () => oldResume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: 3 } }));
+    if (order === 'before-next-request') await respondLate();
+    await act(async () => useTabStore.setState({ playbackContext: PLAYBACK_CONTEXT }));
+    const original = send.getMockImplementation()!;
+    send.mockImplementation((tab, message, params) => message === 'beginListeningSession'
+      ? Promise.resolve({ success: true, data: { ...READY_SESSION, sessionId: 'session-b' } })
+      : original(tab, message, params));
+    await click('v2_retry');
+    await start();
+    await act(async () => useTabStore.setState({ playbackContext: returned }));
+    expect(button('v2_listening_advertisement_continue').disabled).toBe(false);
+    const nextResume = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
+    send.mockReturnValueOnce(nextResume.promise);
+    await click('v2_listening_advertisement_continue');
+    if (order === 'during-next-request') await respondLate();
+    expect(button('v2_listening_advertisement_continue').disabled).toBe(true);
+    await act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false } }));
+    expect(container.querySelector('[inert]')).not.toBeNull();
+    await act(async () => nextResume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: 3 } }));
+    expect(container.querySelector('[inert]')).toBeNull();
+    await act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false, videoRevision: 5, mediaAttachmentRevision: 5 } }));
+    expect(container.querySelector('#listening-practice-title')).toBeNull();
+    expect(send).toHaveBeenCalledWith(17, 'endListeningSession', { mode: 'restore-start', sessionId: 'session-b' });
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 });
 

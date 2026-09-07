@@ -66,11 +66,14 @@ export type ListeningRuntimeMessageSender = <M extends RuntimeListeningMessage>(
 ) => Promise<TransportResponse<MessageResult<M>>>;
 
 export type ListeningSessionFatalReason = ListeningTerminalReason | 'error';
+export type ListeningResumeResult =
+  | { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number }
+  | ListeningSessionFatalReason;
 
 export interface ListeningSessionController extends ListeningMissionController {
   dispose: () => Promise<void>;
   sessionId: string;
-  resumeAfterAdvertisement: () => Promise<'resumed' | ListeningSessionFatalReason | 'error'>;
+  resumeAfterAdvertisement: () => Promise<ListeningResumeResult>;
   startHeartbeat: () => void;
   stopHeartbeat: () => void;
 }
@@ -437,9 +440,10 @@ export const createListeningSessionController = ({
         : undefined;
       if (!parsed?.success) return 'error' as const;
       if (parsed.data.status !== 'resumed') return parsed.data.status;
+      if (disposed || endCompleted || endRequest || fatalReported) return 'stale' as const;
       currentIdentity = parsed.data.identity;
       currentSubtitleRevision = parsed.data.subtitleRevision;
-      return 'resumed' as const;
+      return parsed.data;
     } catch {
       return 'error' as const;
     }

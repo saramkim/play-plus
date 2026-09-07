@@ -1021,7 +1021,7 @@ const createController = (): ListeningSessionController => ({
   dispose: vi.fn().mockResolvedValue(undefined),
   endSession: vi.fn().mockResolvedValue({ status: 'ended' }),
   playSegment: vi.fn().mockResolvedValue({ status: 'played' }),
-  resumeAfterAdvertisement: vi.fn().mockResolvedValue('resumed'),
+  resumeAfterAdvertisement: vi.fn().mockResolvedValue({ status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision }),
   saveDifficultSegments: vi.fn().mockResolvedValue({ retryableFailures: [], saved: [] }),
   sessionId: 'session-a',
   startHeartbeat: vi.fn(),

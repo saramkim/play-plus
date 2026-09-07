@@ -9,7 +9,7 @@ import {
 import type { ListeningProgressV1 } from '@storage/v2/type';
 import { LANGUAGES, type Language } from '@utils/constants';
 import { t } from '@utils/i18n';
-import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { BeginListeningSessionResponse, ContentVideoIdentity } from '@utils/message/type';
 import type { PlaybackContextStatus } from '@utils/playback-context';
 import { HeadphonesIcon, LoaderCircleIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 
@@ -77,6 +77,12 @@ type FatalTeardownState = Readonly<{
   sessionId: string;
 }>;
 
+type InterruptionRequest = Readonly<{
+  context: PlaybackContextStatus;
+  kind: 'resume' | 'exit';
+  mission: ActiveMission;
+}>;
+
 export interface ListeningLearningPageProps {
   progressRevision: number;
   settingsStore: LearningSettingsStore;
@@ -116,7 +122,9 @@ export function ListeningLearningPage({
   const [reloadRevision, setReloadRevision] = useState(0);
   const [resumeError, setResumeError] = useState(false);
   const [interruptedExitError, setInterruptedExitError] = useState(false);
-  const [resumePending, setResumePending] = useState(false);
+  const [interruptionRequest, setInterruptionRequest] = useState<InterruptionRequest>();
+  const interruptionRequestRef = useRef<InterruptionRequest | undefined>(undefined);
+  const resumePending = interruptionRequest !== undefined && interruptionRequest.mission === activeMission;
   const [resetError, setResetError] = useState(false);
   const [resetPending, setResetPending] = useState(false);
   const [resetRequest, setResetRequest] = useState<ResetRequest>();
@@ -210,6 +218,10 @@ export function ListeningLearningPage({
   }, []);
 
   const clearActiveMission = useCallback(() => {
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
+    setResumeError(false);
+    setInterruptedExitError(false);
     activeMissionRef.current = undefined;
     ownershipRef.current = false;
     teardownRef.current = false;
@@ -256,6 +268,8 @@ export function ListeningLearningPage({
     if (!current || current.sessionId !== sessionId || teardownRef.current) return;
     fatalHandlerReasonRef.current = reason;
     teardownRef.current = true;
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
     current.controller.stopHeartbeat();
     setActiveMission(undefined);
     setFatalTeardown({ error: false, pending: true, reason, sessionId });
@@ -663,10 +677,9 @@ export function ListeningLearningPage({
     activeMission.tabId === activeTabId && connectionStatus === 'connected' &&
     activeMission.snapshot.learningLanguage === learningLanguage &&
     isFrozenMissionContextCurrent(activeMission.context, playbackContext) &&
-    (playbackContext?.missionResumeRequired || resumePending || (
-      activeMission.context.videoRevision === playbackContext?.videoRevision &&
-      activeMission.context.mediaAttachmentRevision === playbackContext?.mediaAttachmentRevision
-    ))
+    (resumePending && interruptionRequest.kind === 'resume'
+      ? isSameMissionAttachment(interruptionRequest.context, playbackContext)
+      : playbackContext?.missionResumeRequired || isSameMissionAttachment(activeMission.context, playbackContext))
   );
 
   useEffect(() => {
@@ -694,6 +707,7 @@ export function ListeningLearningPage({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      interruptionRequestRef.current = undefined;
       loadGenerationRef.current += 1;
       beginGenerationRef.current += 1;
       startSelectionGenerationRef.current += 1;
@@ -727,32 +741,44 @@ export function ListeningLearningPage({
 
   const exitInterruptedMission = async () => {
     const current = activeMissionRef.current;
-    if (!current || resumePending) return;
-    setResumePending(true);
+    const context = playbackContextRef.current;
+    if (!current || !context || interruptionRequestRef.current) return;
+    const request: InterruptionRequest = { context, kind: 'exit', mission: current };
+    interruptionRequestRef.current = request;
+    setInterruptionRequest(request);
     setInterruptedExitError(false);
     try {
       const result = await current.controller.endSession('restore-start');
-      if (!mountedRef.current || activeMissionRef.current !== current) return;
+      if (!mountedRef.current || activeMissionRef.current !== current || interruptionRequestRef.current !== request) return;
       if (result.status === 'error') setInterruptedExitError(true);
       else returnToIdle();
     } catch {
-      if (mountedRef.current) setInterruptedExitError(true);
+      if (mountedRef.current && activeMissionRef.current === current && interruptionRequestRef.current === request) setInterruptedExitError(true);
     } finally {
-      if (mountedRef.current) setResumePending(false);
+      if (interruptionRequestRef.current === request) {
+        interruptionRequestRef.current = undefined;
+        if (mountedRef.current) setInterruptionRequest(undefined);
+      }
     }
   };
 
   const resumeAfterAdvertisement = async () => {
     const current = activeMissionRef.current;
-    if (!current || resumePending) return;
+    const requestedContext = playbackContextRef.current;
+    if (!current || !requestedContext || interruptionRequestRef.current) return;
+    const request: InterruptionRequest = { context: requestedContext, kind: 'resume', mission: current };
+    interruptionRequestRef.current = request;
+    setInterruptionRequest(request);
     setResumeError(false);
-    setResumePending(true);
     const result = await current.controller.resumeAfterAdvertisement();
-    if (!mountedRef.current || activeMissionRef.current !== current) return;
-    setResumePending(false);
-    if (result === 'resumed') {
+    if (!mountedRef.current || activeMissionRef.current !== current || interruptionRequestRef.current !== request) return;
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
+    if (typeof result === 'object') {
       const context = playbackContextRef.current;
-      if (!context || !isFrozenMissionContextCurrent(current.context, context)) {
+      if (!context || !isFrozenMissionContextCurrent(current.context, context) ||
+        !isSameMissionAttachment(requestedContext, context) ||
+        !isResumeIdentityCurrent(result.identity, result.subtitleRevision, context)) {
         fatalHandlerRef.current?.(current.sessionId, 'stale');
         return;
       }
@@ -883,10 +909,10 @@ export function ListeningLearningPage({
     if (!activeContextMatches) {
       return <FatalTeardown state={{ error: false, pending: true, reason: 'stale', sessionId: activeMission.sessionId }} onRetry={() => undefined} />;
     }
-    const interrupted = playbackContext?.missionResumeRequired === true;
+    const interrupted = playbackContext?.missionResumeRequired === true || resumePending;
     const canResume =
       interrupted &&
-      playbackContext.lifecycle === 'content' &&
+      playbackContext?.lifecycle === 'content' &&
       playbackContext.learningAvailable;
     return (
       <>
@@ -1327,6 +1353,19 @@ const isFrozenMissionContextCurrent = (left: PlaybackContextStatus, right: Playb
   left.subtitleIdentity.subtitleRevision === right.subtitleIdentity.subtitleRevision &&
   (left.routeKind === right.routeKind || (right.missionResumeRequired && right.lifecycle !== 'content' && right.routeKind === 'unknown')) &&
   (right.learningAvailable || right.missionResumeRequired);
+
+const isSameMissionAttachment = (left: PlaybackContextStatus, right: PlaybackContextStatus | null) =>
+  right !== null && left.videoRevision === right.videoRevision &&
+  left.mediaAttachmentRevision === right.mediaAttachmentRevision;
+
+const isResumeIdentityCurrent = (identity: ContentVideoIdentity, subtitleRevision: number, context: PlaybackContextStatus) =>
+  identity.contentEpoch === context.contentEpoch &&
+  identity.contentInstanceId === context.contentInstanceId &&
+  identity.routeChangedAt === context.routeChangedAt &&
+  identity.videoId === context.videoId &&
+  identity.videoRevision === context.videoRevision &&
+  identity.videoRevision === context.mediaAttachmentRevision &&
+  subtitleRevision === context.subtitleIdentity.subtitleRevision;
 
 const createSpokenLanguageContextKey = (
   activeTabId: number | undefined,

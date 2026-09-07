@@ -41,6 +41,30 @@ describe('Listening Mission UI transport', () => {
     });
   });
 
+  it('returns the validated resume binding and uses it for subsequent heartbeat', async () => {
+    const resumed = { status: 'resumed', identity: { ...catalog.identity, videoRevision: 4 }, subtitleRevision: 3 } as const;
+    sendTabMessage.mockResolvedValueOnce({ success: true, data: resumed });
+    const controller = createController();
+    await expect(controller.resumeAfterAdvertisement()).resolves.toEqual(resumed);
+    sendTabMessage.mockResolvedValueOnce({ success: true, data: { status: 'alive' } });
+    controller.startHeartbeat();
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS);
+    expect(sendTabMessage).toHaveBeenLastCalledWith(17, 'heartbeatListeningSession', {
+      expectedIdentity: resumed.identity, expectedSubtitleRevision: resumed.subtitleRevision, sessionId: 'session-a',
+    });
+    controller.stopHeartbeat();
+  });
+
+  it('does not accept a delayed resume success after ending its session', async () => {
+    const pending = deferred<{ success: true; data: { status: 'resumed'; identity: typeof catalog.identity; subtitleRevision: number } }>();
+    sendTabMessage.mockReturnValueOnce(pending.promise).mockResolvedValueOnce({ success: true, data: { status: 'ended' } });
+    const controller = createController();
+    const resume = controller.resumeAfterAdvertisement();
+    await controller.endSession('restore-start');
+    pending.resolve({ success: true, data: { status: 'resumed', identity: catalog.identity, subtitleRevision: 3 } });
+    await expect(resume).resolves.toBe('stale');
+  });
+
   it('accepts signed delayed intervals while rejecting reversed and nonfinite timing', async () => {
     sendTabMessage
       .mockResolvedValueOnce({ success: true, data: negativeCatalog })
