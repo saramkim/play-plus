@@ -102,6 +102,7 @@ describe('listening session coordinator', () => {
       await harness.coordinator.begin({
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys: [keys[1], keys[0]],
       })
     ).toEqual({ status: 'segment-unavailable' });
@@ -109,6 +110,7 @@ describe('listening session coordinator', () => {
       await harness.coordinator.begin({
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys: [keys[0], keys[0]],
       })
     ).toEqual({ status: 'segment-unavailable' });
@@ -116,6 +118,7 @@ describe('listening session coordinator', () => {
       await harness.coordinator.begin({
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys: Array.from({ length: 11 }, () => keys[0]),
       })
     ).toEqual({ status: 'segment-unavailable' });
@@ -123,6 +126,7 @@ describe('listening session coordinator', () => {
     const begun = await harness.coordinator.begin({
       expectedIdentity: catalog.identity,
       expectedSubtitleRevision: catalog.subtitleRevision,
+      entryCutoffMs: catalog.currentTime * 1000,
       segmentKeys: keys.slice(0, 2),
     });
     expect(begun.status).toBe('ready');
@@ -154,32 +158,95 @@ describe('listening session coordinator', () => {
       await harness.coordinator.begin({
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys: [keys[2]],
       })
     ).toEqual({ status: 'busy' });
   });
 
-  it('accepts exactly ten consecutive segments and rejects eleven', async () => {
+  it('accepts more than ten past candidates but rejects partly finished and future segments', async () => {
     const harness = create({
-      cues: Array.from({ length: 11 }, (_, index) => ({
-        start: index * 2 + 1,
-        end: index * 2 + 2,
-        text: `Line ${index + 1}.`,
+      currentTime: 22,
+      cues: Array.from({ length: 12 }, (_, index) => ({
+        start: index * 2 + 1, end: index * 2 + 2, text: 'Line ' + (index + 1) + '.',
       })),
     });
     const catalog = await getReadyCatalog(harness.coordinator);
-    const ten = await beginRawFirst(harness.coordinator, catalog, 10);
-    expect(ten.status).toBe('ready');
-    if (ten.status !== 'ready') throw new Error('Expected ten segments');
-    expect(ten.snapshot.segments).toHaveLength(10);
-    await harness.coordinator.end({
-      sessionId: ten.sessionId,
-      mode: 'complete-stay',
-    });
+    const ready = await beginRawFirst(harness.coordinator, catalog, 11);
+    expect(ready.status).toBe('ready');
+    if (ready.status !== 'ready') throw new Error('Expected past snapshot');
+    expect(ready.snapshot.segments).toHaveLength(11);
+    await harness.coordinator.end({ sessionId: ready.sessionId, mode: 'restore-start' });
+    expect(await beginRawFirst(harness.coordinator, catalog, 12)).toEqual({ status: 'segment-unavailable' });
+    expect(await harness.coordinator.begin({
+      expectedIdentity: catalog.identity, expectedSubtitleRevision: catalog.subtitleRevision,
+      entryCutoffMs: 21_500, segmentKeys: [catalog.segments[10].segmentKey],
+    })).toEqual({ status: 'segment-unavailable' });
+    expect(await harness.coordinator.begin({
+      expectedIdentity: catalog.identity, expectedSubtitleRevision: catalog.subtitleRevision,
+      entryCutoffMs: 23_000, segmentKeys: [catalog.segments[0].segmentKey],
+    })).toEqual({ status: 'stale' });
+  });
 
-    expect(await beginRawFirst(harness.coordinator, catalog, 11)).toEqual({
-      status: 'segment-unavailable',
+  it.each(['position', 'rate', 'paused'] as const)('yields ownership to a newer user %s choice without restoring an old position', async (field) => {
+    const harness = create({ currentTime: 8, paused: false, playbackRate: 1.5 });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const ready = await beginRawFirst(harness.coordinator, catalog, 1);
+    if (ready.status !== 'ready') throw new Error('Expected session');
+    const result = harness.coordinator.play({
+      sessionId: ready.sessionId, segmentKey: catalog.segments[0].segmentKey, rate: 0.75,
     });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    const video = harness.media.video;
+    if (field === 'position') {
+      harness.media.setCurrentTime(44);
+      video.dispatchEvent(new Event('seeking'));
+    } else if (field === 'rate') {
+      video.playbackRate = 2;
+      video.dispatchEvent(new Event('ratechange'));
+    } else {
+      video.pause();
+    }
+    expect(await result).not.toEqual({ status: 'played' });
+    expect(harness.getMissionActive()).toBe(false);
+    await harness.coordinator.end({ sessionId: ready.sessionId, mode: 'restore-start' });
+    if (field === 'position') expect(video.currentTime).toBe(44);
+    if (field === 'rate') expect(video.playbackRate).toBe(2);
+    if (field === 'paused') expect(video.paused).toBe(true);
+    expect(video.currentTime).not.toBe(8);
+  });
+
+  it('does not claim a complete replay when the media ends before the segment ends', async () => {
+    const harness = create();
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const ready = await beginRawFirst(harness.coordinator, catalog, 1);
+    if (ready.status !== 'ready') throw new Error('Expected session');
+    const result = harness.coordinator.play({ sessionId: ready.sessionId, segmentKey: catalog.segments[0].segmentKey, rate: 1 });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    harness.media.setCurrentTime(1.2);
+    harness.media.video.dispatchEvent(new Event('ended'));
+    expect(await result).toEqual({ status: 'error' });
+  });
+
+  it('preserves a user seek during a delayed restoration failure and its retry', async () => {
+    const harness = create({ currentTime: 8, paused: false });
+    const catalog = await getReadyCatalog(harness.coordinator);
+    const ready = await beginFirst(harness.coordinator, catalog);
+    let rejectPlay!: (reason: Error) => void;
+    harness.media.play.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => { rejectPlay = reject; }));
+    const ending = harness.coordinator.end({ sessionId: ready.sessionId, mode: 'restore-start' });
+    await flushPromises();
+    harness.media.setCurrentTime(44);
+    harness.media.video.dispatchEvent(new Event('seeking'));
+    rejectPlay(new Error('late media rejection'));
+    await ending;
+    await harness.coordinator.end({ sessionId: ready.sessionId, mode: 'restore-start' });
+    expect(harness.media.getCurrentTime()).toBe(44);
+    expect(harness.getMissionActive()).toBe(false);
   });
 
   it('serializes concurrent begin requests so exactly one session owns media', async () => {
@@ -203,6 +270,7 @@ describe('listening session coordinator', () => {
       await harness.coordinator.begin({
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys: [key],
         extra: true,
       } as never)
@@ -1520,7 +1588,7 @@ const createDefaultCues = (): V2SubtitleCue[] => [
 const createControllableVideo = (options: HarnessOptions = {}) => {
   const video = document.createElement('video');
   document.body.append(video);
-  let currentTime = options.currentTime ?? 5;
+  let currentTime = options.currentTime ?? 8;
   let paused = options.paused ?? true;
   let playbackRate = options.playbackRate ?? 1;
   let readyState = options.readyState ?? 1;
@@ -1608,6 +1676,7 @@ const beginRawFirst = (
   coordinator.begin({
     expectedIdentity: catalog.identity,
     expectedSubtitleRevision: catalog.subtitleRevision,
+    entryCutoffMs: catalog.currentTime * 1000,
     segmentKeys: catalog.segments.slice(0, count).map(({ segmentKey }) => segmentKey),
   });
 

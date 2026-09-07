@@ -1,4 +1,3 @@
-import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
 import { listeningSegmentKeySchema } from '@storage/v2/schema';
 import type { BeginListeningSessionResponse } from '@utils/message/type';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,6 +36,7 @@ describe('Listening Mission UI transport', () => {
     expect(sendTabMessage).toHaveBeenNthCalledWith(2, 17, 'beginListeningSession', {
       expectedIdentity: catalog.identity,
       expectedSubtitleRevision: 3,
+      entryCutoffMs: catalog.currentTime * 1000,
       segmentKeys: [SEGMENT_A],
     });
   });
@@ -147,7 +147,6 @@ describe('Listening Mission UI transport', () => {
     await expect(transport.beginSession(catalog, [SEGMENT_A])).resolves.toEqual({ status: 'error' });
     const controller = transport.createSessionController(readySession, vi.fn());
     await expect(controller.playSegment(SEGMENT_A, 1)).resolves.toEqual({ status: 'error' });
-    await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'error' });
   });
 
   it('awaits exact stale-ready cleanup before returning stale', async () => {
@@ -168,6 +167,7 @@ describe('Listening Mission UI transport', () => {
     expect(sendTabMessage).toHaveBeenNthCalledWith(1, 17, 'beginListeningSession', {
       expectedIdentity: catalog.identity,
       expectedSubtitleRevision: catalog.subtitleRevision,
+      entryCutoffMs: catalog.currentTime * 1000,
       segmentKeys: [SEGMENT_A],
     });
     expect(sendTabMessage).toHaveBeenNthCalledWith(2, 17, 'endListeningSession', {
@@ -198,18 +198,12 @@ describe('Listening Mission UI transport', () => {
     });
   });
 
-  it('does not resend a successful progress commit and retries a rejected one without text', async () => {
-    sendRuntimeMessage
-      .mockResolvedValueOnce({ success: false, message: 'write failed' })
-      .mockResolvedValueOnce({ success: true, data: EMPTY_PROGRESS });
+  it('has no progress-writing capability during active practice', async () => {
     const controller = createController();
-
-    await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'error' });
-    await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'saved' });
-    await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'saved' });
-
-    expect(sendRuntimeMessage).toHaveBeenCalledTimes(2);
-    expect(JSON.stringify(sendRuntimeMessage.mock.calls)).not.toMatch(/answer|draft|text/i);
+    expect(controller).not.toHaveProperty('commitProgress');
+    sendTabMessage.mockResolvedValueOnce({ success: true, data: { status: 'played' } });
+    await controller.playSegment(SEGMENT_A, 1);
+    expect(sendRuntimeMessage).not.toHaveBeenCalled();
   });
 
   it('heartbeats every five seconds, ignores a late beat after stop, and reports terminal state once', async () => {
@@ -232,7 +226,7 @@ describe('Listening Mission UI transport', () => {
     expect(terminal).toHaveBeenCalledWith('no-video');
   });
 
-  it('stops heartbeat after terminal play while completed progress remains saveable', async () => {
+  it('stops heartbeat after terminal play without writing progress', async () => {
     const terminal = vi.fn();
     sendTabMessage.mockResolvedValueOnce({ success: true, data: { status: 'stale' } });
     sendRuntimeMessage.mockResolvedValueOnce({ success: true, data: EMPTY_PROGRESS });
@@ -240,7 +234,6 @@ describe('Listening Mission UI transport', () => {
     controller.startHeartbeat();
 
     await expect(controller.playSegment(SEGMENT_A, 1)).resolves.toEqual({ status: 'stale' });
-    await expect(controller.commitProgress(PROGRESS_RESULT)).resolves.toEqual({ status: 'saved' });
     await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 3);
 
     expect(sendTabMessage).toHaveBeenCalledOnce();
@@ -497,7 +490,7 @@ const SEGMENT_C = listeningSegmentKeySchema.parse(`segment-v1-${'c'.repeat(64)}`
 const SEGMENT_D = listeningSegmentKeySchema.parse(`segment-v1-${'d'.repeat(64)}`);
 
 const catalog = {
-  currentTime: 1,
+  currentTime: 2,
   identity: {
     contentEpoch: 1,
     contentInstanceId: 'content-a',
@@ -563,15 +556,6 @@ const negativeReadySession = {
     segments: [{ ...readySession.snapshot.segments[0], endMs: -200, startMs: -1_000 }],
   },
 } satisfies Extract<BeginListeningSessionResponse, { status: 'ready' }>;
-
-const PROGRESS_RESULT: ListeningMissionResult = {
-  bestCombo: 1,
-  items: [{ achievedState: 'cleared', segmentKey: SEGMENT_A, submittedAttemptIncrement: 1 }],
-  learningSourceKey: 'native:en',
-  practicedAt: '2026-08-09T12:00:00+00:00',
-  segmenterVersion: 1,
-  videoId: '123e4567-e89b-12d3-a456-426614174020',
-};
 
 const EMPTY_PROGRESS = { version: 1, videos: {} } as const;
 

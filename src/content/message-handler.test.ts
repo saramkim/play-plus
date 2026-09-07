@@ -1361,6 +1361,7 @@ describe('canonical content messages', () => {
     const beginParams: MessageSchema['beginListeningSession']['params'] = {
       expectedIdentity: identity,
       expectedSubtitleRevision: 3,
+      entryCutoffMs: 8000,
       segmentKeys: [segmentKey],
     };
     const heartbeatParams: MessageSchema['heartbeatListeningSession']['params'] = {

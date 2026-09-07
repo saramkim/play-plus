@@ -1,6 +1,8 @@
 import { normalizeListeningAnswer } from './answer';
 import { splitListeningGraphemes } from './grapheme';
-import { LISTENING_HINT_MASK } from './hint';
+
+
+export const LISTENING_HINT_MASK = '＿';
 
 export type SubmittedAnswerScaffoldPart =
   | Readonly<{ graphemeCount: number; kind: 'blank' }>

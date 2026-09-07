@@ -23,6 +23,23 @@
 
 Coupang authentication, DRM/player accessibility와 platform subtitle acquisition은 extension 설치·side-panel 동작과 별도 gate다. authentication이 필요하면 올바른 login page를 열고 최소한의 one-time human authentication만 요청한 뒤 persistent MCP profile을 재사용한다. 인증·DRM 한계를 product-code 변경으로 우회하지 않는다. 이 shared profile은 별도 준비 없이는 clean fresh-install profile이나 v1.11.0 upgrade profile의 증거가 아니며, 해당 row는 실제 전용 profile에서 수행하기 전까지 `NOT RUN`으로 남긴다.
 
+## One-line listening revision (#102, 2026-09-07)
+
+The approved one-line practice supersedes the scored Mission UI. Older evidence below remains historical and is not proof of this revision.
+
+| Area | Required observation | Current result |
+| --- | --- | --- |
+| Recent entry and past picker | Fresh position chooses only a whole segment ended within 10 seconds; manual choice is bounded by the first entry cutoff, including overlapping/grouped cues; no future text or automatic next line | NOT RUN |
+| Reveal and hidden replay | Immediate answer/support reveal; hide removes answer, support, draft and scaffold before one replay; mid-replay reveal, seek, interruption or error never earns a hidden-replay completion message | NOT RUN |
+| Optional typing and accessibility | Original draft preserved on same line, replaced on selection; exact subtitle comparison and fixed matched-parts; Korean IME, keyboard focus and one scroll owner at attainable narrow widths | NOT RUN |
+| Return and ownership | Exit during playback/save/ad; restore first captured position/rate/paused state; newer user seek/rate/play state and new content/attachment win; retry failed restoration | NOT RUN |
+| Data and privacy | No new listeningProgress write/history; old records remain readable/resettable; only explicit current-line save writes an existing LearningCard; no draft/scaffold/raw text in network/storage/logs | NOT RUN |
+| Runtime regression | Source/revision/epoch invalidation, ad explicit resume, episode fence, heartbeat/lease and normal four-destination viewing | NOT RUN |
+
+Automated checks on the current implementation (2026-09-07): `yarn type-check`, `yarn lint --ignore-pattern '.worktrees/**'`, `yarn test:run --exclude '**/.worktrees/**'` (102 files, 1,179 tests), `yarn build` and `git diff --check` passed. Only unrelated nested worktrees were excluded. Build emitted three existing webpack size/performance warnings. These checks do not substitute for the actual Chrome rows below.
+
+Environment at preparation: KR gateway preflight passed with unchanged host routing. Chrome MCP is unable to open its dedicated profile because a completed prototype task still owns its browser. Automatic approval review rejected force-closing that process because another task's transient browser state could be lost. User approval to release the browser is pending; actual Chrome rows above have not run.
+
 ## Test record
 
 | Field | Value |
@@ -426,7 +443,9 @@ Use a controlled test build or debugger hook that fails exactly one boundary. Re
 | Save pending/error | Inject write delay/failure | Duplicate saves are blocked; failure creates no partial card and leaves a truthful recoverable state | NOT RUN | |
 | Shortcut enforcement | Both routes | Disabled shortcuts, reserved keys and conflicts do not execute actions | NOT RUN | |
 
-## Listening Mission side-panel integration (#65 / #66)
+## Historical scored Listening Mission evidence (#65 / #66)
+
+다음 항목은 이전 점수형 미션의 역사적 실행 기록이며 Issue #102의 한 문장 듣기 동작이나 검증 결과로 승계하지 않는다.
 
 이번 #66 candidate에서 actual signed-in `/en/play/<video-id>/episode`, 360px Side Panel, registered source와 bounded active Mission subset은 위 certification record에 `PASS`로 기록했다. 그러나 아래 compound 행은 명시된 fixture·failure·width·source 조건을 모두 실행하기 전까지 `NOT RUN`으로 유지한다.
 

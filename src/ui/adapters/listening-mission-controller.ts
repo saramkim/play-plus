@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
-import {
-  listeningMissionResultSchema,
-} from '@storage/v2/listening-progress-storage';
 import {
   languageSchema,
   listeningProgressSchema,
@@ -42,8 +38,7 @@ type DirectListeningMessage =
 type RuntimeListeningMessage =
   | 'clearAllListeningProgress'
   | 'clearListeningVideoProgress'
-  | 'getListeningProgress'
-  | 'recordListeningMissionResult';
+  | 'getListeningProgress';
 
 type MessageParams<M extends keyof MessageSchema> = MessageSchema[M] extends {
   params: infer Params;
@@ -187,7 +182,7 @@ const listeningSessionSnapshotSchema = z
   .object({
     learningLanguage: languageSchema,
     segmenterVersion: z.literal(1),
-    segments: z.array(sessionSnapshotSegmentSchema).min(1).max(10),
+    segments: z.array(sessionSnapshotSegmentSchema).min(1).max(20_000),
     sourceKey: listeningSourceKeySchema,
     videoId: z.string().min(1),
   })
@@ -277,6 +272,7 @@ export const createListeningMissionTransport = (
       const response = await dependencies.sendTabMessage(tabId, 'beginListeningSession', {
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys,
       });
       if (!response.success) return { status: 'error' };
@@ -289,6 +285,7 @@ export const createListeningMissionTransport = (
           parsed.data.snapshot.videoId !== catalog.videoId ||
           parsed.data.snapshot.sourceKey !== catalog.sourceKey ||
           parsed.data.snapshot.segmenterVersion !== catalog.segmenterVersion ||
+          parsed.data.snapshot.segments.some(({ endMs }) => endMs > catalog.currentTime * 1000) ||
           !sameOrderedValues(
             parsed.data.snapshot.segments.map(({ segmentKey }) => segmentKey),
             segmentKeys
@@ -299,7 +296,6 @@ export const createListeningMissionTransport = (
             clearInterval: dependencies.clearInterval,
             identity: parsed.data.identity,
             onFatal: () => undefined,
-            sendRuntimeMessage: dependencies.sendRuntimeMessage,
             sendTabMessage: dependencies.sendTabMessage,
             sessionId: parsed.data.sessionId,
             setInterval: dependencies.setInterval,
@@ -331,7 +327,6 @@ export const createListeningMissionTransport = (
       clearInterval: dependencies.clearInterval,
       identity: session.identity,
       onFatal,
-      sendRuntimeMessage: dependencies.sendRuntimeMessage,
       sendTabMessage: dependencies.sendTabMessage,
       sessionId: session.sessionId,
       setInterval: dependencies.setInterval,
@@ -356,7 +351,6 @@ export const createListeningSessionController = ({
   clearInterval,
   identity,
   onFatal,
-  sendRuntimeMessage,
   sendTabMessage,
   sessionId,
   setInterval,
@@ -366,7 +360,6 @@ export const createListeningSessionController = ({
   clearInterval: typeof globalThis.clearInterval;
   identity: ContentVideoIdentity;
   onFatal: (reason: ListeningSessionFatalReason) => void;
-  sendRuntimeMessage: ListeningRuntimeMessageSender;
   sendTabMessage: ListeningTabMessageSender;
   sessionId: string;
   setInterval: typeof globalThis.setInterval;
@@ -383,8 +376,6 @@ export const createListeningSessionController = ({
   let heartbeatGeneration = 0;
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
   let playRequestGeneration = 0;
-  let progressSaved = false;
-  let progressRequest: Promise<{ status: 'saved' | 'error' }> | undefined;
 
   const stopHeartbeat = () => {
     heartbeatGeneration += 1;
@@ -477,32 +468,6 @@ export const createListeningSessionController = ({
     }
   };
 
-  const commitProgress = (result: ListeningMissionResult) => {
-    if (progressSaved) return Promise.resolve({ status: 'saved' } as const);
-    if (progressRequest) return progressRequest;
-
-    const parsedResult = listeningMissionResultSchema.safeParse(result);
-    if (!parsedResult.success) return Promise.resolve({ status: 'error' } as const);
-
-    progressRequest = (async () => {
-      try {
-        const response = await sendRuntimeMessage('recordListeningMissionResult', {
-          result: parsedResult.data,
-        });
-        if (!response.success || !listeningProgressSchema.safeParse(response.data).success) {
-          return { status: 'error' } as const;
-        }
-        progressSaved = true;
-        return { status: 'saved' } as const;
-      } catch {
-        return { status: 'error' } as const;
-      } finally {
-        progressRequest = undefined;
-      }
-    })();
-    return progressRequest;
-  };
-
   const performEndSession = async (
     mode: 'restore-start' | 'complete-stay' | 'continue-watching',
     restartHeartbeatOnError: boolean
@@ -592,7 +557,6 @@ export const createListeningSessionController = ({
   };
 
   return {
-    commitProgress,
     dispose: () => {
       if (disposeRequest) return disposeRequest;
       disposed = true;
@@ -636,6 +600,7 @@ const unwrapRuntime = async <T>(
 };
 
 const contentIdentityEqual = (left: ContentVideoIdentity, right: ContentVideoIdentity) =>
+  left.contentEpoch === right.contentEpoch &&
   left.contentInstanceId === right.contentInstanceId &&
   left.routeChangedAt === right.routeChangedAt &&
   left.videoId === right.videoId &&

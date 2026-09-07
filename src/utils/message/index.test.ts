@@ -76,6 +76,7 @@ describe('message transport', () => {
     await sendMessageToTab(7, 'beginListeningSession', {
       expectedIdentity: identity,
       expectedSubtitleRevision: 3,
+      entryCutoffMs: 8000,
       segmentKeys: [segmentKey],
     });
     await sendMessageToTab(7, 'heartbeatListeningSession', {
@@ -109,6 +110,7 @@ describe('message transport', () => {
       params: {
         expectedIdentity: identity,
         expectedSubtitleRevision: 3,
+        entryCutoffMs: 8000,
         segmentKeys: [segmentKey],
       },
     });
