@@ -1,5 +1,5 @@
 import { listeningSegmentKeySchema } from '@storage/v2/schema';
-import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { BeginListeningSessionResponse, ContentVideoIdentity } from '@utils/message/type';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -15,7 +15,7 @@ describe('Listening Mission UI transport', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => vi.useRealTimers());
@@ -52,6 +52,46 @@ describe('Listening Mission UI transport', () => {
     expect(sendTabMessage).toHaveBeenLastCalledWith(17, 'heartbeatListeningSession', {
       expectedIdentity: resumed.identity, expectedSubtitleRevision: resumed.subtitleRevision, sessionId: 'session-a',
     });
+    controller.stopHeartbeat();
+  });
+
+  it('pauses old-binding heartbeats across a delayed resume and ignores their late terminal responses', async () => {
+    const oldHeartbeat = deferred<{ success: true; data: { status: 'stale' } }>();
+    const pending = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
+    const fatal = vi.fn();
+    sendTabMessage.mockReturnValueOnce(oldHeartbeat.promise).mockReturnValueOnce(pending.promise);
+    const controller = createController(fatal);
+    controller.startHeartbeat();
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS);
+    const resume = controller.resumeAfterAdvertisement();
+    oldHeartbeat.resolve({ success: true, data: { status: 'stale' } });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS * 2);
+    expect(sendTabMessage).toHaveBeenCalledTimes(2);
+    expect(fatal).not.toHaveBeenCalled();
+    const resumed = { status: 'resumed', identity: { ...catalog.identity, videoRevision: 4 }, subtitleRevision: 3 } as const;
+    pending.resolve({ success: true, data: resumed });
+    await expect(resume).resolves.toEqual(resumed);
+    sendTabMessage.mockResolvedValueOnce({ success: true, data: { status: 'alive' } });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS);
+    expect(sendTabMessage).toHaveBeenLastCalledWith(17, 'heartbeatListeningSession', {
+      expectedIdentity: resumed.identity, expectedSubtitleRevision: 3, sessionId: 'session-a',
+    });
+    expect(fatal).not.toHaveBeenCalled();
+    controller.stopHeartbeat();
+  });
+
+  it.each(['error', 'stopped'])('restores heartbeat intent after a resume %s without reviving stopped ownership', async (outcome) => {
+    const pending = deferred<{ success: true; data: { status: 'error' } }>();
+    sendTabMessage.mockReturnValueOnce(pending.promise);
+    const controller = createController();
+    controller.startHeartbeat();
+    const resume = controller.resumeAfterAdvertisement();
+    if (outcome === 'stopped') controller.stopHeartbeat();
+    pending.resolve({ success: true, data: { status: 'error' } });
+    await expect(resume).resolves.toBe('error');
+    if (outcome === 'error') sendTabMessage.mockResolvedValueOnce({ success: true, data: { status: 'alive' } });
+    await vi.advanceTimersByTimeAsync(LISTENING_HEARTBEAT_INTERVAL_MS);
+    expect(sendTabMessage).toHaveBeenCalledTimes(outcome === 'error' ? 2 : 1);
     controller.stopHeartbeat();
   });
 

@@ -378,13 +378,20 @@ export const createListeningSessionController = ({
   let fatalReported = false;
   let heartbeatGeneration = 0;
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+  let heartbeatWanted = false;
+  let resumePending = false;
   let playRequestGeneration = 0;
   let saveRequestGeneration = 0;
 
-  const stopHeartbeat = () => {
+  const pauseHeartbeat = () => {
     heartbeatGeneration += 1;
     if (heartbeatTimer !== undefined) clearInterval(heartbeatTimer);
     heartbeatTimer = undefined;
+  };
+
+  const stopHeartbeat = () => {
+    heartbeatWanted = false;
+    pauseHeartbeat();
   };
 
   const reportFatal = (reason: ListeningSessionFatalReason) => {
@@ -416,13 +423,18 @@ export const createListeningSessionController = ({
   };
 
   const startHeartbeat = () => {
-    if (disposed || heartbeatTimer !== undefined || endCompleted) return;
+    if (disposed || endCompleted) return;
+    heartbeatWanted = true;
+    if (resumePending || heartbeatTimer !== undefined) return;
     const generation = ++heartbeatGeneration;
     heartbeatTimer = setInterval(() => void heartbeat(generation), LISTENING_HEARTBEAT_INTERVAL_MS);
   };
 
   const resumeAfterAdvertisement = async () => {
-    if (disposed || endCompleted || fatalReported) return 'stale' as const;
+    if (disposed || endCompleted || endRequest || fatalReported) return 'stale' as const;
+    if (resumePending) return 'error' as const;
+    resumePending = true;
+    pauseHeartbeat();
     playRequestGeneration += 1;
     saveRequestGeneration += 1;
     try {
@@ -446,6 +458,9 @@ export const createListeningSessionController = ({
       return parsed.data;
     } catch {
       return 'error' as const;
+    } finally {
+      resumePending = false;
+      if (heartbeatWanted) startHeartbeat();
     }
   };
 

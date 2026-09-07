@@ -177,6 +177,10 @@ describe('actual listening flow, mission and adapter integration', () => {
     const respond = () => act(async () => resume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision } }));
     await (order === 'broadcast-first' ? broadcast() : respond());
     expect(container.querySelector('[inert]')).not.toBeNull();
+    expect(button('v2_listening_advertisement_continue').disabled).toBe(true);
+    const resumeCount = send.mock.calls.filter(([, message]) => message === 'resumeListeningSessionAfterAdvertisement').length;
+    await click('v2_listening_advertisement_continue');
+    expect(send.mock.calls.filter(([, message]) => message === 'resumeListeningSessionAfterAdvertisement')).toHaveLength(resumeCount);
     await (order === 'broadcast-first' ? respond() : broadcast());
     expect(container.querySelector('[inert]')).toBeNull();
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount);
@@ -184,6 +188,19 @@ describe('actual listening flow, mission and adapter integration', () => {
     expect(container.querySelector('textarea')?.value).toBe('my retained draft');
     await click('v2_listening_hide_replay');
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount + 1);
+  });
+
+  it('allows return while a confirmed resume awaits its broadcast', async () => {
+    await start();
+    await act(async () => useTabStore.setState({ playbackContext: { ...PLAYBACK_CONTEXT, missionResumeRequired: true, videoRevision: 4, mediaAttachmentRevision: 4 } }));
+    await click('v2_listening_advertisement_continue');
+    expect(button('v2_listening_advertisement_continue').disabled).toBe(true);
+    const returns = Array.from(container.querySelectorAll('button')).filter((node) => node.textContent === 'v2_listening_return');
+    const visibleReturn = returns.find((node) => !node.closest('[inert]'))!;
+    expect(visibleReturn.disabled).toBe(false);
+    await act(async () => { visibleReturn.click(); await flush(); });
+    expect(container.querySelector('#listening-practice-title')).toBeNull();
+    expect(usePageStore.getState().navigationLocked).toBe(false);
   });
 
   it.each(['attachment', 'response-identity', 'response-revision'])('rejects %s replacement during resume instead of adopting a new binding', async (axis) => {

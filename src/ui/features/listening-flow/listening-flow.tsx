@@ -124,7 +124,10 @@ export function ListeningLearningPage({
   const [interruptedExitError, setInterruptedExitError] = useState(false);
   const [interruptionRequest, setInterruptionRequest] = useState<InterruptionRequest>();
   const interruptionRequestRef = useRef<InterruptionRequest | undefined>(undefined);
+  const [resumeConfirmation, setResumeConfirmation] = useState<ActiveMission>();
+  const resumeConfirmationRef = useRef<ActiveMission | undefined>(undefined);
   const resumePending = interruptionRequest !== undefined && interruptionRequest.mission === activeMission;
+  const awaitingResumeBroadcast = activeMission !== undefined && resumeConfirmation === activeMission;
   const [resetError, setResetError] = useState(false);
   const [resetPending, setResetPending] = useState(false);
   const [resetRequest, setResetRequest] = useState<ResetRequest>();
@@ -218,6 +221,8 @@ export function ListeningLearningPage({
   }, []);
 
   const clearActiveMission = useCallback(() => {
+    resumeConfirmationRef.current = undefined;
+    setResumeConfirmation(undefined);
     interruptionRequestRef.current = undefined;
     setInterruptionRequest(undefined);
     setResumeError(false);
@@ -268,6 +273,8 @@ export function ListeningLearningPage({
     if (!current || current.sessionId !== sessionId || teardownRef.current) return;
     fatalHandlerReasonRef.current = reason;
     teardownRef.current = true;
+    resumeConfirmationRef.current = undefined;
+    setResumeConfirmation(undefined);
     interruptionRequestRef.current = undefined;
     setInterruptionRequest(undefined);
     current.controller.stopHeartbeat();
@@ -679,7 +686,7 @@ export function ListeningLearningPage({
     isFrozenMissionContextCurrent(activeMission.context, playbackContext) &&
     (resumePending && interruptionRequest.kind === 'resume'
       ? isSameMissionAttachment(interruptionRequest.context, playbackContext)
-      : playbackContext?.missionResumeRequired || isSameMissionAttachment(activeMission.context, playbackContext))
+      : (playbackContext?.missionResumeRequired && !awaitingResumeBroadcast) || isSameMissionAttachment(activeMission.context, playbackContext))
   );
 
   useEffect(() => {
@@ -695,6 +702,13 @@ export function ListeningLearningPage({
   }, [activeContextMatches, activeMission]);
 
   useEffect(() => {
+    if (awaitingResumeBroadcast && activeContextMatches && playbackContext?.missionResumeRequired === false) {
+      resumeConfirmationRef.current = undefined;
+      setResumeConfirmation(undefined);
+    }
+  }, [activeContextMatches, awaitingResumeBroadcast, playbackContext?.missionResumeRequired]);
+
+  useEffect(() => {
     if (!beginPendingRef.current) return;
     beginGenerationRef.current += 1;
     startSelectionGenerationRef.current += 1;
@@ -707,6 +721,7 @@ export function ListeningLearningPage({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      resumeConfirmationRef.current = undefined;
       interruptionRequestRef.current = undefined;
       loadGenerationRef.current += 1;
       beginGenerationRef.current += 1;
@@ -765,7 +780,7 @@ export function ListeningLearningPage({
   const resumeAfterAdvertisement = async () => {
     const current = activeMissionRef.current;
     const requestedContext = playbackContextRef.current;
-    if (!current || !requestedContext || interruptionRequestRef.current) return;
+    if (!current || !requestedContext || interruptionRequestRef.current || resumeConfirmationRef.current === current) return;
     const request: InterruptionRequest = { context: requestedContext, kind: 'resume', mission: current };
     interruptionRequestRef.current = request;
     setInterruptionRequest(request);
@@ -783,6 +798,9 @@ export function ListeningLearningPage({
         return;
       }
       const rebound = Object.freeze({ ...current, context });
+      const confirmation = context.missionResumeRequired ? rebound : undefined;
+      resumeConfirmationRef.current = confirmation;
+      setResumeConfirmation(confirmation);
       activeMissionRef.current = rebound;
       setActiveMission(rebound);
       return;
@@ -909,7 +927,7 @@ export function ListeningLearningPage({
     if (!activeContextMatches) {
       return <FatalTeardown state={{ error: false, pending: true, reason: 'stale', sessionId: activeMission.sessionId }} onRetry={() => undefined} />;
     }
-    const interrupted = playbackContext?.missionResumeRequired === true || resumePending;
+    const interrupted = playbackContext?.missionResumeRequired === true || resumePending || awaitingResumeBroadcast;
     const canResume =
       interrupted &&
       playbackContext?.lifecycle === 'content' &&
@@ -934,6 +952,7 @@ export function ListeningLearningPage({
             onExit={() => void exitInterruptedMission()}
             error={resumeError}
             pending={resumePending}
+            resumeConfirmed={awaitingResumeBroadcast}
             onResume={() => void resumeAfterAdvertisement()}
           />
         )}
@@ -1169,6 +1188,7 @@ function MissionAdvertisementInterruption({
   error,
   onResume,
   pending,
+  resumeConfirmed,
 }: {
   canResume: boolean;
   exitError: boolean;
@@ -1176,6 +1196,7 @@ function MissionAdvertisementInterruption({
   error: boolean;
   onResume: () => void;
   pending: boolean;
+  resumeConfirmed: boolean;
 }) {
   return (
     <section
@@ -1205,7 +1226,7 @@ function MissionAdvertisementInterruption({
       {exitError && <p role='alert'>{t('v2_listening_mission_end_error')}</p>}
       <Button disabled={pending} variant='outline' onClick={onExit}>{t('v2_listening_return')}</Button>
       {canResume && (
-        <Button disabled={pending} onClick={onResume}>
+        <Button disabled={pending || resumeConfirmed} onClick={onResume}>
           {t('v2_listening_advertisement_continue')}
         </Button>
       )}
