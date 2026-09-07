@@ -2,7 +2,8 @@ import { act } from 'react';
 
 import { listeningSegmentKeySchema } from '@storage/v2/schema';
 import type { ListeningProgressV1 } from '@storage/v2/type';
-import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { BeginListeningSessionResponse, ContentVideoIdentity } from '@utils/message/type';
+import type { PlaybackContextStatus } from '@utils/playback-context';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { create } from 'zustand';
@@ -29,6 +30,7 @@ describe('actual listening flow, mission and adapter integration', () => {
   let runtime: ReturnType<typeof vi.fn>;
   beforeEach(() => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    SETTINGS_STORE.setState({ learningProfile: { learningLanguage: 'en', supportLanguage: 'ko' } });
     usePageStore.setState({ currentPage: 'learning', navigationLocked: false, navigationLockTokens: new Set() });
     useTabStore.setState({
       activeTab: { id: 17 } as chrome.tabs.Tab,
@@ -117,6 +119,42 @@ describe('actual listening flow, mission and adapter integration', () => {
     expect(runtime.mock.calls.every(([message]) => message === 'getListeningProgress')).toBe(true);
   });
 
+  it.each(['source', 'support', 'revision', 'epoch', 'video', 'instance', 'route', 'attachment', 'language', 'unavailable'] as const)(
+    'removes an exposed snapshot immediately after same-tab %s changes without waiting for heartbeat',
+    async (axis) => {
+      await start();
+      await click('v2_listening_reveal');
+      await click('v2_listening_type_optional');
+      type('private fixture draft');
+      await click('v2_listening_compare');
+      expect(container.querySelector('textarea')).not.toBeNull();
+      const externalRelease = usePageStore.getState().acquireNavigationLock();
+      await act(async () => {
+        let context: PlaybackContextStatus = PLAYBACK_CONTEXT;
+        if (axis === 'source') context = { ...context, subtitleIdentity: { ...context.subtitleIdentity, learning: 'native:ja' } };
+        if (axis === 'support') context = { ...context, subtitleIdentity: { ...context.subtitleIdentity, support: 'native:ja' } };
+        if (axis === 'revision') context = { ...context, subtitleIdentity: { ...context.subtitleIdentity, subtitleRevision: context.subtitleIdentity.subtitleRevision + 1 } };
+        if (axis === 'epoch') context = { ...context, contentEpoch: context.contentEpoch + 1 };
+        if (axis === 'video') context = { ...context, videoId: 'new-video' };
+        if (axis === 'instance') context = { ...context, contentInstanceId: 'new-content' };
+        if (axis === 'route') context = { ...context, routeChangedAt: context.routeChangedAt + 1 };
+        if (axis === 'attachment') context = { ...context, videoRevision: context.videoRevision + 1, mediaAttachmentRevision: context.mediaAttachmentRevision + 1 };
+        if (axis === 'language') SETTINGS_STORE.setState({ learningProfile: { learningLanguage: 'ja', supportLanguage: 'ko' } });
+        if (axis === 'unavailable') context = { ...context, learningAvailable: false };
+        useTabStore.setState({ playbackContext: context });
+        await flush();
+      });
+      expect(container.querySelector('#listening-practice-title')).toBeNull();
+      expect(container.querySelector('textarea')).toBeNull();
+      expect(container.textContent).not.toContain('fixture line');
+      expect(container.textContent).not.toContain('private fixture draft');
+      expect(send.mock.calls.some(([, message]) => message === 'heartbeatListeningSession')).toBe(false);
+      expect(send).toHaveBeenCalledWith(17, 'endListeningSession', { mode: 'restore-start', sessionId: 'session-a' });
+      expect(usePageStore.getState().navigationLockTokens.size).toBe(1);
+      externalRelease();
+    }
+  );
+
   it('preserves the same-line draft through ad attachments without hidden autoplay or completion', async () => {
     await start();
     await click('v2_listening_type_optional');
@@ -132,8 +170,11 @@ describe('actual listening flow, mission and adapter integration', () => {
     await act(async () => useTabStore.setState({ playbackContext: returned }));
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount);
     expect(container.textContent).not.toContain('v2_listening_blind_completed');
+    const resume = deferred<{ success: true; data: { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number } }>();
+    send.mockReturnValueOnce(resume.promise);
     await click('v2_listening_advertisement_continue');
     await act(async () => useTabStore.setState({ playbackContext: { ...returned, missionResumeRequired: false } }));
+    await act(async () => resume.resolve({ success: true, data: { status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision } }));
     expect(send.mock.calls.filter(([, message]) => message === 'playListeningSegment')).toHaveLength(playCount);
     await click('v2_listening_type_optional');
     expect(container.querySelector('textarea')?.value).toBe('my retained draft');

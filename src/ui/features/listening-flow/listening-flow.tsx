@@ -62,6 +62,7 @@ type LandingState =
     };
 
 type ActiveMission = Readonly<{
+  context: PlaybackContextStatus;
   controller: ListeningSessionController;
   initialSegmentKey?: ReadyListeningCatalog['segments'][number]['segmentKey'];
   sessionId: string;
@@ -281,10 +282,11 @@ export function ListeningLearningPage({
       initialSegmentKey?: ReadyListeningCatalog['segments'][number]['segmentKey']
     ) => {
       const startTabId = activeTabId;
+      const startPlaybackContext = playbackContextRef.current;
       const startLearningLanguage = learningLanguageRef.current;
       const startSpokenLanguageContextKey = spokenLanguageContextKeyRef.current;
       if (
-        startTabId === undefined ||
+        startTabId === undefined || !startPlaybackContext ||
         startSpokenLanguageContextKey === undefined ||
         confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
         !isCatalogBoundToPlaybackContext(
@@ -381,6 +383,7 @@ export function ListeningLearningPage({
         );
         const snapshot = toMissionSnapshot(response.snapshot);
         const mission: ActiveMission = Object.freeze({
+          context: startPlaybackContext,
           controller,
           initialSegmentKey,
           sessionId: response.sessionId,
@@ -656,17 +659,27 @@ export function ListeningLearningPage({
     playbackContext,
   ]);
 
+  const activeContextMatches = !activeMission || (
+    activeMission.tabId === activeTabId && connectionStatus === 'connected' &&
+    activeMission.snapshot.learningLanguage === learningLanguage &&
+    isFrozenMissionContextCurrent(activeMission.context, playbackContext) &&
+    (playbackContext?.missionResumeRequired || resumePending || (
+      activeMission.context.videoRevision === playbackContext?.videoRevision &&
+      activeMission.context.mediaAttachmentRevision === playbackContext?.mediaAttachmentRevision
+    ))
+  );
+
   useEffect(() => {
     const current = activeMissionRef.current;
     if (
       !current ||
-      (current.tabId === activeTabId && connectionStatus === 'connected') ||
+      activeContextMatches ||
       teardownRef.current
     ) {
       return;
     }
     fatalHandlerRef.current?.(current.sessionId, 'stale');
-  }, [activeTabId, connectionStatus]);
+  }, [activeContextMatches, activeMission]);
 
   useEffect(() => {
     if (!beginPendingRef.current) return;
@@ -737,7 +750,17 @@ export function ListeningLearningPage({
     const result = await current.controller.resumeAfterAdvertisement();
     if (!mountedRef.current || activeMissionRef.current !== current) return;
     setResumePending(false);
-    if (result === 'resumed') return;
+    if (result === 'resumed') {
+      const context = playbackContextRef.current;
+      if (!context || !isFrozenMissionContextCurrent(current.context, context)) {
+        fatalHandlerRef.current?.(current.sessionId, 'stale');
+        return;
+      }
+      const rebound = Object.freeze({ ...current, context });
+      activeMissionRef.current = rebound;
+      setActiveMission(rebound);
+      return;
+    }
     if (result === 'error') {
       setResumeError(true);
       return;
@@ -857,6 +880,9 @@ export function ListeningLearningPage({
   };
 
   if (activeMission) {
+    if (!activeContextMatches) {
+      return <FatalTeardown state={{ error: false, pending: true, reason: 'stale', sessionId: activeMission.sessionId }} onRetry={() => undefined} />;
+    }
     const interrupted = playbackContext?.missionResumeRequired === true;
     const canResume =
       interrupted &&
@@ -1289,6 +1315,18 @@ const fatalDescription = (reason: ListeningSessionFatalReason) => {
   if (reason === 'segment-unavailable') return t('v2_listening_landing_fatal_segment_unavailable');
   return t('v2_listening_landing_fatal_error');
 };
+
+const isFrozenMissionContextCurrent = (left: PlaybackContextStatus, right: PlaybackContextStatus | null) =>
+  right !== null &&
+  left.contentEpoch === right.contentEpoch &&
+  left.contentInstanceId === right.contentInstanceId &&
+  left.routeChangedAt === right.routeChangedAt &&
+  left.videoId === right.videoId &&
+  left.subtitleIdentity.learning === right.subtitleIdentity.learning &&
+  left.subtitleIdentity.support === right.subtitleIdentity.support &&
+  left.subtitleIdentity.subtitleRevision === right.subtitleIdentity.subtitleRevision &&
+  (left.routeKind === right.routeKind || (right.missionResumeRequired && right.lifecycle !== 'content' && right.routeKind === 'unknown')) &&
+  (right.learningAvailable || right.missionResumeRequired);
 
 const createSpokenLanguageContextKey = (
   activeTabId: number | undefined,
