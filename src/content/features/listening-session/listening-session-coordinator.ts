@@ -975,6 +975,9 @@ export const createListeningSessionCoordinator = (
         video.removeEventListener('canplay', onReady);
         video.removeEventListener('loadedmetadata', onReady);
         try {
+          // Keep the seek target stable until seeked, including already-playing
+          // main content rebound after an advertisement.
+          media.pause();
           media.seek(startSeconds);
           media.setRate(rate);
         } catch {

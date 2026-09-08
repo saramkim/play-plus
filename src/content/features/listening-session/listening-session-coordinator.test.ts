@@ -1386,6 +1386,67 @@ describe('listening session coordinator', () => {
     expect(harness.getMissionActive()).toBe(true);
   });
 
+  it.each([1, 0.75] as const)(
+    'stops a %sx replay after an ad even when the rebound video was already playing',
+    async (rate) => {
+      const harness = create();
+      const catalog = await getReadyCatalog(harness.coordinator);
+      const begun = await beginFirst(harness.coordinator, catalog);
+      const rebound = createControllableVideo({ paused: false, seekingOnSet: true });
+
+      for (const lifecycle of ['advertisement', 'content'] as const) {
+        harness.updateContext((context) => {
+          const identity = {
+            ...context.identity,
+            videoRevision: context.identity.videoRevision + 1,
+          };
+          return {
+            ...context,
+            identity,
+            playbackContext: {
+              ...context.playbackContext,
+              ...identity,
+              learningAvailable: lifecycle === 'content',
+              lifecycle,
+              mediaAttachmentRevision: identity.videoRevision,
+              missionResumeRequired: true,
+            },
+            video: lifecycle === 'content' ? rebound.video : null,
+          };
+        });
+        harness.coordinator.handlePlaybackContextChange();
+      }
+
+      await expect(harness.coordinator.resumeAfterAdvertisement({
+        expectedIdentity: begun.identity,
+        expectedSubtitleRevision: begun.subtitleRevision,
+        sessionId: begun.sessionId,
+      })).resolves.toMatchObject({ status: 'resumed' });
+      expect(rebound.play).not.toHaveBeenCalled();
+      expect(rebound.pause).not.toHaveBeenCalled();
+
+      const completed = vi.fn();
+      void harness.coordinator.play({
+        sessionId: begun.sessionId,
+        segmentKey: begun.snapshot.segments[0].segmentKey,
+        rate,
+      }).then(completed);
+
+      // A running media clock can advance before the asynchronous seeked event.
+      rebound.finishSeek(0.016);
+      await flushPromises();
+      rebound.setCurrentTime(2.4);
+      rebound.video.dispatchEvent(new Event('timeupdate'));
+      await flushPromises();
+
+      expect(completed).toHaveBeenCalledWith({ status: 'played' });
+      expect(rebound.getPaused()).toBe(true);
+      expect(rebound.getCurrentTime()).toBe(2.35);
+      expect(rebound.getPlaybackRate()).toBe(rate);
+      expect(harness.getMissionActive()).toBe(true);
+    }
+  );
+
   it.each([null, 2000])(
     'discards a fenced mission when fresh main-content evidence settles with fence %s',
     async (settledFenceEndMs) => {
@@ -1703,8 +1764,9 @@ const createControllableVideo = (options: HarnessOptions = {}) => {
     dispatchSeekedWhileSeeking: () => {
       video.dispatchEvent(new Event('seeked'));
     },
-    finishSeek: () => {
+    finishSeek: (playingAdvanceSeconds = 0) => {
       seeking = false;
+      if (!paused) currentTime += playingAdvanceSeconds;
       video.dispatchEvent(new Event('seeked'));
     },
     rejectNextPlay: () => {
