@@ -9,11 +9,11 @@ import {
 import type { ListeningProgressV1 } from '@storage/v2/type';
 import { LANGUAGES, type Language } from '@utils/constants';
 import { t } from '@utils/i18n';
-import type { BeginListeningSessionResponse } from '@utils/message/type';
+import type { BeginListeningSessionResponse, ContentVideoIdentity } from '@utils/message/type';
 import type { PlaybackContextStatus } from '@utils/playback-context';
 import { HeadphonesIcon, LoaderCircleIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 
-import type { ListeningMissionSnapshot } from '@/listening/session/mission-reducer';
+import type { ListeningMissionSnapshot } from '@/listening/session/mission-snapshot';
 import {
   createListeningMissionTransport,
   type ListeningMissionTransport,
@@ -28,9 +28,8 @@ import { usePageStore } from '@/ui/store/page-store';
 import { useTabStore } from '@/ui/store/tab-store';
 
 import {
-  selectContinueSegmentKeys,
+  selectPastSegmentKeys,
   selectCurrentSegmentKeys,
-  selectNextMissionSegmentKeys,
   summarizeListeningProgress,
   type ListeningProgressSummary,
   type ReadyListeningCatalog,
@@ -63,9 +62,9 @@ type LandingState =
     };
 
 type ActiveMission = Readonly<{
-  canStartNextMission: boolean;
+  context: PlaybackContextStatus;
   controller: ListeningSessionController;
-  finalSegmentKey: ReadyListeningCatalog['segments'][number]['segmentKey'];
+  initialSegmentKey?: ReadyListeningCatalog['segments'][number]['segmentKey'];
   sessionId: string;
   snapshot: ListeningMissionSnapshot;
   tabId: number;
@@ -76,6 +75,12 @@ type FatalTeardownState = Readonly<{
   pending: boolean;
   reason: ListeningSessionFatalReason;
   sessionId: string;
+}>;
+
+type InterruptionRequest = Readonly<{
+  context: PlaybackContextStatus;
+  kind: 'resume' | 'exit';
+  mission: ActiveMission;
 }>;
 
 export interface ListeningLearningPageProps {
@@ -116,7 +121,13 @@ export function ListeningLearningPage({
   const [landing, setLanding] = useState<LandingState>({ kind: 'loading' });
   const [reloadRevision, setReloadRevision] = useState(0);
   const [resumeError, setResumeError] = useState(false);
-  const [resumePending, setResumePending] = useState(false);
+  const [interruptedExitError, setInterruptedExitError] = useState(false);
+  const [interruptionRequest, setInterruptionRequest] = useState<InterruptionRequest>();
+  const interruptionRequestRef = useRef<InterruptionRequest | undefined>(undefined);
+  const [resumeConfirmation, setResumeConfirmation] = useState<ActiveMission>();
+  const resumeConfirmationRef = useRef<ActiveMission | undefined>(undefined);
+  const resumePending = interruptionRequest !== undefined && interruptionRequest.mission === activeMission;
+  const awaitingResumeBroadcast = activeMission !== undefined && resumeConfirmation === activeMission;
   const [resetError, setResetError] = useState(false);
   const [resetPending, setResetPending] = useState(false);
   const [resetRequest, setResetRequest] = useState<ResetRequest>();
@@ -139,7 +150,6 @@ export function ListeningLearningPage({
   const learningLanguageRef = useRef(learningLanguage);
   const loadGenerationRef = useRef(0);
   const mountedRef = useRef(true);
-  const nextAfterRef = useRef<ActiveMission['finalSegmentKey'] | undefined>(undefined);
   const ownershipRef = useRef(false);
   const playbackContextRef = useRef(playbackContext);
   const resetAllTriggerRef = useRef<HTMLButtonElement>(null);
@@ -211,6 +221,12 @@ export function ListeningLearningPage({
   }, []);
 
   const clearActiveMission = useCallback(() => {
+    resumeConfirmationRef.current = undefined;
+    setResumeConfirmation(undefined);
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
+    setResumeError(false);
+    setInterruptedExitError(false);
     activeMissionRef.current = undefined;
     ownershipRef.current = false;
     teardownRef.current = false;
@@ -257,6 +273,10 @@ export function ListeningLearningPage({
     if (!current || current.sessionId !== sessionId || teardownRef.current) return;
     fatalHandlerReasonRef.current = reason;
     teardownRef.current = true;
+    resumeConfirmationRef.current = undefined;
+    setResumeConfirmation(undefined);
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
     current.controller.stopHeartbeat();
     setActiveMission(undefined);
     setFatalTeardown({ error: false, pending: true, reason, sessionId });
@@ -279,13 +299,15 @@ export function ListeningLearningPage({
     async (
       currentTransport: ListeningMissionTransport,
       catalog: ReadyListeningCatalog,
-      segmentKeys: readonly ReadyListeningCatalog['segments'][number]['segmentKey'][]
+      segmentKeys: readonly ReadyListeningCatalog['segments'][number]['segmentKey'][],
+      initialSegmentKey?: ReadyListeningCatalog['segments'][number]['segmentKey']
     ) => {
       const startTabId = activeTabId;
+      const startPlaybackContext = playbackContextRef.current;
       const startLearningLanguage = learningLanguageRef.current;
       const startSpokenLanguageContextKey = spokenLanguageContextKeyRef.current;
       if (
-        startTabId === undefined ||
+        startTabId === undefined || !startPlaybackContext ||
         startSpokenLanguageContextKey === undefined ||
         confirmedSpokenLanguageContextKeyRef.current !== startSpokenLanguageContextKey ||
         !isCatalogBoundToPlaybackContext(
@@ -381,14 +403,10 @@ export function ListeningLearningPage({
           fatalHandlerRef.current?.(response.sessionId, reason)
         );
         const snapshot = toMissionSnapshot(response.snapshot);
-        const finalCatalogIndex = catalog.segments.findIndex(
-          ({ segmentKey }) => segmentKey === snapshot.segments.at(-1)?.segmentKey
-        );
         const mission: ActiveMission = Object.freeze({
-          canStartNextMission:
-            finalCatalogIndex >= 0 && finalCatalogIndex < catalog.segments.length - 1,
+          context: startPlaybackContext,
           controller,
-          finalSegmentKey: snapshot.segments[snapshot.segments.length - 1].segmentKey,
+          initialSegmentKey,
           sessionId: response.sessionId,
           snapshot,
           tabId: startTabId,
@@ -492,18 +510,16 @@ export function ListeningLearningPage({
         progress,
         summary: summarizeListeningProgress(catalog, progress),
       });
-      const keys =
-        mode === 'continue'
-          ? selectContinueSegmentKeys(catalog, progress)
-          : selectCurrentSegmentKeys(catalog);
-      if (keys.length === 0) {
+      const currentKey = mode === 'current' ? selectCurrentSegmentKeys(catalog)[0] : undefined;
+      const keys = selectPastSegmentKeys(catalog);
+      if (keys.length === 0 || (mode === 'current' && !currentKey)) {
         setBeginError(t('v2_listening_landing_current_unavailable'));
         return;
       }
 
       beginPendingRef.current = false;
       setBeginPending(false);
-      await startMission(currentTransport, catalog, keys);
+      await startMission(currentTransport, catalog, keys, currentKey);
     } catch {
       if (
         mountedRef.current &&
@@ -632,22 +648,6 @@ export function ListeningLearningPage({
           return;
         }
 
-        const nextAfter = nextAfterRef.current;
-        if (nextAfter) {
-          nextAfterRef.current = undefined;
-          const keys = selectNextMissionSegmentKeys(catalog, progress, nextAfter);
-          setLanding({
-            catalog,
-            kind: 'ready',
-            progress,
-            summary: summarizeListeningProgress(catalog, progress),
-          });
-          if (keys.length === 0) {
-            return;
-          }
-          await startMission(transport, catalog, keys);
-          return;
-        }
         setLanding({
           catalog,
           kind: 'ready',
@@ -680,17 +680,33 @@ export function ListeningLearningPage({
     playbackContext,
   ]);
 
+  const activeContextMatches = !activeMission || (
+    activeMission.tabId === activeTabId && connectionStatus === 'connected' &&
+    activeMission.snapshot.learningLanguage === learningLanguage &&
+    isFrozenMissionContextCurrent(activeMission.context, playbackContext) &&
+    (resumePending && interruptionRequest.kind === 'resume'
+      ? isSameMissionAttachment(interruptionRequest.context, playbackContext)
+      : (playbackContext?.missionResumeRequired && !awaitingResumeBroadcast) || isSameMissionAttachment(activeMission.context, playbackContext))
+  );
+
   useEffect(() => {
     const current = activeMissionRef.current;
     if (
       !current ||
-      (current.tabId === activeTabId && connectionStatus === 'connected') ||
+      activeContextMatches ||
       teardownRef.current
     ) {
       return;
     }
     fatalHandlerRef.current?.(current.sessionId, 'stale');
-  }, [activeTabId, connectionStatus]);
+  }, [activeContextMatches, activeMission]);
+
+  useEffect(() => {
+    if (awaitingResumeBroadcast && activeContextMatches && playbackContext?.missionResumeRequired === false) {
+      resumeConfirmationRef.current = undefined;
+      setResumeConfirmation(undefined);
+    }
+  }, [activeContextMatches, awaitingResumeBroadcast, playbackContext?.missionResumeRequired]);
 
   useEffect(() => {
     if (!beginPendingRef.current) return;
@@ -705,6 +721,8 @@ export function ListeningLearningPage({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      resumeConfirmationRef.current = undefined;
+      interruptionRequestRef.current = undefined;
       loadGenerationRef.current += 1;
       beginGenerationRef.current += 1;
       startSelectionGenerationRef.current += 1;
@@ -736,26 +754,57 @@ export function ListeningLearningPage({
     setReloadRevision((revision) => revision + 1);
   }, [clearActiveMission]);
 
-  const startNextMission = useCallback(() => {
+  const exitInterruptedMission = async () => {
     const current = activeMissionRef.current;
-    if (!current) return;
-    nextAfterRef.current = current.finalSegmentKey;
-    clearActiveMission();
-    setFatalReason(undefined);
-    setReloadRevision((revision) => revision + 1);
-  }, [clearActiveMission]);
-
-  const getPracticedAt = useCallback(() => new Date().toISOString(), []);
+    const context = playbackContextRef.current;
+    if (!current || !context || interruptionRequestRef.current) return;
+    const request: InterruptionRequest = { context, kind: 'exit', mission: current };
+    interruptionRequestRef.current = request;
+    setInterruptionRequest(request);
+    setInterruptedExitError(false);
+    try {
+      const result = await current.controller.endSession('restore-start');
+      if (!mountedRef.current || activeMissionRef.current !== current || interruptionRequestRef.current !== request) return;
+      if (result.status === 'error') setInterruptedExitError(true);
+      else returnToIdle();
+    } catch {
+      if (mountedRef.current && activeMissionRef.current === current && interruptionRequestRef.current === request) setInterruptedExitError(true);
+    } finally {
+      if (interruptionRequestRef.current === request) {
+        interruptionRequestRef.current = undefined;
+        if (mountedRef.current) setInterruptionRequest(undefined);
+      }
+    }
+  };
 
   const resumeAfterAdvertisement = async () => {
     const current = activeMissionRef.current;
-    if (!current || resumePending) return;
+    const requestedContext = playbackContextRef.current;
+    if (!current || !requestedContext || interruptionRequestRef.current || resumeConfirmationRef.current === current) return;
+    const request: InterruptionRequest = { context: requestedContext, kind: 'resume', mission: current };
+    interruptionRequestRef.current = request;
+    setInterruptionRequest(request);
     setResumeError(false);
-    setResumePending(true);
     const result = await current.controller.resumeAfterAdvertisement();
-    if (!mountedRef.current || activeMissionRef.current !== current) return;
-    setResumePending(false);
-    if (result === 'resumed') return;
+    if (!mountedRef.current || activeMissionRef.current !== current || interruptionRequestRef.current !== request) return;
+    interruptionRequestRef.current = undefined;
+    setInterruptionRequest(undefined);
+    if (typeof result === 'object') {
+      const context = playbackContextRef.current;
+      if (!context || !isFrozenMissionContextCurrent(current.context, context) ||
+        !isSameMissionAttachment(requestedContext, context) ||
+        !isResumeIdentityCurrent(result.identity, result.subtitleRevision, context)) {
+        fatalHandlerRef.current?.(current.sessionId, 'stale');
+        return;
+      }
+      const rebound = Object.freeze({ ...current, context });
+      const confirmation = context.missionResumeRequired ? rebound : undefined;
+      resumeConfirmationRef.current = confirmation;
+      setResumeConfirmation(confirmation);
+      activeMissionRef.current = rebound;
+      setActiveMission(rebound);
+      return;
+    }
     if (result === 'error') {
       setResumeError(true);
       return;
@@ -875,30 +924,35 @@ export function ListeningLearningPage({
   };
 
   if (activeMission) {
-    const interrupted = playbackContext?.missionResumeRequired === true;
+    if (!activeContextMatches) {
+      return <FatalTeardown state={{ error: false, pending: true, reason: 'stale', sessionId: activeMission.sessionId }} onRetry={() => undefined} />;
+    }
+    const interrupted = playbackContext?.missionResumeRequired === true || resumePending || awaitingResumeBroadcast;
     const canResume =
       interrupted &&
-      playbackContext.lifecycle === 'content' &&
+      playbackContext?.lifecycle === 'content' &&
       playbackContext.learningAvailable;
     return (
       <>
         <div className={interrupted ? 'hidden' : 'h-full min-h-0'} inert={interrupted}>
           <ListeningMission
-            boundContextKey={spokenLanguageContextKey}
-            canStartNextMission={activeMission.canStartNextMission}
+            boundContextKey={activeMission.sessionId}
+            interrupted={interrupted}
+            initialSegmentKey={activeMission.initialSegmentKey}
             controller={activeMission.controller}
-            getPracticedAt={getPracticedAt}
             snapshot={activeMission.snapshot}
             onExit={returnToIdle}
-            onNextMission={startNextMission}
             onOwnershipChange={onOwnershipChange}
           />
         </div>
         {interrupted && (
           <MissionAdvertisementInterruption
             canResume={canResume}
+            exitError={interruptedExitError}
+            onExit={() => void exitInterruptedMission()}
             error={resumeError}
             pending={resumePending}
+            resumeConfirmed={awaitingResumeBroadcast}
             onResume={() => void resumeAfterAdvertisement()}
           />
         )}
@@ -1057,15 +1111,6 @@ function LandingContent({
   const currentAvailable = selectCurrentSegmentKeys(catalog).length > 0;
   return (
     <div className='min-w-0 space-y-3'>
-      <dl className='grid min-w-0 grid-cols-2 gap-2 text-sm'>
-        <ProgressFact label={t('v2_listening_landing_cleared')} value={`${summary.cleared} / ${summary.total}`} />
-        <ProgressFact label={t('v2_listening_landing_mastered')} value={`${summary.mastered} / ${summary.total}`} />
-        <ProgressFact label={t('v2_listening_landing_best_combo')} value={String(summary.bestCombo)} />
-        <ProgressFact
-          label={t('v2_listening_landing_last_practiced')}
-          value={summary.lastPracticedAt ? formatPracticedAt(summary.lastPracticedAt) : t('v2_listening_landing_not_practiced')}
-        />
-      </dl>
       {catalog.supportAvailable && <p className='text-wrap text-xs text-muted-foreground'>{t('v2_listening_landing_support_available')}</p>}
       <p className='text-wrap text-xs text-muted-foreground'>{t('v2_listening_landing_caption_reminder')}</p>
       <fieldset className='min-w-0 space-y-2 rounded-lg border p-3'>
@@ -1100,37 +1145,58 @@ function LandingContent({
           </span>
         </label>
       </fieldset>
+      {beginPending && <p role='status'>{t('v2_listening_landing_starting')}</p>}
       {beginError && <p role='alert' className='text-wrap text-sm text-destructive'>{beginError}</p>}
+      {!currentAvailable && <p className='text-xs text-muted-foreground'>{t('v2_listening_landing_current_unavailable')}</p>}
       <div className='grid min-w-0 gap-2 min-[360px]:grid-cols-2'>
-        <Button ref={continueStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || beginPending || resetOpen || resetPending} onClick={() => onStart('continue')}>
-          {beginPending ? t('v2_listening_landing_starting') : t('v2_listening_landing_continue')}
-        </Button>
-        <Button ref={currentStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || !currentAvailable || beginPending || resetOpen || resetPending} variant='outline' onClick={() => onStart('current')}>
+        <Button ref={currentStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || beginPending || resetOpen || resetPending} onClick={() => onStart('current')}>
           {t('v2_listening_landing_start_current')}
         </Button>
-      </div>
-      <div className='grid min-w-0 gap-2 border-t pt-3 min-[360px]:grid-cols-2'>
-        <Button ref={currentResetTriggerRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={beginPending || resetPending} size='sm' variant='outline' onClick={() => onOpenReset('video')}>
-          <RotateCcwIcon />{t('v2_listening_landing_reset_video')}
-        </Button>
-        <Button ref={resetAllTriggerRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={beginPending || resetPending} size='sm' variant='outline' onClick={() => onOpenReset('all')}>
-          <Trash2Icon />{t('v2_listening_landing_reset_all')}
+        <Button ref={continueStartRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={!spokenLanguageConfirmed || selectPastSegmentKeys(catalog).length === 0 || beginPending || resetOpen || resetPending} variant='outline' onClick={() => onStart('continue')}>
+          {t('v2_listening_landing_continue')}
         </Button>
       </div>
+      <details className='space-y-3 border-t pt-3'>
+        <summary className='cursor-pointer text-sm'>{t('v2_listening_previous_records')}</summary>
+        <p className='text-xs text-muted-foreground'>{t('v2_listening_previous_records_description')}</p>
+        <dl className='grid min-w-0 grid-cols-2 gap-2 text-sm'>
+          <ProgressFact label={t('v2_listening_landing_cleared')} value={`${summary.cleared} / ${summary.total}`} />
+          <ProgressFact label={t('v2_listening_landing_mastered')} value={`${summary.mastered} / ${summary.total}`} />
+          <ProgressFact label={t('v2_listening_landing_best_combo')} value={String(summary.bestCombo)} />
+          <ProgressFact
+            label={t('v2_listening_landing_last_practiced')}
+            value={summary.lastPracticedAt ? formatPracticedAt(summary.lastPracticedAt) : t('v2_listening_landing_not_practiced')}
+          />
+        </dl>
+        <div className='grid min-w-0 gap-2 border-t pt-3 min-[360px]:grid-cols-2'>
+          <Button ref={currentResetTriggerRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={beginPending || resetPending} size='sm' variant='outline' onClick={() => onOpenReset('video')}>
+            <RotateCcwIcon />{t('v2_listening_landing_reset_video')}
+          </Button>
+          <Button ref={resetAllTriggerRef} className='min-h-11 h-auto min-w-0 whitespace-normal text-wrap' disabled={beginPending || resetPending} size='sm' variant='outline' onClick={() => onOpenReset('all')}>
+            <Trash2Icon />{t('v2_listening_landing_reset_all')}
+          </Button>
+        </div>
+      </details>
     </div>
   );
 }
 
 function MissionAdvertisementInterruption({
   canResume,
+  exitError,
+  onExit,
   error,
   onResume,
   pending,
+  resumeConfirmed,
 }: {
   canResume: boolean;
+  exitError: boolean;
+  onExit: () => void;
   error: boolean;
   onResume: () => void;
   pending: boolean;
+  resumeConfirmed: boolean;
 }) {
   return (
     <section
@@ -1157,8 +1223,10 @@ function MissionAdvertisementInterruption({
           {t('v2_listening_advertisement_resume_error')}
         </p>
       )}
+      {exitError && <p role='alert'>{t('v2_listening_mission_end_error')}</p>}
+      <Button disabled={pending} variant='outline' onClick={onExit}>{t('v2_listening_return')}</Button>
       {canResume && (
-        <Button disabled={pending} onClick={onResume}>
+        <Button disabled={pending || resumeConfirmed} onClick={onResume}>
           {t('v2_listening_advertisement_continue')}
         </Button>
       )}
@@ -1263,6 +1331,8 @@ const toMissionSnapshot = (
   segments: Object.freeze(snapshot.segments.map((segment) => Object.freeze({
     ...(segment.alignedSupport ? { alignedSupport: Object.freeze({ sourceIndices: Object.freeze([...segment.alignedSupport.sourceIndices]), text: segment.alignedSupport.text }) } : {}),
     answerText: segment.answerText,
+    startMs: segment.startMs,
+    endMs: segment.endMs,
     segmentKey: segment.segmentKey,
     sourceIndices: Object.freeze([...segment.sourceIndices]),
     sourceKey: segment.sourceKey,
@@ -1292,6 +1362,31 @@ const fatalDescription = (reason: ListeningSessionFatalReason) => {
   if (reason === 'segment-unavailable') return t('v2_listening_landing_fatal_segment_unavailable');
   return t('v2_listening_landing_fatal_error');
 };
+
+const isFrozenMissionContextCurrent = (left: PlaybackContextStatus, right: PlaybackContextStatus | null) =>
+  right !== null &&
+  left.contentEpoch === right.contentEpoch &&
+  left.contentInstanceId === right.contentInstanceId &&
+  left.routeChangedAt === right.routeChangedAt &&
+  left.videoId === right.videoId &&
+  left.subtitleIdentity.learning === right.subtitleIdentity.learning &&
+  left.subtitleIdentity.support === right.subtitleIdentity.support &&
+  left.subtitleIdentity.subtitleRevision === right.subtitleIdentity.subtitleRevision &&
+  (left.routeKind === right.routeKind || (right.missionResumeRequired && right.lifecycle !== 'content' && right.routeKind === 'unknown')) &&
+  (right.learningAvailable || right.missionResumeRequired);
+
+const isSameMissionAttachment = (left: PlaybackContextStatus, right: PlaybackContextStatus | null) =>
+  right !== null && left.videoRevision === right.videoRevision &&
+  left.mediaAttachmentRevision === right.mediaAttachmentRevision;
+
+const isResumeIdentityCurrent = (identity: ContentVideoIdentity, subtitleRevision: number, context: PlaybackContextStatus) =>
+  identity.contentEpoch === context.contentEpoch &&
+  identity.contentInstanceId === context.contentInstanceId &&
+  identity.routeChangedAt === context.routeChangedAt &&
+  identity.videoId === context.videoId &&
+  identity.videoRevision === context.videoRevision &&
+  identity.videoRevision === context.mediaAttachmentRevision &&
+  subtitleRevision === context.subtitleIdentity.subtitleRevision;
 
 const createSpokenLanguageContextKey = (
   activeTabId: number | undefined,

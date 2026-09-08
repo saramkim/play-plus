@@ -238,6 +238,7 @@ export type MessageSchema = {
     params: {
       expectedIdentity: ContentVideoIdentity;
       expectedSubtitleRevision: number;
+      entryCutoffMs: number;
       segmentKeys: readonly ListeningSegmentKey[];
     };
     response: BeginListeningSessionResponse;

@@ -992,8 +992,8 @@
     "v2_content_action_failed":  {
                                      "message":  "Content action failed."
                                  },
-    "v2_listening_landing_title": { "message": "Listening Mission" },
-    "v2_listening_landing_description": { "message": "Practice up to 10 consecutive lines from the selected learning subtitle." },
+    "v2_listening_landing_title": { "message": "One-line listening" },
+    "v2_listening_landing_description": { "message": "Catch a line, check the subtitles, then listen again without the text." },
     "v2_listening_landing_loading": { "message": "Loading this video’s listening practice…" },
     "v2_listening_landing_connecting_title": { "message": "Connecting to Coupang Play" },
     "v2_listening_landing_connecting_description": { "message": "Listening practice will become available when this Coupang Play tab finishes connecting." },
@@ -1005,7 +1005,7 @@
     "v2_listening_advertisement_description": { "message": "Mission playback is paused. Advertisement media, time, and captions are not used for learning." },
     "v2_listening_advertisement_returned_title": { "message": "The advertisement has ended" },
     "v2_listening_advertisement_returned_description": { "message": "Your mission is still here. Continue explicitly to use the current main-content media." },
-    "v2_listening_advertisement_continue": { "message": "Return to mission" },
+    "v2_listening_advertisement_continue": { "message": "Return to practice" },
     "v2_listening_advertisement_resume_error": { "message": "The mission could not resume on the current media." },
     "v2_listening_landing_no_video_title": { "message": "No video is ready" },
     "v2_listening_landing_no_video_description": { "message": "Start a supported Coupang Play video, then try again." },
@@ -1031,9 +1031,9 @@
       "placeholders": { "language": { "content": "$1" } }
     },
     "v2_listening_landing_spoken_language_reset": { "message": "The video or learning subtitle changed. Confirm the spoken language again." },
-    "v2_listening_landing_continue": { "message": "Continue" },
-    "v2_listening_landing_start_current": { "message": "Start from current position" },
-    "v2_listening_landing_current_unavailable": { "message": "There is no current or later practice line at this position." },
+    "v2_listening_landing_continue": { "message": "Choose an earlier line" },
+    "v2_listening_landing_start_current": { "message": "Listen to the last line" },
+    "v2_listening_landing_current_unavailable": { "message": "No line finished nearby. Keep watching, or choose an earlier line." },
     "v2_listening_landing_starting": { "message": "Starting…" },
     "v2_listening_landing_busy": { "message": "Another Listening Mission already owns this video. End it before starting again." },
     "v2_listening_landing_begin_stale": { "message": "The video or learning subtitle changed before the mission started. Refresh and try again." },
@@ -1056,152 +1056,35 @@
     "v2_listening_landing_fatal_no_video": { "message": "The mission video is no longer available. Old mission text was removed." },
     "v2_listening_landing_fatal_segment_unavailable": { "message": "A mission line is no longer available. Old mission text was removed." },
     "v2_listening_landing_fatal_error": { "message": "The connection to this mission could not be renewed. The mission was closed so the video can recover safely." },
-    "v2_listening_mission_title": { "message": "Listening Mission" },
-    "v2_listening_mission_exit": { "message": "Exit" },
-    "v2_listening_mission_first_round": { "message": "First round" },
-    "v2_listening_mission_retry_round": { "message": "Retry round" },
-    "v2_listening_mission_round_progress": {
-      "message": "Line $1 of $2",
-      "placeholders": {
-        "current": { "content": "$1" },
-        "total": { "content": "$2" }
-      }
-    },
-    "v2_listening_mission_combo": {
-      "message": "$1 combo",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_line_current": { "message": "Current line" },
-    "v2_listening_mission_line_completed": { "message": "Completed line" },
-    "v2_listening_mission_line_retry": { "message": "Needs retry" },
-    "v2_listening_mission_instruction": { "message": "Listen, then type the line you hear." },
-    "v2_listening_mission_listen_again": { "message": "Listen again" },
-    "v2_listening_mission_listen_slow": { "message": "Slow 0.75×" },
-    "v2_listening_mission_answer_label": { "message": "Your answer" },
-    "v2_listening_mission_answer_placeholder": { "message": "Type what you hear" },
-    "v2_listening_mission_submit": { "message": "Submit" },
-    "v2_listening_mission_hint": { "message": "Hint" },
-    "v2_listening_mission_hint_level": {
-      "message": "Hint level $1",
-      "placeholders": { "level": { "content": "$1" } }
-    },
-    "v2_listening_mission_reveal": { "message": "Reveal answer" },
-    "v2_listening_mission_later": { "message": "Later" },
-    "v2_listening_mission_playing": { "message": "Playing this line…" },
-    "v2_listening_mission_played": { "message": "Playback finished. You can type your answer." },
-    "v2_listening_mission_playback_error": { "message": "Could not play this line. You can try listening again." },
-    "v2_listening_mission_correct": { "message": "Correct" },
-    "v2_listening_mission_almost": { "message": "Almost. The difference is small; revise your answer." },
-    "v2_listening_mission_try_again": { "message": "Try again. Revise your answer or use a hint." },
-    "v2_listening_mission_scaffold_heading": { "message": "Matched parts" },
     "v2_listening_mission_scaffold_blank": {
       "message": "$1-grapheme blank",
       "placeholders": { "count": { "content": "$1" } }
     },
-    "v2_listening_mission_answer_heading": { "message": "Answer" },
-    "v2_listening_mission_support_heading": { "message": "Support sentence" },
-    "v2_listening_mission_next": { "message": "Next" },
-    "v2_listening_mission_summary_title": { "message": "First round complete" },
-    "v2_listening_mission_summary_exact": {
-      "message": "$1 correct on the first submission",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_summary_retry": {
-      "message": "Lines available to retry: $1",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_best_combo": {
-      "message": "Best combo: $1",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_retry_lines": {
-      "message": "Retry lines ($1)",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_view_results": { "message": "View results now" },
-    "v2_listening_mission_results_title": { "message": "Results" },
-    "v2_listening_mission_stars": {
-      "message": "Stars: $1",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_perfect": { "message": "Perfect" },
-    "v2_listening_mission_results_cleared": {
-      "message": "Cleared: $1 of $2",
-      "placeholders": {
-        "cleared": { "content": "$1" },
-        "total": { "content": "$2" }
-      }
-    },
-    "v2_listening_mission_results_first_exact": {
-      "message": "First-submission correct: $1",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_results_hint_free": {
-      "message": "Correct without a text hint: $1",
-      "placeholders": { "count": { "content": "$1" } }
-    },
-    "v2_listening_mission_results_retry": {
-      "message": "Retry success: $1 of $2 attempted",
-      "placeholders": {
-        "success": { "content": "$1" },
-        "attempted": { "content": "$2" }
-      }
-    },
-    "v2_listening_mission_progress_saving": { "message": "Saving progress…" },
-    "v2_listening_mission_progress_saved": { "message": "Progress saved." },
-    "v2_listening_mission_progress_unsaved": { "message": "Progress has not been saved." },
-    "v2_listening_mission_next_10": { "message": "Next 10" },
-    "v2_listening_mission_continue_watching": { "message": "Continue watching" },
-    "v2_listening_mission_close": { "message": "Close results" },
-    "v2_listening_mission_exit_dialog_title": { "message": "Exit Listening Mission?" },
-    "v2_listening_mission_exit_dialog_description": { "message": "Progress facts for completed lines will be saved. Your current draft will not be saved." },
-    "v2_listening_mission_continue_mission": { "message": "Continue mission" },
-    "v2_listening_mission_save_and_exit": { "message": "Save and exit" },
     "v2_listening_mission_ending": { "message": "Ending session…" },
     "v2_listening_mission_end_error": { "message": "Could not end the session safely. Try again." },
     "v2_listening_mission_retry_ending": { "message": "Retry ending session" },
-    "v2_listening_mission_progress_failed_title": { "message": "Progress was not saved" },
-    "v2_listening_mission_progress_failed_description": { "message": "Your completed work from this session is still available here to retry saving." },
-    "v2_listening_mission_retry_saving": { "message": "Retry saving progress" },
-    "v2_listening_mission_exit_without_saving": { "message": "Exit without saving this progress" },
-    "v2_listening_mission_unsaved_lost": { "message": "This session’s unsaved progress will be lost. Progress saved before this session will remain." },
-    "v2_listening_mission_terminal_title": { "message": "This mission is no longer available" },
-    "v2_listening_mission_terminal_stale": { "message": "The video or subtitle changed, so this mission cannot continue." },
-    "v2_listening_mission_terminal_no_video": { "message": "The mission video is no longer available." },
-    "v2_listening_mission_terminal_segment_unavailable": { "message": "This line is no longer available." },
-    "v2_listening_mission_safe_exit": { "message": "Exit safely" },
-    "v2_listening_mission_difficult_title": { "message": "Save difficult lines" },
-    "v2_listening_mission_difficult_description": { "message": "Choose only the lines you want to add to your Learning Library." },
-    "v2_listening_mission_difficult_checkbox": {
-      "message": "Select difficult line $1",
-      "placeholders": { "number": { "content": "$1" } }
-    },
-    "v2_listening_mission_save_selected": { "message": "Save selected lines" },
-    "v2_listening_mission_difficult_saving": { "message": "Saving selected lines…" },
-    "v2_listening_mission_difficult_saved": { "message": "Saved lines are marked below." },
-    "v2_listening_mission_difficult_busy": { "message": "Some selected lines are busy. They remain selected so you can retry." },
-    "v2_listening_mission_difficult_error": { "message": "Some selected lines could not be saved. They remain selected so you can retry." },
-    "v2_listening_mission_difficult_row_busy": { "message": "Busy. This line remains selected." },
-    "v2_listening_mission_difficult_row_error": { "message": "Not saved. This line remains selected." },
-    "v2_listening_mission_difficult_row_saved": { "message": "Saved." },
-    "v2_listening_mission_difficult_terminal_saved_line": {
-      "message": "Line $LINE$ was saved.",
-      "placeholders": { "line": { "content": "$1" } }
-    },
-    "v2_listening_mission_difficult_terminal_busy_line": {
-      "message": "Line $LINE$ is busy and was not saved.",
-      "placeholders": { "line": { "content": "$1" } }
-    },
-    "v2_listening_mission_difficult_terminal_error_line": {
-      "message": "Line $LINE$ could not be saved.",
-      "placeholders": { "line": { "content": "$1" } }
-    },
-    "v2_listening_mission_difficult_terminal_unattempted_line": {
-      "message": "Line $LINE$ was not attempted.",
-      "placeholders": { "line": { "content": "$1" } }
-    },
-    "v2_listening_mission_difficult_terminal_failed": {
-      "message": "Saving stopped at difficult line $1 because the mission changed. Previously saved lines remain saved.",
-      "placeholders": { "number": { "content": "$1" } }
-    }
+    "v2_listening_previous_records": { "message": "Previous dictation records" },
+    "v2_listening_previous_records_description": { "message": "These are records from the previous scored practice. This listening practice does not add scores or change these records." },
+    "v2_listening_return": { "message": "Return to watching" },
+    "v2_listening_past_description": { "message": "Only lines that ended before you entered this practice are shown." },
+    "v2_listening_newer_lines": { "message": "More recent lines" },
+    "v2_listening_older_lines": { "message": "Earlier lines" },
+    "v2_listening_playing": { "message": "Listening… You can reveal the text at any time." },
+    "v2_listening_blind_completed": { "message": "You listened once more with the text hidden." },
+    "v2_listening_listen_description": { "message": "Check the line whenever you like, then hide it and listen again." },
+    "v2_listening_play_error": { "message": "Playback was interrupted. You can listen again or return to watching." },
+    "v2_listening_reveal": { "message": "Reveal subtitles" },
+    "v2_listening_hide_replay": { "message": "Hide and listen again" },
+    "v2_listening_hide_slow": { "message": "Hide and listen slowly · 0.75×" },
+    "v2_listening_type_optional": { "message": "Try typing · optional" },
+    "v2_listening_compare_description": { "message": "Compare with the selected subtitles. Other wording may also be valid; this is not a skill assessment." },
+    "v2_listening_matched_parts": { "message": "Parts matching the subtitles" },
+    "v2_listening_compare": { "message": "Compare with subtitles" },
+    "v2_listening_comparison_exact": { "message": "Matches the subtitles." },
+    "v2_listening_comparison_different": { "message": "Some parts differ from the subtitles." },
+    "v2_listening_saving_line": { "message": "Saving…" },
+    "v2_listening_save_line": { "message": "Save this line" },
+    "v2_listening_saved_line": { "message": "Saved to Library." },
+    "v2_listening_save_error": { "message": "The line was not saved. Try again or return to watching." },
+    "v2_listening_visible_replay": { "message": "Listen with subtitles" }
 }

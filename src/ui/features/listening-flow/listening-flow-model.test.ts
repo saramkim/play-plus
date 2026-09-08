@@ -4,73 +4,47 @@ import { describe, expect, it } from 'vitest';
 
 
 import {
-  selectContinueSegmentKeys,
+  selectPastSegmentKeys,
   selectCurrentSegmentKeys,
-  selectNextMissionSegmentKeys,
   summarizeListeningProgress,
   type ReadyListeningCatalog,
 } from './listening-flow-model';
 
 describe('Listening flow selection', () => {
-  it('uses earliest unrecorded, then earliest attempted, then first for Continue', () => {
-    const catalog = createCatalog(12);
-
-    expect(selectContinueSegmentKeys(catalog, progressWith({ [segmentKey(0)]: 'mastered' }))).toEqual(
-      segmentKeys(1, 10)
-    );
-    expect(
-      selectContinueSegmentKeys(
-        catalog,
-        progressWith({
-          [segmentKey(0)]: 'cleared',
-          [segmentKey(1)]: 'mastered',
-          [segmentKey(2)]: 'attempted',
-          [segmentKey(3)]: 'cleared',
-          [segmentKey(4)]: 'cleared',
-          [segmentKey(5)]: 'cleared',
-          [segmentKey(6)]: 'cleared',
-          [segmentKey(7)]: 'cleared',
-          [segmentKey(8)]: 'cleared',
-          [segmentKey(9)]: 'cleared',
-          [segmentKey(10)]: 'cleared',
-          [segmentKey(11)]: 'cleared',
-        })
-      )
-    ).toEqual(segmentKeys(2, 10));
-    expect(
-      selectContinueSegmentKeys(
-        catalog,
-        progressWith(Object.fromEntries(segmentKeys(0, 12).map((key) => [key, 'cleared'])))
-      )
-    ).toEqual(segmentKeys(0, 10));
-  });
-
-  it('selects the latest-start containing line, then the next gap line, and none after the track', () => {
-    const baseCatalog = createCatalog(4);
-    const catalog: ReadyListeningCatalog = {
-      ...baseCatalog,
-      segments: baseCatalog.segments.map((segment, index) => {
-        if (index === 1) return { ...segment, endMs: 3500 };
-        if (index === 2) return { ...segment, startMs: 2500 };
-        return segment;
-      }),
-    };
-
-    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 2.6 })[0]).toBe(segmentKey(2));
-    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 1.9 })[0]).toBe(segmentKey(1));
+  it('selects only a recently completed whole segment, never a containing or future segment', () => {
+    const catalog = createCatalog(4);
+    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 0.5 })).toEqual([]);
+    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 0.8 })).toEqual([segmentKey(0)]);
+    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 1.5 })).toEqual([segmentKey(0)]);
+    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 13.8 })).toEqual([segmentKey(3)]);
+    expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 13.801 })).toEqual([]);
     expect(selectCurrentSegmentKeys({ ...catalog, currentTime: 20 })).toEqual([]);
   });
 
-  it('uses the line after the prior final key for Next 10 and falls back safely after refresh', () => {
-    const catalog = createCatalog(12);
+  it('uses latest end then latest start with stable source order for overlaps', () => {
+    const base = createCatalog(4);
+    const catalog = { ...base, currentTime: 5, segments: base.segments.map((segment, index) => ({
+      ...segment, startMs: index === 0 ? 1000 : 2000, endMs: index === 3 ? 5500 : 4000,
+    })) };
+    expect(selectCurrentSegmentKeys(catalog)).toEqual([segmentKey(1)]);
+    expect(selectPastSegmentKeys(catalog)).toEqual(segmentKeys(0, 3));
+  });
 
-    expect(selectNextMissionSegmentKeys(catalog, EMPTY_PROGRESS, segmentKey(8))).toEqual(
-      segmentKeys(9, 3)
-    );
-    expect(selectNextMissionSegmentKeys(catalog, EMPTY_PROGRESS, segmentKey(11))).toEqual([]);
-    expect(selectNextMissionSegmentKeys(catalog, EMPTY_PROGRESS, segmentKey(99))).toEqual(
-      segmentKeys(0, 10)
-    );
+  it('bounds past candidates and does not include partly finished groups', () => {
+    const catalog = createCatalog(20_005);
+    const keys = selectPastSegmentKeys({ ...catalog, currentTime: 20_004.5 });
+    expect(keys).toHaveLength(20_000);
+    expect(keys[0]).toBe(segmentKey(4));
+    expect(keys.at(-1)).toBe(segmentKey(20_003));
+  });
+
+  it('retains the nearest default even when a large source has out-of-order timings', () => {
+    const catalog = createCatalog(20_005);
+    const reordered = { ...catalog, currentTime: 30_000, segments: catalog.segments.map((segment, index) =>
+      index === 0 ? { ...segment, startMs: 29_998_000, endMs: 29_999_000 } : segment) };
+    const current = selectCurrentSegmentKeys(reordered)[0];
+    expect(current).toBe(segmentKey(0));
+    expect(selectPastSegmentKeys(reordered)).toContain(current);
   });
 
   it('summarizes only current catalog keys in the exact namespace', () => {
@@ -150,5 +124,3 @@ const progressWith = (states: Record<string, 'attempted' | 'cleared' | 'mastered
     },
   },
 });
-
-const EMPTY_PROGRESS: ListeningProgressV1 = { version: 1, videos: {} };

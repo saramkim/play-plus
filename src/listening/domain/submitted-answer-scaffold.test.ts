@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { LISTENING_HINT_MASK } from './hint';
-import { createSubmittedAnswerScaffold } from './submitted-answer-scaffold';
+
+import { createSubmittedAnswerScaffold, LISTENING_HINT_MASK } from './submitted-answer-scaffold';
 
 describe('createSubmittedAnswerScaffold', () => {
   it('aligns exact tokens and omits submitted insertions', () => {

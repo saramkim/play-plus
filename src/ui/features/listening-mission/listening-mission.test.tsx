@@ -1,703 +1,273 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { act } from 'react';
 
+import { listeningSegmentKeySchema } from '@storage/v2/schema';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-  ListeningSegmentKey,
-  ListeningSourceKey,
-} from '@/listening/domain/source-identity';
-import type {
-  CommitProgressResult,
-  DifficultSaveResult,
-  EndSessionResult,
-  ListeningMissionController,
-  PlaySegmentResult,
-} from '@/listening/session/mission-controller';
-import type { ListeningMissionSnapshot } from '@/listening/session/mission-reducer';
+import type { ListeningMissionController, PlaySegmentResult } from '@/listening/session/mission-controller';
+import type { ListeningMissionSnapshot } from '@/listening/session/mission-snapshot';
 
 import { ListeningMission } from './listening-mission';
 
-const PRACTICED_AT = '2026-08-09T12:00:00+12:00';
-const SOURCE_KEY = 'native:en' as ListeningSourceKey;
+const key = (index: number) => listeningSegmentKeySchema.parse(`segment-v1-${String(index).padStart(64, '0')}`);
+const snapshot: ListeningMissionSnapshot = {
+  learningLanguage: 'en', sourceKey: 'native:en', segmenterVersion: 1, videoId: 'video-a',
+  segments: [0, 1].map((index) => ({
+    segmentKey: key(index), sourceKey: 'native:en', sourceIndices: [index],
+    startMs: index * 2000, endMs: index * 2000 + 1000, answerText: `Take the train ${index}`,
+    alignedSupport: { sourceIndices: [index], text: `기차를 타세요 ${index}` },
+  })),
+};
+const deferred = <T,>() => {
+  let resolve!: (result: T) => void;
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+};
 
-describe('ListeningMission isolated UI', () => {
+describe('One-line listening practice', () => {
   let container: HTMLDivElement;
-  let root: Root | undefined;
-
-  beforeAll(() => {
-    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      queueMicrotask(() => callback(0));
-      return 1;
-    });
-  });
-
+  let root: Root;
+  let controller: ListeningMissionController;
+  let onExit: ReturnType<typeof vi.fn<() => void>>;
   beforeEach(() => {
-    vi.mocked(chrome.i18n.getMessage).mockImplementation((messageName, substitutions) => {
-      const values = Array.isArray(substitutions)
-        ? substitutions
-        : substitutions === undefined
-          ? []
-          : [substitutions];
-      return values.length === 0 ? messageName : `${messageName}:${values.join('/')}`;
-    });
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    vi.stubGlobal('chrome', { i18n: { getMessage: (key: string) => key } });
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => { callback(); return 1; });
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
+    onExit = vi.fn();
+    controller = {
+      playSegment: vi.fn().mockResolvedValue({ status: 'played' }),
+      endSession: vi.fn().mockResolvedValue({ status: 'ended' }),
+      saveDifficultSegments: vi.fn().mockResolvedValue({ saved: [key(1)], retryableFailures: [] }),
+    };
   });
-
   afterEach(() => {
-    if (root) act(() => root?.unmount());
-    root = undefined;
+    act(() => root.unmount());
     container.remove();
-    document.documentElement.classList.remove('dark');
+    vi.unstubAllGlobals();
   });
-
-  afterAll(() => vi.unstubAllGlobals());
-
-  it.each([320, 360, 390])(
-    'keeps one scroll owner and usable narrow controls at %ipx',
-    async (width) => {
-      container.style.width = `${width}px`;
-      const harness = createHarness();
-      await renderMission(root, harness, snapshot(1));
-
-      const scrollOwners = container.querySelectorAll<HTMLElement>(
-        "[data-scroll-owner='listening-mission']"
-      );
-      expect(scrollOwners).toHaveLength(1);
-      expect(scrollOwners[0].className).toContain('overflow-x-hidden');
-      expect(scrollOwners[0].className).toContain('overflow-y-auto');
-      expect(scrollOwners[0].parentElement?.className).toContain('overflow-hidden');
-      expect(container.querySelectorAll('[data-scroll-owner] [data-scroll-owner]')).toHaveLength(0);
-
-      const textarea = getTextarea(container);
-      const label = container.querySelector<HTMLLabelElement>(`label[for='${textarea.id}']`);
-      expect(label?.textContent).toBe('v2_listening_mission_answer_label');
-      expect(textarea.value).toBe('');
-      expect(textarea.className).toContain('min-w-0');
-      expect(textarea.className).toContain('[overflow-wrap:anywhere]');
-      expect(
-        Array.from(container.querySelectorAll<HTMLButtonElement>('button')).every((button) =>
-          button.className.includes('min-h-11')
-        )
-      ).toBe(true);
-    }
-  );
-
-  it('preserves draft and cumulative hints through an accessible exit dialog', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1, { support: true }));
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'private draft');
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:1');
-
-    const exit = getButton(container, 'v2_listening_mission_exit');
-    exit.focus();
-    await click(exit);
-
-    const dialog = container.querySelector<HTMLElement>("[role='alertdialog']");
-    expect(dialog).not.toBeNull();
-    expect(dialog?.getAttribute('aria-modal')).toBe('true');
-    expect(dialog?.getAttribute('aria-labelledby')).toBeTruthy();
-    expect(dialog?.getAttribute('aria-describedby')).toBeTruthy();
-    const continueButton = getButton(dialog!, 'v2_listening_mission_continue_mission');
-    const saveButton = getButton(dialog!, 'v2_listening_mission_save_and_exit');
-    expect(document.activeElement).toBe(continueButton);
-
-    dispatchKey(continueButton, 'Tab', { shiftKey: true });
-    expect(document.activeElement).toBe(saveButton);
-    dispatchKey(saveButton, 'Tab');
-    expect(document.activeElement).toBe(continueButton);
-
-    dispatchKey(dialog!, 'Escape');
-    await flush();
-    expect(container.querySelector("[role='alertdialog']")).toBeNull();
-    expect(document.activeElement).toBe(exit);
-    expect(getTextarea(container).value).toBe('private draft');
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:1');
-  });
-
-  it('keeps the standard composition Enter sequence from submitting', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1, { support: true }));
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'Answer 1');
-    const shiftedEnter = dispatchKey(textarea, 'Enter', { shiftKey: true });
-    expect(shiftedEnter.defaultPrevented).toBe(false);
-    expect(getTextarea(container)).toBe(textarea);
-
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
-    const composingEnter = dispatchKey(textarea, 'Enter', {
-      isComposing: true,
-      keyCode: 229,
-    });
-    expect(composingEnter.defaultPrevented).toBe(false);
-    expect(getTextarea(container)).toBe(textarea);
-    expect(container.textContent).not.toContain('v2_listening_mission_answer_heading');
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
-    dispatchKeyUp(textarea, 'Enter');
-
-    const submitEnter = dispatchKey(textarea, 'Enter');
-    expect(submitEnter.defaultPrevented).toBe(true);
-    await flush();
-
-    expect(container.querySelector('textarea')).toBeNull();
-    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
-    expect(container.textContent).toContain('Answer 1');
-    expect(container.textContent).toContain('도움 1');
-    expect(document.activeElement).toBe(getButton(container, 'v2_listening_mission_next'));
-  });
-
-  it('suppresses an Enter delivered immediately after compositionend', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1));
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'Answer 1');
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
-
-    const commitEnter = dispatchKey(textarea, 'Enter');
-    expect(commitEnter.defaultPrevented).toBe(true);
-    expect(getTextarea(container)).toBe(textarea);
-    expect(container.textContent).not.toContain('v2_listening_mission_answer_heading');
-
-    dispatchKeyUp(textarea, 'Enter');
-    const submitEnter = dispatchKey(textarea, 'Enter');
-    expect(submitEnter.defaultPrevented).toBe(true);
-    await flush();
-
-    expect(container.querySelector('textarea')).toBeNull();
-    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
-  });
-
-  it('submits Enter after the post-composition guard expires', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1));
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'Answer 1');
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
-    await flush();
-
-    const submitEnter = dispatchKey(textarea, 'Enter');
-    expect(submitEnter.defaultPrevented).toBe(true);
-    await flush();
-
-    expect(container.querySelector('textarea')).toBeNull();
-    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
-  });
-
-  it('does not suppress Enter after a non-Enter composition end key completes', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1));
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'Answer 1');
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
-    dispatchKey(textarea, 'Escape', { isComposing: true, keyCode: 229 });
-    act(() => textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
-    dispatchKeyUp(textarea, 'Escape');
-
-    const submitEnter = dispatchKey(textarea, 'Enter');
-    expect(submitEnter.defaultPrevented).toBe(true);
-    await flush();
-
-    expect(container.querySelector('textarea')).toBeNull();
-    expect(container.textContent).toContain('v2_listening_mission_answer_heading');
-  });
-
-  it('renders cumulative authored hints and never labels Reveal as cleared', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1, { support: true }));
-
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:1');
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:2');
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:3');
-    expect(container.textContent).toContain('도움 1');
-
-    await click(getButton(container, 'v2_listening_mission_reveal'));
-    await flush();
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:4');
-    expect(container.textContent).toContain('v2_listening_mission_line_retry');
-    expect(container.textContent).not.toContain('v2_listening_mission_line_completed');
-    expect(container.textContent).toContain('Answer 1');
-    expect(document.activeElement).toBe(getButton(container, 'v2_listening_mission_next'));
-  });
-
-  it('skips support cleanly when the mission has no aligned support', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1));
-
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:1');
-    expect(container.textContent).toContain('v2_listening_mission_hint_level:2');
-    expect(container.textContent).not.toContain('v2_listening_mission_hint_level:3');
-    expect(getButton(container, 'v2_listening_mission_reveal')).not.toBeNull();
-  });
-
-  it('distinguishes Almost from Try again while preserving editable focus and draft', async () => {
-    const harness = createHarness();
-    const base = snapshot(1);
-    await renderMission(root, harness, {
-      ...base,
-      segments: [{ ...base.segments[0], answerText: 'abcdefghij' }],
-    });
-
-    const textarea = getTextarea(container);
-    const scaffoldStatus = container.querySelector<HTMLElement>(
-      "[data-testid='submitted-answer-scaffold-status']"
-    );
-    if (!scaffoldStatus) throw new Error('Expected persistent scaffold status');
-    expect(scaffoldStatus.getAttribute('role')).toBe('status');
-    expect(scaffoldStatus.getAttribute('aria-live')).toBe('polite');
-    expect(scaffoldStatus.getAttribute('aria-atomic')).toBe('true');
-    expect(scaffoldStatus.textContent).toBe('');
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
-
-    changeTextarea(textarea, 'abcdefghiX');
-    dispatchKey(textarea, 'Enter');
-    await flush();
-    let feedback = container.querySelector<HTMLElement>("[role='status']:not(.sr-only)");
-    expect(feedback?.textContent).toContain('v2_listening_mission_almost');
-    expect(feedback?.querySelector('svg')?.className.baseVal).toContain('text-primary');
-    expect(getTextarea(container).value).toBe('abcdefghiX');
-    expect(document.activeElement).toBe(textarea);
-    const firstScaffold = container.querySelector<HTMLElement>(
-      "[data-testid='submitted-answer-scaffold']"
-    );
-    if (!firstScaffold) throw new Error('Expected submitted-answer scaffold');
-    expect(
-      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
-    ).toBe(scaffoldStatus);
-    expect(scaffoldStatus.textContent).toContain(
-      'v2_listening_mission_scaffold_heading'
-    );
-    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:1');
-    expect(firstScaffold.hasAttribute('aria-live')).toBe(false);
-    expect(firstScaffold.textContent).toContain('v2_listening_mission_scaffold_heading');
-    expect(firstScaffold.querySelector("[aria-hidden='true']")?.textContent).toBe(
-      'abcdefghi＿'
-    );
-    expect(firstScaffold.querySelector('.sr-only')?.textContent).toContain(
-      'v2_listening_mission_scaffold_blank:1'
-    );
-    expect(firstScaffold.querySelector('.sr-only')?.textContent).not.toContain('＿');
-    expect(
-      firstScaffold.compareDocumentPosition(textarea) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-
-    changeTextarea(textarea, 'abcdefghXY');
-    expect(
-      container
-        .querySelector<HTMLElement>("[data-testid='submitted-answer-scaffold']")
-        ?.querySelector("[aria-hidden='true']")?.textContent
-    ).toBe('abcdefghi＿');
-    dispatchKey(textarea, 'Enter');
-    await flush();
-    feedback = container.querySelector<HTMLElement>("[role='status']:not(.sr-only)");
-    expect(feedback?.textContent).toContain('v2_listening_mission_try_again');
-    expect(feedback?.querySelector('svg')?.className.baseVal).toContain('text-destructive');
-    expect(getTextarea(container).value).toBe('abcdefghXY');
-    expect(document.activeElement).toBe(textarea);
-    const secondScaffold = container.querySelector<HTMLElement>(
-      "[data-testid='submitted-answer-scaffold']"
-    );
-    expect(secondScaffold).toBe(firstScaffold);
-    expect(secondScaffold?.querySelector("[aria-hidden='true']")?.textContent).toBe(
-      'abcdefgh＿＿'
-    );
-    expect(secondScaffold?.querySelector('.sr-only')?.textContent).toContain(
-      'v2_listening_mission_scaffold_blank:2'
-    );
-    expect(
-      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
-    ).toBe(scaffoldStatus);
-    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:2');
-    const secondAnnouncement = scaffoldStatus.firstElementChild;
-
-    dispatchKey(textarea, 'Enter');
-    await flush();
-    expect(
-      container.querySelector("[data-testid='submitted-answer-scaffold-status']")
-    ).toBe(scaffoldStatus);
-    expect(scaffoldStatus.textContent).toContain('v2_listening_mission_scaffold_blank:2');
-    expect(scaffoldStatus.firstElementChild).not.toBe(secondAnnouncement);
-
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
-    await click(getButton(container, 'v2_listening_mission_reveal'));
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
-  });
-
-  it('clears submitted-answer feedback on context change and allows validated continuation', async () => {
-    const harness = createHarness();
-    const missionSnapshot = snapshot(1);
-    await renderMission(root, harness, missionSnapshot, 'context-a');
-
-    const textarea = getTextarea(container);
-    changeTextarea(textarea, 'wrong');
-    dispatchKey(textarea, 'Enter');
-    await flush();
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
-
-    await renderMission(root, harness, missionSnapshot, 'context-b');
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
-    expect(
-      container.querySelector("[data-testid='submitted-answer-scaffold-status']")?.textContent
-    ).toBe('');
-
-    await renderMission(root, harness, missionSnapshot, 'context-a');
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).toBeNull();
-
-    dispatchKey(getTextarea(container), 'Enter');
-    await flush();
-    expect(container.querySelector("[data-testid='submitted-answer-scaffold']")).not.toBeNull();
-  });
-
-  it('wraps deterministic long English, Korean, and no-space text in light and dark hosts', async () => {
-    document.documentElement.classList.add('dark');
-    const harness = createHarness();
-    const base = snapshot(1, { support: true });
-    const longAnswer =
-      'A deliberately long English sentence 한국어 문장 ' + 'NoBreakToken'.repeat(40);
-    const longSupport = '긴 도움 문장 ' + '지원텍스트'.repeat(50);
-    await renderMission(root, harness, {
-      ...base,
-      segments: [
-        {
-          ...base.segments[0],
-          alignedSupport: { sourceIndices: [100], text: longSupport },
-          answerText: longAnswer,
-        },
-      ],
-    });
-
-    changeTextarea(getTextarea(container), 'wrong');
-    dispatchKey(getTextarea(container), 'Enter');
-    await flush();
-    const scaffold = container.querySelector<HTMLElement>(
-      "[data-testid='submitted-answer-scaffold']"
-    );
-    if (!scaffold) throw new Error('Expected submitted-answer scaffold');
-
-    for (const width of [320, 360, 390]) {
-      container.style.width = `${width}px`;
-      expect(scaffold.className).toContain('min-w-0');
-      expect(scaffold.querySelector("[aria-hidden='true']")?.className).toContain(
-        '[overflow-wrap:anywhere]'
-      );
-      expect(container.querySelectorAll("[data-scroll-owner='listening-mission']")).toHaveLength(1);
-      expect(container.querySelectorAll('[data-scroll-owner] [data-scroll-owner]')).toHaveLength(0);
-      expect(getButton(container, 'v2_listening_mission_hint').disabled).toBe(false);
-    }
-
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    await click(getButton(container, 'v2_listening_mission_reveal'));
-
-    for (const width of [320, 360, 390]) {
-      container.style.width = `${width}px`;
-      expect(container.querySelectorAll("[data-scroll-owner='listening-mission']")).toHaveLength(1);
-      expect(container.querySelectorAll('[data-scroll-owner] [data-scroll-owner]')).toHaveLength(0);
-      expect(
-        Array.from(container.querySelectorAll<HTMLElement>('[class*="overflow-wrap:anywhere"]')).some(
-          ({ textContent }) => textContent?.includes('NoBreakToken')
-        )
-      ).toBe(true);
-      expect(container.textContent).toContain(longSupport);
-    }
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-  });
-
-  it('uses retry-round position and renders local Results without sharing claims', async () => {
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(2, { support: true }));
-
-    changeTextarea(getTextarea(container), 'wrong');
-    dispatchKey(getTextarea(container), 'Enter');
-    expect(container.textContent).toContain('v2_listening_mission_try_again');
-    expect(container.querySelector('textarea')).not.toBeNull();
-
-    changeTextarea(getTextarea(container), 'Answer 1');
-    dispatchKey(getTextarea(container), 'Enter');
-    await flush();
-    await click(getButton(container, 'v2_listening_mission_next'));
-    await click(getButton(container, 'v2_listening_mission_later'));
-
-    expect(container.textContent).toContain('v2_listening_mission_summary_title');
-    expect(container.textContent).toContain('v2_listening_mission_summary_retry:2');
-    expect(document.activeElement?.textContent).toBe('v2_listening_mission_summary_title');
-    await click(getButton(container, 'v2_listening_mission_retry_lines'));
-    expect(container.textContent).toContain('v2_listening_mission_retry_round');
-    expect(container.textContent).toContain('v2_listening_mission_round_progress:1/2');
-    expect(getTextarea(container).value).toBe('');
-    expect(container.textContent).not.toContain('v2_listening_mission_hint_level');
-
-    changeTextarea(getTextarea(container), 'Answer 1');
-    dispatchKey(getTextarea(container), 'Enter');
-    await flush();
-    await click(getButton(container, 'v2_listening_mission_next'));
-    expect(container.textContent).toContain('v2_listening_mission_round_progress:2/2');
-    changeTextarea(getTextarea(container), 'Answer 2');
-    dispatchKey(getTextarea(container), 'Enter');
-    await flush();
-    await click(getButton(container, 'v2_listening_mission_next'));
-    await flush();
-
-    expect(container.textContent).toContain('v2_listening_mission_results_title');
-    expect(document.activeElement?.textContent).toBe('v2_listening_mission_results_title');
-    expect(container.textContent).toContain('v2_listening_mission_progress_saved');
-    expect(container.textContent).toContain('v2_listening_mission_results_retry:2/2');
-    expect(container.textContent).toContain('v2_listening_mission_stars:');
-    expect(container.textContent?.toLowerCase()).not.toContain('share');
-    expect(container.textContent?.toLowerCase()).not.toContain('leaderboard');
-
-    await act(async () => {
-      root?.render(
-        <ListeningMission
-          canStartNextMission={false}
-          controller={harness.controller}
-          getPracticedAt={harness.getPracticedAt}
-          onExit={harness.onExit}
-          onNextMission={harness.onNextMission}
-          onOwnershipChange={harness.onOwnershipChange}
-          snapshot={snapshot(2, { support: true })}
-        />
-      );
-      await Promise.resolve();
-    });
-    expect(container.textContent).not.toContain('v2_listening_mission_next_10');
-    expect(container.textContent).toContain('v2_listening_mission_continue_watching');
-  });
-
-  it('stays isolated from production mounts and never sends typed answer text', async () => {
-    const componentSource = readFileSync(
-      join(process.cwd(), 'src/ui/features/listening-mission/listening-mission.tsx'),
-      'utf8'
-    );
-    const productionSource = readProductionSource([
-      'src/ui/app.tsx',
-      'src/ui/index.tsx',
-      'src/ui/pages',
-      'src/background',
-      'src/content',
-      'src/utils/message',
-    ]);
-
-    expect(componentSource).not.toMatch(/@storage|@utils\/message|@\/ui\/(?:pages|store)|chrome\./u);
-    expect(productionSource).not.toContain('listening-mission');
-
-    const harness = createHarness();
-    await renderMission(root, harness, snapshot(1, { support: true }));
-    changeTextarea(getTextarea(container), 'typed secret answer');
-    await click(getButton(container, 'v2_listening_mission_hint'));
-    const exit = getButton(container, 'v2_listening_mission_exit');
-    exit.focus();
-    await click(exit);
-    await click(getButton(container, 'v2_listening_mission_continue_mission'));
-
-    const controllerCalls = JSON.stringify({
-      commit: harness.commitProgress.mock.calls,
-      difficult: harness.saveDifficultSegments.mock.calls,
-      end: harness.endSession.mock.calls,
-      play: harness.playSegment.mock.calls,
-    });
-    expect(controllerCalls).not.toContain('typed secret answer');
-    expect(controllerCalls).not.toContain('Answer 1');
-    expect(controllerCalls).not.toContain('도움 1');
-    expect(
-      Array.from(container.querySelectorAll('*')).flatMap((element) =>
-        Array.from(element.attributes, ({ value }) => value)
-      )
-    ).not.toContain('typed secret answer');
-  });
-});
-
-type MissionHarness = ReturnType<typeof createHarness>;
-
-function createHarness() {
-  const playSegment = vi.fn(async (): Promise<PlaySegmentResult> => ({ status: 'played' }));
-  const commitProgress = vi.fn(async (): Promise<CommitProgressResult> => ({ status: 'saved' }));
-  const endSession = vi.fn(async (): Promise<EndSessionResult> => ({ status: 'ended' }));
-  const saveDifficultSegments = vi.fn(
-    async (segmentKeys: string[]): Promise<DifficultSaveResult> => ({
-      retryableFailures: [],
-      saved: segmentKeys,
-    })
-  );
-  const controller = {
-    commitProgress,
-    endSession,
-    playSegment,
-    saveDifficultSegments,
-  } satisfies ListeningMissionController;
-
-  return {
-    commitProgress,
-    controller,
-    endSession,
-    getPracticedAt: vi.fn(() => PRACTICED_AT),
-    onExit: vi.fn(),
-    onNextMission: vi.fn(),
-    onOwnershipChange: vi.fn(),
-    playSegment,
-    saveDifficultSegments,
+  const render = async (initial: string | undefined = key(1), context = 'a') => {
+    await act(async () => root.render(<ListeningMission snapshot={snapshot} controller={controller} initialSegmentKey={initial} boundContextKey={context} onExit={onExit} />));
   };
-}
-
-async function renderMission(
-  root: Root | undefined,
-  harness: MissionHarness,
-  missionSnapshot: ListeningMissionSnapshot,
-  boundContextKey?: string
-) {
-  if (!root) throw new Error('Expected a React root');
-  await act(async () => {
-    root.render(
-      <ListeningMission
-        boundContextKey={boundContextKey}
-        controller={harness.controller}
-        getPracticedAt={harness.getPracticedAt}
-        onExit={harness.onExit}
-        onNextMission={harness.onNextMission}
-        onOwnershipChange={harness.onOwnershipChange}
-        snapshot={missionSnapshot}
-      />
-    );
-    await Promise.resolve();
-  });
-  await flush();
-}
-
-const key = (index: number): ListeningSegmentKey =>
-  `segment-v1-${index.toString(16).padStart(64, '0')}` as ListeningSegmentKey;
-
-const snapshot = (
-  count: number,
-  options: { support?: boolean } = {}
-): ListeningMissionSnapshot => ({
-  learningLanguage: 'en',
-  segmenterVersion: 1,
-  segments: Array.from({ length: count }, (_, index) => ({
-    ...(options.support
-      ? {
-          alignedSupport: {
-            sourceIndices: [index + 100],
-            text: `도움 ${index + 1}`,
-          },
-        }
-      : {}),
-    answerText: `Answer ${index + 1}`,
-    segmentKey: key(index),
-    sourceIndices: [index],
-    sourceKey: SOURCE_KEY,
-  })),
-  sourceKey: SOURCE_KEY,
-  videoId: '123e4567-e89b-12d3-a456-426614174050',
-});
-
-function getTextarea(scope: ParentNode) {
-  const textarea = scope.querySelector<HTMLTextAreaElement>('textarea');
-  if (!textarea) throw new Error('Expected an answer textarea');
-  return textarea;
-}
-
-function getButton(scope: ParentNode, name: string) {
-  const button = Array.from(scope.querySelectorAll<HTMLButtonElement>('button')).find(
-    ({ textContent }) => textContent?.trim() === name || textContent?.trim().startsWith(`${name}:`)
-  );
-  if (!button) throw new Error(`Expected button: ${name}`);
-  return button;
-}
-
-function changeTextarea(textarea: HTMLTextAreaElement, value: string) {
-  act(() => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
-    if (!setter) throw new Error('Expected native textarea value setter');
-    setter.call(textarea, value);
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-}
-
-function dispatchKey(
-  target: Element,
-  keyValue: string,
-  options: KeyboardEventInit = {}
-) {
-  const event = new KeyboardEvent('keydown', {
-    bubbles: true,
-    cancelable: true,
-    key: keyValue,
-    ...options,
-  });
-  act(() => {
-    target.dispatchEvent(event);
-  });
-  return event;
-}
-
-function dispatchKeyUp(target: Element, keyValue: string, options: KeyboardEventInit = {}) {
-  const event = new KeyboardEvent('keyup', {
-    bubbles: true,
-    cancelable: true,
-    key: keyValue,
-    ...options,
-  });
-  act(() => {
-    target.dispatchEvent(event);
-  });
-  return event;
-}
-
-async function click(target: HTMLElement) {
-  await act(async () => {
-    target.click();
-    await Promise.resolve();
-  });
-  await flush();
-}
-
-async function flush() {
-  await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-}
-
-function readProductionSource(relativePaths: readonly string[]) {
-  const visit = (path: string): string => {
-    const entries = readdirSync(path, { withFileTypes: true });
-    return entries
-      .filter(({ name }) => !name.includes('.test.') && !name.includes('listening-mission'))
-      .map((entry) => {
-        const child = join(path, entry.name);
-        if (entry.isDirectory()) return visit(child);
-        return /\.tsx?$/u.test(entry.name) ? readFileSync(child, 'utf8') : '';
-      })
-      .join('\n');
+  const button = (name: string) => {
+    const result = Array.from(container.querySelectorAll('button')).find((node) => node.textContent?.trim() === name);
+    if (!result) throw new Error(`Missing ${name}`);
+    return result;
+  };
+  const click = async (name: string) => { await act(async () => button(name).click()); };
+  const type = (value: string) => {
+    const textarea = container.querySelector('textarea')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(textarea, value);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    return textarea;
   };
 
-  return relativePaths
-    .map((relativePath) => {
-      const path = join(process.cwd(), relativePath);
-      return /\.tsx?$/u.test(relativePath) ? readFileSync(path, 'utf8') : visit(path);
-    })
-    .join('\n');
-}
+  it('replays one selected line and offers immediate reveal without a typing gate or progress write', async () => {
+    const playback = deferred<PlaySegmentResult>();
+    vi.mocked(controller.playSegment).mockReturnValue(playback.promise);
+    await render();
+    expect(controller.playSegment).toHaveBeenCalledExactlyOnceWith(key(1), 1);
+    expect(container.textContent).not.toContain('Take the train');
+    await click('v2_listening_reveal');
+    expect(container.textContent).toContain('Take the train 1');
+    expect(container.textContent).toContain('기차를 타세요 1');
+    expect(container.querySelector('textarea')).toBeNull();
+    await act(async () => playback.resolve({ status: 'played' }));
+    expect(controller).not.toHaveProperty('commitProgress');
+    expect(controller.playSegment).toHaveBeenCalledTimes(1);
+  });
+
+  it('can listen with visible subtitles and immediately switch to a fresh hidden replay', async () => {
+    await render();
+    await click('v2_listening_reveal');
+    const visible = deferred<PlaySegmentResult>();
+    vi.mocked(controller.playSegment).mockReturnValueOnce(visible.promise).mockResolvedValueOnce({ status: 'played' });
+    await click('v2_listening_visible_replay');
+    expect(container.textContent).toContain('Take the train 1');
+    expect(button('v2_listening_hide_replay').disabled).toBe(false);
+    await click('v2_listening_hide_replay');
+    expect(container.textContent).not.toContain('Take the train 1');
+    expect(container.textContent).toContain('v2_listening_blind_completed');
+    await act(async () => visible.resolve({ status: 'played' }));
+    expect(container.textContent).toContain('v2_listening_blind_completed');
+  });
+
+  it('removes answer, support, draft and scaffold before replay, retaining the draft for the same line', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    type('Take train');
+    await click('v2_listening_compare');
+    expect(container.querySelector('[aria-label="v2_listening_matched_parts"]')).not.toBeNull();
+    await click('v2_listening_reveal');
+    vi.mocked(controller.playSegment).mockImplementation(async () => {
+      expect(container.textContent).not.toContain('Take the train');
+      expect(container.textContent).not.toContain('기차를');
+      expect(container.querySelector('textarea')).toBeNull();
+      expect(container.querySelector('[aria-label="v2_listening_matched_parts"]')).toBeNull();
+      return { status: 'played' };
+    });
+    await click('v2_listening_hide_replay');
+    expect(container.textContent).toContain('v2_listening_blind_completed');
+    expect(document.activeElement).toBe(button('v2_listening_return'));
+    await click('v2_listening_type_optional');
+    expect(container.querySelector('textarea')?.value).toBe('Take train');
+    expect(container.textContent).not.toContain('v2_listening_blind_completed');
+  });
+
+  it.each(['reveal', 'type_optional'])('does not count hidden playback if text is exposed via %s during playback', async (action) => {
+    await render();
+    const replay = deferred<PlaySegmentResult>();
+    vi.mocked(controller.playSegment).mockReturnValue(replay.promise);
+    await click('v2_listening_hide_replay');
+    await click('v2_listening_' + action);
+    await act(async () => replay.resolve({ status: 'played' }));
+    expect(container.textContent).not.toContain('v2_listening_blind_completed');
+  });
+
+  it.each(['error', 'suspended', 'stale'] as const)('never counts %s playback as completed', async (status) => {
+    await render();
+    vi.mocked(controller.playSegment).mockResolvedValue({ status });
+    await click('v2_listening_hide_slow');
+    expect(controller.playSegment).toHaveBeenLastCalledWith(key(1), 0.75);
+    expect(container.textContent).not.toContain('v2_listening_blind_completed');
+  });
+
+  it('keeps drafts unchanged, compares only on submit and clears feedback when hidden', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    type('Take train');
+    await click('v2_listening_compare');
+    const original = container.querySelector('[aria-label="v2_listening_matched_parts"]')?.textContent;
+    type('different');
+    expect(container.querySelector('[aria-label="v2_listening_matched_parts"]')?.textContent).toBe(original);
+    await click('v2_listening_compare');
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+    expect(container.querySelector('textarea')?.value).toBe('different');
+    type('TAKE THE TRAIN 1!');
+    await click('v2_listening_compare');
+    expect(container.textContent).toContain('v2_listening_comparison_exact');
+    expect(controller).not.toHaveProperty('commitProgress');
+  });
+
+  it('does not submit IME Enter and preserves Shift+Enter for multiline drafts', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    const textarea = type('기차');
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })));
+    expect(container.textContent).not.toContain('v2_listening_comparison_different');
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true })));
+    expect(container.textContent).not.toContain('v2_listening_comparison_different');
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+  });
+
+  it('suppresses only the composition commit Enter and allows the next intentional Enter', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    const textarea = type('기차');
+    let frame!: () => void;
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => { frame = callback; return 1; });
+    act(() => {
+      textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    });
+    const commit = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    act(() => textarea.dispatchEvent(commit));
+    expect(commit.defaultPrevented).toBe(true);
+    expect(container.textContent).not.toContain('v2_listening_comparison_different');
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })));
+    act(() => frame());
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+  });
+
+  it.each(['frame', 'other-key', 'blur', 'hide'] as const)('clears a non-Enter composition completion on %s before intentional comparison', async (finish) => {
+    await render();
+    await click('v2_listening_type_optional');
+    let textarea = type('기차');
+    let frame!: () => void;
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => { frame = callback; return 1; });
+    act(() => {
+      textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      textarea.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+    });
+    if (finish === 'frame') act(() => frame());
+    if (finish === 'other-key') act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })));
+    if (finish === 'blur') act(() => textarea.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
+    if (finish === 'hide') {
+      act(() => textarea.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+      await click('v2_listening_hide_replay');
+      await click('v2_listening_type_optional');
+      textarea = container.querySelector('textarea')!;
+      expect(textarea.value).toBe('기차');
+    }
+    act(() => textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(container.textContent).toContain('v2_listening_comparison_different');
+  });
+
+  it('allows exit during playback without saving progress and ignores the late replay response', async () => {
+    const replay = deferred<PlaySegmentResult>();
+    vi.mocked(controller.playSegment).mockReturnValue(replay.promise);
+    await render();
+    await click('v2_listening_return');
+    expect(controller.endSession).toHaveBeenCalledExactlyOnceWith('restore-start');
+    expect(onExit).toHaveBeenCalledOnce();
+    expect(controller).not.toHaveProperty('commitProgress');
+    await act(async () => replay.resolve({ status: 'played' }));
+    expect(container.textContent).not.toContain('v2_listening_blind_completed');
+  });
+
+  it('retries failed restoration directly with no discard/progress dialog', async () => {
+    vi.mocked(controller.endSession).mockResolvedValueOnce({ status: 'error' }).mockResolvedValueOnce({ status: 'ended' });
+    await render();
+    await click('v2_listening_return');
+    expect(onExit).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('v2_listening_mission_end_error');
+    await click('v2_listening_return');
+    expect(onExit).toHaveBeenCalledOnce();
+  });
+
+  it('only saves the explicit current selection and keeps exit available during a save', async () => {
+    await render();
+    expect(controller.saveDifficultSegments).not.toHaveBeenCalled();
+    const save = deferred<Awaited<ReturnType<ListeningMissionController['saveDifficultSegments']>>>();
+    vi.mocked(controller.saveDifficultSegments).mockReturnValue(save.promise);
+    await click('v2_listening_save_line');
+    expect(controller.saveDifficultSegments).toHaveBeenCalledExactlyOnceWith([key(1)]);
+    await click('v2_listening_return');
+    expect(onExit).toHaveBeenCalledOnce();
+    await act(async () => save.resolve({ saved: [key(1)], retryableFailures: [] }));
+  });
+
+  it('manually reselects only from the frozen snapshot and clears another line’s draft', async () => {
+    await render();
+    await click('v2_listening_type_optional');
+    type('private draft');
+    await click('v2_listening_landing_continue');
+    expect(container.textContent).toContain('Take the train 0');
+    expect(container.textContent).not.toContain('Take the train 2');
+    const line = Array.from(container.querySelectorAll('li button')).find((node) => node.textContent?.includes('Take the train 0')) as HTMLButtonElement;
+    await act(async () => line.click());
+    expect(controller.playSegment).toHaveBeenLastCalledWith(key(0), 1);
+    await click('v2_listening_type_optional');
+    expect(container.querySelector('textarea')?.value).toBe('');
+  });
+
+  it('opens the explicit past picker without automatic playback', async () => {
+    await act(async () => root.render(<ListeningMission snapshot={snapshot} controller={controller} onExit={onExit} />));
+    expect(controller.playSegment).not.toHaveBeenCalled();
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+  });
+
+  it.each([320, 360, 390])('has one scroll owner and reachable actions at %ipx', async (width) => {
+    container.style.width = width + 'px';
+    await render();
+    expect(container.querySelector('section')?.classList.contains('whitespace-normal')).toBe(true);
+    expect(container.querySelectorAll('[data-scroll-owner]')).toHaveLength(1);
+    for (const node of Array.from(container.querySelectorAll('button'))) expect(node.className).toContain('min-h-11');
+  });
+});

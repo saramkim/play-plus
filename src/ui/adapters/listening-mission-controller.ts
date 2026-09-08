@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-import type { ListeningMissionResult } from '@storage/v2/listening-progress-storage';
-import {
-  listeningMissionResultSchema,
-} from '@storage/v2/listening-progress-storage';
 import {
   languageSchema,
   listeningProgressSchema,
@@ -42,8 +38,7 @@ type DirectListeningMessage =
 type RuntimeListeningMessage =
   | 'clearAllListeningProgress'
   | 'clearListeningVideoProgress'
-  | 'getListeningProgress'
-  | 'recordListeningMissionResult';
+  | 'getListeningProgress';
 
 type MessageParams<M extends keyof MessageSchema> = MessageSchema[M] extends {
   params: infer Params;
@@ -71,11 +66,14 @@ export type ListeningRuntimeMessageSender = <M extends RuntimeListeningMessage>(
 ) => Promise<TransportResponse<MessageResult<M>>>;
 
 export type ListeningSessionFatalReason = ListeningTerminalReason | 'error';
+export type ListeningResumeResult =
+  | { status: 'resumed'; identity: ContentVideoIdentity; subtitleRevision: number }
+  | ListeningSessionFatalReason;
 
 export interface ListeningSessionController extends ListeningMissionController {
   dispose: () => Promise<void>;
   sessionId: string;
-  resumeAfterAdvertisement: () => Promise<'resumed' | ListeningSessionFatalReason | 'error'>;
+  resumeAfterAdvertisement: () => Promise<ListeningResumeResult>;
   startHeartbeat: () => void;
   stopHeartbeat: () => void;
 }
@@ -187,7 +185,7 @@ const listeningSessionSnapshotSchema = z
   .object({
     learningLanguage: languageSchema,
     segmenterVersion: z.literal(1),
-    segments: z.array(sessionSnapshotSegmentSchema).min(1).max(10),
+    segments: z.array(sessionSnapshotSegmentSchema).min(1).max(20_000),
     sourceKey: listeningSourceKeySchema,
     videoId: z.string().min(1),
   })
@@ -277,6 +275,7 @@ export const createListeningMissionTransport = (
       const response = await dependencies.sendTabMessage(tabId, 'beginListeningSession', {
         expectedIdentity: catalog.identity,
         expectedSubtitleRevision: catalog.subtitleRevision,
+        entryCutoffMs: catalog.currentTime * 1000,
         segmentKeys,
       });
       if (!response.success) return { status: 'error' };
@@ -289,6 +288,7 @@ export const createListeningMissionTransport = (
           parsed.data.snapshot.videoId !== catalog.videoId ||
           parsed.data.snapshot.sourceKey !== catalog.sourceKey ||
           parsed.data.snapshot.segmenterVersion !== catalog.segmenterVersion ||
+          parsed.data.snapshot.segments.some(({ endMs }) => endMs > catalog.currentTime * 1000) ||
           !sameOrderedValues(
             parsed.data.snapshot.segments.map(({ segmentKey }) => segmentKey),
             segmentKeys
@@ -299,7 +299,6 @@ export const createListeningMissionTransport = (
             clearInterval: dependencies.clearInterval,
             identity: parsed.data.identity,
             onFatal: () => undefined,
-            sendRuntimeMessage: dependencies.sendRuntimeMessage,
             sendTabMessage: dependencies.sendTabMessage,
             sessionId: parsed.data.sessionId,
             setInterval: dependencies.setInterval,
@@ -331,7 +330,6 @@ export const createListeningMissionTransport = (
       clearInterval: dependencies.clearInterval,
       identity: session.identity,
       onFatal,
-      sendRuntimeMessage: dependencies.sendRuntimeMessage,
       sendTabMessage: dependencies.sendTabMessage,
       sessionId: session.sessionId,
       setInterval: dependencies.setInterval,
@@ -356,7 +354,6 @@ export const createListeningSessionController = ({
   clearInterval,
   identity,
   onFatal,
-  sendRuntimeMessage,
   sendTabMessage,
   sessionId,
   setInterval,
@@ -366,7 +363,6 @@ export const createListeningSessionController = ({
   clearInterval: typeof globalThis.clearInterval;
   identity: ContentVideoIdentity;
   onFatal: (reason: ListeningSessionFatalReason) => void;
-  sendRuntimeMessage: ListeningRuntimeMessageSender;
   sendTabMessage: ListeningTabMessageSender;
   sessionId: string;
   setInterval: typeof globalThis.setInterval;
@@ -382,18 +378,24 @@ export const createListeningSessionController = ({
   let fatalReported = false;
   let heartbeatGeneration = 0;
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+  let heartbeatWanted = false;
+  let resumePending = false;
   let playRequestGeneration = 0;
-  let progressSaved = false;
-  let progressRequest: Promise<{ status: 'saved' | 'error' }> | undefined;
+  let saveRequestGeneration = 0;
 
-  const stopHeartbeat = () => {
+  const pauseHeartbeat = () => {
     heartbeatGeneration += 1;
     if (heartbeatTimer !== undefined) clearInterval(heartbeatTimer);
     heartbeatTimer = undefined;
   };
 
+  const stopHeartbeat = () => {
+    heartbeatWanted = false;
+    pauseHeartbeat();
+  };
+
   const reportFatal = (reason: ListeningSessionFatalReason) => {
-    if (disposed || fatalReported || endCompleted) return;
+    if (disposed || fatalReported || endCompleted || endRequest) return;
     fatalReported = true;
     stopHeartbeat();
     onFatal(reason);
@@ -421,13 +423,20 @@ export const createListeningSessionController = ({
   };
 
   const startHeartbeat = () => {
-    if (disposed || heartbeatTimer !== undefined || endCompleted) return;
+    if (disposed || endCompleted) return;
+    heartbeatWanted = true;
+    if (resumePending || heartbeatTimer !== undefined) return;
     const generation = ++heartbeatGeneration;
     heartbeatTimer = setInterval(() => void heartbeat(generation), LISTENING_HEARTBEAT_INTERVAL_MS);
   };
 
   const resumeAfterAdvertisement = async () => {
-    if (disposed || endCompleted || fatalReported) return 'stale' as const;
+    if (disposed || endCompleted || endRequest || fatalReported) return 'stale' as const;
+    if (resumePending) return 'error' as const;
+    resumePending = true;
+    pauseHeartbeat();
+    playRequestGeneration += 1;
+    saveRequestGeneration += 1;
     try {
       const response = await sendTabMessage(
         tabId,
@@ -443,11 +452,15 @@ export const createListeningSessionController = ({
         : undefined;
       if (!parsed?.success) return 'error' as const;
       if (parsed.data.status !== 'resumed') return parsed.data.status;
+      if (disposed || endCompleted || endRequest || fatalReported) return 'stale' as const;
       currentIdentity = parsed.data.identity;
       currentSubtitleRevision = parsed.data.subtitleRevision;
-      return 'resumed' as const;
+      return parsed.data;
     } catch {
       return 'error' as const;
+    } finally {
+      resumePending = false;
+      if (heartbeatWanted) startHeartbeat();
     }
   };
 
@@ -469,38 +482,12 @@ export const createListeningSessionController = ({
         requestGeneration === playRequestGeneration &&
         isTerminalListeningStatus(parsed.data.status)
       ) {
-        stopHeartbeat();
+        reportFatal(parsed.data.status);
       }
       return parsed.data;
     } catch {
       return { status: 'error' };
     }
-  };
-
-  const commitProgress = (result: ListeningMissionResult) => {
-    if (progressSaved) return Promise.resolve({ status: 'saved' } as const);
-    if (progressRequest) return progressRequest;
-
-    const parsedResult = listeningMissionResultSchema.safeParse(result);
-    if (!parsedResult.success) return Promise.resolve({ status: 'error' } as const);
-
-    progressRequest = (async () => {
-      try {
-        const response = await sendRuntimeMessage('recordListeningMissionResult', {
-          result: parsedResult.data,
-        });
-        if (!response.success || !listeningProgressSchema.safeParse(response.data).success) {
-          return { status: 'error' } as const;
-        }
-        progressSaved = true;
-        return { status: 'saved' } as const;
-      } catch {
-        return { status: 'error' } as const;
-      } finally {
-        progressRequest = undefined;
-      }
-    })();
-    return progressRequest;
   };
 
   const performEndSession = async (
@@ -509,6 +496,7 @@ export const createListeningSessionController = ({
   ): Promise<EndSessionResult> => {
     if (endCompleted) return { status: 'already-ended' };
     playRequestGeneration += 1;
+    saveRequestGeneration += 1;
     stopHeartbeat();
     try {
       const response = await sendTabMessage(tabId, 'endListeningSession', { mode, sessionId });
@@ -545,6 +533,7 @@ export const createListeningSessionController = ({
   };
 
   const saveDifficultSegments = async (segmentKeys: string[]): Promise<DifficultSaveResult> => {
+    const requestGeneration = ++saveRequestGeneration;
     const saved: string[] = [];
     const retryableFailures: DifficultSaveResult['retryableFailures'] = [];
 
@@ -575,7 +564,7 @@ export const createListeningSessionController = ({
       } else if (status === 'busy' || status === 'error') {
         retryableFailures.push({ reason: status, segmentKey });
       } else {
-        stopHeartbeat();
+        if (requestGeneration === saveRequestGeneration) reportFatal(status);
         return {
           retryableFailures,
           saved,
@@ -592,7 +581,6 @@ export const createListeningSessionController = ({
   };
 
   return {
-    commitProgress,
     dispose: () => {
       if (disposeRequest) return disposeRequest;
       disposed = true;
@@ -636,6 +624,7 @@ const unwrapRuntime = async <T>(
 };
 
 const contentIdentityEqual = (left: ContentVideoIdentity, right: ContentVideoIdentity) =>
+  left.contentEpoch === right.contentEpoch &&
   left.contentInstanceId === right.contentInstanceId &&
   left.routeChangedAt === right.routeChangedAt &&
   left.videoId === right.videoId &&

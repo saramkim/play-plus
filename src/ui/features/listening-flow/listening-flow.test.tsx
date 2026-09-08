@@ -456,7 +456,7 @@ describe('Listening Learning production flow', () => {
     expect(transport.beginSession).toHaveBeenNthCalledWith(
       1,
       CATALOG,
-      SEGMENT_KEYS.slice(5, 12)
+      SEGMENT_KEYS.slice(0, 5)
     );
     expect(usePageStore.getState().navigationLocked).toBe(false);
 
@@ -466,7 +466,7 @@ describe('Listening Learning production flow', () => {
     });
     expect(usePageStore.getState().navigationLocked).toBe(true);
     expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
-    expect(transport.beginSession).toHaveBeenNthCalledWith(2, CATALOG, SEGMENT_KEYS.slice(0, 10));
+    expect(transport.beginSession).toHaveBeenNthCalledWith(2, CATALOG, SEGMENT_KEYS.slice(0, 5));
 
     await act(async () => beginPending.resolve(READY_SESSION));
     expect(container.querySelector("[data-testid='active-mission']")?.textContent).toBe('fixture line 0');
@@ -517,7 +517,7 @@ describe('Listening Learning production flow', () => {
     expect(transport.beginSession).not.toHaveBeenCalled();
   });
 
-  it('keeps fresh after-tail truth and disables Current Position without beginning', async () => {
+  it('keeps after-tail truth and allows a fresh current-position check without beginning', async () => {
     const afterTailCatalog = {
       ...CATALOG,
       currentTime: 20,
@@ -533,7 +533,7 @@ describe('Listening Learning production flow', () => {
     expect(transport.beginSession).not.toHaveBeenCalled();
     expect(container.textContent).toContain('v2_listening_landing_current_unavailable');
     expect(container.textContent).toContain('0 / 3');
-    expect(getButton('v2_listening_landing_start_current').disabled).toBe(true);
+    expect(getButton('v2_listening_landing_start_current').disabled).toBe(false);
   });
 
   it('blocks reset while a stale fresh-catalog selection is pending', async () => {
@@ -882,62 +882,6 @@ describe('Listening Learning production flow', () => {
     expect(container.textContent).toContain('v2_listening_landing_continue');
   });
 
-  it('refreshes Next 10 from content and starts after the prior final key', async () => {
-    await startReadyMission();
-    const ownershipCallback = harness.missionProps?.onOwnershipChange;
-    if (!ownershipCallback) throw new Error('Expected active mission ownership');
-    act(() => {
-      ownershipCallback(false);
-      harness.missionProps?.onNextMission();
-    });
-    await act(async () => await flush());
-
-    expect(transport.getCatalog).toHaveBeenCalledTimes(3);
-    expect(transport.beginSession).toHaveBeenNthCalledWith(2, CATALOG, SEGMENT_KEYS.slice(10, 12));
-  });
-
-  it('returns to refreshed landing truth when Next 10 is already at the catalog tail', async () => {
-    await startReadyMission();
-    vi.mocked(transport.getCatalog).mockResolvedValueOnce({
-      ...CATALOG,
-      segments: CATALOG.segments.slice(0, 10),
-    });
-    const ownershipCallback = harness.missionProps?.onOwnershipChange;
-    if (!ownershipCallback) throw new Error('Expected active mission ownership');
-
-    act(() => {
-      ownershipCallback(false);
-      harness.missionProps?.onNextMission();
-    });
-    await act(async () => await flush());
-
-    expect(transport.beginSession).toHaveBeenCalledOnce();
-    expect(container.querySelector("[data-testid='learning-settings']")).not.toBeNull();
-    expect(container.textContent).toContain('0 / 10');
-    expect(container.textContent).toContain('v2_listening_landing_continue');
-    expect(container.textContent).not.toContain('v2_listening_landing_starting');
-    expect(usePageStore.getState().navigationLocked).toBe(false);
-  });
-
-  it('keeps refreshed landing truth visible when the Next 10 begin fails', async () => {
-    await startReadyMission();
-    vi.mocked(transport.beginSession).mockResolvedValueOnce({ status: 'error' });
-    const ownershipCallback = harness.missionProps?.onOwnershipChange;
-    if (!ownershipCallback) throw new Error('Expected active mission ownership');
-
-    act(() => {
-      ownershipCallback(false);
-      harness.missionProps?.onNextMission();
-    });
-    await act(async () => await flush());
-
-    expect(transport.beginSession).toHaveBeenCalledTimes(2);
-    expect(container.textContent).toContain('v2_listening_landing_start_error');
-    expect(container.textContent).toContain('v2_listening_landing_continue');
-    expect(container.textContent).not.toContain('v2_listening_landing_loading');
-    expect(usePageStore.getState().navigationLocked).toBe(false);
-  });
-
   it('keeps navigation locked until delayed unmount restoration settles', async () => {
     const disposal = deferred<void>();
     vi.mocked(controller.dispose).mockReturnValueOnce(disposal.promise);
@@ -975,7 +919,8 @@ describe('Listening Learning production flow', () => {
       await flush();
     });
     expect(container.textContent).toContain('v2_listening_advertisement_title');
-    expect(harness.missionProps?.boundContextKey).not.toBe(initialBoundContextKey);
+    expect(harness.missionProps?.boundContextKey).toBe(initialBoundContextKey);
+    expect(harness.missionProps?.interrupted).toBe(true);
     expect(
       container
         .querySelector("[data-testid='active-mission']")
@@ -1073,11 +1018,10 @@ describe('Listening Learning production flow', () => {
 });
 
 const createController = (): ListeningSessionController => ({
-  commitProgress: vi.fn().mockResolvedValue({ status: 'saved' }),
   dispose: vi.fn().mockResolvedValue(undefined),
   endSession: vi.fn().mockResolvedValue({ status: 'ended' }),
   playSegment: vi.fn().mockResolvedValue({ status: 'played' }),
-  resumeAfterAdvertisement: vi.fn().mockResolvedValue('resumed'),
+  resumeAfterAdvertisement: vi.fn().mockResolvedValue({ status: 'resumed', identity: { ...CATALOG.identity, videoRevision: 4 }, subtitleRevision: CATALOG.subtitleRevision }),
   saveDifficultSegments: vi.fn().mockResolvedValue({ retryableFailures: [], saved: [] }),
   sessionId: 'session-a',
   startHeartbeat: vi.fn(),
@@ -1132,7 +1076,7 @@ const READY_SESSION = {
   snapshot: {
     learningLanguage: 'en',
     segmenterVersion: 1,
-    segments: SEGMENT_KEYS.slice(0, 10).map((segmentKey, index) => ({
+    segments: SEGMENT_KEYS.slice(0, 5).map((segmentKey, index) => ({
       answerText: `fixture line ${index}`,
       endMs: index * 1000 + 800,
       segmentKey,

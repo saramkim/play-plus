@@ -4,8 +4,6 @@ import type {
   ListeningCatalogSegmentSummary,
 } from '@utils/message/type';
 
-import type { ListeningSegmentKey } from '@/listening/domain/source-identity';
-
 export type ReadyListeningCatalog = Extract<ListeningCatalogResponse, { status: 'ready' }>;
 
 export type ListeningProgressSummary = Readonly<{
@@ -15,8 +13,6 @@ export type ListeningProgressSummary = Readonly<{
   mastered: number;
   total: number;
 }>;
-
-const MAX_MISSION_SEGMENTS = 10;
 
 export const summarizeListeningProgress = (
   catalog: ReadyListeningCatalog,
@@ -41,65 +37,31 @@ export const summarizeListeningProgress = (
   });
 };
 
-export const selectContinueSegmentKeys = (
-  catalog: ReadyListeningCatalog,
-  progress: ListeningProgressV1
-) => {
-  const source = getExactSourceProgress(catalog, progress);
-  const earliestUnrecorded = catalog.segments.findIndex(
-    ({ segmentKey }) => source === undefined || !hasOwn(source.items, segmentKey)
-  );
-  if (earliestUnrecorded >= 0) return selectConsecutiveSegmentKeys(catalog.segments, earliestUnrecorded);
+export const LISTENING_RECENCY_MS = 10_000;
+export const MAX_PAST_LISTENING_SEGMENTS = 20_000;
 
-  const earliestBelowCleared = catalog.segments.findIndex(
-    ({ segmentKey }) => source?.items[segmentKey]?.state === 'attempted'
-  );
-  return selectConsecutiveSegmentKeys(
-    catalog.segments,
-    earliestBelowCleared >= 0 ? earliestBelowCleared : 0
-  );
-};
+export const selectPastSegmentKeys = (catalog: ReadyListeningCatalog) =>
+  catalog.segments
+    .map((segment, index) => ({ segment, index }))
+    .filter(({ segment }) => segment.endMs <= catalog.currentTime * 1000)
+    .sort((a, b) => b.segment.endMs - a.segment.endMs ||
+      b.segment.startMs - a.segment.startMs || a.index - b.index)
+    .slice(0, MAX_PAST_LISTENING_SEGMENTS)
+    .sort((a, b) => a.index - b.index)
+    .map(({ segment }) => segment.segmentKey);
 
 export const selectCurrentSegmentKeys = (catalog: ReadyListeningCatalog) => {
-  const currentMs = catalog.currentTime * 1000;
-  let containingIndex = -1;
-
-  catalog.segments.forEach((segment, index) => {
-    if (segment.startMs > currentMs || segment.endMs < currentMs) return;
-    if (containingIndex < 0 || segment.startMs > catalog.segments[containingIndex].startMs) {
-      containingIndex = index;
+  const cutoffMs = catalog.currentTime * 1000;
+  let selected: ListeningCatalogSegmentSummary | undefined;
+  for (const segment of catalog.segments) {
+    if (segment.endMs > cutoffMs || cutoffMs - segment.endMs > LISTENING_RECENCY_MS) continue;
+    if (!selected || segment.endMs > selected.endMs ||
+        (segment.endMs === selected.endMs && segment.startMs > selected.startMs)) {
+      selected = segment;
     }
-  });
-
-  if (containingIndex >= 0) {
-    return selectConsecutiveSegmentKeys(catalog.segments, containingIndex);
   }
-
-  const nextIndex = catalog.segments.findIndex(({ startMs }) => startMs > currentMs);
-  return nextIndex < 0 ? [] : selectConsecutiveSegmentKeys(catalog.segments, nextIndex);
+  return selected ? [selected.segmentKey] : [];
 };
-
-export const selectNextMissionSegmentKeys = (
-  catalog: ReadyListeningCatalog,
-  progress: ListeningProgressV1,
-  priorFinalSegmentKey: ListeningSegmentKey
-) => {
-  const previousIndex = catalog.segments.findIndex(
-    ({ segmentKey }) => segmentKey === priorFinalSegmentKey
-  );
-  if (previousIndex >= 0) {
-    return selectConsecutiveSegmentKeys(catalog.segments, previousIndex + 1);
-  }
-  return selectContinueSegmentKeys(catalog, progress);
-};
-
-export const selectConsecutiveSegmentKeys = (
-  segments: readonly ListeningCatalogSegmentSummary[],
-  startIndex: number
-) =>
-  segments
-    .slice(startIndex, startIndex + MAX_MISSION_SEGMENTS)
-    .map(({ segmentKey }) => segmentKey);
 
 const getExactSourceProgress = (
   catalog: ReadyListeningCatalog,
@@ -108,6 +70,3 @@ const getExactSourceProgress = (
   const source = progress.videos[catalog.videoId]?.sources[catalog.sourceKey];
   return source?.segmenterVersion === catalog.segmenterVersion ? source : undefined;
 };
-
-const hasOwn = (value: object, key: PropertyKey) =>
-  Object.prototype.hasOwnProperty.call(value, key);

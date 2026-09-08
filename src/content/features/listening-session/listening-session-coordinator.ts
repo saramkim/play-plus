@@ -36,6 +36,8 @@ import {
   type ListeningSourceKey,
 } from '@/listening/domain/source-identity';
 
+import { observeListeningMedia } from './media-ownership';
+
 const LISTENING_SESSION_LEASE_MS = 15_000;
 const LISTENING_CLIP_PREROLL_MS = 250;
 const LISTENING_CLIP_POSTROLL_MS = 350;
@@ -71,6 +73,7 @@ const beginParamsSchema = z
   .object({
     expectedIdentity: contentVideoIdentitySchema,
     expectedSubtitleRevision: nonnegativeSafeIntegerSchema,
+    entryCutoffMs: z.number().finite().nonnegative(),
     segmentKeys: z.array(listeningSegmentKeySchema),
   })
   .strict();
@@ -171,6 +174,7 @@ interface ReadyListeningSessionContext extends ListeningSessionContext {
 interface PreparedCatalog {
   catalog: readonly ListeningPracticeSegment[];
   context: ReadyListeningSessionContext;
+  requestedCurrentTime: number;
 }
 
 type CatalogPreparationResult =
@@ -192,6 +196,8 @@ interface CapturedPlaybackState {
 }
 
 interface ActiveListeningSession {
+  entryCutoffMs: number;
+  mediaOwnership?: ReturnType<typeof observeListeningMedia>;
   catalog: readonly ListeningPracticeSegment[];
   captured: CapturedPlaybackState;
   context: PreparedCatalog['context'];
@@ -321,9 +327,33 @@ export const createListeningSessionCoordinator = (
     if (activeSession !== session) return;
     invalidateActiveClip();
     clearLease(session);
+    session.mediaOwnership?.dispose();
     activeSession = null;
     safelyClearSuppression();
     rememberEndedSession(session.sessionId);
+  };
+
+  const attachMediaOwnership = (session: ActiveListeningSession) => {
+    session.mediaOwnership?.dispose();
+    session.mediaOwnership = observeListeningMedia(session.video, (field) => {
+      if (activeSession !== session || session.suspendedForAdvertisement) return;
+      let context: ListeningSessionContext;
+      try { context = dependencies.readContext(); } catch { return; }
+      if (!isSessionContextCurrent(session, context)) return;
+      const owner = session.mediaOwnership;
+      const restoreRate = field !== 'rate' && session.video.playbackRate === owner?.expectedRate;
+      const restorePaused = field !== 'paused' && session.video.paused === owner?.expectedPaused;
+      releaseSession(session);
+      try {
+        if (restoreRate) session.video.playbackRate = session.captured.playbackRate;
+        if (restorePaused) {
+          if (session.captured.paused) session.video.pause();
+          else void session.video.play().catch(() => undefined);
+        }
+      } catch {
+        // The user's new position/state remains authoritative even if cleanup fails.
+      }
+    });
   };
 
   const abandonSessionWithoutSeeking = (session: ActiveListeningSession) => {
@@ -339,6 +369,7 @@ export const createListeningSessionCoordinator = (
       return;
     }
     invalidateActiveClip();
+    session.mediaOwnership?.dispose();
     try {
       session.video.pause();
     } catch {
@@ -356,20 +387,21 @@ export const createListeningSessionCoordinator = (
     session: ActiveListeningSession,
     mode: EndListeningSessionMode
   ) => {
-    const video = session.video;
+    const media = session.mediaOwnership;
+    if (!media) throw new Error('Listening media ownership unavailable');
     const targetTime =
       mode === 'restore-start'
         ? session.captured.currentTime
         : session.lastPracticedEndpoint;
 
-    video.pause();
-    video.currentTime = targetTime;
-    video.playbackRate = session.captured.playbackRate;
+    media.pause();
+    media.seek(targetTime);
+    media.setRate(session.captured.playbackRate);
 
     const shouldPlay =
       mode === 'continue-watching' ||
       (mode === 'restore-start' && !session.captured.paused);
-    if (shouldPlay) await video.play();
+    if (shouldPlay) await media.play();
   };
 
   const finishSession = async (
@@ -392,6 +424,7 @@ export const createListeningSessionCoordinator = (
       if (retainForRetry && activeSession === session) {
         session.pendingEndMode = null;
         session.endRetryRequired = true;
+        attachMediaOwnership(session);
         session.lastHeartbeatAt = now();
         scheduleLease(session);
       } else {
@@ -463,6 +496,7 @@ export const createListeningSessionCoordinator = (
         return { status: 'no-learning-track' };
       }
 
+      const requestedCurrentTime = context.video.currentTime;
       const catalog = freezeCatalog(
         await buildListeningSegmentCatalog({
           fenceEndMs: context.learningFenceEndMs,
@@ -487,6 +521,7 @@ export const createListeningSessionCoordinator = (
         prepared: {
           catalog,
           context: context as ReadyListeningSessionContext,
+          requestedCurrentTime,
         },
       };
     } catch {
@@ -507,7 +542,7 @@ export const createListeningSessionCoordinator = (
       subtitleRevision: context.subtitleRevision,
       videoId: context.identity.videoId,
       sourceKey: context.learning.sourceKey,
-      currentTime: context.video.currentTime,
+      currentTime: result.prepared.requestedCurrentTime,
       segmenterVersion: LISTENING_SEGMENTER_VERSION,
       supportAvailable: catalog.some(({ alignedSupport }) => alignedSupport !== undefined),
       segments: catalog.map(({ endMs, segmentKey, startMs }) => ({
@@ -582,7 +617,11 @@ export const createListeningSessionCoordinator = (
       return { status: 'stale' };
     }
 
+    if (request.entryCutoffMs > context.video.currentTime * 1000) return { status: 'stale' };
     const selectedSegments = selectRequestedSegments(catalog, request.segmentKeys);
+    if (selectedSegments?.some(({ endMs }) => endMs > request.entryCutoffMs)) {
+      return { status: 'segment-unavailable' };
+    }
     if (!selectedSegments) return { status: 'segment-unavailable' };
 
     const latest = dependencies.readContext();
@@ -607,6 +646,7 @@ export const createListeningSessionCoordinator = (
 
       const session: ActiveListeningSession = {
         catalog,
+        entryCutoffMs: request.entryCutoffMs,
         captured,
         context,
         endRetryRequired: false,
@@ -623,6 +663,7 @@ export const createListeningSessionCoordinator = (
       };
       startedSession = session;
       activeSession = session;
+      attachMediaOwnership(session);
       applySuppression(true);
       scheduleLease(session);
 
@@ -673,13 +714,14 @@ export const createListeningSessionCoordinator = (
       if (activeSession !== session) return { status: 'stale' };
       const latestValidation = validateSession(session);
       if (latestValidation.status !== 'valid') return latestValidation;
+      const indicesByKey = new Map(catalog.map((segment, index) => [segment.segmentKey, index]));
       const currentIndices = session.selectedSegments.map(({ segmentKey }) =>
-        catalog.findIndex((segment) => segment.segmentKey === segmentKey)
+        indicesByKey.get(segmentKey) ?? -1
       );
       if (
         currentIndices.some((index) => index < 0) ||
         currentIndices.some(
-          (index, position) => position > 0 && index !== currentIndices[position - 1] + 1
+          (index, position) => position > 0 && index <= currentIndices[position - 1]
         )
       ) {
         return { status: 'segment-unavailable' };
@@ -780,15 +822,17 @@ export const createListeningSessionCoordinator = (
     rate: 1 | 0.75
   ): Promise<PlayListeningSegmentResponse> => {
     const video = session.video;
+    if (!session.mediaOwnership) return Promise.resolve({ status: 'error' });
+    const media = session.mediaOwnership;
     const catalogIndex = session.catalog.findIndex(
       ({ segmentKey }) => segmentKey === segment.segmentKey
     );
     const nextSegment = session.catalog[catalogIndex + 1];
-    const stopMs = getClipStopMs(
+    const stopMs = Math.min(session.entryCutoffMs, getClipStopMs(
       segment,
       nextSegment,
       session.context.learningFenceEndMs
-    );
+    ));
     const startSeconds = Math.max(0, segment.startMs - LISTENING_CLIP_PREROLL_MS) / 1000;
     const stopSeconds = Math.max(0, stopMs) / 1000;
     const generation = ++clipGeneration;
@@ -844,7 +888,7 @@ export const createListeningSessionCoordinator = (
 
       const settlePlayedAtStop = () => {
         try {
-          video.currentTime = stopSeconds;
+          media.seek(stopSeconds);
         } catch {
           settle({ status: 'error' });
           return;
@@ -859,7 +903,7 @@ export const createListeningSessionCoordinator = (
           return;
         }
         pauseRequested = true;
-        video.pause();
+        media.pause();
         if (!settled) settlePlayedAtStop();
       };
 
@@ -912,9 +956,9 @@ export const createListeningSessionCoordinator = (
           return;
         }
         video.removeEventListener('pause', onPause);
-        video.pause();
+        media.pause();
         session.lastPracticedEndpoint = video.currentTime;
-        settle({ status: 'played' });
+        settle({ status: video.currentTime * 1000 >= segment.endMs ? 'played' : 'error' });
       }
 
       function onPause() {
@@ -931,8 +975,11 @@ export const createListeningSessionCoordinator = (
         video.removeEventListener('canplay', onReady);
         video.removeEventListener('loadedmetadata', onReady);
         try {
-          video.currentTime = startSeconds;
-          video.playbackRate = rate;
+          // Keep the seek target stable until seeked, including already-playing
+          // main content rebound after an advertisement.
+          media.pause();
+          media.seek(startSeconds);
+          media.setRate(rate);
         } catch {
           settle({ status: 'error' });
           return;
@@ -952,7 +999,7 @@ export const createListeningSessionCoordinator = (
         video.addEventListener('timeupdate', onTimeUpdate);
         video.addEventListener('ended', onEnded);
         video.addEventListener('pause', onPause);
-        void video.play().then(
+        void media.play().then(
           () => {
             if (!isLive()) {
               settle({ status: 'stale' });
@@ -962,7 +1009,11 @@ export const createListeningSessionCoordinator = (
             scheduleFrame();
           },
           () => {
-            video.pause();
+            if (!isLive()) {
+              settle({ status: 'stale' });
+              return;
+            }
+            media.pause();
             settle({ status: 'error' });
           }
         );
@@ -1118,6 +1169,7 @@ export const createListeningSessionCoordinator = (
       }
       if (!session.suspendedForAdvertisement) {
         session.suspendedForAdvertisement = true;
+        session.mediaOwnership?.dispose();
         session.playbackFenceEvidenceSettledAfterAdvertisement =
           session.context.learningFenceEndMs === null;
         suspendActiveClip();
@@ -1205,6 +1257,7 @@ export const createListeningSessionCoordinator = (
     session.context = context as ReadyListeningSessionContext;
     session.video = context.video;
     session.suspendedForAdvertisement = false;
+    attachMediaOwnership(session);
     session.lastHeartbeatAt = now();
     scheduleLease(session);
     return {
@@ -1282,13 +1335,12 @@ const selectRequestedSegments = (
   catalog: readonly ListeningPracticeSegment[],
   segmentKeys: readonly string[]
 ): readonly ListeningPracticeSegment[] | null => {
-  if (segmentKeys.length < 1 || segmentKeys.length > 10) return null;
+  if (segmentKeys.length < 1 || segmentKeys.length > 20_000) return null;
   if (new Set(segmentKeys).size !== segmentKeys.length) return null;
-  const indices = segmentKeys.map((segmentKey) =>
-    catalog.findIndex((segment) => segment.segmentKey === segmentKey)
-  );
+  const indicesByKey = new Map<string, number>(catalog.map((segment, index) => [segment.segmentKey, index]));
+  const indices = segmentKeys.map((segmentKey) => indicesByKey.get(segmentKey) ?? -1);
   if (indices.some((index) => index < 0)) return null;
-  if (indices.some((index, position) => position > 0 && index !== indices[position - 1] + 1)) {
+  if (indices.some((index, position) => position > 0 && index <= indices[position - 1])) {
     return null;
   }
   return Object.freeze(indices.map((index) => catalog[index]));
