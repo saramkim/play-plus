@@ -118,6 +118,21 @@ ChatGPT independently reviewed correction `909d79a0e8e7f4f0e57478069a0aaa70027da
 The remaining representative actual gate is native Korean IME: composition-commit Enter must not compare, the next intentional ordinary Enter must compare, and the draft must be preserved. Final evidence/head/CI reconciliation follows that observation; no unrelated full-matrix rerun was requested. Keep PR #103 Draft until those requirements are resolved. No merge or release was performed.
 
 
+### Native Korean IME continuation (2026-09-08)
+
+This observation used head `d37eed7cfe451a059e99f7db8280b597a87494dd`, whose only difference from approved runtime head `909d79a` is the review-record documentation. The content bundle hash remained `AA314237D8A2EA759EC1A34FB1972746673F22B95563AA99C84105F3FD1DF010`. [Exact-head CI](https://github.com/saramkim/play-plus/actions/runs/34177495396) passed. The user physically switched the focused actual Side Panel textarea to Korean input and confirmed the switch; subsequent test keys were sent through native Windows `sky.press_key`.
+
+| Actual observation | Result | Evidence / limits |
+| --- | --- | --- |
+| Native Korean composition | Observed | Native `r` then `k` produced `ㄱ` then `가`, trusted `compositionstart`/`compositionupdate`, trusted Process/229 key events, and trusted `beforeinput`/`input` with `isComposing: true` and `inputType: insertCompositionText`. No Unicode fill or synthetic composition setup was used. |
+| Composition-commit Enter | PASS (bounded observation) | The first native Return produced Process/229 while composing, composition update/input/end, then ordinary Enter/13. No comparison status or matching-parts scaffold appeared; the draft remained exactly `가`, without a newline. |
+| Next intentional Enter | PASS (bounded observation) | A separate second native Return produced ordinary Enter/13 with `isComposing: false`. Comparison feedback and the matching-parts scaffold appeared; the draft remained exactly `가`. |
+| Fresh-document repeat | PASS (same bounded behavior) | After Return, the actual Side Panel document was reloaded and a new practice begun. Only DOM observation listeners were attached. The same native `r`, `k`, Return, Return sequence reproduced the first/second Enter behavior and preserved the draft. |
+| Event trust provenance | Limitation recorded | In both runs, `compositionend` reported `isTrusted: false`, although composition start/update, composing input and Process/Enter key events were trusted. No test script created or dispatched a composition/input/keyboard event in these runs. The cause of the single false trust bit is not established; this record does not claim an entirely trusted event sequence or that the reviewer physically replayed it. |
+| Return and cleanup | PASS | Return removed practice, unlocked all four navigation destinations and restored position `461.363113`, rate 1 and paused state. The official gateway stop returned `ok: true`, `active: false`. |
+
+These bounded observations and the trust-bit limitation form the final IME evidence packet. The independent gate disposition and final documentation-head CI reconciliation are recorded in PR #103; the PR stays Draft until those steps are resolved. No merge or release was performed.
+
 ## Test record
 
 | Field | Value |
