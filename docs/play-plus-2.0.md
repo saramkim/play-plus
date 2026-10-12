@@ -4,7 +4,7 @@
 
 승인일: 2026-08-02
 
-최종 개정 승인일: 2026-09-07 — 한 문장 듣기 재구성 (Issue #102)
+최종 개정 승인일: 2026-10-12 — v1.11.0 사용자 행동 호환성 기준 C1–C5 및 A 우선 방향 채택
 
 공개 마이그레이션 기준: Chrome Web Store에 배포된 **Play Plus v1.11.0**
 
@@ -16,9 +16,77 @@
 
 2026-08-14 실제 Coupang Play 조사에서 관찰한 route, runtime과 비공개 API data surface, 신뢰도와 개인정보 경계는 [Coupang Play Content and Runtime Evidence](./coupang-play-content-evidence.md)에 기록한다. 이 시점별 조사 기록은 구현 가능성을 판단하는 근거이며, 비공개 API의 안정성을 보장하거나 이 계약의 `확정`, `제외`, `연기` 범위를 자체적으로 변경하지 않는다.
 
+## 0. Existing-user compatibility amendment — 2026-10-12
+
+### 0.1 승인과 적용 순서
+
+공유 결정·구현 추적: [Issue #104](https://github.com/saramkim/play-plus/issues/104). 이 문서가 승인된 제품 기준의 단일 출처이며, Issue는 담당 범위와 구현·검증 증거를 추적한다. 문서 통합만으로 Issue의 구현 완료 조건을 충족하거나 닫지 않는다.
+
+사용자는 실제 v1.11.0과 미배포 main의 코드 조사 및 [ChatGPT 제품 검토](https://chatgpt.com/g/g-p-675f90661b2c819187496500269e15e3-play-plus/c/6acc03ed-2ae4-83ec-b8e3-cf9206237872) 뒤 다음 권고를 채택하고, 다른 Codex 세션이 구현할 수 있도록 문서/Issue 기록을 요청했다.
+
+- **C1–C5의 사용자 행동 보존을 다음 버전의 필수 출시조건으로 삼는다.** 새 학습 기능 확대보다 이 호환성 충족을 우선한다.
+- **A: 현재 2.0에서 필요한 기존 행동을 복원하는 방향을 우선한다.** 현재 데이터 모델까지 고정하는 결정은 아니다. 사용자 행동과 활성 의도를 표현하기 위한 정상 v2 모델 변경은 필요한 범위에서 설계한다. 구 schema/runtime을 통째로 되살리지 않는다.
+- 이 절은 아래의 과거 제거·축소 결정 중 C1–C5와 충돌하는 부분을 대체한다. 특히 §2.2, §3.1/3.4, §4.5, §5.1/5.2, §6, §9.1–9.3의 단일 저장/단일 master, 일회 재생·시간/보조 이동·A/B·역할별 복사/표시 제거 문구로 이번 채택을 거부하지 않는다. 그 밖의 제품·개인정보·MV3·안전 경계는 유지한다.
+- 이는 **제품 기준 채택**이다. 문서 개정에 production 구현·롤백을 포함하지 않는다. 후속 구현 세션은 사용자의 구현 요청과 이 절을 근거로 좁은 Issue 범위와 검증 계약을 확정하고 일반 개발 workflow를 따른다. 이 문서 자체는 Batch Relay, commit/push/merge, 태그·버전 변경·배포 권한을 부여하지 않으며 각 동작은 현재 대화의 명시적 승인과 기존 규칙을 따른다.
+
+### 0.2 조사 기준과 증거 한계
+
+| 기준 | 고정값 |
+| --- | --- |
+| 원격 공개 v1.11.0 | `70cf32683650b63f4fe5d3196360e299f6e51ad1` |
+| 조사 대상 원격 main | `31749806c14c7078d9668fe971d3fe518d0f41d7` |
+| 조사/기록 시작 로컬 HEAD | `9e0a0f0151e900d3a92d153ee38edc17e3c4e54d` — 위 main의 조상, 시작 작업 트리 clean |
+| 로컬 v1.11.0 태그 | `9451661311e0b88d14b4f9295c44dbdefb91b3dd` — 원격과 달라 비교 기준에서 제외, 변경하지 않음 |
+
+SHA는 코드 조사 시점의 근거다. 후속 구현은 최신 원격 main과 작업 트리를 다시 확인한다. 이번 개정은 조사 대상 main의 **2026-09-07 한 문장 듣기 개정(Issue #102)을 보존**하면서 C1–C5 관련 계약만 변경한다. 현재 한 문장 듣기 흐름을 전면 재설계하는 승인이 아니다.
+
+- **코드 확인:** 양쪽 ref의 실제 UI 진입점과 handler/controller/storage 실행 경로를 확인했다. 버전 문자열이나 README만으로 기능을 판정하지 않았다.
+- **이번 조사에서 실행한 합성 검사:** 원격 main의 migration/schema와 Review queue selector, 실제 v1 기본값/공식 학습 프리셋을 사용했다. A/D 보조 cue 바인딩 유실, 기본 ArrowLeft/Right 보존, S 바인딩 존속, E/R 첫 진입 선택, 비활성 그룹 키의 통합 master 재활성화 사례를 확인했다. 동일 본문 두 항목의 수·내용·출처·시각·저장일과 안정된 서로 다른 ID 보존, 이주 직후 Focused Review 큐 0도 확인했다. 이는 브라우저/ChromeStorage 통합 실행이 아니다.
+- **기존 테스트:** 관련 migration, playback, Library/Review 테스트 소스를 읽었다. 기존 기록을 새 PASS로 계산하지 않았다.
+- **NOT RUN:** 실제 Chrome v1→2.0 업그레이드·재생 비교, 전체 테스트/빌드. 기존 격리 환경 status 조회의 `Wsl/E_ACCESSDENIED`는 환경 실패이며 제품 실패나 호환성 PASS가 아니다.
+- 사용자 보고 WAU 약 6,700/별점 4.96은 기능별 사용량이나 모든 사용자 만족의 증거가 아니다. 실측 클릭 수·시간·학습 효과·개발 일정은 없다.
+
+### 0.3 필수 사용자 결과와 acceptance criteria
+
+아래 항목은 **채택된 요구사항이며 아직 구현·검증 완료 표시가 아니다.** 같은 UI·버튼 위치·구 schema를 복제하는 것이 아니라 목적, 조작과 결과의 연속성을 검증한다.
+
+| ID | 필수 호환성 결과 | 변경 범위와 경계 |
+| --- | --- | --- |
+| C1 저장 자료 재사용 | v1 문장은 이전 직후 언어·역할 재분류 없이 목록에서 읽기·검색·정렬·명시적 전체 문장 복사·원래 장면 복귀가 가능하다. URL과 시작 시점으로 이동하며 접근 불가/실패는 사실대로 알린다. 정밀 드래그만 가능한 상태를 전용 복사의 동등 대체로 보지 않는다. | Library UI와 기존 video-open 메시지/출처 경로를 우선 재사용한다. 본문·출처·시각·저장일·중복 보존을 유지한다. 미분류 카드를 새 Focused Review에 강제로 편입하지 않는다. 새 Review 자격과 기존 자료 이용 자격을 분리한다. |
+| C2 직접 문장 재생 | 별도 학습 세션 없이 현재 유효 자막 구간의 연속 반복과 한 번 재생을 실행한다. 정지 중에도 요청한 재생을 시작한다. 연속 반복은 끝→시작을 반복하고 사용자가 종료할 수 있으며, 한 번 재생은 구간 끝에서 멈춘다. | 재생 controller·observer·메시지·단축키까지 연결된다. 시작점 seek만으로 반복을 충족하지 않는다. 새 한 문장 듣기로 대체하지 않는다. content 소유권, 광고/SPA/영상/source/revision 및 적용되는 fence 보호를 유지한다. |
+| C3 이동·구간 선택 | 사용자가 정한 유효 시간량(초/분)과 자막 개수로 앞뒤 이동하고, 임의 A/B 시작·끝을 정해 반복·종료한다. 기존 활성 보조 이동과 그 키도 보존한다. 기존 활성 설정에 연결된 자막 부재 시 시간 대체는 해당 사용자에게 조건부 필수다. 본편이 검증된 상태에서는 자막 부재나 속도 키 비활성화만으로 직접 속도 조절을 막지 않는다. | 설정·마이그레이션·바인딩·재생 제어. 주/보조 그룹 UI는 바뀔 수 있으나 두 이동을 번갈아 쓸 때 매번 설정을 바꿔야 하는 것은 동등 대체가 아니다. 자막 부재와 광고/본편 identity 미확인은 구분한다. 안전 검사를 우회하지 않는다. |
+| C4 역할별 선택 저장 | 시청 중 어느 역할이든 선택한 본문만 저장하고 다시 이용한다. 전역 학습 언어 변경이나 다른 역할과의 pair 저장을 강요하지 않는다. 선택한 본문·확인된 언어·출처·시점을 보존한다. pair 저장은 추가 선택으로 유지할 수 있다. | UI만이 아니라 카드 의미 모델·builder·메시지·Library·Review 자격에 연결된다. 도움 문장을 자동 learning으로 바꾸거나 알려진 언어를 und로 버리지 않는다. support-only/중립 단일 문장의 정확한 타입은 후속 설계에서 확정한다. 저장한 자료와 학습 대상으로 지정한 자료를 구분한다. |
+| C5 키와 설정 의도 | 충돌 없는 기존 활성 키는 같은 대상·행동으로 이어지고 비활성 명령은 다른 그룹 때문에 켜지지 않는다. 실제 충돌/의미 선택이 필요한 항목만 명시적으로 확인한다. 역할별 복사와 개별 표시/숨김을 시청 중 직접 실행할 수 있고, 유효한 외형 값을 보존하며 조정·적용 상태를 명확히 보여 준다. | 마이그레이션·정상 설정 모델·검증·키 실행·표시/복사 경로. 단일 master나 한 저장 키에 사용자 의도를 억지로 맞추지 않는다. A/D 누락, S의 의미 변경, disabled E/S 활성화를 각각 검증한다. 기본값과 공식 프리셋을 구분한다. |
+
+전체 자막은 제거가 아니라 `Subtitles → 전체 자막`으로 이동했고 검색은 v1에 없던 개선이다. 검색·현재 강조·follow/재개·장면 이동·키보드 접근성·stale snapshot 검증을 유지할 가치가 있다. 기존 문장은 이미 Library에서 읽기/검색/선택 복사가 가능하다. **데이터 전체가 이용 불가하거나 새 Review 큐 0 자체가 기존 복습 소멸이라는 주장은 하지 않는다.** C1의 부족분은 직접 복사와 원래 장면 복귀를 포함한 기존 이용 결과로 판단한다.
+
+### 0.4 구현에서 보존할 경계와 미결 사항
+
+- 역할별 선택 저장을 표현하는 정상 v2 schema와 유효한 활성 의도를 표현하는 설정 모델의 구체안은 구현 전에 해당 Issue에서 명시한다. public v1 decoder 격리, strict schema/readback, 결정론적 재시도, 실패 전 원본 보존과 완료 후 cleanup 순서를 약화하지 않는다.
+- 재생은 content script가 소유한다. DOM plain-text 처리, source/episode/lifecycle/attachment/revision 안전성, 접근성, 키 입력 충돌과 개인정보 경계를 함께 지킨다. 새 network/권한/telemetry나 외부 저장을 추가하지 않는다.
+- 반복 중 문장 이동·직접 seek·속도 변경 시 반복 대상/종료 규칙, A/B 조작·새 사용자 기본값, 구체 저장 UI, 중복 저장과 별표 삭제 토글 정책은 미결이다. 기존 동작과 차이를 제시하고 제품 결과가 달라지는 선택은 기존 협업 규칙으로 결정한다. 이미 채택한 C1–C5 자체를 재승인받을 필요는 없다.
+- Focus mode, gap skip, 역할 지정 전 등록 자막의 장면 이동/저장은 **미결이며 제거 승인도 자동 복원 승인도 아니다.** 정확한 UI 복제, 프리셋 일괄 덮어쓰기, 자동 dedupe/병합/삭제, 구 schema 복원, 한 문장 듣기·Review 전면 재설계는 포함하지 않는다.
+- 저장된 데이터를 자동으로 학습 대상으로 분류하지 않는다. 신뢰할 수 없는 언어/역할은 추측하지 않는다. 기존 개발 프로필을 초기화하거나 구버전으로 덮어쓰지 않으며, 코드 복귀를 데이터 복귀로 간주하지 않는다.
+
+### 0.5 개발 방향과 재검토 조건
+
+**A 우선의 근거:** 현재 provenance와 영상 복귀 경로, migration, Library/overview, 편집과 안전장치 등 구체적인 재사용 지점이 있다. 매몰비용이나 모든 작업이 UI만이라는 가정은 근거가 아니다. 선택 저장과 활성 상태는 여러 계층의 변경이 필요할 수 있다.
+
+**B를 공정하게 비교:** v1.11.0에서 시작해 필요한 소수 개선만 선택하면 이식 범위가 작아질 수 있다. 2.0 전체나 새 카드 모델을 반드시 가져온다고 전제하지 않는다. 일반 공개 사용자는 아직 v1.11.0이므로 공개 사용자 전체의 v2→v1 역마이그레이션 비용을 가산하지 않는다. 이미 v2를 쓴 개발 프로필의 데이터 보호는 별도다.
+
+C1–C5를 충족하려면 A에서 저장·메시지·재생·UI 대부분을 다시 바꿔야 하고 B에서는 같은 결과와 필요한 보호 경계를 더 제한된 변경으로 달성한다는 구체적인 비교가 나오거나, 다음 버전의 새 학습 기능 범위가 크게 줄거나, 실제 검증에서 국소 수정으로 격리되지 않는 구조적 실패가 확인되면 방향을 다시 검토한다. A를 유지하기 위해 호환성 기준을 낮추지 않는다. 현재 정량 비용·일정 우위는 미확정이며 환경 실패/NOT RUN 자체는 B 선택의 근거가 아니다.
+
+### 0.6 후속 세션의 완료 증거
+
+1. 최신 main과 작업 트리, 원격 v1.11.0을 다시 확인하고 해당 Issue에 작업 소유 범위, 변경될 schema/message/context, C1–C5 중 담당 항목과 미결 의존성을 적는다. 아래의 이전 구현 순서는 새 Batch 실행 계획이 아니다. 이 개정을 최신 canonical 문서와 구현 Issue에 일치시킨 뒤 production 작업을 진행한다.
+2. 실제 v1 기본값·공식 프리셋·사용자 지정·활성/비활성·충돌·보조/시간 대체 설정을 fixture로 검증한다. 저장 중복/순서/내용/출처와 미분류 상태를 유지하면서 C1이 되는지도 확인한다.
+3. 맡은 변경의 관련 자동 테스트와 `AGENTS.md`의 필수 gate를 실행한다. 재생/메시지 변경은 연속 반복·once 끝정지, 시간/자막 개수·A/B, source/광고/SPA/소유권 격리까지 확인한다. 선택 저장은 양 역할 단독과 pair, 언어/출처 보존, Library 재사용 및 Review 자격을 구분해 확인한다.
+4. 최종 후보의 격리된 실제 v1.11.0→다음 버전 업그레이드와 fresh install, 실제 action-opened side panel/영상에서 C1–C5를 확인한다. 기존 사용자 Chrome 프로필이나 실제 개인 자료를 테스트용으로 덮어쓰지 않는다. 합성 fixture·문서 기록·ChatGPT 검토를 실제 Chrome PASS로 승격하지 않는다.
+5. 각 기준의 코드 근거, 이번 자동 실행, 기존 기록, 실제 관찰을 분리해 보고하고 `NOT RUN/UNKNOWN/FAIL`을 유지한다. 이 문서와 Issue 작성만으로 구현/출시 완료 처리하지 않는다. commit/push/merge/배포는 각각 기존 승인 규칙을 따른다.
+
 ## 1. Product North Star
 
-Play Plus 2.0은 Coupang Play를 위한 범용 편의 기능 모음이 아니라 **영상 시청과 문장 복습을 연결하는 언어 학습 도구**다.
+Play Plus 2.0은 **영상 시청과 문장 복습을 연결하는 언어 학습 도구**다. 기존 v1.11.0의 직접 시청·저장·재사용도 학습을 돕는 사용자 행동이며, §0의 호환성 기준을 새 학습 흐름 진입의 대가로 축소하지 않는다.
 
 Top-level destination은 **Learning, Subtitles, Library, Review** 네 개만 유지한다. 한 문장 듣기의 entry, 이전 받아쓰기 기록과 active session은 모두 Learning 안에 둔다.
 
@@ -53,8 +121,8 @@ Top-level destination은 **Learning, Subtitles, Library, Review** 네 개만 유
 | 저장 위치 | 공개 v1.11.0 데이터 | 2.0 처리 |
 | --- | --- | --- |
 | `chrome.storage.sync` | `primarySubtitle`, `secondarySubtitle` | 학습/도움 언어·표시·외형 설정으로 이전 |
-| `chrome.storage.sync` | `videoSkip`, `subVideoSkip`, `loop` | 아래의 제한된 이전/다음 문장·현재 문장 반복 매핑만 수행하고 구 설정 모델은 제거 |
-| `chrome.storage.sync` | `shortcuts` | 하나의 저장 단축키 후보만 매핑하고 복사·중복 저장·역할별 표시 단축키는 제거 |
+| `chrome.storage.sync` | `videoSkip`, `subVideoSkip`, `loop` | §0 C2/C3/C5의 시간량·문장 개수·보조/대체 이동·연속 반복·한 번 재생·A/B와 활성 의도를 정상 v2 모델로 이전 |
+| `chrome.storage.sync` | `shortcuts` | §0 C4/C5의 역할별 선택 저장·복사·표시와 키/활성 의도를 보존; 실제 충돌만 명시 확인 |
 | `chrome.storage.sync` | `playbackSpeed` | 2.0 재생 속도 제어로 이전 |
 | `chrome.storage.local` | `savedSubtitles`의 `{ content, url, startTime, savedAt }[]` | `learningCards`로 항목별 이전 |
 | `chrome.storage.local` | `registeredSubtitles` 메타데이터 | 유효한 항목을 그대로 보존 |
@@ -80,7 +148,7 @@ v2의 정상 코드가 사용하는 영속 데이터는 다음처럼 소유한�
 | `chrome.storage.local` | `subtitle-<uuid>` | 등록 자막 cue 본문 |
 | `chrome.storage.sync` | `learningProfile` | 학습 언어와 도움 언어 |
 | `chrome.storage.sync` | `subtitleDisplay` | 역할별 표시 방식과 자막 외형 |
-| `chrome.storage.sync` | `shortcuts` | 하나의 저장 동작과 이전/다음/반복의 키보드 바인딩 및 단일 master |
+| `chrome.storage.sync` | `shortcuts` | §0 C2–C5의 동작별 키보드 바인딩과 활성 의도; 단일 master 강제는 대체됨 |
 | `chrome.storage.sync` | `playbackSpeed` | 재생 속도 제어 |
 
 학습 카드는 로컬 데이터다. 2.0은 계정, 장치 간 동기화 또는 복구를 약속하지 않는다. `chrome.storage.sync`에 카드를 넣거나 저장 용량을 쪼개 우회하지 않는다.
@@ -120,6 +188,8 @@ OpenSubtitles 검색 입력, 결과 metadata, `file_id`, 임시 download URL과 
 
 ### 3.4 Learning card
 
+§0 C4가 아래 모델의 `새 저장은 항상 learning`, `unassigned는 항상 und` 제약을 필요한 범위에서 대체한다. 아래 union은 이주 카드와 기존 pair/Review를 설명하는 구현 기반이며 선택 저장까지 완성된 최종 schema가 아니다. 구체적인 support-only/중립 단일 문장 표현은 구현 Issue에서 먼저 확정한다. v1에서 실제 언어를 모르는 문장을 `unassigned/und`로 이전하는 §4.3 규칙과 기존 데이터 보존은 유지한다.
+
 canonical 카드의 의미 모델은 다음과 같다. TypeScript 구현은 strict schema와 discriminated union 등으로 불변식을 강제해야 한다.
 
 ```text
@@ -144,8 +214,8 @@ Line
 불변식은 다음과 같다.
 
 - 카드에는 하나 이상의 비어 있지 않은 문장이 있어야 한다.
-- `unassigned`는 `learning` 또는 `support`와 동시에 존재할 수 없다. 언어 코드는 `und`다.
-- 새 2.0 저장은 항상 `learning`을 포함한다. 신뢰할 수 있는 대응 문장이 있을 때만 `support`를 포함한다.
+- v1에서 이전한 `unassigned`는 `learning` 또는 `support`와 동시에 존재하지 않고 언어 코드는 `und`다. 새 역할 미지정 단일 문장의 알려진 언어까지 이 제약으로 버리지 않는다(§0 C4).
+- 학습+도움 pair 저장은 `learning`을 포함하고 신뢰할 수 있는 대응 문장이 있을 때만 `support`를 포함한다. 새 역할별 단독 저장은 §0 C4의 후속 타입 설계를 따른다.
 - v1.11에서 이전한 미분류 카드는 정상적인 `unassigned` 카드다. `legacy`, `migrated`, `v1` 같은 영구 출처 필드를 추가하지 않는다.
 - `unassigned` 카드는 Library에는 보이지만 Review 대상에는 들어가지 않는다.
 - `active`는 계속 학습할 카드, `completed`는 사용자가 완료로 정리한 카드다. SRS 단계, 정답률 또는 기억 수준을 뜻하지 않는다.
@@ -253,16 +323,18 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 
 ### 4.5 Settings and Web Storage conversion
 
+**2026-10-12 개정:** 단일 저장 후보·단일 master OR, `videoSkip`만 보는 제한 매핑과 제거 목록을 §0 C2–C5에 맞게 대체했다. 과거 알고리즘을 새 acceptance criterion으로 재사용하지 않는다.
+
 - `primarySubtitle`의 언어·표시·외형은 `learning` 역할로 이전한다.
 - `secondarySubtitle`의 언어·표시·외형은 `support` 역할로 이전한다.
 - 숫자 범위와 enum이 유효한 사용자 값은 기본값으로 치환하지 않고 그대로 보존한다.
 - `playbackSpeed`의 유효한 단축키와 활성 의도는 새 속도 제어로 이전한다.
-- 하나의 저장 동작에 사용할 수 있는 기존 저장 단축키가 하나뿐이면 그 값을 후보로 이전한다. 두 값이 모두 있거나 충돌하면 임의로 선택하지 말고 첫 진입 확인 대상으로 둔다.
-- `videoSkip.skipTimeUnit`이 `subtitles`일 때 유효한 `backward`/`forward` 단축키는 이전/다음 학습 문장 후보로 이전한다. 문장 이동 수가 1이 아니거나 다른 v2 단축키와 충돌하면 첫 진입 확인 대상으로 두며 임의로 의미를 바꾸지 않는다.
-- `loop.loopCurrentSubtitle`의 유효한 단축키는 현재 학습 문장 반복 후보로 이전한다. `playCurrentSubtitleOnce`를 별도 명령으로 유지하지 않는다.
-- v2 `shortcuts.enabled`는 기존 `shortcuts.enabled`, 활성화된 자막 단위 `videoSkip`에서 보존할 이전/다음 후보가 있는 경우, 활성화된 `loopCurrentSubtitle`에서 보존할 반복 후보가 있는 경우를 OR해 결정한다. 충돌·모호성으로 첫 진입 확인이 필요한 후보도 기존 활성 의도를 잃지 않으며, 사용자가 거부한 후보는 빈 바인딩으로 남긴다.
-- 첫 진입은 모호하거나 충돌한 키 후보와 학습/도움 언어만 확인한다. 이전/다음/반복 동작 자체를 끄는 별도 상태를 만들거나 기록하지 않는다.
-- 복사 전용, primary/secondary 중복 저장·표시, 초/분 단위 스킵, `subVideoSkip`, 수동 A/B 시작·끝, 일반 loop toggle과 일회 재생 설정은 v2 데이터로 이전하지 않는다.
+- 두 역할의 저장·복사·표시 키를 같은 역할의 동작으로 이전한다. 실제 충돌이 아닌 두 역할의 키를 단일 저장 키 선택으로 축소하지 않는다.
+- `videoSkip`과 `subVideoSkip` 모두의 유효한 시간량·자막 개수·대체 동작·키와 활성 의도를 정상 v2 모델로 이전한다. 1문장으로 임의 축소하거나 보조 그룹이라는 이유로 버리지 않는다.
+- `loopCurrentSubtitle`, `playCurrentSubtitleOnce`, A/B 시작·끝과 loop toggle의 키·의미·활성 의도를 §0 C2/C3대로 보존한다.
+- 정확히 매핑 가능한 활성 키는 이전하고 실제 충돌/모호성만 명시 확인한다. 사용자가 거부한 후보는 활성화하지 않는다. 모든 키 초기화로 대체하지 않는다.
+- 서로 다른 구 그룹의 활성 여부를 OR한 master 하나만으로 비활성 키를 켜지 않는다. 이를 표현할 정상 v2 설정 구조를 구현 Issue에서 정한다. 직접 control의 가용성과 키보드 활성 상태는 구분한다.
+- 첫 진입 확인은 필요한 언어/역할 및 실제 충돌에 한정하며 기존 저장 문장을 모두 분류하도록 강제하지 않는다.
 - 유효한 `vite-ui-theme` 값은 유지한다.
 - 기존 `page-store`는 2.0 정보 구조와 맞지 않으므로 제거하고 v2 기본 진입점에서 시작한다.
 - 기존 `isOnboardingComplete`는 그대로 신뢰하지 않는다. 2.0의 학습/도움 언어 확인을 한 번 완료한 뒤 새 v2 onboarding 표식을 기록하고 구 키를 제거한다.
@@ -273,18 +345,22 @@ ID는 재시도해도 같고 중복 항목은 서로 달라야 한다. 구현은
 
 #### Learning playback
 
+**2026-10-12 개정:** 직접 control과 키 활성 상태를 구분하고, 자막 없는 검증된 본편의 시간 이동·속도 제어를 자막 학습 자격으로 막지 않는다. media 소유권·충돌/예약 키·표시 label 경계는 유지한다.
+
 - 이전 학습 문장으로 이동
 - 다음 학습 문장으로 이동
-- 현재 학습 문장 반복
+- 현재 유효 문장 연속 반복과 한 번 재생 후 정지
+- 설정한 시간량/자막 개수 및 보조·대체 이동
+- 사용자가 지정하는 A/B 구간 반복
 - 재생 속도 증가·감소·초기화
-- 도움 자막 보이기/숨기기
-- 현재 학습 문장을 저장하는 하나의 명령과 하나의 사용자 단축키
+- 두 역할 각각의 자막 보이기/숨기기와 복사
+- 역할별 단독 저장과 pair 저장 선택
 
-이전·다음·반복은 항상 제공하는 핵심 재생 동작이며 사용자가 설정에서 개별적으로 숨기거나 비활성화하지 않는다. `shortcuts.enabled`는 저장·이전·다음·반복의 **키보드 바인딩만** 한꺼번에 켜고 끈다. master가 꺼져도 영상 위 재생 control과 직접 명령은 유지하고, master가 켜졌을 때 비어 있지 않은 바인딩만 동작한다. 단, active Listening Mission이 content media state를 소유하는 동안에는 충돌하는 Play Plus overlay와 on-video Controller를 persistent setting 변경 없이 transiently 숨기고 비활성화한다. 재생 속도는 자체 master를 유지한다.
+직접 재생 control은 해당 동작의 유효한 대상과 안전 경계 안에서 제공하고, 키보드 설정이 꺼져도 직접 명령까지 막지 않는다. 키 바인딩은 §0 C5의 활성 의도를 따르며 서로 다른 기존 상태를 단일 master에 강제로 합치지 않는다. active Listening Mission이 content media state를 소유하는 동안에는 충돌하는 Play Plus overlay와 on-video Controller를 persistent setting 변경 없이 transiently 숨기고 비활성화한다. 속도 키 활성 여부와 직접 속도 버튼의 가용성도 구분한다.
 
-설정에는 `Learning playback controls`나 개별 enabled checkbox를 두지 않는다. 저장·이전·다음·반복과 재생 속도의 raw `KeyboardEvent.code`는 저장·검증·runtime 비교에만 사용하고, 사용자에게는 같은 code를 일관된 읽기 쉬운 키 이름으로 변환해 표시한다. 같은 키 충돌과 예약 키 검증은 계속 필요하며 저장할 수 없는 입력에는 해당 필드와 연결된 이유를 즉시 표시한다.
+설정 UI의 그룹/checkbox 형태는 후속 설계에서 정하되 기존 활성 의도를 표현해야 한다. raw `KeyboardEvent.code`는 저장·검증·runtime 비교에만 사용하고, 사용자에게는 같은 code를 일관된 읽기 쉬운 키 이름으로 변환해 표시한다. 같은 키 충돌과 예약 키 검증은 계속 필요하며 저장할 수 없는 입력에는 해당 필드와 연결된 이유를 즉시 표시한다.
 
-두 개의 저장 명령, 자막 복사 단축키, primary/secondary 토글이라는 이름은 남기지 않는다.
+사용자 역할 이름은 학습/도움으로 정리할 수 있지만 두 역할의 저장·복사·표시 행동을 함께 없애지 않는다.
 
 #### Listening Mission
 
@@ -390,13 +466,15 @@ End mode와 결과는 다음처럼 고정한다.
 - 현재 cue는 해당 보기의 anchor에서 1ms로 반올림한 닫힌 시간 구간 중 가장 늦게 시작한 cue를 우선하고, 시작 시각이 같으면 더 작은 source index를 우선한다. gap에서는 어떤 cue도 현재라고 표시하지 않는다.
 - 성공한 snapshot 뒤 follow를 기본 활성화한다. 사용자 scroll이나 비어 있지 않은 검색은 follow를 끄지만 현재 cue highlight는 유지하며, 검색을 지워도 자동 재개하지 않는다. 사용자는 명시적인 control로 follow를 재개하고 현재 cue가 있으면 즉시 가운데로 이동할 수 있다.
 - 각 행의 본문은 pointer와 키보드 `Enter`/`Space`로 해당 장면을 seek하는 실제 action이다. 가상 목록의 결과 집합에는 roving focus와 `ArrowUp`/`ArrowDown`/`Home`/`End` 이동을 제공한다. 행별 저장은 seek와 중첩되지 않은 별도 action이어야 한다.
-- `함께`와 `학습` 보기의 학습 anchor 행은 바로 카드로 저장할 수 있다. UI는 snapshot의 video/content identity, subtitle revision과 학습 source index만 보내고, content script가 현재 활성 학습 cue를 원자적으로 다시 검증한 뒤 기존 delay·도움 정렬·카드 저장 경계를 사용한다. 저장 결과는 도움 포함, 학습만 저장, 오래된 snapshot, cue 없음, 진행 중과 오류를 구분하고 기존 side panel toast로 알린다. `도움` 보기에는 저장 action을 제공하지 않는다.
+- `함께`와 `학습` 보기의 학습 anchor 행은 바로 카드로 저장할 수 있다. UI는 snapshot의 video/content identity, subtitle revision과 학습 source index만 보내고, content script가 현재 활성 학습 cue를 원자적으로 다시 검증한 뒤 기존 delay·도움 정렬·카드 저장 경계를 사용한다. 저장 결과는 도움 포함, 학습만 저장, 오래된 snapshot, cue 없음, 진행 중과 오류를 구분하고 기존 side panel toast로 알린다. §0 C4에 따라 도움 역할의 선택 저장도 지원해야 하며, 구체적인 UI 진입점·role/source message와 카드 타입은 후속 Issue에서 정한다. 과거의 도움 저장 금지를 유지하지 않는다.
 - 학습 행의 저장 표시는 canonical `learningCards`에서 같은 Coupang Play video ID, 학습 언어, 정제된 학습 문장과 1ms로 반올림한 시작·종료 시각이 모두 일치하는 assigned 카드가 있는지 파생한다. 이는 자막 provenance를 완전히 증명하지 않는 best-effort 표시이며 toggle, dedupe, 저장 차단이나 삭제 control이 아니다. 성공 직후 표시하고 storage revision으로 다시 조정하되 새 provenance schema나 cue 사본을 만들지 않는다. 진행 중인 현재 cue 저장과 행별 저장은 하나의 pending lock을 공유하며, 완료 뒤 같은 문장을 다시 저장하면 기존 카드 계약대로 별도 카드가 추가된다.
 - UI는 cue 본문을 Storage나 background에 복제하지 않는다. 활성 tab의 content script에서 직접 받은 일시 snapshot과 재생 시각만 사용하고, tab·SPA route·content instance·video·자막 revision 변경과 늦은 응답을 격리한다. 행 seek와 저장은 content 경계에서 snapshot identity와 자막 revision을 원자적으로 다시 검증한 뒤에만 실행한다.
 
 #### Ordinary viewing save and multi-cue alignment
 
-- active Listening Mission 밖의 ordinary viewing save는 현재 재생 중인 학습 cue를 anchor로 사용한다. 한 문장 듣기의 명시적 combined-segment save는 위 Listening Mission 계약을 따른다.
+§0 C4의 역할별 단독 저장과 pair 저장 선택을 구분한다. 아래 alignment는 pair 저장을 선택한 경로의 규칙이며 모든 ordinary save가 학습 anchor를 요구한다는 뜻은 아니다.
+
+- active Listening Mission 밖의 pair 저장은 현재 재생 중인 학습 cue를 anchor로 사용한다. 한 문장 듣기의 명시적 combined-segment save는 위 Listening Mission 계약을 따른다.
 - 도움 자막의 delay를 적용한 뒤, 시간적으로 연속된 하나 이상의 도움 cue 그룹을 후보로 비교한다.
 - 시간 겹침, 중심점 거리와 cue 사이 gap을 함께 사용해 가장 신뢰할 수 있는 그룹을 선택한다.
 - 신뢰도가 기준보다 낮으면 도움 문장을 생략하되 학습 문장 저장은 성공시킨다.
@@ -406,6 +484,7 @@ End mode와 결과는 다음처럼 고정한다.
 #### Library and Review
 
 - Library는 `active`, `completed`, `unassigned` 카드를 모두 보여 주고 상태·역할에 따라 필터할 수 있다.
+- §0 C1에 따라 언어/역할 재분류 없이 검색·정렬·명시적 전체 문장 복사·원래 장면 복귀를 제공한다. 미분류 자료를 새 Review에 넣기 위한 편집은 기존 자료 이용의 선행 조건이 아니다.
 - Review 기본 대상은 학습 문장이 있는 `active` 카드다. 사용자가 요청하면 `completed` 카드를 별도로 볼 수 있다.
 - Review는 한 번에 한 카드에 집중하고 도움 문장을 먼저 숨긴 뒤 명시적으로 공개한다.
 - 이전, 건너뛰기, 계속 학습, 완료와 원래 영상 시점 열기를 제공한다.
@@ -543,10 +622,9 @@ OpenSubtitles 검색·다운로드 capability는 초기 Play Plus 2.0에 포함�
 
 - 독립된 자막 분석 top-level 화면과 단어 빈도·통계 기능
 - 학습 프리셋과 preset storage/module/UI
-- 시간 단위·자막 단위 스킵을 중복 구성하는 `videoSkip`/`subVideoSkip` 모델
-- 사용자가 시작·끝을 정하는 수동 A/B 루프와 일반 루프 설정
-- primary/secondary별 저장·복사·표시 단축키
-- 이전/다음/반복을 개별적으로 숨기거나 막는 `learningControls` enabled 모델
+- 구 `videoSkip`/`subVideoSkip` 영속 모델의 정상 runtime 사용. 시간/문장 개수·보조/대체 **행동과 활성 키는 §0 C3/C5에 따라 보존**한다.
+- 구 primary/secondary 명칭과 구 loop 모델의 정상 runtime 사용. **A/B·연속 반복·once 및 역할별 저장/복사/표시는 제거 대상에서 제외**한다.
+- 구 `learningControls` 모델의 기계적 복원. 정상 v2 설정은 §0 C5의 서로 다른 활성 의도를 표현할 수 있어야 한다.
 - 과거 LearningCard/Review용 `new | learning | mastered` 복습 상태와 이를 전제로 한 필터·문구·세션 override. 이는 §3.5 Listening Progress의 별도 `attempted | cleared | mastered` best-evidence state를 제거한다는 뜻이 아니다.
 - 하이라이트, 추천, broad dashboard, Listening Mission 밖의 범용 퀴즈, 공유와 밝기 조절 같은 범용 확장 기능. Learning의 exact current-source progress summary는 broad dashboard가 아니다.
 
@@ -590,7 +668,7 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - `Clear current video progress`와 `Clear all listening progress`는 서로 다른 confirmation과 focus recovery를 사용하며 실패 시 data를 지웠다고 표시하지 않는다.
 - 320, 360, 390 CSS px에서 active mission은 horizontal overflow, overlap, clipped focus ring 또는 nested idle-settings scroll이 없어야 한다. Chrome이 실제로 제공하지 않는 320px는 deterministic fixture로 검증하고 실제 Chrome에서는 browser constraint를 기록한다. long English, Korean과 no-space text가 primary action을 막지 않아야 한다.
 - 첫 2.0 진입은 학습 언어와 도움 언어 확인에 집중한다. v1 카드를 모두 고치도록 강제하지 않는다.
-- 미분류 이전 카드는 “언어/역할 지정 필요”처럼 사실만 말한다. 자동 감지했다고 주장하지 않는다.
+- 미분류 이전 카드는 기존 자료 이용이 가능함을 알리고, 새 Focused Review에 편입할 때만 언어/역할 지정이 필요함을 구분한다. 자동 감지했다고 주장하지 않는다.
 - 도움 문장이 정렬되지 않아 저장되지 않은 경우에도 학습 문장은 저장되며, 실패가 아니라 도움 문장 생략으로 이해할 수 있어야 한다.
 - 데이터 오류나 마이그레이션 실패는 재시도 가능한 상태로 알린다. “모두 복구됐다” 또는 “백업됐다”처럼 구현하지 않은 보장을 하지 않는다.
 - 자막 외형 설정은 고급 영역에 둘 수 있지만 찾을 수 있어야 하며, 접근성 있는 label과 현재 값을 제공한다.
@@ -621,6 +699,8 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - Playback Context의 `routeKind`, lifecycle, capability, `contentEpoch`과 `mediaAttachmentRevision`은 active tab의 승인된 transient message boundary 안에서만 사용한다. Storage, Web Storage, telemetry, diagnostics 또는 외부 network에 기록하지 않으며 광고 media/time/cue/text를 main-content subtitle, card 또는 progress로 투영하지 않는다.
 
 ## 8. Implementation Program
+
+아래는 이전 프로그램의 이력이다. 2026-10-12 이후 후속 호환성 작업은 §0 C1–C5와 §0.6을 적용한다. 과거 scope cleanup을 이유로 이번에 보존하기로 한 행동을 다시 삭제하지 않으며, 이 목록은 새 Batch Relay 승인이나 실행 순서를 뜻하지 않는다.
 
 2.0은 하나의 거대한 변경으로 만들지 않는다. 각 단계는 최신 `main`에서 Issue 계약과 작업 브랜치를 만들고, 검증 가능한 vertical slice로 Pull Request를 제출한다. 순서는 다음을 기본으로 한다.
 
@@ -656,12 +736,14 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 
 ## 9. Definition of Done for 2.0
 
+§0 C1–C5와 §0.6은 다음 버전의 추가 필수 완료 조건이다. 아래의 과거 단일 master 매핑/독립 활성 상태 금지 및 단일 저장 전제는 §0으로 대체한다. runtime에서 구 키를 읽지 않는다는 원칙은 유지하되, 그 원칙을 정상 v2 모델의 필요한 확장이나 공개 행동 보존을 금지하는 의미로 해석하지 않는다. 일반 검증 및 실제 Chrome gate는 유지한다.
+
 ### 9.1 Migration proof
 
 - 실제 v1.11 형식 fixture로 저장 카드의 수·순서·중복·텍스트·URL·시각·저장일이 보존된다.
 - 같은 fixture를 여러 번 변환해 같은 ID와 결과를 얻는다.
 - 학습/도움 자막의 유효한 외형 값이 각 역할에 정확히 보존된다.
-- v1.11의 저장, 자막 단위 이전/다음, 현재 문장 반복 단축키 후보와 활성 의도가 하나의 v2 `shortcuts` master와 바인딩으로 결정론적으로 이전되고, 첫 진입에서 거부한 후보는 빈 바인딩으로 남는다.
+- v1.11의 §0 C2–C5 동작/키/활성 의도를 결정론적으로 이전한다. 기본값·공식 프리셋·사용자 지정과 비활성 그룹을 따로 검증하고 실제 충돌만 확인하며, 거부한 후보는 활성화하지 않는다.
 - 유효한 등록 자막 metadata와 cue body가 byte-for-byte 또는 구조적으로 동등하게 보존된다.
 - 변환, 쓰기, 재읽기, 표식과 정리 각 단계의 실패를 주입해 원본 비삭제, 무표식, 재시도와 오류 UI를 증명한다.
 - 손상된 등록 자막 한 항목이 정상 카드와 다른 등록 자막의 이전을 막지 않고 격리된다.
@@ -675,14 +757,14 @@ Play Plus 2.0에는 내보내기, 가져오기 또는 backup 파일 형식을 �
 - 정상 UI/content/background가 `savedSubtitles`, `primarySubtitle`, `secondarySubtitle`, `videoSkip`, `subVideoSkip` 또는 구 `loop`를 읽거나 쓰지 않는다.
 - 미배포 backup v1과 과거 LearningCard/Review용 `new | learning | mastered` status 호환 분기가 없다. Listening Progress의 별도 best-evidence state `attempted | cleared | mastered`는 §3.5 계약이다.
 - 제거한 feature의 route, UI, controller/store, schema/default, message handler, locale, test와 Chrome permission이 남지 않는다.
-- 정상 v2 schema, default, storage API, Settings, First Entry, content controller와 runtime에 `learningControls` 키나 개별 enabled 분기가 남지 않는다.
+- 구 `learningControls`를 기계적으로 복원하지 않는다. 정상 v2 설정은 §0 C5의 독립적인 활성 의도를 보존할 수 있어야 하며 개별 활성 상태를 표현한다는 이유만으로 금지하지 않는다.
 - migration 완료 뒤 정리 대상 v1 키가 사라지고, 정리가 중단돼도 다음 시작에서 안전하게 끝난다.
 - interim v2 missing-progress fallback, persisted typed answer/draft/history/raw catalog/mission snapshot 또는 deferred Listening feature용 dormant schema·route·permission이 없다.
 
 ### 9.3 Product proof
 
 - 학습/도움 언어 확인 → 시청 → 한 번 저장 → Library 확인/수정 → 집중 Review → 영상 복귀의 전체 흐름이 작동한다.
-- 이전·다음·반복 control과 직접 명령은 Shortcuts master 상태와 관계없이 항상 제공되고, master는 저장·이전·다음·반복의 비어 있지 않은 키보드 바인딩만 제어한다. active Listening Mission의 content media ownership 동안만 persistent setting 변경 없이 Play Plus overlay와 on-video Controller를 transiently suppress한다. 저장된 raw code와 사용자 표시 label은 구분되며 예약·중복 키 오류는 충돌 대상을 포함해 접근 가능하게 설명된다.
+- §0 C2/C3의 직접 재생 control과 키 활성 상태가 독립적으로 작동하며 C5의 비활성 명령이 다른 그룹 때문에 켜지지 않는다. active Listening Mission의 content media ownership 동안에는 persistent setting 변경 없이 충돌하는 overlay/controller를 transiently suppress한다. raw code와 사용자 label을 구분하고 예약·중복 키 오류를 접근 가능하게 설명한다.
 - 도움 자막이 한 cue 및 여러 연속 cue일 때 올바르게 pair되고, 낮은 신뢰도에서는 학습 문장만 저장된다.
 - `unassigned`는 Library에 남고 Review에서 제외되며 사용자가 정상 카드로 바꿀 수 있다.
 - `active`와 `completed`만으로 Review와 Library 동작이 일관된다.
