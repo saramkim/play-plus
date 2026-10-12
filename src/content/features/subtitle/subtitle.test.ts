@@ -3,16 +3,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
+import { videoManager } from '@/content/core/video/video-manager';
 import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 import { initializeSubtitleSync, syncSubtitles } from './subtitle';
-import { useSubtitleStore } from './subtitle-store';
+import { selectSubtitleTrack, useSubtitleStore } from './subtitle-store';
+
+vi.mock('@utils/coupang-play', () => ({ getCoupangPlayVideoId: () => 'video-test' }));
+
+useSubtitleStore.subscribe((state) => {
+  const status = usePlaybackContextStore.getState().status;
+  if (status) usePlaybackContextStore.setState({ status: { ...status, subtitleIdentity: {
+    learning: selectSubtitleTrack(state, 'learning').cues.length ? 'learning-source' : null,
+    support: selectSubtitleTrack(state, 'support').cues.length ? 'support-source' : null,
+    subtitleRevision: state.subtitleRevision,
+  } } });
+});
 
 const registeredSubtitleId = 'subtitle-00000000-0000-4000-8000-000000000001';
 
 describe('canonical subtitle presentation', () => {
   beforeEach(() => {
+    const video = document.createElement('video');
+    vi.spyOn(videoManager, 'get').mockReturnValue(video);
+    vi.spyOn(videoManager, 'isCurrent').mockReturnValue(true);
     useSubtitleStore.getState().clearCaches();
     useListeningMissionActiveStore.getState().setActive(false);
     usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
@@ -116,6 +131,31 @@ describe('canonical subtitle presentation', () => {
     syncSubtitles(1.5);
     expect(elementStore.getSubtitleElement('learning').textContent).toBe('Changed while active');
     expect(elementStore.getSubtitleElement('support').textContent).toBe('Support');
+  });
+
+
+  it('renders support independently and clears it for hidden, stale, ad or mission state', () => {
+    const store = useSubtitleStore.getState();
+    store.setNativeCues('ko', [{ start: 1, end: 2, text: 'Support alone' }]);
+    const status = usePlaybackContextStore.getState().status!;
+    usePlaybackContextStore.setState({ status: { ...status, learningAvailable: false } });
+    syncSubtitles(1.5);
+    expect(elementStore.getSubtitleElement('learning').textContent).toBe('');
+    expect(elementStore.getSubtitleElement('support').textContent).toBe('Support alone');
+    const display = structuredClone(store.subtitleDisplay); display.support.visibility = 'hidden';
+    store.setSettings({ learningProfile: store.learningProfile, subtitleDisplay: display });
+    syncSubtitles(1.5); expect(elementStore.getSubtitleElement('support').textContent).toBe('');
+    display.support.visibility = 'visible'; store.setSettings({ learningProfile: store.learningProfile, subtitleDisplay: display });
+    for (const next of [
+      { ...status, lifecycle: 'advertisement' as const },
+      { ...status, subtitleIdentity: { ...status.subtitleIdentity, subtitleRevision: -1 } },
+      { ...status, subtitleIdentity: { ...status.subtitleIdentity, support: null } },
+    ]) {
+      usePlaybackContextStore.setState({ status: next }); syncSubtitles(1.5);
+      expect(elementStore.getSubtitleElement('support').textContent).toBe('');
+    }
+    usePlaybackContextStore.setState({ status }); useListeningMissionActiveStore.getState().setActive(true);
+    syncSubtitles(1.5); expect(elementStore.getSubtitleElement('support').textContent).toBe('');
   });
 
   it('strictly loads canonical settings and follows validated storage and video changes', async () => {

@@ -1,3 +1,4 @@
+import { CONTROL_COMMANDS } from './control-settings';
 import {
   createDefaultListeningProgress,
   createDefaultV2LocalData,
@@ -54,16 +55,6 @@ export interface V2MigrationCoordinatorDependencies {
 
 type ShortcutField = V2ShortcutConfirmation['field'];
 type ShortcutCandidate = V2ShortcutConfirmation['candidates'][number];
-
-const SHORTCUT_FIELDS: ShortcutField[] = [
-  'saveCard',
-  'previousCue',
-  'nextCue',
-  'repeatCurrentCue',
-  'speedIncrease',
-  'speedDecrease',
-  'speedReset',
-];
 
 export const createV1LearningCardId = async (subtitle: V1SavedSubtitle, originalIndex: number) => {
   const source = JSON.stringify([
@@ -157,152 +148,67 @@ export const ensureV2Ready = async (dependencies: V2MigrationCoordinatorDependen
 };
 
 const mapV1Settings = (legacy: ReturnType<typeof parseV1_11SyncStorage>) => {
-  const assignments: Record<ShortcutField, string> = {
-    saveCard: '',
-    previousCue: '',
-    nextCue: '',
-    repeatCurrentCue: '',
-    speedIncrease: legacy.playbackSpeed.increase,
-    speedDecrease: legacy.playbackSpeed.decrease,
-    speedReset: legacy.playbackSpeed.reset,
+  const sync = structuredClone(DEFAULT_V2_SYNC_STORAGE);
+  sync.learningProfile = { learningLanguage: legacy.primarySubtitle.language, supportLanguage: legacy.secondarySubtitle.language };
+  sync.subtitleDisplay = {
+    learning: { visibility: legacy.primarySubtitle.enabled ? 'visible' : 'hidden', appearance: pickAppearance(legacy.primarySubtitle) },
+    support: { visibility: legacy.secondarySubtitle.enabled ? 'visible' : 'hidden', appearance: pickAppearance(legacy.secondarySubtitle) },
   };
-  const candidates = new Map<ShortcutField, ShortcutCandidate[]>();
-  const confirmations = new Map<ShortcutField, V2ShortcutConfirmation>();
-  const setCandidate = (field: ShortcutField, candidate: ShortcutCandidate) => {
-    candidates.set(field, [candidate]);
-    assignments[field] = candidate.shortcut;
-  };
-  const requireConfirmation = (
-    field: ShortcutField,
-    fieldCandidates: ShortcutCandidate[],
-    reason: V2ShortcutConfirmation['reason'],
-    conflictingFields?: ShortcutField[]
-  ) => {
-    candidates.set(field, fieldCandidates);
-    assignments[field] = '';
-    confirmations.set(field, {
-      field,
-      candidates: fieldCandidates,
-      reason,
-      ...(conflictingFields?.length ? { conflictingFields } : {}),
+  const mappings = [
+    ['saveLearning', 'savePrimary'], ['saveSupport', 'saveSecondary'],
+    ['copyLearning', 'copyPrimary'], ['copySupport', 'copySecondary'],
+    ['toggleLearning', 'togglePrimary'], ['toggleSupport', 'toggleSecondary'],
+  ] as const;
+  const candidates = new Map<ShortcutField, ShortcutCandidate>();
+  for (const [field, source] of mappings) {
+    sync.shortcuts[field] = { key: legacy.shortcuts[source], enabled: legacy.shortcuts.enabled };
+    candidates.set(field, { source, shortcut: legacy.shortcuts[source] });
+  }
+  for (const [profile, source, previous, next] of [
+    ['primary', 'videoSkip', 'previousCue', 'nextCue'],
+    ['secondary', 'subVideoSkip', 'secondaryPrevious', 'secondaryNext'],
+  ] as const) {
+    const value = legacy[source];
+    sync.shortcuts.navigation[profile] = {
+      amount: value.skipTime, unit: value.skipTimeUnit,
+      fallbackEnabled: value.fallbackTime > 0, fallbackAmount: value.fallbackTime, fallbackUnit: value.fallbackUnit,
+    };
+    sync.shortcuts[previous] = { key: value.backward, enabled: value.enabled };
+    sync.shortcuts[next] = { key: value.forward, enabled: value.enabled };
+    candidates.set(previous, { source: `${source}.backward`, shortcut: value.backward });
+    candidates.set(next, { source: `${source}.forward`, shortcut: value.forward });
+  }
+  for (const [field, source] of [
+    ['repeatCurrentCue', 'loopCurrentSubtitle'], ['playOnce', 'playCurrentSubtitleOnce'],
+    ['toggleAB', 'toggleLoop'], ['setA', 'startPoint'], ['setB', 'endPoint'],
+  ] as const) {
+    sync.shortcuts[field] = { key: legacy.loop[source], enabled: legacy.loop.enabled };
+    candidates.set(field, { source: `loop.${source}`, shortcut: legacy.loop[source] });
+  }
+  for (const [field, source] of [
+    ['speedIncrease', 'increase'], ['speedDecrease', 'decrease'], ['speedReset', 'reset'],
+  ] as const) {
+    sync.playbackSpeed[source] = { key: legacy.playbackSpeed[source], enabled: legacy.playbackSpeed.enabled };
+    candidates.set(field, { source: `playbackSpeed.${source}`, shortcut: legacy.playbackSpeed[source] });
+  }
+  const bindings = [
+    ...CONTROL_COMMANDS.map((field) => [field, sync.shortcuts[field]] as const),
+    ...([['speedIncrease', 'increase'], ['speedDecrease', 'decrease'], ['speedReset', 'reset']] as const)
+      .map(([field, source]) => [field, sync.playbackSpeed[source]] as const),
+  ];
+  const confirmations: V2ShortcutConfirmation[] = [];
+  // Disable every owner of an actual active conflict; never choose an insertion-order winner.
+  const conflicting = bindings.filter(([, binding]) => binding.enabled && binding.key &&
+    bindings.filter(([, other]) => other.enabled && other.key === binding.key).length > 1);
+  for (const [field, binding] of conflicting) {
+    const candidate = candidates.get(field);
+    if (!candidate) continue;
+    confirmations.push({ field, candidates: [candidate], reason: 'conflict',
+      conflictingFields: conflicting.filter(([other, value]) => other !== field && value.key === binding.key).map(([other]) => other),
     });
-  };
-
-  const saveCandidates = [
-    { source: 'savePrimary' as const, shortcut: legacy.shortcuts.savePrimary },
-    { source: 'saveSecondary' as const, shortcut: legacy.shortcuts.saveSecondary },
-  ].filter(({ shortcut }) => shortcut !== '');
-  if (saveCandidates.length === 1) setCandidate('saveCard', saveCandidates[0]);
-  if (saveCandidates.length > 1) requireConfirmation('saveCard', saveCandidates, 'multiple-candidates');
-
-  const cueSemanticsAreExact = legacy.videoSkip.skipTimeUnit === 'subtitles' && legacy.videoSkip.skipTime === 1;
-  if (legacy.videoSkip.skipTimeUnit === 'subtitles') {
-    const previous = { source: 'videoSkip.backward' as const, shortcut: legacy.videoSkip.backward };
-    const next = { source: 'videoSkip.forward' as const, shortcut: legacy.videoSkip.forward };
-    if (previous.shortcut) {
-      if (cueSemanticsAreExact) setCandidate('previousCue', previous);
-      else requireConfirmation('previousCue', [previous], 'ambiguous-semantics');
-    }
-    if (next.shortcut) {
-      if (cueSemanticsAreExact) setCandidate('nextCue', next);
-      else requireConfirmation('nextCue', [next], 'ambiguous-semantics');
-    }
+    binding.enabled = false;
   }
-
-  if (legacy.loop.loopCurrentSubtitle) {
-    setCandidate('repeatCurrentCue', {
-      source: 'loop.loopCurrentSubtitle',
-      shortcut: legacy.loop.loopCurrentSubtitle,
-    });
-  }
-  if (legacy.playbackSpeed.increase) {
-    candidates.set('speedIncrease', [
-      { source: 'playbackSpeed.increase', shortcut: legacy.playbackSpeed.increase },
-    ]);
-  }
-  if (legacy.playbackSpeed.decrease) {
-    candidates.set('speedDecrease', [
-      { source: 'playbackSpeed.decrease', shortcut: legacy.playbackSpeed.decrease },
-    ]);
-  }
-  if (legacy.playbackSpeed.reset) {
-    candidates.set('speedReset', [{ source: 'playbackSpeed.reset', shortcut: legacy.playbackSpeed.reset }]);
-  }
-
-  const groups = new Map<string, Set<ShortcutField>>();
-  for (const field of SHORTCUT_FIELDS) {
-    for (const { shortcut } of candidates.get(field) ?? []) {
-      if (!shortcut) continue;
-      const fields = groups.get(shortcut) ?? new Set<ShortcutField>();
-      fields.add(field);
-      groups.set(shortcut, fields);
-    }
-  }
-  const conflicts = new Map<ShortcutField, Set<ShortcutField>>();
-  for (const fields of groups.values()) {
-    if (fields.size < 2) continue;
-    for (const field of fields) {
-      const conflictingFields = conflicts.get(field) ?? new Set<ShortcutField>();
-      for (const candidate of fields) {
-        if (candidate !== field) conflictingFields.add(candidate);
-      }
-      conflicts.set(field, conflictingFields);
-    }
-  }
-  for (const field of SHORTCUT_FIELDS) {
-    const conflictingFields = conflicts.get(field);
-    if (!conflictingFields) continue;
-    requireConfirmation(
-      field,
-      candidates.get(field) ?? [],
-      'conflict',
-      SHORTCUT_FIELDS.filter((candidate) => conflictingFields.has(candidate))
-    );
-  }
-
-  const retainsCueCandidate =
-    (candidates.get('previousCue')?.length ?? 0) > 0 || (candidates.get('nextCue')?.length ?? 0) > 0;
-  const retainsRepeatCandidate = (candidates.get('repeatCurrentCue')?.length ?? 0) > 0;
-  return {
-    sync: {
-      learningProfile: {
-        learningLanguage: legacy.primarySubtitle.language,
-        supportLanguage: legacy.secondarySubtitle.language,
-      },
-      subtitleDisplay: {
-        learning: {
-          visibility: legacy.primarySubtitle.enabled ? 'visible' : 'hidden',
-          appearance: pickAppearance(legacy.primarySubtitle),
-        },
-        support: {
-          visibility: legacy.secondarySubtitle.enabled ? 'visible' : 'hidden',
-          appearance: pickAppearance(legacy.secondarySubtitle),
-        },
-      },
-      shortcuts: {
-        enabled:
-          legacy.shortcuts.enabled ||
-          (legacy.videoSkip.enabled &&
-            legacy.videoSkip.skipTimeUnit === 'subtitles' &&
-            retainsCueCandidate) ||
-          (legacy.loop.enabled && retainsRepeatCandidate),
-        saveCard: assignments.saveCard,
-        previousCue: assignments.previousCue,
-        nextCue: assignments.nextCue,
-        repeatCurrentCue: assignments.repeatCurrentCue,
-      },
-      playbackSpeed: {
-        enabled: legacy.playbackSpeed.enabled,
-        increase: assignments.speedIncrease,
-        decrease: assignments.speedDecrease,
-        reset: assignments.speedReset,
-      },
-    },
-    confirmations: SHORTCUT_FIELDS.flatMap((field) => {
-      const confirmation = confirmations.get(field);
-      return confirmation ? [confirmation] : [];
-    }),
-  };
+  return { sync, confirmations };
 };
 
 const pickAppearance = ({

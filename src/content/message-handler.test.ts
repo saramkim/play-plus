@@ -18,6 +18,7 @@ import {
   initializeMessageListener,
   playbackContextController,
 } from './message-handler';
+import { replacePlaybackFence } from './playback-context/playback-fence';
 import { VideoLifecycleEvent } from './video-lifecycle/video-lifecycle-monitor';
 
 vi.mock('@storage/registered-subtitle', () => ({ getRegisteredSubtitles: vi.fn() }));
@@ -454,7 +455,7 @@ describe('canonical content messages', () => {
     const save = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: videoAIdentity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
     await expectResponse(save.sendResponse, {
       success: true,
@@ -481,7 +482,7 @@ describe('canonical content messages', () => {
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 1,
+      sourceIndex: 1,
     });
 
     expect(hasVideo).toBe(true);
@@ -509,6 +510,24 @@ describe('canonical content messages', () => {
     });
   });
 
+  it('saves a selected support cue without learning and rejects an invalid selected role', async () => {
+    attachVideo(50);
+    useSubtitleStore.getState().clearNativeCues();
+    useSubtitleStore.getState().setRegisteredSelection('support', { subtitleId: SECOND_SUBTITLE_ID,
+      cues: [{ start: 10, end: 12, text: 'Support only' }], delay: 2 });
+    const { dispatch } = createMessageHarness();
+    const { identity } = readPing(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data);
+    const params = { expectedIdentity: identity, expectedSubtitleRevision: useSubtitleStore.getState().subtitleRevision,
+      sourceIndex: 0, selection: 'support' as const };
+    const result = dispatch('saveSubtitleOverviewCue', params);
+    await expectResponse(result.sendResponse, { success: true, data: { status: 'saved-support-only' } });
+    expect(sendMessage).toHaveBeenCalledWith('addLearningCard', { card: expect.objectContaining({
+      content: { support: { text: 'Support only', language: 'ko' } }, source: expect.objectContaining({ startTime: 12, endTime: 14 }),
+    }) });
+    const invalid = dispatch('saveSubtitleOverviewCue', { ...params, selection: 'invalid' } as never);
+    await expectResponse(invalid.sendResponse, { success: true, data: { status: 'cue-unavailable' } });
+  });
+
   it('saves a learning-only card when no support cue aligns', async () => {
     attachVideo(50);
     useSubtitleStore.getState().setNativeCues('en', [
@@ -525,7 +544,7 @@ describe('canonical content messages', () => {
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
 
     expect(request.result).toBe(true);
@@ -561,7 +580,7 @@ describe('canonical content messages', () => {
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
 
     expect(hasVideo).toBe(true);
@@ -593,7 +612,7 @@ describe('canonical content messages', () => {
     const staleIdentity = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: { ...identity, videoRevision: identity.videoRevision + 1 },
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
     await expectResponse(staleIdentity.sendResponse, {
       success: true,
@@ -603,7 +622,7 @@ describe('canonical content messages', () => {
     const staleRevision = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision + 1,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
     await expectResponse(staleRevision.sendResponse, {
       success: true,
@@ -611,24 +630,24 @@ describe('canonical content messages', () => {
     });
 
     for (const params of [
-      { learningSourceIndex: 0 },
+      { sourceIndex: 0 },
       {
         expectedIdentity: identity,
-        learningSourceIndex: 0,
+        sourceIndex: 0,
       },
       {
         expectedSubtitleRevision: subtitleRevision,
-        learningSourceIndex: 0,
+        sourceIndex: 0,
       },
       {
         expectedIdentity: { ...identity, contentInstanceId: '' },
         expectedSubtitleRevision: subtitleRevision,
-        learningSourceIndex: 0,
+        sourceIndex: 0,
       },
       {
         expectedIdentity: identity,
         expectedSubtitleRevision: Number.NaN,
-        learningSourceIndex: 0,
+        sourceIndex: 0,
       },
     ]) {
       const invalidGuard = dispatch('saveSubtitleOverviewCue', params);
@@ -651,11 +670,11 @@ describe('canonical content messages', () => {
     const ping = dispatch('pingContent', undefined);
     const { hasVideo: _, ...identity } = ping.sendResponse.mock.calls[0][0].data;
 
-    for (const learningSourceIndex of [-1, 1.5, 4, 0, 1]) {
+    for (const sourceIndex of [-1, 1.5, 4, 0, 1]) {
       const request = dispatch('saveSubtitleOverviewCue', {
         expectedIdentity: identity,
         expectedSubtitleRevision: subtitleRevision,
-        learningSourceIndex,
+        sourceIndex,
       });
       await expectResponse(request.sendResponse, {
         success: true,
@@ -673,7 +692,7 @@ describe('canonical content messages', () => {
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: useSubtitleStore.getState().subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
 
     expect(hasVideo).toBe(false);
@@ -697,7 +716,7 @@ describe('canonical content messages', () => {
     const params = {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     };
 
     const failed = dispatch('saveSubtitleOverviewCue', params);
@@ -725,7 +744,7 @@ describe('canonical content messages', () => {
     const params = {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     };
 
     const first = dispatch('saveSubtitleOverviewCue', params);
@@ -780,7 +799,7 @@ describe('canonical content messages', () => {
     const request = dispatch('saveSubtitleOverviewCue', {
       expectedIdentity: identity,
       expectedSubtitleRevision: subtitleRevision,
-      learningSourceIndex: 0,
+      sourceIndex: 0,
     });
 
     expect(sendMessage).toHaveBeenCalledWith('addLearningCard', expect.anything());
@@ -849,88 +868,34 @@ describe('canonical content messages', () => {
     expect(video.currentTime).toBe(35);
   });
 
-  it('rechecks guarded deferred seeks before canplay changes the captured video time', () => {
-    const capturedVideo = attachVideo(10, 0);
-    useSubtitleStore.getState().setNativeCues('en', [
-      { start: 0, end: 1, text: 'Deferred cue' },
-    ]);
-    const { dispatch } = createMessageHarness();
-    const ping = dispatch('pingContent', undefined);
-    const { hasVideo, identity } = readPing(ping.sendResponse.mock.calls[0][0].data);
-    const subtitleRevision = useSubtitleStore.getState().subtitleRevision;
 
-    expect(hasVideo).toBe(true);
-
-    const pendingSwap = dispatch('playVideo', {
-      startTime: 20,
-      expectedIdentity: identity,
-      expectedSubtitleRevision: subtitleRevision,
-    });
-    expect(pendingSwap.sendResponse).toHaveBeenCalledWith({
-      success: true,
-      data: { status: 'played' },
-    });
-
-    const replacementVideo = attachVideo(50);
-    capturedVideo.dispatchEvent(new Event('canplay'));
-    expect(capturedVideo.currentTime).toBe(10);
-    expect(replacementVideo.currentTime).toBe(50);
-
-    videoManager.clear();
-    const revisionVideo = attachVideo(11, 0);
-    const { identity: revisionIdentity } = readPing(
-      dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data
-    );
-    const currentRevision = useSubtitleStore.getState().subtitleRevision;
-    const pendingRevision = dispatch('playVideo', {
-      startTime: 30,
-      expectedIdentity: revisionIdentity,
-      expectedSubtitleRevision: currentRevision,
-    });
-    expect(pendingRevision.sendResponse).toHaveBeenCalledWith({
-      success: true,
-      data: { status: 'played' },
-    });
-
-    useSubtitleStore.getState().setNativeCues('en', [{ start: 2, end: 3, text: 'Changed' }]);
-    revisionVideo.dispatchEvent(new Event('canplay'));
-    expect(revisionVideo.currentTime).toBe(11);
-  });
-
-  it('keeps a guarded deferred seek inert while a Listening Mission owns media', () => {
-    const video = attachVideo(10, 0);
-    useSubtitleStore.getState().setNativeCues('en', [
-      { start: 0, end: 1, text: 'Mission cue' },
-    ]);
-    const { dispatch } = createMessageHarness();
-    const { identity } = readPing(
-      dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data
-    );
-    const expectedSubtitleRevision = useSubtitleStore.getState().subtitleRevision;
-    const deferred = dispatch('playVideo', {
-      expectedIdentity: identity,
-      expectedSubtitleRevision,
-      startTime: 20,
-    });
-    expect(deferred.sendResponse).toHaveBeenCalledWith({
-      success: true,
-      data: { status: 'played' },
-    });
-
-    useListeningMissionActiveStore.getState().setActive(true);
-    const blocked = dispatch('playVideo', {
-      expectedIdentity: identity,
-      expectedSubtitleRevision,
-      startTime: 30,
-    });
-    expect(blocked.sendResponse).toHaveBeenCalledWith({
-      success: true,
-      data: { status: 'stale' },
-    });
-
-    video.dispatchEvent(new Event('canplay'));
-    expect(video.currentTime).toBe(10);
-  });
+  it.each(['ready', 'source', 'attachment', 'mission', 'seek', 'new-command'] as const)(
+    'settles deferred playback truthfully after %s', async (change) => {
+      const video = attachVideo(10, 0);
+      useSubtitleStore.getState().setNativeCues('en', [{ start: 0, end: 1, text: 'Cue' }]);
+      const { dispatch } = createMessageHarness();
+      const { identity } = readPing(dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data);
+      const params = { expectedIdentity: identity, expectedSubtitleRevision: useSubtitleStore.getState().subtitleRevision, startTime: 20, purpose: 'original-scene' as const };
+      const pending = dispatch('playVideo', params);
+      expect(pending.sendResponse).not.toHaveBeenCalled();
+      if (change === 'source') useSubtitleStore.getState().setNativeCues('en', [{ start: 1, end: 2, text: 'New' }]);
+      if (change === 'attachment') attachVideo(50);
+      if (change === 'mission') {
+        useListeningMissionActiveStore.getState().setActive(true);
+        useListeningMissionActiveStore.getState().setActive(false);
+      }
+      if (change === 'seek') { video.currentTime = 40; video.dispatchEvent(new Event('seeking')); }
+      if (change === 'new-command') {
+        Object.defineProperty(video, 'readyState', { value: 4 });
+        dispatch('playVideo', { ...params, startTime: 30 });
+      }
+      Object.defineProperty(video, 'readyState', { value: 4 });
+      video.dispatchEvent(new Event('canplay'));
+      await Promise.resolve();
+      expect(pending.sendResponse).toHaveBeenCalledWith({ success: true, data: { status: change === 'ready' ? 'played' : 'stale' } });
+      expect(video.currentTime).toBe(change === 'ready' ? 20 : change === 'seek' ? 40 : change === 'new-command' ? 30 : 10);
+    }
+  );
 
   it('atomically applies selected native cues for every supported language', async () => {
     attachVideo(0);
@@ -1033,6 +998,25 @@ describe('canonical content messages', () => {
       }).sendResponse
     ).toHaveBeenCalledWith({ success: true, data: { status: 'played' } });
     expect(video.currentTime).toBe(1);
+  });
+
+
+  it.each([undefined, 'original-scene'] as const)('rechecks a delayed request against a newly narrowed fence, purpose=%s', async (purpose) => {
+    const video = attachVideo(0);
+    vi.mocked(coupangStrategy.fetchPlaybackData).mockResolvedValue({
+      subtitles: [createFetchedNativeTrack('en', [{ start: 20, end: 25, text: 'Crossing cue' }])], watchNextFenceSeconds: null,
+    });
+    const { dispatch } = createMessageHarness();
+    await expectResponse(dispatch('fetchVideoMetadata', createNativeRequest()).sendResponse, { success: true });
+    const data = dispatch('pingContent', undefined).sendResponse.mock.calls[0][0].data;
+    const { identity } = readPing(data);
+    Object.defineProperty(video, 'readyState', { value: 0 });
+    const request = dispatch('playVideo', { expectedIdentity: identity, expectedSubtitleRevision: data.subtitleIdentity.subtitleRevision, startTime: 20, purpose });
+    expect(request.sendResponse).not.toHaveBeenCalled();
+    replacePlaybackFence(23, { mediaDurationSeconds: video.duration, nativeTracks: useSubtitleStore.getState().nativeTrackIdentityCache, playbackContext: data });
+    Object.defineProperty(video, 'readyState', { value: 4 }); video.dispatchEvent(new Event('canplay'));
+    await expectResponse(request.sendResponse, { success: true, data: { status: purpose ? 'played' : 'stale' } });
+    expect(video.currentTime).toBe(purpose ? 20 : 0);
   });
 
   it('clears stale native learning when the complete selected snapshot is empty', async () => {
@@ -1530,6 +1514,7 @@ const createDeferred = <T>() => {
 
 const attachVideo = (currentTime: number, readyState = 4) => {
   const video = document.createElement('video');
+  Object.defineProperty(video, 'duration', { configurable: true, value: 1000 });
   Object.defineProperty(video, 'readyState', { configurable: true, value: readyState });
   video.currentTime = currentTime;
   video.requestVideoFrameCallback = vi.fn(() => 1);

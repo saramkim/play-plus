@@ -21,6 +21,7 @@ interface ResolveLearningCueCommandInput {
   currentTime: number;
   delaySeconds?: number;
   fenceEndMs?: number | null;
+  amount?: number;
 }
 
 export const resolveLearningCueCommand = ({
@@ -29,6 +30,7 @@ export const resolveLearningCueCommand = ({
   currentTime,
   delaySeconds = 0,
   fenceEndMs = null,
+  amount = 1,
 }: ResolveLearningCueCommandInput): LearningCueCommandResult => {
   const resolvedCues = resolveNonEmptyCues(cues, delaySeconds).filter(
     ({ endMs }) => fenceEndMs === null || endMs <= fenceEndMs
@@ -40,9 +42,11 @@ export const resolveLearningCueCommand = ({
     return anchor ? { status: 'resolved', cue: anchor } : { status: 'no-current-cue' };
   }
 
-  const target = anchor
-    ? findAdjacentCue(resolvedCues, anchor.sourceIndex, command)
+  const first = anchor ? findAdjacentCue(resolvedCues, anchor.sourceIndex, command)
     : findGapCue(resolvedCues, currentTimeMs, command);
+  const index = first ? resolvedCues.indexOf(first) : -1;
+  const target = index < 0 || !Number.isInteger(amount) || amount < 1 ? undefined
+    : resolvedCues[index + (command === 'previous' ? -1 : 1) * (amount - 1)];
 
   return target ? { status: 'resolved', cue: target } : { status: 'no-target-cue' };
 };

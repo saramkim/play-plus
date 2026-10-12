@@ -45,7 +45,8 @@ describe('v2 sync storage', () => {
       ...DEFAULT_V2_SYNC_STORAGE,
       shortcuts: {
         ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-        saveCard: DEFAULT_V2_SYNC_STORAGE.shortcuts.previousCue,
+        saveCard: { key: 'ArrowLeft', enabled: true },
+        previousCue: { key: 'ArrowLeft', enabled: true },
       },
     });
     const api = createV2SyncStorage(storage);
@@ -67,7 +68,7 @@ describe('v2 sync storage', () => {
   });
 
   it('writes related canonical settings in one storage operation', async () => {
-    const storage = new FakeSyncStorage();
+    const storage = new FakeSyncStorage(structuredClone(DEFAULT_V2_SYNC_STORAGE));
     const api = createV2SyncStorage(storage);
 
     await api.setMany({

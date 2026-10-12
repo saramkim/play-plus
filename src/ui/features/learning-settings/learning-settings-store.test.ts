@@ -81,6 +81,7 @@ describe('v2 learning settings store', () => {
     expect(storage.setMany).toHaveBeenCalledOnce();
     expect(storage.setMany).toHaveBeenCalledWith(settings);
 
+    settings.shortcuts.previousCue.enabled = true;
     settings.shortcuts.saveCard = settings.shortcuts.previousCue;
     await expect(useStore.getState().setShortcutSettings(settings)).rejects.toThrow();
     expect(storage.setMany).toHaveBeenCalledOnce();

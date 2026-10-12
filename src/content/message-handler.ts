@@ -24,7 +24,7 @@ import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
 import { coupangStrategy } from './coupang-play';
-import { buildLearningCardFromResolvedCue } from './features/learning-playback/learning-card-builder';
+import { buildLearningCardFromResolvedCue, buildRoleLearningCard } from './features/learning-playback/learning-card-builder';
 import { saveLearningCard } from './features/learning-playback/learning-card-save-coordinator';
 import {
   resolveCue,
@@ -35,17 +35,20 @@ import {
   type ListeningSessionContext,
   type ListeningSessionCoordinator,
 } from './features/listening-session/listening-session-coordinator';
-import { isListeningMissionActive } from './features/listening-session/mission-active-store';
+import { isListeningMissionActive, useListeningMissionActiveStore } from './features/listening-session/mission-active-store';
 import {
   createLearningSubtitleOverviewCues,
   createSubtitleOverviewCues,
 } from './features/subtitle/subtitle-overview';
 import { selectSubtitleTrack, useSubtitleStore } from './features/subtitle/subtitle-store';
+import { isMediaContextAvailable } from './features/video/media-controls';
+import { playbackRepetition } from './features/video/playback-repetition';
 import { PlaybackContextController } from './playback-context/playback-context-controller';
 import { usePlaybackContextStore } from './playback-context/playback-context-store';
 import {
   discardPlaybackFence,
   getCurrentPlaybackFenceEndMs,
+  isPlaybackIntervalAllowed,
   replacePlaybackFence,
   retainPlaybackFenceIfCurrent,
 } from './playback-context/playback-fence';
@@ -144,9 +147,12 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
         break;
       case 'fetchVideoMetadata':
         return respond(sendResponse, () => handleFetchVideoMetadata(params, sessionCoordinator));
-      case 'playVideo':
-        sendResponse({ success: true, data: handlePlayVideo(params) });
+      case 'playVideo': {
+        const result = handlePlayVideo(params);
+        if (result instanceof Promise) return respond(sendResponse, () => result);
+        sendResponse({ success: true, data: result });
         break;
+      }
       case 'setSubtitleRole':
         return respond(sendResponse, () => handleSetSubtitleRole(params.role, params.subtitleId));
       case 'refreshRegisteredSubtitle':
@@ -214,6 +220,7 @@ export function initializeMessageListener(dependencies = defaultMessageListenerD
   return () => {
     if (!active) return;
     active = false;
+    cancelPendingSeek?.();
     registration.remove();
     videoLifecycleMonitor.stop();
     subtitleSubscription();
@@ -311,18 +318,21 @@ const handleFetchVideoMetadata = async (
   }
 };
 
+let cancelPendingSeek: (() => void) | null = null;
+
 const handlePlayVideo = ({
   expectedIdentity,
   expectedSubtitleRevision,
   startTime,
-}: MessageSchema['playVideo']['params']): MessageSchema['playVideo']['response'] => {
+  purpose,
+}: MessageSchema['playVideo']['params']): MessageSchema['playVideo']['response'] | Promise<MessageSchema['playVideo']['response']> => {
   if (isListeningMissionActive()) return { status: 'stale' };
   if (!isValidContentVideoIdentity(expectedIdentity)) return { status: 'stale' };
-  if (!createPlaybackContextStatus().learningAvailable) return { status: 'stale' };
+  if (!isMediaContextAvailable(createPlaybackContextStatus())) return { status: 'stale' };
   if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) return { status: 'stale' };
 
   if (
-    expectedSubtitleRevision !== undefined &&
+    purpose !== 'original-scene' && expectedSubtitleRevision !== undefined &&
     !isCurrentOverviewSeekAllowed(startTime)
   ) {
     return { status: 'stale' };
@@ -330,25 +340,55 @@ const handlePlayVideo = ({
 
   const video = videoManager.get();
   if (!video) return { status: 'no-video' };
-  if (video.readyState >= 3) video.currentTime = startTime;
-  else {
-    video.addEventListener(
-      'canplay',
-      () => {
-        const guarded = expectedIdentity !== undefined || expectedSubtitleRevision !== undefined;
-        if (
-          isListeningMissionActive() ||
-          (guarded &&
-            (videoManager.get() !== video ||
-              isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)))
-        ) {
-          return;
+  const allowed = () => Number.isFinite(startTime) && startTime >= 0 && Number.isFinite(video.duration) &&
+    startTime < video.duration && isPlaybackIntervalAllowed(startTime * 1000, startTime * 1000, createPlaybackFenceContext(createPlaybackContextStatus(), video));
+  if (!allowed()) return { status: 'stale' };
+  cancelPendingSeek?.();
+  if (video.readyState < 3) {
+    return new Promise((resolve) => {
+      const commandRevision = playbackRepetition.commandRevision;
+      const initialTime = video.currentTime;
+      let settled = false;
+      const finish = (status: 'stale' | 'played') => {
+        if (settled) return;
+        settled = true;
+        clearInterval(timer);
+        clearTimeout(timeout);
+        unsubscribeMission();
+        unsubscribeContext();
+        unsubscribeSubtitles();
+        video.removeEventListener('canplay', onReady);
+        video.removeEventListener('seeking', cancel);
+        video.removeEventListener('play', cancel);
+        if (cancelPendingSeek === cancel) cancelPendingSeek = null;
+        if (status === 'played') {
+          try { playbackRepetition.navigate(startTime); }
+          catch { resolve({ status: 'stale' }); return; }
         }
-        video.currentTime = startTime;
-      },
-      { once: true }
-    );
+        resolve({ status });
+      };
+      const cancel = () => finish('stale');
+      const isCurrent = () => !isListeningMissionActive() && videoManager.get() === video &&
+        playbackRepetition.commandRevision === commandRevision && video.currentTime === initialTime &&
+        !isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision) && allowed() &&
+        (purpose === 'original-scene' || expectedSubtitleRevision === undefined || isCurrentOverviewSeekAllowed(startTime));
+      const onReady = () => {
+        if (!isCurrent()) { cancel(); return; }
+        if (video.readyState < 3) return;
+        finish('played');
+      };
+      const timer = setInterval(() => { if (!isCurrent()) cancel(); }, 25);
+      const timeout = setTimeout(cancel, 10000);
+      const unsubscribeMission = useListeningMissionActiveStore.subscribe(({ active }) => { if (active) cancel(); });
+      const unsubscribeContext = usePlaybackContextStore.subscribe(() => { if (!isCurrent()) cancel(); });
+      const unsubscribeSubtitles = useSubtitleStore.subscribe(() => { if (!isCurrent()) cancel(); });
+      cancelPendingSeek = cancel;
+      video.addEventListener('canplay', onReady);
+      video.addEventListener('seeking', cancel);
+      video.addEventListener('play', cancel);
+    });
   }
+  playbackRepetition.navigate(startTime);
   return { status: 'played' };
 };
 
@@ -387,7 +427,7 @@ const handleGetSubtitleOverview = (): SubtitleOverviewResponse => {
   const identity = createContentVideoIdentity();
   if (
     !isLiveVideoIdentityCurrent(identity) ||
-    !createPlaybackContextStatus().learningAvailable
+    !isMediaContextAvailable(createPlaybackContextStatus())
   ) {
     return { status: 'no-video', identity };
   }
@@ -451,7 +491,7 @@ const handleGetVideoTime = (): VideoTimeResponse => {
   const identity = createContentVideoIdentity();
   if (
     !isLiveVideoIdentityCurrent(identity) ||
-    !createPlaybackContextStatus().learningAvailable
+    !isMediaContextAvailable(createPlaybackContextStatus())
   ) {
     return { status: 'no-video', identity };
   }
@@ -468,7 +508,8 @@ const handleGetVideoTime = (): VideoTimeResponse => {
 const handleSaveSubtitleOverviewCue = async ({
   expectedIdentity,
   expectedSubtitleRevision,
-  learningSourceIndex,
+  sourceIndex,
+  selection = 'pair',
 }: MessageSchema['saveSubtitleOverviewCue']['params']): Promise<
   MessageSchema['saveSubtitleOverviewCue']['response']
 > => {
@@ -483,7 +524,7 @@ const handleSaveSubtitleOverviewCue = async ({
   let supportIncluded = false;
 
   const result = await saveLearningCard(() => {
-    if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) {
+    if (isListeningMissionActive() || isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) {
       unavailableStatus = 'stale';
       return null;
     }
@@ -491,19 +532,26 @@ const handleSaveSubtitleOverviewCue = async ({
       unavailableStatus = 'no-video';
       return null;
     }
-    if (!Number.isInteger(learningSourceIndex) || learningSourceIndex < 0) return null;
+    if (!Number.isInteger(sourceIndex) || sourceIndex < 0) return null;
 
     const state = useSubtitleStore.getState();
-    const learningTrack = selectSubtitleTrack(state, 'learning');
-    const learningCue = learningTrack.cues[learningSourceIndex];
+    const role = selection === 'support' ? 'support' : 'learning';
+    if (!['pair', 'learning', 'support'].includes(selection) || createPlaybackSubtitleIdentity()[role] === null) return null;
+    const learningTrack = selectSubtitleTrack(state, role);
+    const learningCue = learningTrack.cues[sourceIndex];
     if (!learningCue) return null;
 
     const supportTrack =
       state.learningProfile.supportLanguage === null
         ? null
         : selectSubtitleTrack(state, 'support');
-    const built = buildLearningCardFromResolvedCue({
-      learningCue: resolveCue(learningCue, learningSourceIndex, learningTrack.delay),
+    const cue = resolveCue(learningCue, sourceIndex, learningTrack.delay);
+    const video = videoManager.get();
+    const language = role === 'support' ? state.learningProfile.supportLanguage : state.learningProfile.learningLanguage;
+    if (!video || language === null || cue.startMs < 0 || cue.endMs > video.duration * 1000 ||
+      !isPlaybackIntervalAllowed(cue.startMs, cue.endMs, createPlaybackFenceContext(createPlaybackContextStatus(), video))) return null;
+    const built = selection !== 'pair' ? buildRoleLearningCard({ role, cue, language, url: window.location.href }) : buildLearningCardFromResolvedCue({
+      learningCue: cue,
       supportCues: supportTrack?.cues,
       supportDelaySeconds: supportTrack?.delay,
       learningLanguage: state.learningProfile.learningLanguage,
@@ -521,7 +569,7 @@ const handleSaveSubtitleOverviewCue = async ({
   if (isGuardedRequestStale(expectedIdentity, expectedSubtitleRevision)) {
     return { status: 'stale' };
   }
-  return { status: supportIncluded ? 'saved-with-support' : 'saved-learning-only' };
+  return { status: selection === 'support' ? 'saved-support-only' : supportIncluded ? 'saved-with-support' : 'saved-learning-only' };
 };
 
 function createListeningSessionContext(): ListeningSessionContext {
@@ -611,7 +659,7 @@ const isGuardedRequestStale = (
   const identity = createContentVideoIdentity();
   return (
     !isLiveVideoIdentityCurrent(identity) ||
-    !createPlaybackContextStatus().learningAvailable ||
+    !isMediaContextAvailable(createPlaybackContextStatus()) ||
     (expectedIdentity !== undefined &&
       !isSameContentVideoIdentity(expectedIdentity, identity)) ||
     (expectedSubtitleRevision !== undefined &&

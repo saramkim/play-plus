@@ -93,7 +93,7 @@ describe('v2 first entry', () => {
       oldPage: null,
       theme: 'dark',
     });
-    expect((syncValues.shortcuts as typeof DEFAULT_V2_SYNC_STORAGE.shortcuts).saveCard).toBe('KeyS');
+    expect((syncValues.shortcuts as typeof DEFAULT_V2_SYNC_STORAGE.shortcuts).saveCard.key).toBe('KeyS');
     expect((localValues.migrationState as ReturnType<typeof createMigrationState>).shortcutConfirmations).toEqual([]);
   });
 
@@ -115,7 +115,7 @@ describe('v2 first entry', () => {
       submit.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
     );
 
-    expect((syncValues.shortcuts as typeof DEFAULT_V2_SYNC_STORAGE.shortcuts).saveCard).toBe(
+    expect((syncValues.shortcuts as typeof DEFAULT_V2_SYNC_STORAGE.shortcuts).saveCard.key).toBe(
       'Numpad1'
     );
     expect(onComplete).toHaveBeenCalledOnce();

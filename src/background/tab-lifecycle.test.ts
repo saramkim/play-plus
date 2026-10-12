@@ -12,6 +12,7 @@ const createDependencies = () => ({
   sendMessageToTab: vi.fn(),
   clearSubtitleReplay: vi.fn(),
   takeViewAction: vi.fn(),
+  playOriginalScene: vi.fn(),
   updateNavigatingStatus: vi.fn(),
 });
 
@@ -35,12 +36,12 @@ describe('handleTabCompleted', () => {
   it('delivers the newest queued playback action after detection', async () => {
     const dependencies = createDependencies();
     dependencies.sendMessageToTab.mockResolvedValue({ success: true });
-    dependencies.takeViewAction.mockResolvedValue({ url: VIDEO_URL, videoId: null, startTime: 42 });
+    dependencies.takeViewAction.mockResolvedValue({ url: VIDEO_URL, videoId: '123e4567-e89b-12d3-a456-426614174000', startTime: 42 });
 
     await handleTabCompleted(7, { id: 7, active: false, url: VIDEO_URL } as chrome.tabs.Tab, dependencies);
 
     expect(dependencies.takeViewAction).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', VIDEO_URL);
-    expect(dependencies.sendMessageToTab).toHaveBeenLastCalledWith(7, 'playVideo', { startTime: 42 });
+    expect(dependencies.playOriginalScene).toHaveBeenCalledWith(7, 42, '123e4567-e89b-12d3-a456-426614174000');
   });
 
   it('ignores a completed snapshot after a newer navigation starts', async () => {

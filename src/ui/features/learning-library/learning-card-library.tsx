@@ -27,6 +27,7 @@ export interface LearningCardLibraryQuery {
 }
 
 interface LearningCardLibraryProps {
+  onOpenOriginalVideo?: (source: LearningCard['source']) => Promise<void>;
   refreshRevision?: number;
   storage: V2LearningCardStorageApi;
 }
@@ -50,7 +51,7 @@ const DEFAULT_QUERY: LearningCardLibraryQuery = {
   studyState: 'all',
 };
 
-export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCardLibraryProps) {
+export function LearningCardLibrary({ onOpenOriginalVideo, refreshRevision = 0, storage }: LearningCardLibraryProps) {
   const acquireNavigationLock = usePageStore((state) => state.acquireNavigationLock);
   const [cards, setCards] = useState<LearningCard[]>();
   const [loadError, setLoadError] = useState(false);
@@ -59,6 +60,7 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
   const [pendingCardId, setPendingCardId] = useState<string>();
   const [deleted, setDeleted] = useState<DeletedLearningCard>();
   const [actionError, setActionError] = useState<ActionError>();
+  const [copiedCardId, setCopiedCardId] = useState<string>();
   const [focusRequest, setFocusRequest] = useState<FocusRequest>();
   const actionRefs = useRef<Record<FocusAction, Map<string, HTMLButtonElement | HTMLSelectElement>>>(
     {
@@ -224,6 +226,29 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
     }
   };
 
+  const handleReuse = async (card: LearningCard, action: 'copy' | 'open') => {
+    const releaseNavigationLock = beginMutation(card.id);
+    if (!releaseNavigationLock) return;
+    setActionError(undefined);
+    setCopiedCardId(undefined);
+    try {
+      if (action === 'copy') {
+        await navigator.clipboard.writeText(getLearningCardSearchText(card));
+        setCopiedCardId(card.id);
+      } else {
+        if (!onOpenOriginalVideo) throw new Error('Video opener unavailable');
+        await onOpenOriginalVideo(card.source);
+      }
+    } catch {
+      setActionError({
+        cardId: card.id,
+        message: t(action === 'copy' ? 'v2_library_copy_error' : 'v2_review_open_video_error'),
+      });
+    } finally {
+      finishMutation(releaseNavigationLock);
+    }
+  };
+
   if (!cards) {
     return loadError ? <LibraryLoadError onRetry={load} /> : <LibraryLoading />;
   }
@@ -334,6 +359,14 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
 
                   {!editing && (
                     <div className='flex min-w-0 flex-wrap items-center gap-2'>
+                      <Button type='button' variant='outline' size='sm'
+                        disabled={mutationPending} onClick={() => void handleReuse(card, 'copy')}>
+                        {t('v2_library_copy')}
+                      </Button>
+                      <Button type='button' variant='outline' size='sm'
+                        disabled={mutationPending} onClick={() => void handleReuse(card, 'open')}>
+                        {t('v2_review_open_video')}
+                      </Button>
                       <label className='min-w-0 flex-1 text-xs font-medium'>
                         <span className='sr-only'>{t('v2_library_state_change')}</span>
                         <select
@@ -380,6 +413,9 @@ export function LearningCardLibrary({ refreshRevision = 0, storage }: LearningCa
                     <p role='status' className='text-sm text-muted-foreground'>
                       {t('v2_library_save_pending')}
                     </p>
+                  )}
+                  {copiedCardId === card.id && (
+                    <p role='status' className='text-sm text-muted-foreground'>{t('v2_library_copied')}</p>
                   )}
                   {actionError?.cardId === card.id && (
                     <p role='alert' className='text-wrap text-sm text-destructive'>
@@ -580,14 +616,14 @@ export const getVisibleLearningCards = (
 
 export const getLearningCardSearchText = (card: LearningCard) => {
   if ('unassigned' in card.content) return card.content.unassigned.text;
-  return [card.content.learning.text, card.content.support?.text].filter(Boolean).join('\n');
+  return ['learning' in card.content ? card.content.learning.text : undefined, card.content.support?.text].filter(Boolean).join('\n');
 };
 
 const matchesRole = (card: LearningCard, role: LearningCardRoleFilter) => {
   if (role === 'all') return true;
   if (role === 'unassigned') return 'unassigned' in card.content;
   if ('unassigned' in card.content) return false;
-  return role === 'learning' || card.content.support !== undefined;
+  return role === 'learning' ? 'learning' in card.content : card.content.support !== undefined;
 };
 
 const removeLearningCard = (cards: LearningCard[] | undefined, id: string) => {

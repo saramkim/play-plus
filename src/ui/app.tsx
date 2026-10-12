@@ -140,7 +140,11 @@ export function App() {
       );
     }
     if (currentPage === 'library') {
-      return <LearningCardLibrary refreshRevision={cardRevision} storage={learningCardStorage} />;
+      return <LearningCardLibrary refreshRevision={cardRevision} storage={learningCardStorage}
+        onOpenOriginalVideo={async (source) => {
+          const response = await sendMessage('viewVideo', { url: source.url, startTime: source.startTime });
+          if (!response.success) throw new Error(t('v2_review_open_video_error'));
+        }} />;
     }
     return (
       <FocusedReview

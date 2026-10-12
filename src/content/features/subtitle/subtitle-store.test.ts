@@ -163,7 +163,7 @@ describe('canonical subtitle store', () => {
     expect(useSubtitleStore.getState().subtitleRevision).toBe(before.subtitleRevision);
   });
 
-  it('increments its content-local revision for every presentation mutation', () => {
+  it('increments its content-local revision for source mutations but not unchanged presentation settings', () => {
     expect(useSubtitleStore.getInitialState().subtitleRevision).toBe(0);
 
     const store = useSubtitleStore.getState();
@@ -176,6 +176,6 @@ describe('canonical subtitle store', () => {
     store.clearRegisteredSelection('learning');
     store.clearCaches();
 
-    expect(useSubtitleStore.getState().subtitleRevision).toBe(initialRevision + 6);
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(initialRevision + 5);
   });
 });

@@ -4,14 +4,15 @@ import { findSubtitle, stripTags } from '@utils/helper';
 
 import { elementStore } from '@/content/core/store/element-store';
 import { useVideoStore } from '@/content/core/store/video-store';
-import { isListeningMissionActive } from '@/content/features/listening-session/mission-active-store';
+import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import {
   selectSubtitleTrack,
   SUBTITLE_ROLES,
   useSubtitleStore,
 } from '@/content/features/subtitle/subtitle-store';
 import { applySubtitleStyles } from '@/content/features/subtitle/subtitle-utils';
-import { isLearningPlaybackAvailable } from '@/content/playback-context/playback-context-store';
+import { getControlledMedia } from '@/content/features/video/media-controls';
+import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 
 type SubtitleSettings = Pick<V2SyncStorage, 'learningProfile' | 'subtitleDisplay'>;
 
@@ -59,19 +60,25 @@ export async function initializeSubtitleSync() {
     syncSubtitles(currentTime);
   });
 
+  const resync = () => syncSubtitles(useVideoStore.getState().currentTime);
+  const contextSubscription = usePlaybackContextStore.subscribe(resync);
+  const missionSubscription = useListeningMissionActiveStore.subscribe(resync);
   syncSubtitles(useVideoStore.getState().currentTime, true);
 
   return () => {
     storageSubscription.remove();
     subtitleSubscription();
     videoSubscription();
+    contextSubscription();
+    missionSubscription();
   };
 }
 
 export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
   const state = useSubtitleStore.getState();
 
-  if (isListeningMissionActive() || !isLearningPlaybackAvailable()) {
+  const media = getControlledMedia();
+  if (!media || media.status.subtitleIdentity.subtitleRevision !== state.subtitleRevision) {
     for (const role of SUBTITLE_ROLES) {
       const subtitleElement = elementStore.getSubtitleElement(role);
       if (hasStyleChanged) applySubtitleStyles(subtitleElement, state.subtitleDisplay[role]);
@@ -86,7 +93,7 @@ export function syncSubtitles(currentTime: number, hasStyleChanged = false) {
 
     if (hasStyleChanged) applySubtitleStyles(subtitleElement, display);
 
-    if (display.visibility === 'hidden') {
+    if (display.visibility === 'hidden' || media.status.subtitleIdentity[role] === null) {
       subtitleElement.textContent = '';
       continue;
     }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { CONTROL_LABELS } from '@storage/v2/control-settings';
 import { createV2FirstEntryStorage, V2FirstEntryShortcutChoices } from '@storage/v2/first-entry-storage';
 import { learningProfileSchema, migrationStateSchema } from '@storage/v2/schema';
 import type { V2MigrationState, V2SyncStorage } from '@storage/v2/type';
@@ -134,10 +135,7 @@ export function FirstEntry({ onComplete }: FirstEntryProps) {
 }
 
 const shortcutFieldLabel = (field: V2MigrationState['shortcutConfirmations'][number]['field']) => {
-  if (field === 'saveCard') return t('v2_save_learning_card');
-  if (field === 'previousCue') return t('v2_previous_learning_cue');
-  if (field === 'nextCue') return t('v2_next_learning_cue');
-  if (field === 'repeatCurrentCue') return t('v2_repeat_current_learning_cue');
+  if (field in CONTROL_LABELS) return t(CONTROL_LABELS[field as keyof typeof CONTROL_LABELS]);
   if (field === 'speedIncrease') return t('increase_speed');
   if (field === 'speedDecrease') return t('decrease_speed');
   return t('reset_speed');

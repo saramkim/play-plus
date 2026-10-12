@@ -87,28 +87,15 @@ const createConfirmedSync = (
     const choice = choices.get(unresolved.field) ?? null;
     const shortcut = choice ?? '';
 
-    switch (unresolved.field) {
-      case 'saveCard':
-        shortcuts.saveCard = shortcut;
-        break;
-      case 'previousCue':
-        shortcuts.previousCue = shortcut;
-        break;
-      case 'nextCue':
-        shortcuts.nextCue = shortcut;
-        break;
-      case 'repeatCurrentCue':
-        shortcuts.repeatCurrentCue = shortcut;
-        break;
-      case 'speedIncrease':
-        playbackSpeed.increase = shortcut;
-        break;
-      case 'speedDecrease':
-        playbackSpeed.decrease = shortcut;
-        break;
-      case 'speedReset':
-        playbackSpeed.reset = shortcut;
-        break;
+    const speedField = unresolved.field === 'speedIncrease' ? 'increase'
+      : unresolved.field === 'speedDecrease' ? 'decrease' : unresolved.field === 'speedReset' ? 'reset' : null;
+    if (speedField) {
+      playbackSpeed[speedField] = { ...playbackSpeed[speedField], enabled: choice !== null,
+        ...(shortcut ? { key: shortcut } : {}) };
+    } else if (unresolved.field in shortcuts && unresolved.field !== 'speedIncrease' &&
+      unresolved.field !== 'speedDecrease' && unresolved.field !== 'speedReset') {
+      shortcuts[unresolved.field] = { ...shortcuts[unresolved.field], enabled: choice !== null,
+        ...(shortcut ? { key: shortcut } : {}) };
     }
   }
 
@@ -118,7 +105,6 @@ const createConfirmedSync = (
     shortcuts,
     playbackSpeed,
   });
-  assertUniqueShortcuts(next);
   return next;
 };
 
@@ -158,22 +144,6 @@ const validateChoices = (
   }
 
   return validated;
-};
-
-const assertUniqueShortcuts = ({ playbackSpeed, shortcuts }: V2SyncStorage) => {
-  const values = [
-    shortcuts.saveCard,
-    shortcuts.previousCue,
-    shortcuts.nextCue,
-    shortcuts.repeatCurrentCue,
-    playbackSpeed.increase,
-    playbackSpeed.decrease,
-    playbackSpeed.reset,
-  ].filter((value) => value !== '');
-
-  if (new Set(values).size !== values.length) {
-    throw new Error('Canonical shortcuts must be unique');
-  }
 };
 
 const assertEquivalent = (actual: unknown, expected: unknown, area: string) => {

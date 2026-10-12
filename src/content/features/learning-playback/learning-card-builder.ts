@@ -183,3 +183,15 @@ const createAssignedLearningCard = ({
 };
 
 const createLearningCardId = () => `card-${crypto.randomUUID()}`;
+
+export const buildRoleLearningCard = ({ role, cue, language, url }: {
+  role: 'learning' | 'support'; cue: ResolvedLearningCue; language: Language; url: string;
+}): LearningCardBuildResult => {
+  const text = stripTags(cue.cue.text);
+  if (!text.trim()) return { status: 'no-current-cue' };
+  return { status: 'created', card: learningCardSchema.parse({
+    id: createLearningCardId(), content: { [role]: { text, language } },
+    source: { url, startTime: cue.startMs / 1000, endTime: cue.endMs / 1000 },
+    studyState: 'active', createdAt: new Date().toISOString(),
+  }) };
+};

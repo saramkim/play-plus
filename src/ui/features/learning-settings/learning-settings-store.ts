@@ -36,6 +36,11 @@ export const createLearningSettingsStore = (storage: V2SyncStorageApi) =>
             }
             Object.assign(next, { [key]: value });
           }
+          const current = get();
+          if (!v2SyncStorageSchema.safeParse({ learningProfile: current.learningProfile, subtitleDisplay: current.subtitleDisplay,
+            shortcuts: current.shortcuts, playbackSpeed: current.playbackSpeed, ...next }).success) {
+            set({ error: true, loading: true }); return;
+          }
           set(next);
         },
         () => set({ error: true, loading: true })

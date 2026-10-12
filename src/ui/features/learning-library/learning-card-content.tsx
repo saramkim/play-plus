@@ -26,12 +26,12 @@ export function LearningCardContent({ card, showSupport = true }: LearningCardCo
 
   return (
     <div className='flex min-w-0 flex-col gap-3'>
-      <CardLine
+      {'learning' in card.content && <CardLine
         label={t('v2_library_learning')}
         language={t(LANGUAGES[card.content.learning.language])}
         text={card.content.learning.text}
         emphasized
-      />
+      />}
       {showSupport && <LearningCardSupportContent card={card} />}
     </div>
   );

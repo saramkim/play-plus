@@ -95,6 +95,15 @@ describe('content-owned playback fence binding', () => {
     expect(getCurrentPlaybackFenceEndMs(context())).toBeNull();
   });
 
+  it('retains an observed episode fence for media controls without a learning track', () => {
+    const current = context({ playbackContext: status({ learningAvailable: false,
+      subtitleIdentity: { learning: null, support: null, subtitleRevision: 11 },
+    }) });
+    replacePlaybackFence(500, current);
+    expect(getCurrentPlaybackFenceEndMs(current)).toBe(500_000);
+    expect(isPlaybackIntervalAllowed(490_000, 510_000, current)).toBe(false);
+  });
+
   it('preserves marker-agnostic signed-delay intervals when no fence exists', () => {
     expect(isPlaybackIntervalAllowed(-2000, -1000, context())).toBe(true);
   });

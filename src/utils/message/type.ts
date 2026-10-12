@@ -84,6 +84,7 @@ export type PlayVideoResponse =
   | { status: 'no-video' };
 
 export type SaveSubtitleOverviewCueResponse =
+  | { status: 'saved-support-only' }
   | { status: 'saved-with-support' }
   | { status: 'saved-learning-only' }
   | { status: 'stale' }
@@ -205,6 +206,7 @@ export type MessageSchema = {
       startTime: number;
       expectedIdentity: ContentVideoIdentity;
       expectedSubtitleRevision?: number;
+      purpose?: 'original-scene';
     };
     response: PlayVideoResponse;
   };
@@ -224,7 +226,8 @@ export type MessageSchema = {
     params: {
       expectedIdentity: ContentVideoIdentity;
       expectedSubtitleRevision: number;
-      learningSourceIndex: number;
+      sourceIndex: number;
+      selection?: 'pair' | 'learning' | 'support';
     };
     response: SaveSubtitleOverviewCueResponse;
   };
