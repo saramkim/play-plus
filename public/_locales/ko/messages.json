@@ -67,6 +67,7 @@
   "fallback_unit": { "message": "대체 단위" },
   "fixed": { "message": "고정형" },
   "font_weight": { "message": "글씨 굵기" },
+  "shadow_strength": { "message": "그림자 강도" },
   "forward_key": { "message": "앞으로 이동 키" },
   "info": { "message": "알림" },
   "language": { "message": "언어" },

@@ -36,6 +36,7 @@ export const subtitleConfigSchema = z.object({
   color: z.string(),
   fontSize: z.number().min(1).max(10),
   fontWeight: z.number().min(1).max(6),
+  shadowStrength: z.number().int().min(0).max(10),
   backgroundOpacity: z.number().min(0).max(100),
   lineBreak: z.boolean(),
 });

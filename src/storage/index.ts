@@ -38,7 +38,7 @@ export const getStorageAll = (): Promise<StorageSchema> => {
   });
 };
 
-const validateStorageValue = <K extends StorageKey>(key: K, persisted: unknown): StorageSchema[K] => {
+export const validateStorageValue = <K extends StorageKey>(key: K, persisted: unknown): StorageSchema[K] => {
   const candidate = { ...DEFAULT_CONFIG[key], ...(typeof persisted === 'object' ? persisted : {}) };
   const schema = storageSchema[key];
   const result = schema.safeParse(candidate);

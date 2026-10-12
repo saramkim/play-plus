@@ -1,5 +1,4 @@
-import { DEFAULT_CONFIG } from '@storage/default';
-import { getStorage } from '@storage/index';
+import { getStorage, validateStorageValue } from '@storage/index';
 import { StorageChanges } from '@storage/type';
 import { REVIEW, SETTINGS } from '@utils/constants';
 import { findSubtitle } from '@utils/helper';
@@ -18,7 +17,7 @@ export async function onSubtitleStorageChange(changes: StorageChanges) {
     const change = changes[STORAGE_KEY];
     if (!change) continue;
 
-    const newConfig = change.newValue || DEFAULT_CONFIG[STORAGE_KEY];
+    const newConfig = validateStorageValue(STORAGE_KEY, change.newValue);
     useSubtitleStore.getState().setSubtitleSetting(STORAGE_KEY, newConfig);
 
     const { currentTime } = useVideoStore.getState();

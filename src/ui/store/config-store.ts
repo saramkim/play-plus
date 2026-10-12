@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG } from '@storage/default';
-import { getStorageAll, onStorageChange, setStorage } from '@storage/index';
+import { getStorageAll, onStorageChange, setStorage, validateStorageValue } from '@storage/index';
 import { StorageKey, StorageSchema } from '@storage/type';
 import { create } from 'zustand';
 
@@ -25,7 +25,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
 
     return onStorageChange((changes) => {
       Object.keys(changes).forEach((key) => {
-        const value = changes[key]!.newValue || DEFAULT_CONFIG[key];
+        if (!Object.keys(DEFAULT_CONFIG).includes(key)) return;
+        const value = validateStorageValue(key, changes[key]!.newValue);
         set((state) => ({ configs: { ...state.configs, [key]: value } }));
       });
     });

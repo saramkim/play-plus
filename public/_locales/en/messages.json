@@ -66,6 +66,7 @@
   "fallback_unit": { "message": "Fallback Unit" },
   "fixed": { "message": "Fixed" },
   "font_weight": { "message": "Font Weight" },
+  "shadow_strength": { "message": "Shadow Strength" },
   "forward_key": { "message": "Forward Key" },
   "info": { "message": "Info" },
   "language": { "message": "Language" },

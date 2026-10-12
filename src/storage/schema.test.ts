@@ -4,6 +4,14 @@ import { DEFAULT_CONFIG } from './default';
 import { shortcutSchema, subtitleConfigSchema } from './schema';
 
 describe('subtitleConfigSchema', () => {
+  it.each([0, 2, 10])('accepts shadow strength %s', (shadowStrength) => {
+    expect(subtitleConfigSchema.safeParse({ ...DEFAULT_CONFIG.primarySubtitle, shadowStrength }).success).toBe(true);
+  });
+
+  it.each([-1, 11, 1.5, NaN, Infinity])('rejects shadow strength %s', (shadowStrength) => {
+    expect(subtitleConfigSchema.safeParse({ ...DEFAULT_CONFIG.primarySubtitle, shadowStrength }).success).toBe(false);
+  });
+
   it.each([1, 10])('accepts font size %s', (fontSize) => {
     expect(subtitleConfigSchema.safeParse({ ...DEFAULT_CONFIG.primarySubtitle, fontSize }).success).toBe(true);
   });

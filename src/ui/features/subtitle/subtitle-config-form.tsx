@@ -110,6 +110,11 @@ export function SubtitleConfigForm({ STORAGE_KEY, TITLE_MESSAGE_KEY }: SubtitleC
         />
         <FormField
           control={form.control}
+          name='shadowStrength'
+          render={({ field }) => <SliderField label={t('shadow_strength')} field={field} min={0} max={10} step={1} />}
+        />
+        <FormField
+          control={form.control}
           name='backgroundOpacity'
           render={({ field }) => (
             <SliderField label={t('background_opacity')} field={field} min={0} max={100} unit='%' />

@@ -40,8 +40,25 @@ export const applySubtitleStyles = (subtitle: HTMLElement, config: StorageSchema
     color,
     fontSize: `${0.5 + 0.1 * fontSize}em`,
     fontWeight: `${200 + 100 * fontWeight}`,
+    textShadow: getSubtitleTextShadow(config.shadowStrength),
     whiteSpace: lineBreak ? 'pre-line' : 'nowrap',
     backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity * 0.01})`,
     ...positions[positionReference],
   });
+};
+
+export const getSubtitleTextShadow = (strength: number) => {
+  if (strength === 0) return 'none';
+  if (strength < 2) return `rgba(0, 0, 0, ${strength / 2}) 2px 2px 2px`;
+
+  const original = 'black 2px 2px 2px';
+  if (strength === 2) return original;
+
+  const color = `rgba(0, 0, 0, ${(strength - 2) / 8})`;
+  const outline = [
+    [-1, -1], [0, -1], [1, -1],
+    [-1, 0], [1, 0],
+    [-1, 1], [0, 1], [1, 1],
+  ].map(([x, y]) => `${color} ${x}px ${y}px 1px`);
+  return [original, ...outline].join(', ');
 };

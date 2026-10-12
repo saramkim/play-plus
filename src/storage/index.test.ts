@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_CONFIG } from './default';
 
-import { getStorage, getStorageAll } from './index';
+import { getStorage, getStorageAll, setStorage, validateStorageValue } from './index';
 
 let stored: Record<string, unknown> = {};
 
@@ -16,6 +16,30 @@ beforeEach(() => {
 });
 
 describe('validated sync storage reads', () => {
+  it.each(['primarySubtitle', 'secondarySubtitle'] as const)('preserves legacy %s styles and defaults its shadow', async (key) => {
+    stored[key] = { color: '#123456', fontSize: 8, backgroundOpacity: 30 };
+    const config = await getStorage(key);
+    expect(config).toEqual({ ...DEFAULT_CONFIG[key], ...stored[key] as object, shadowStrength: 2 });
+    expect(validateStorageValue(key, stored[key])).toEqual(config);
+  });
+
+  it('stores independent shadow strengths including zero', async () => {
+    vi.mocked(chrome.storage.sync.set).mockImplementation((async (values: object) => {
+      Object.assign(stored, values);
+    }) as typeof chrome.storage.sync.set);
+    await setStorage('primarySubtitle', { ...DEFAULT_CONFIG.primarySubtitle, shadowStrength: 0 });
+    await setStorage('secondarySubtitle', { ...DEFAULT_CONFIG.secondarySubtitle, shadowStrength: 10 });
+    expect((await getStorageAll()).primarySubtitle.shadowStrength).toBe(0);
+    expect((await getStorageAll()).secondarySubtitle.shadowStrength).toBe(10);
+  });
+
+  it('replaces an invalid shadow without losing unrelated preferences', async () => {
+    stored.primarySubtitle = { shadowStrength: 99, fontSize: 8, color: '#123456' };
+    await expect(getStorage('primarySubtitle')).resolves.toEqual({
+      ...DEFAULT_CONFIG.primarySubtitle, fontSize: 8, color: '#123456', shadowStrength: 2,
+    });
+  });
+
   it('keeps valid user fields while replacing invalid fields with defaults', async () => {
     stored.primarySubtitle = { fontSize: 99, color: '#123456', language: 'unknown' };
 
