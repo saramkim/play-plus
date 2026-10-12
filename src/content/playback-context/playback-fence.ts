@@ -82,7 +82,6 @@ export const isPlaybackIntervalAllowed = (
 const isFenceContextEligible = ({ mediaDurationSeconds, playbackContext }: PlaybackFenceContext) =>
   playbackContext.routeKind === 'episode' &&
   playbackContext.lifecycle === 'content' &&
-  playbackContext.learningAvailable &&
   playbackContext.videoId !== null &&
   playbackContext.mediaAttachmentRevision === playbackContext.videoRevision &&
   Number.isFinite(mediaDurationSeconds) &&

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { SubtitleId } from '@storage/subtitle';
+import { CONTROL_COMMANDS, CONTROL_LABELS, NavigationProfile } from '@storage/v2/control-settings';
 import { isReservedV2Shortcut, v2SyncStorageSchema } from '@storage/v2/schema';
 import { V2SyncStorage } from '@storage/v2/type';
 import { t } from '@utils/i18n';
@@ -22,14 +23,7 @@ interface LearningSettingsPageProps {
 }
 
 type ShortcutSettings = Pick<V2SyncStorage, 'playbackSpeed' | 'shortcuts'>;
-type ShortcutFieldPath =
-  | 'shortcuts.saveCard'
-  | 'shortcuts.previousCue'
-  | 'shortcuts.nextCue'
-  | 'shortcuts.repeatCurrentCue'
-  | 'playbackSpeed.increase'
-  | 'playbackSpeed.decrease'
-  | 'playbackSpeed.reset';
+type ShortcutFieldPath = `shortcuts.${(typeof CONTROL_COMMANDS)[number]}` | 'playbackSpeed.increase' | 'playbackSpeed.decrease' | 'playbackSpeed.reset';
 
 type ShortcutValidationError =
   | { type: 'reserved' }
@@ -181,75 +175,40 @@ function ShortcutSettingsForm({
       onSubmit={save}
     >
       <section aria-labelledby={shortcutsTitleId} className='flex flex-col gap-2'>
-        <SwitchSectionHeading
-          checked={draft.shortcuts.enabled}
-          id={shortcutsTitleId}
-          label={t('shortcuts')}
-          level={2}
-          onChange={(enabled) => setDraft((current) => ({ ...current, shortcuts: { ...current.shortcuts, enabled } }))}
-        />
-        <p id={shortcutHintId} className='text-wrap text-xs text-muted-foreground'>
-          {t('v2_shortcut_capture_hint')}
-        </p>
-        <ShortcutRow
-          descriptionId={shortcutHintId}
-          disabled={!draft.shortcuts.enabled}
-          error={errorMessage('shortcuts.saveCard')}
-          label={t('v2_save_learning_card')}
-          value={draft.shortcuts.saveCard}
-          onChange={(saveCard) =>
-            setDraft((current) => ({ ...current, shortcuts: { ...current.shortcuts, saveCard } }))
-          }
-        />
-        {(['previousCue', 'nextCue', 'repeatCurrentCue'] as const).map((field) => {
-          const path = `shortcuts.${field}` as const;
-          return (
-            <ShortcutRow
-              key={field}
-              descriptionId={shortcutHintId}
-              disabled={!draft.shortcuts.enabled}
-              error={errorMessage(path)}
-              label={cueShortcutLabel(field)}
-              value={draft.shortcuts[field]}
-              onChange={(shortcut) =>
-                setDraft((current) => ({
-                  ...current,
-                  shortcuts: { ...current.shortcuts, [field]: shortcut },
-                }))
-              }
-            />
-          );
-        })}
+        <h2 id={shortcutsTitleId} className='text-[15px] font-semibold'>{t('shortcuts')}</h2>
+        <p id={shortcutHintId} className='text-wrap text-xs text-muted-foreground'>{t('v2_shortcut_capture_hint')}</p>
+        {(['primary', 'secondary'] as const).map((profile) => <NavigationFields
+          key={profile} label={t(profile === 'primary' ? 'v2_primary_navigation' : 'v2_secondary_navigation')}
+          value={draft.shortcuts.navigation[profile]}
+          onChange={(value) => setDraft((current) => ({ ...current, shortcuts: {
+            ...current.shortcuts, navigation: { ...current.shortcuts.navigation, [profile]: value },
+          } }))} />)}
+        {CONTROL_COMMANDS.map((field) => <div key={field} className='flex items-center gap-2'>
+          <Switch aria-label={t('v2_enable_command', t(CONTROL_LABELS[field]))}
+            checked={draft.shortcuts[field].enabled}
+            onCheckedChange={(enabled) => setDraft((current) => ({ ...current, shortcuts: {
+              ...current.shortcuts, [field]: { ...current.shortcuts[field], enabled },
+            } }))} />
+          <ShortcutRow descriptionId={shortcutHintId} disabled={saving}
+            error={errorMessage(`shortcuts.${field}`)} label={t(CONTROL_LABELS[field])} value={draft.shortcuts[field].key}
+            onChange={(key) => setDraft((current) => ({ ...current, shortcuts: {
+              ...current.shortcuts, [field]: { ...current.shortcuts[field], key },
+            } }))} />
+        </div>)}
       </section>
       <section aria-labelledby={playbackSpeedTitleId} className='flex flex-col gap-2'>
-        <SwitchSectionHeading
-          checked={draft.playbackSpeed.enabled}
-          id={playbackSpeedTitleId}
-          label={t('playback_speed')}
-          level={3}
-          onChange={(enabled) =>
-            setDraft((current) => ({ ...current, playbackSpeed: { ...current.playbackSpeed, enabled } }))
-          }
-        />
-        {(['increase', 'decrease', 'reset'] as const).map((field) => {
-          const path = `playbackSpeed.${field}` as const;
-          return (
-            <ShortcutRow
-              key={field}
-              descriptionId={shortcutHintId}
-              disabled={!draft.playbackSpeed.enabled}
-              error={errorMessage(path)}
-              label={speedLabel(field)}
-              value={draft.playbackSpeed[field]}
-              onChange={(shortcut) =>
-                setDraft((current) => ({
-                  ...current,
-                  playbackSpeed: { ...current.playbackSpeed, [field]: shortcut },
-                }))
-              }
-            />
-          );
-        })}
+        <h3 id={playbackSpeedTitleId} className='text-[15px] font-semibold'>{t('playback_speed')}</h3>
+        {(['increase', 'decrease', 'reset'] as const).map((field) => <div key={field} className='flex items-center gap-2'>
+          <Switch aria-label={t('v2_enable_command', speedLabel(field))} checked={draft.playbackSpeed[field].enabled}
+            onCheckedChange={(enabled) => setDraft((current) => ({ ...current, playbackSpeed: {
+              ...current.playbackSpeed, [field]: { ...current.playbackSpeed[field], enabled },
+            } }))} />
+          <ShortcutRow descriptionId={shortcutHintId} disabled={saving} error={errorMessage(`playbackSpeed.${field}`)}
+            label={speedLabel(field)} value={draft.playbackSpeed[field].key}
+            onChange={(key) => setDraft((current) => ({ ...current, playbackSpeed: {
+              ...current.playbackSpeed, [field]: { ...current.playbackSpeed[field], key },
+            } }))} />
+        </div>)}
       </section>
       {submitError && <p role='alert' className='text-wrap text-sm text-destructive'>{t('error_try_later')}</p>}
       <Button
@@ -288,7 +247,7 @@ function ShortcutRow({
   const describedBy = error ? `${descriptionId} ${errorId}` : descriptionId;
 
   return (
-    <div className='flex min-w-0 flex-col gap-1'>
+    <div className='flex min-w-0 flex-1 flex-col gap-1'>
       <label className='flex min-w-0 items-center justify-between gap-2 text-sm'>
         <span className='text-wrap'>{label}</span>
         <Button
@@ -319,39 +278,33 @@ function ShortcutRow({
   );
 }
 
-function SwitchSectionHeading({
-  checked,
-  id,
-  label,
-  level,
-  onChange,
-}: {
-  checked: boolean;
-  id: string;
-  label: string;
-  level: 2 | 3;
-  onChange: (value: boolean) => void;
+function NavigationFields({ label, onChange, value }: {
+  label: string; onChange: (value: NavigationProfile) => void; value: NavigationProfile;
 }) {
-  const heading =
-    level === 2 ? (
-      <h2 id={id} className='text-[15px] font-semibold'>{label}</h2>
-    ) : (
-      <h3 id={id} className='text-[15px] font-semibold'>{label}</h3>
-    );
-
-  return (
-    <div className='flex items-center justify-between gap-2'>
-      {heading}
-      <Switch aria-label={label} checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
+  return <fieldset className='flex flex-col gap-2 rounded-md border p-2'>
+    <legend className='text-sm'>{label}</legend>
+    <label className='flex items-center justify-between gap-2 text-sm'>{t('v2_navigation_amount')}
+      <input aria-label={`${label} ${t('v2_navigation_amount')}`} className='w-20 rounded border p-1' type='number' min='1'
+        value={value.amount} onChange={(event) => onChange({ ...value, amount: Number(event.target.value) })} />
+    </label>
+    <label className='flex items-center justify-between gap-2 text-sm'>{t('v2_navigation_unit')}
+      <select value={value.unit} onChange={(event) => onChange({ ...value, unit: event.target.value as NavigationProfile['unit'] })}>
+        <option value='subtitles'>{t('v2_unit_cues')}</option><option value='seconds'>{t('v2_unit_seconds')}</option><option value='minutes'>{t('v2_unit_minutes')}</option>
+      </select>
+    </label>
+    <label className='flex items-center justify-between gap-2 text-sm'>{t('v2_navigation_fallback')}
+      <Switch checked={value.fallbackEnabled} onCheckedChange={(fallbackEnabled) => onChange({ ...value, fallbackEnabled })} />
+    </label>
+    <label className='flex items-center justify-between gap-2 text-sm'>{t('v2_fallback_amount')}
+      <input className='w-20 rounded border p-1' type='number' min='0' value={value.fallbackAmount}
+        onChange={(event) => onChange({ ...value, fallbackAmount: Number(event.target.value) })} />
+      <select aria-label={t('v2_fallback_unit')} value={value.fallbackUnit}
+        onChange={(event) => onChange({ ...value, fallbackUnit: event.target.value as NavigationProfile['fallbackUnit'] })}>
+        <option value='seconds'>{t('v2_unit_seconds')}</option><option value='minutes'>{t('v2_unit_minutes')}</option>
+      </select>
+    </label>
+  </fieldset>;
 }
-
-const cueShortcutLabel = (field: 'nextCue' | 'previousCue' | 'repeatCurrentCue') => {
-  if (field === 'previousCue') return t('v2_previous_learning_cue');
-  if (field === 'nextCue') return t('v2_next_learning_cue');
-  return t('v2_repeat_current_learning_cue');
-};
 
 const speedLabel = (field: 'increase' | 'decrease' | 'reset') => {
   if (field === 'increase') return t('increase_speed');
@@ -360,13 +313,9 @@ const speedLabel = (field: 'increase' | 'decrease' | 'reset') => {
 };
 
 const shortcutLabel = (path: ShortcutFieldPath) => {
-  if (path === 'shortcuts.saveCard') return t('v2_save_learning_card');
-  if (path === 'shortcuts.previousCue') return t('v2_previous_learning_cue');
-  if (path === 'shortcuts.nextCue') return t('v2_next_learning_cue');
-  if (path === 'shortcuts.repeatCurrentCue') return t('v2_repeat_current_learning_cue');
-  if (path === 'playbackSpeed.increase') return t('increase_speed');
-  if (path === 'playbackSpeed.decrease') return t('decrease_speed');
-  return t('reset_speed');
+  const [group, field] = path.split('.');
+  return group === 'shortcuts' ? t(CONTROL_LABELS[field as (typeof CONTROL_COMMANDS)[number]])
+    : speedLabel(field as 'increase' | 'decrease' | 'reset');
 };
 
 const getShortcutValidationErrors = (settings: ShortcutSettings) => {
@@ -374,9 +323,11 @@ const getShortcutValidationErrors = (settings: ShortcutSettings) => {
   const owners = new Map<string, ShortcutFieldPath[]>();
 
   for (const path of SHORTCUT_FIELD_PATHS) {
-    const shortcut = getShortcutValue(settings, path);
+    const binding = getShortcutValue(settings, path);
+    const shortcut = binding.key;
     if (!shortcut) continue;
     if (isReservedV2Shortcut(shortcut)) errors.set(path, { type: 'reserved' });
+    if (!binding.enabled) continue;
     owners.set(shortcut, [...(owners.get(shortcut) ?? []), path]);
   }
 
@@ -391,32 +342,14 @@ const getShortcutValidationErrors = (settings: ShortcutSettings) => {
 };
 
 const getShortcutValue = (settings: ShortcutSettings, path: ShortcutFieldPath) => {
-  if (path === 'shortcuts.saveCard') return settings.shortcuts.saveCard;
-  if (path === 'shortcuts.previousCue') return settings.shortcuts.previousCue;
-  if (path === 'shortcuts.nextCue') return settings.shortcuts.nextCue;
-  if (path === 'shortcuts.repeatCurrentCue') return settings.shortcuts.repeatCurrentCue;
-  if (path === 'playbackSpeed.increase') return settings.playbackSpeed.increase;
-  if (path === 'playbackSpeed.decrease') return settings.playbackSpeed.decrease;
-  return settings.playbackSpeed.reset;
+  const [group, field] = path.split('.');
+  return group === 'shortcuts' ? settings.shortcuts[field as (typeof CONTROL_COMMANDS)[number]]
+    : settings.playbackSpeed[field as 'increase' | 'decrease' | 'reset'];
 };
 
-const shortcutSettingsEqual = (left: ShortcutSettings, right: ShortcutSettings) =>
-  left.shortcuts.enabled === right.shortcuts.enabled &&
-  left.shortcuts.saveCard === right.shortcuts.saveCard &&
-  left.shortcuts.previousCue === right.shortcuts.previousCue &&
-  left.shortcuts.nextCue === right.shortcuts.nextCue &&
-  left.shortcuts.repeatCurrentCue === right.shortcuts.repeatCurrentCue &&
-  left.playbackSpeed.enabled === right.playbackSpeed.enabled &&
-  left.playbackSpeed.increase === right.playbackSpeed.increase &&
-  left.playbackSpeed.decrease === right.playbackSpeed.decrease &&
-  left.playbackSpeed.reset === right.playbackSpeed.reset;
+const shortcutSettingsEqual = (left: ShortcutSettings, right: ShortcutSettings) => JSON.stringify(left) === JSON.stringify(right);
 
 const SHORTCUT_FIELD_PATHS: ShortcutFieldPath[] = [
-  'shortcuts.saveCard',
-  'shortcuts.previousCue',
-  'shortcuts.nextCue',
-  'shortcuts.repeatCurrentCue',
-  'playbackSpeed.increase',
-  'playbackSpeed.decrease',
-  'playbackSpeed.reset',
+  ...CONTROL_COMMANDS.map((field) => `shortcuts.${field}` as const),
+  'playbackSpeed.increase', 'playbackSpeed.decrease', 'playbackSpeed.reset',
 ];

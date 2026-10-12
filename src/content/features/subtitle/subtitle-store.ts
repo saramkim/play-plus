@@ -147,7 +147,9 @@ export const useSubtitleStore = create<SubtitleStoreState>((set) => ({
     };
     set((state) => ({
       ...settings,
-      subtitleRevision: state.subtitleRevision + 1,
+      subtitleRevision: state.subtitleRevision + (
+        JSON.stringify(state.learningProfile) === JSON.stringify(settings.learningProfile) ? 0 : 1
+      ),
     }));
   },
   setNativeCues: (language, cues) => {

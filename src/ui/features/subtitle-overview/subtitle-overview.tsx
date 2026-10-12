@@ -502,12 +502,13 @@ function ReadyOverview({
   };
 
   const saveRow = (row: SubtitleOverviewRow) => {
-    if (activeTabId === undefined || row.learningSourceIndex === undefined || savePending) return;
+    if (activeTabId === undefined || savePending) return;
     setSavePending(true);
     void sendMessageToTab(activeTabId, 'saveSubtitleOverviewCue', {
       expectedIdentity: snapshot.identity,
       expectedSubtitleRevision: snapshot.subtitleRevision,
-      learningSourceIndex: row.learningSourceIndex,
+      sourceIndex: row.cue.sourceIndex,
+      ...(mode === 'together' ? {} : { selection: mode }),
     })
       .then((response) => {
         if (!response.success) {
@@ -516,7 +517,9 @@ function ReadyOverview({
         }
 
         const status = response.data.status;
-        if (status === 'saved-with-support') {
+        if (status === 'saved-support-only') {
+          toast.success(t('v2_learning_card_saved'));
+        } else if (status === 'saved-with-support') {
           markSaved(row);
           toast.success(t('v2_subtitle_overview_saved_with_support'));
         } else if (status === 'saved-learning-only') {
@@ -684,8 +687,10 @@ function ReadyOverview({
             {virtualItems.map((virtualRow) => {
               const row = visibleRows[virtualRow.index];
               const active = row.key === activeRow?.key;
-              const canSave = row.learningSourceIndex !== undefined;
               const saved = isSaved(row);
+              const saveLabel = mode === 'support' ? t('v2_save_support_only')
+                : mode === 'learning' ? t('v2_save_learning_only')
+                  : t(saved ? 'v2_subtitle_overview_saved_row' : 'v2_subtitle_overview_save_row');
               return (
                 <div
                   key={virtualRow.key}
@@ -802,7 +807,7 @@ function ReadyOverview({
                         </div>
                       </TooltipContent>
                     </Tooltip>
-                    {canSave && (
+                    {(
                       <div className='flex shrink-0 items-center border-l border-border/60 px-0.5'>
                         <Button
                           type='button'
@@ -810,16 +815,8 @@ function ReadyOverview({
                           size='icon'
                           className='size-11'
                           data-subtitle-overview-save='true'
-                          aria-label={`${t(
-                            saved
-                              ? 'v2_subtitle_overview_saved_row'
-                              : 'v2_subtitle_overview_save_row'
-                          )}: ${row.cue.text}`}
-                          tooltip={t(
-                            saved
-                              ? 'v2_subtitle_overview_saved_row'
-                              : 'v2_subtitle_overview_save_row'
-                          )}
+                          aria-label={`${saveLabel}: ${row.cue.text}`}
+                          tooltip={saveLabel}
                           disabled={savePending}
                           tabIndex={row.key === tabStopRowKey ? 0 : -1}
                           onFocus={() => {

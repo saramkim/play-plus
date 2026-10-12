@@ -69,125 +69,79 @@ describe('v1.11 migration plan', () => {
       },
     });
     expect(plan.sync).not.toHaveProperty('learningControls');
-    expect(plan.sync.shortcuts).toEqual({
-      enabled: true,
-      saveCard: 'KeyS',
-      previousCue: 'KeyA',
-      nextCue: 'KeyD',
-      repeatCurrentCue: 'KeyR',
+    expect(plan.sync.shortcuts).toMatchObject({
+      saveLearning: { key: 'KeyS', enabled: true }, saveSupport: { key: '', enabled: true },
+      previousCue: { key: 'KeyA', enabled: true }, nextCue: { key: 'KeyD', enabled: true },
+      repeatCurrentCue: { key: 'KeyR', enabled: true },
     });
     expect(plan.sync.playbackSpeed).toEqual({
-      enabled: true,
-      increase: 'Equal',
-      decrease: 'Minus',
-      reset: 'Digit0',
+      increase: { key: 'Equal', enabled: true }, decrease: { key: 'Minus', enabled: true }, reset: { key: 'Digit0', enabled: true },
     });
     expect(plan.local.registeredSubtitles).toEqual(fixture.local.registeredSubtitles);
     expect(plan.local.subtitleBodies).toEqual(fixture.local.subtitleBodies);
     expect(plan.local.migrationState.shortcutConfirmations).toEqual([]);
   });
 
-  it('requires confirmation instead of choosing ambiguous or conflicting shortcut candidates', async () => {
+  it('preserves separate role saves, arbitrary cue amounts and only confirms active collisions', async () => {
     const fixture = createV1_11Fixture();
     fixture.sync.shortcuts.saveSecondary = 'KeyW';
     fixture.sync.videoSkip.skipTime = 2;
     fixture.sync.loop.loopCurrentSubtitle = 'Equal';
-
     const plan = await createV1_11MigrationPlan(fixture);
-
-    expect(plan.sync.shortcuts).toMatchObject({ saveCard: '', previousCue: '', nextCue: '', repeatCurrentCue: '' });
-    expect(plan.sync.playbackSpeed.increase).toBe('');
-    expect(plan.local.migrationState.shortcutConfirmations).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'saveCard', reason: 'multiple-candidates' }),
-        expect.objectContaining({ field: 'previousCue', reason: 'ambiguous-semantics' }),
-        expect.objectContaining({ field: 'nextCue', reason: 'ambiguous-semantics' }),
-        expect.objectContaining({ field: 'repeatCurrentCue', reason: 'conflict' }),
-        expect.objectContaining({ field: 'speedIncrease', reason: 'conflict' }),
-      ])
-    );
+    expect(plan.sync.shortcuts.saveLearning).toEqual({ key: 'KeyS', enabled: true });
+    expect(plan.sync.shortcuts.saveSupport).toEqual({ key: 'KeyW', enabled: true });
+    expect(plan.sync.shortcuts.navigation.primary).toMatchObject({ amount: 2, unit: 'subtitles' });
+    expect(plan.sync.shortcuts.repeatCurrentCue).toEqual({ key: 'Equal', enabled: false });
+    expect(plan.sync.playbackSpeed.increase).toEqual({ key: 'Equal', enabled: false });
+    expect(plan.local.migrationState.shortcutConfirmations.map(({ field }) => field)).toEqual(['repeatCurrentCue', 'speedIncrease']);
   });
 
-  it('moves both a pending candidate and its assigned owner into conflict confirmation', async () => {
+  it('preserves inactive duplicate keys, secondary time values and dormant fallback independently', async () => {
     const fixture = createV1_11Fixture();
-    fixture.sync.videoSkip.skipTime = 2;
+    fixture.sync.shortcuts.enabled = false;
+    fixture.sync.shortcuts.savePrimary = 'Equal';
+    fixture.sync.videoSkip.enabled = false;
+    fixture.sync.subVideoSkip.skipTime = 2;
+    fixture.sync.subVideoSkip.skipTimeUnit = 'minutes';
+    fixture.sync.subVideoSkip.fallbackTime = 7;
+    fixture.sync.subVideoSkip.fallbackUnit = 'seconds';
+    const before = structuredClone(fixture);
+    const plan = await createV1_11MigrationPlan(fixture);
+    expect(fixture).toEqual(before);
+    expect(plan.sync.shortcuts.saveLearning).toEqual({ key: 'Equal', enabled: false });
+    expect(plan.sync.shortcuts.previousCue.enabled).toBe(false);
+    expect(plan.sync.shortcuts.repeatCurrentCue.enabled).toBe(true);
+    expect(plan.sync.shortcuts.navigation.secondary).toEqual({ amount: 2, unit: 'minutes', fallbackEnabled: true, fallbackAmount: 7, fallbackUnit: 'seconds' });
+    expect(plan.local.migrationState.shortcutConfirmations).toEqual([]);
+  });
+
+  it('retains both active collision owners for explicit resolution', async () => {
+    const fixture = createV1_11Fixture();
     fixture.sync.videoSkip.backward = 'KeyS';
-    fixture.sync.videoSkip.forward = '';
-
     const plan = await createV1_11MigrationPlan(fixture);
-    const confirmations = new Map(
-      plan.local.migrationState.shortcutConfirmations.map((confirmation) => [
-        confirmation.field,
-        confirmation,
-      ])
-    );
-
-    expect(plan.sync.shortcuts).toMatchObject({ enabled: true, saveCard: '', previousCue: '' });
-    expect(confirmations.get('saveCard')).toMatchObject({
-      reason: 'conflict',
-      conflictingFields: ['previousCue'],
-    });
-    expect(confirmations.get('previousCue')).toMatchObject({
-      reason: 'conflict',
-      conflictingFields: ['saveCard'],
-    });
+    expect(plan.sync.shortcuts.saveLearning).toEqual({ key: 'KeyS', enabled: false });
+    expect(plan.sync.shortcuts.previousCue).toEqual({ key: 'KeyS', enabled: false });
+    expect(plan.local.migrationState.shortcutConfirmations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'saveLearning', conflictingFields: ['previousCue'], reason: 'conflict' }),
+      expect.objectContaining({ field: 'previousCue', conflictingFields: ['saveLearning'], reason: 'conflict' }),
+    ]));
   });
 
-  it('represents collisions between two pending candidate options before first entry', async () => {
+  it('preserves the published v1.11 learning preset rather than substituting fresh defaults', async () => {
+    // src/storage/preset.ts at remote v1.11.0 70cf32683650b63f4fe5d3196360e299f6e51ad1.
     const fixture = createV1_11Fixture();
-    fixture.sync.videoSkip.skipTime = 2;
-    fixture.sync.videoSkip.backward = 'KeyQ';
-    fixture.sync.videoSkip.forward = 'KeyQ';
-
+    Object.assign(fixture.sync.videoSkip, { forward: 'ArrowRight', backward: 'ArrowLeft', skipTime: 10, skipTimeUnit: 'seconds', fallbackTime: 10 });
+    Object.assign(fixture.sync.subVideoSkip, { forward: 'KeyD', backward: 'KeyA', skipTime: 1, skipTimeUnit: 'subtitles', fallbackTime: 3 });
+    Object.assign(fixture.sync.shortcuts, { savePrimary: 'KeyE', saveSecondary: 'KeyR', copyPrimary: 'KeyZ', copySecondary: 'KeyX', togglePrimary: 'KeyQ', toggleSecondary: 'KeyW' });
+    Object.assign(fixture.sync.loop, { loopCurrentSubtitle: 'KeyS', playCurrentSubtitleOnce: 'KeyC' });
+    Object.assign(fixture.sync.playbackSpeed, { increase: 'Period', decrease: 'Comma', reset: 'Slash' });
     const plan = await createV1_11MigrationPlan(fixture);
-    const confirmations = new Map(
-      plan.local.migrationState.shortcutConfirmations.map((confirmation) => [
-        confirmation.field,
-        confirmation,
-      ])
-    );
-
-    expect(plan.sync.shortcuts).toMatchObject({ enabled: true, previousCue: '', nextCue: '' });
-    expect(confirmations.get('previousCue')).toMatchObject({
-      reason: 'conflict',
-      conflictingFields: ['nextCue'],
-    });
-    expect(confirmations.get('nextCue')).toMatchObject({
-      reason: 'conflict',
-      conflictingFields: ['previousCue'],
-    });
-  });
-
-  it('unifies active legacy save, cue, and repeat intent under the shortcuts master', async () => {
-    const inactive = createV1_11Fixture();
-    inactive.sync.shortcuts.enabled = false;
-    inactive.sync.videoSkip.enabled = false;
-    inactive.sync.loop.enabled = false;
-    expect((await createV1_11MigrationPlan(inactive)).sync.shortcuts.enabled).toBe(false);
-
-    const ambiguousCue = createV1_11Fixture();
-    ambiguousCue.sync.shortcuts.enabled = false;
-    ambiguousCue.sync.videoSkip.skipTime = 2;
-    ambiguousCue.sync.loop.enabled = false;
-    const ambiguousCuePlan = await createV1_11MigrationPlan(ambiguousCue);
-    expect(ambiguousCuePlan.sync.shortcuts.enabled).toBe(true);
-    expect(ambiguousCuePlan.sync.shortcuts).toMatchObject({ previousCue: '', nextCue: '' });
-    expect(ambiguousCuePlan.local.migrationState.shortcutConfirmations).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'previousCue', reason: 'ambiguous-semantics' }),
-        expect.objectContaining({ field: 'nextCue', reason: 'ambiguous-semantics' }),
-      ])
-    );
-
-    const repeat = createV1_11Fixture();
-    repeat.sync.shortcuts.enabled = false;
-    repeat.sync.videoSkip.enabled = false;
-    expect((await createV1_11MigrationPlan(repeat)).sync.shortcuts.enabled).toBe(true);
-
-    const save = createV1_11Fixture();
-    save.sync.videoSkip.enabled = false;
-    save.sync.loop.enabled = false;
-    expect((await createV1_11MigrationPlan(save)).sync.shortcuts.enabled).toBe(true);
+    expect(plan.sync.shortcuts.navigation.primary).toMatchObject({ amount: 10, unit: 'seconds', fallbackAmount: 10 });
+    expect(plan.sync.shortcuts.navigation.secondary).toMatchObject({ amount: 1, unit: 'subtitles', fallbackAmount: 3 });
+    expect(plan.sync.shortcuts.saveSupport).toEqual({ key: 'KeyR', enabled: true });
+    expect(plan.sync.shortcuts.playOnce).toEqual({ key: 'KeyC', enabled: true });
+    expect(plan.sync.playbackSpeed.increase).toEqual({ key: 'Period', enabled: true });
+    expect(plan.local.migrationState.shortcutConfirmations).toEqual([]);
   });
 
   it('isolates invalid registered subtitles and orphan bodies without mutating the source', async () => {
@@ -245,11 +199,12 @@ describe('v1.11 migration plan', () => {
   it('hydrates missing v1.11 settings from release defaults but rejects invalid persisted fields', async () => {
     const plan = await createV1_11MigrationPlan({ sync: {}, local: {} });
 
+    expect(plan.sync.shortcuts.previousCue).toEqual({ key: 'ArrowLeft', enabled: true });
+    expect(plan.sync.shortcuts.navigation.primary).toEqual({ amount: 1, unit: 'subtitles', fallbackEnabled: true, fallbackAmount: 5, fallbackUnit: 'seconds' });
     const fresh = createFreshV2MigrationPlan().sync;
-    expect(plan.sync).toEqual({
-      ...fresh,
-      shortcuts: { ...fresh.shortcuts, enabled: true },
-    });
+    expect(fresh.shortcuts.previousCue.enabled).toBe(false);
+    expect(fresh.shortcuts.navigation.primary.fallbackEnabled).toBe(false);
+    expect(fresh.shortcuts.navigation.secondary).toMatchObject({ amount: 10, unit: 'seconds' });
     await expect(
       createV1_11MigrationPlan({ sync: { primarySubtitle: { fontSize: 99 } }, local: {} })
     ).rejects.toThrow();

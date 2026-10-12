@@ -76,6 +76,10 @@ export const createV2SyncStorage = (storage: V2SyncStorageArea): V2SyncStorageAp
   },
   set: async (key, value) => {
     const parsed = V2_SYNC_STORAGE_SCHEMAS[key].parse(value) as V2SyncStorage[typeof key];
+    if (key === 'shortcuts' || key === 'playbackSpeed') {
+      const current = await storage.get([...V2_SYNC_STORAGE_KEYS]);
+      v2SyncStorageSchema.parse({ ...Object.fromEntries(V2_SYNC_STORAGE_KEYS.map((item) => [item, current[item]])), [key]: parsed });
+    }
     await storage.set({ [key]: parsed });
   },
   setMany: async (values) => {
@@ -85,6 +89,8 @@ export const createV2SyncStorage = (storage: V2SyncStorageArea): V2SyncStorageAp
         V2_SYNC_STORAGE_SCHEMAS[key as V2SyncStorageKey].parse(value),
       ])
     );
+    const current = await storage.get([...V2_SYNC_STORAGE_KEYS]);
+    v2SyncStorageSchema.parse({ ...Object.fromEntries(V2_SYNC_STORAGE_KEYS.map((key) => [key, current[key]])), ...parsed });
     await storage.set(parsed);
   },
   subscribe: (callback, onError) => {

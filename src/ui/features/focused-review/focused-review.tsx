@@ -157,7 +157,7 @@ export function FocusedReview({
       if (
         updated.id !== card.id ||
         updated.studyState !== studyState ||
-        'unassigned' in updated.content
+        !('learning' in updated.content)
       ) {
         throw new Error('The learning card update returned an invalid Review card');
       }

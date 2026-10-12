@@ -1087,4 +1087,115 @@
     "v2_listening_saved_line": { "message": "Saved to Library." },
     "v2_listening_save_error": { "message": "The line was not saved. Try again or return to watching." },
     "v2_listening_visible_replay": { "message": "Listen with subtitles" }
+,
+  "v2_unit_seconds": {
+    "message": "Seconds"
+  },
+  "v2_unit_minutes": {
+    "message": "Minutes"
+  },
+  "v2_library_add_learning": {
+    "message": "Add learning text"
+  },
+  "v2_save_learning_only": {
+    "message": "Save learning only"
+  },
+  "v2_save_support_only": {
+    "message": "Save support only"
+  },
+  "v2_copy_learning": {
+    "message": "Copy learning"
+  },
+  "v2_copy_support": {
+    "message": "Copy support"
+  },
+  "v2_toggle_learning": {
+    "message": "Toggle learning visibility"
+  },
+  "v2_toggle_support": {
+    "message": "Toggle support visibility"
+  },
+  "v2_primary_previous": {
+    "message": "Primary backward"
+  },
+  "v2_primary_next": {
+    "message": "Primary forward"
+  },
+  "v2_secondary_previous": {
+    "message": "Secondary backward"
+  },
+  "v2_secondary_next": {
+    "message": "Secondary forward"
+  },
+  "v2_play_once": {
+    "message": "Play current cue once"
+  },
+  "v2_toggle_ab": {
+    "message": "Toggle A/B loop"
+  },
+  "v2_set_a": {
+    "message": "Set A to current time"
+  },
+  "v2_set_b": {
+    "message": "Set B to current time"
+  },
+  "v2_invalid_playback_range": {
+    "message": "This interval is unavailable in the current video."
+  },
+  "v2_enable_command": {
+    "message": "Enable $COMMAND$ shortcut",
+    "placeholders": {
+      "command": {
+        "content": "$1"
+      }
+    }
+  },
+  "v2_primary_navigation": {
+    "message": "Primary navigation"
+  },
+  "v2_secondary_navigation": {
+    "message": "Secondary navigation"
+  },
+  "v2_navigation_amount": {
+    "message": "Amount"
+  },
+  "v2_navigation_unit": {
+    "message": "Unit"
+  },
+  "v2_navigation_fallback": {
+    "message": "Use time navigation without subtitles"
+  },
+  "v2_fallback_amount": {
+    "message": "Fallback amount"
+  },
+  "v2_fallback_unit": {
+    "message": "Fallback time unit"
+  },
+  "v2_unit_cues": {
+    "message": "Cues"
+  },
+  "v2_loop_status": {
+    "message": "Playback interval"
+  },
+  "v2_loop_inactive": {
+    "message": "Loop off"
+  },
+  "v2_loop_active": {
+    "message": "Loop on"
+  },
+  "v2_once_active": {
+    "message": "Playing once"
+  },
+  "v2_library_copy": {
+    "message": "Copy full text"
+  },
+  "v2_library_copied": {
+    "message": "Text copied."
+  },
+  "v2_library_copy_error": {
+    "message": "Could not copy. Please try again."
+  },
+  "v2_playback_failed": {
+    "message": "Playback failed. Please try again."
+  }
 }

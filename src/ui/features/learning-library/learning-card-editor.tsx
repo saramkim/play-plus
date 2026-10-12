@@ -8,6 +8,7 @@ import { t } from '@utils/i18n';
 import { Button } from '@/ui/components/button';
 
 export interface LearningCardEditorDraft {
+  learningEnabled?: boolean;
   learningText: string;
   learningLanguage: Language | '';
   supportEnabled: boolean;
@@ -65,6 +66,8 @@ export function LearningCardEditor({
     if (!draft.supportEnabled) return;
     setDraft((current) => ({
       ...current,
+      learningEnabled: true,
+      supportEnabled: current.learningEnabled !== false,
       learningText: current.supportText,
       learningLanguage: current.supportLanguage,
       supportText: current.learningText,
@@ -84,7 +87,7 @@ export function LearningCardEditor({
       </h3>
 
       <fieldset className='flex min-w-0 flex-col gap-2' disabled={disabled}>
-        <EditorLine
+        {draft.learningEnabled !== false ? <EditorLine
           idPrefix={`${card.id}-learning`}
           textLabel={t('v2_library_learning_text')}
           languageLabel={t('v2_library_learning_language')}
@@ -94,7 +97,10 @@ export function LearningCardEditor({
           onLanguageChange={(learningLanguage) =>
             setDraft((current) => ({ ...current, learningLanguage }))
           }
-        />
+        /> : <Button type='button' variant='outline' size='sm'
+          onClick={() => setDraft((current) => ({ ...current, learningEnabled: true }))}>
+          {t('v2_library_add_learning')}
+        </Button>}
 
         {draft.supportEnabled ? (
           <div className='flex min-w-0 flex-col gap-2'>
@@ -124,6 +130,7 @@ export function LearningCardEditor({
                 variant='outline'
                 size='sm'
                 className='h-auto min-h-8 whitespace-normal text-wrap'
+                disabled={draft.learningEnabled === false}
                 onClick={() => setDraft((current) => ({ ...current, supportEnabled: false }))}
               >
                 {t('v2_library_remove_support')}
@@ -231,8 +238,9 @@ export const createLearningCardEditorDraft = (card: LearningCard): LearningCardE
   }
 
   return {
-    learningText: card.content.learning.text,
-    learningLanguage: card.content.learning.language,
+    ...(!('learning' in card.content) ? { learningEnabled: false } : {}),
+    learningText: 'learning' in card.content ? card.content.learning.text : '',
+    learningLanguage: 'learning' in card.content ? card.content.learning.language : '',
     supportEnabled: card.content.support !== undefined,
     supportText: card.content.support?.text ?? '',
     supportLanguage: card.content.support?.language ?? '',
@@ -243,7 +251,8 @@ export const createEditedLearningCard = (
   card: LearningCard,
   draft: LearningCardEditorDraft
 ): LearningCard => {
-  if (!draft.learningText.trim() || !draft.learningLanguage) {
+  if ((draft.learningEnabled !== false && (!draft.learningText.trim() || !draft.learningLanguage)) ||
+    (draft.learningEnabled === false && !draft.supportEnabled)) {
     throw new LearningCardEditorValidationError(t('v2_library_editor_invalid'));
   }
   if (draft.supportEnabled && (!draft.supportText.trim() || !draft.supportLanguage)) {
@@ -253,7 +262,8 @@ export const createEditedLearningCard = (
   return learningCardSchema.parse({
     ...card,
     content: {
-      learning: { text: draft.learningText, language: draft.learningLanguage },
+      ...(draft.learningEnabled !== false
+        ? { learning: { text: draft.learningText, language: draft.learningLanguage } } : {}),
       ...(draft.supportEnabled
         ? { support: { text: draft.supportText, language: draft.supportLanguage } }
         : {}),

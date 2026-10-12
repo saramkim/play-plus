@@ -7,6 +7,8 @@ import {
   listeningSourceKeySchema,
 } from '@/listening/domain/source-identity';
 
+import { CONTROL_COMMANDS, navigationProfileSchema } from './control-settings';
+
 export {
   listeningSegmentKeySchema,
   listeningSourceKeySchema,
@@ -67,24 +69,33 @@ export const subtitleDisplaySchema = z
   })
   .strict();
 
-export const v2ShortcutsSchema = z
-  .object({
-    enabled: z.boolean(),
-    saveCard: v2ShortcutSchema,
-    previousCue: v2ShortcutSchema,
-    nextCue: v2ShortcutSchema,
-    repeatCurrentCue: v2ShortcutSchema,
-  })
-  .strict();
+export const shortcutBindingSchema = z.object({ key: v2ShortcutSchema, enabled: z.boolean() }).strict();
 
-export const v2PlaybackSpeedSchema = z
-  .object({
-    enabled: z.boolean(),
-    increase: v2ShortcutSchema,
-    decrease: v2ShortcutSchema,
-    reset: v2ShortcutSchema,
-  })
-  .strict();
+export const v2ShortcutsSchema = z.object({
+  saveCard: shortcutBindingSchema,
+  saveLearning: shortcutBindingSchema,
+  saveSupport: shortcutBindingSchema,
+  copyLearning: shortcutBindingSchema,
+  copySupport: shortcutBindingSchema,
+  toggleLearning: shortcutBindingSchema,
+  toggleSupport: shortcutBindingSchema,
+  previousCue: shortcutBindingSchema,
+  nextCue: shortcutBindingSchema,
+  secondaryPrevious: shortcutBindingSchema,
+  secondaryNext: shortcutBindingSchema,
+  repeatCurrentCue: shortcutBindingSchema,
+  playOnce: shortcutBindingSchema,
+  toggleAB: shortcutBindingSchema,
+  setA: shortcutBindingSchema,
+  setB: shortcutBindingSchema,
+  navigation: z.object({ primary: navigationProfileSchema, secondary: navigationProfileSchema }).strict(),
+}).strict();
+
+export const v2PlaybackSpeedSchema = z.object({
+  increase: shortcutBindingSchema,
+  decrease: shortcutBindingSchema,
+  reset: shortcutBindingSchema,
+}).strict();
 
 const assignedLineSchema = z
   .object({
@@ -109,7 +120,11 @@ const assignedContentSchema = z
 
 const unassignedContentSchema = z.object({ unassigned: unassignedLineSchema }).strict();
 
-export const learningCardContentSchema = z.union([assignedContentSchema, unassignedContentSchema]);
+export const learningCardContentSchema = z.union([
+  assignedContentSchema,
+  z.object({ support: assignedLineSchema }).strict(),
+  unassignedContentSchema,
+]);
 
 const learningCardSourceSchema = z
   .object({
@@ -216,25 +231,13 @@ export const subtitleCueSchema = z
   .strict()
   .refine(({ end, start }) => end >= start, { message: 'Cue end must be greater than or equal to start' });
 
-const shortcutFieldSchema = z.enum([
-  'saveCard',
-  'previousCue',
-  'nextCue',
-  'repeatCurrentCue',
-  'speedIncrease',
-  'speedDecrease',
-  'speedReset',
-]);
+const shortcutFieldSchema = z.enum([...CONTROL_COMMANDS, 'speedIncrease', 'speedDecrease', 'speedReset']);
 
 const shortcutCandidateSourceSchema = z.enum([
-  'savePrimary',
-  'saveSecondary',
-  'videoSkip.backward',
-  'videoSkip.forward',
-  'loop.loopCurrentSubtitle',
-  'playbackSpeed.increase',
-  'playbackSpeed.decrease',
-  'playbackSpeed.reset',
+  'savePrimary', 'saveSecondary', 'copyPrimary', 'copySecondary', 'togglePrimary', 'toggleSecondary',
+  'videoSkip.backward', 'videoSkip.forward', 'subVideoSkip.backward', 'subVideoSkip.forward',
+  'loop.loopCurrentSubtitle', 'loop.playCurrentSubtitleOnce', 'loop.toggleLoop', 'loop.startPoint', 'loop.endPoint',
+  'playbackSpeed.increase', 'playbackSpeed.decrease', 'playbackSpeed.reset',
 ]);
 
 const shortcutCandidateSchema = z
@@ -290,18 +293,14 @@ export const v2SyncStorageSchema = z
   .strict()
   .superRefine(({ playbackSpeed, shortcuts }, context) => {
     const entries = [
-      ['shortcuts.saveCard', shortcuts.saveCard],
-      ['shortcuts.previousCue', shortcuts.previousCue],
-      ['shortcuts.nextCue', shortcuts.nextCue],
-      ['shortcuts.repeatCurrentCue', shortcuts.repeatCurrentCue],
-      ['playbackSpeed.increase', playbackSpeed.increase],
-      ['playbackSpeed.decrease', playbackSpeed.decrease],
-      ['playbackSpeed.reset', playbackSpeed.reset],
-    ] as const;
+      ...CONTROL_COMMANDS.map((field) => [`shortcuts.${field}`, shortcuts[field]] as const),
+      ...(['increase', 'decrease', 'reset'] as const).map((field) => [`playbackSpeed.${field}`, playbackSpeed[field]] as const),
+    ];
     const owners = new Map<string, string>();
 
-    for (const [field, shortcut] of entries) {
-      if (!shortcut) continue;
+    for (const [field, binding] of entries) {
+      if (!binding.enabled || !binding.key) continue;
+      const shortcut = binding.key;
       const owner = owners.get(shortcut);
       if (owner) {
         context.addIssue({

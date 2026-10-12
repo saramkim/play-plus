@@ -2,16 +2,14 @@ import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { sendMessageToTab } from '@utils/message';
 import { MessageSchema } from '@utils/message/type';
 
-import { enqueueViewAction } from './pending-actions';
-
 type ViewVideoTab = Pick<chrome.tabs.Tab, 'active' | 'id' | 'status' | 'url'>;
 
 export type ViewVideoDependencies = {
   activateTab: (tabId: number) => Promise<void>;
-  createTab: (url: string) => Promise<void>;
-  enqueueViewAction: typeof enqueueViewAction;
+  createTab: (url: string) => Promise<number>;
   getVideoId: typeof getCoupangPlayVideoId;
-  playVideo: (tabId: number, startTime: number) => Promise<void>;
+  playVideo: (tabId: number, startTime: number, videoId: string) => Promise<void>;
+  waitForTab: (tabId: number, videoId: string) => Promise<void>;
   queryTabs: () => Promise<ViewVideoTab[]>;
 };
 
@@ -20,13 +18,19 @@ const defaultDependencies: ViewVideoDependencies = {
     await chrome.tabs.update(tabId, { active: true });
   },
   createTab: async (url) => {
-    await chrome.tabs.create({ url });
+    const tab = await chrome.tabs.create({ url });
+    if (tab.id === undefined) throw new Error('Original scene unavailable');
+    return tab.id;
   },
-  enqueueViewAction,
   getVideoId: getCoupangPlayVideoId,
-  playVideo: async (tabId, startTime) => {
+  playVideo: playOriginalScene,
+  waitForTab: waitForOriginalScene,
+  queryTabs: () => chrome.tabs.query({}),
+};
+
+export async function playOriginalScene(tabId: number, startTime: number, expectedVideoId: string) {
     const ping = await sendMessageToTab(tabId, 'pingContent');
-    if (!ping.success || !ping.data.learningAvailable) return;
+    if (!ping.success || ping.data.videoId !== expectedVideoId || ping.data.lifecycle !== 'content' || !['movie', 'episode'].includes(ping.data.routeKind)) throw new Error('Playback unavailable');
     const {
       contentEpoch,
       contentInstanceId,
@@ -35,7 +39,7 @@ const defaultDependencies: ViewVideoDependencies = {
       videoId,
       videoRevision,
     } = ping.data;
-    await sendMessageToTab(tabId, 'playVideo', {
+    const response = await sendMessageToTab(tabId, 'playVideo', {
       expectedIdentity: {
         contentEpoch,
         contentInstanceId,
@@ -45,30 +49,43 @@ const defaultDependencies: ViewVideoDependencies = {
       },
       expectedSubtitleRevision: subtitleIdentity.subtitleRevision,
       startTime,
+      purpose: 'original-scene',
     });
-  },
-  queryTabs: () => chrome.tabs.query({}),
-};
+    if (!response.success || response.data.status !== 'played') throw new Error('Playback unavailable');
+}
 
 export const createViewVideoHandler = (dependencies = defaultDependencies) =>
   async ({ url, startTime }: MessageSchema['viewVideo']['params']) => {
-    const tabs = await dependencies.queryTabs();
     const videoId = dependencies.getVideoId(url);
+    if (!videoId || !Number.isFinite(startTime) || startTime < 0) {
+      throw new Error('Original scene unavailable');
+    }
+    const tabs = await dependencies.queryTabs();
     const matchingTabs = tabs.filter((tab) =>
       videoId ? dependencies.getVideoId(tab.url) === videoId : tab.url === url
     );
     const matchingTab = matchingTabs.find((tab) => tab.active) ?? matchingTabs[0];
 
-    if (matchingTab?.id !== undefined) {
-      await dependencies.activateTab(matchingTab.id);
-      if (matchingTab.status === 'complete') {
-        await dependencies.playVideo(matchingTab.id, startTime);
-      } else {
-        await dependencies.enqueueViewAction({ url, startTime, videoId });
-      }
-      return;
-    }
-
-    await dependencies.createTab(url);
-    await dependencies.enqueueViewAction({ url, startTime, videoId });
+    const tabId = matchingTab?.id ?? await dependencies.createTab(url);
+    if (matchingTab?.id !== undefined) await dependencies.activateTab(tabId);
+    await dependencies.waitForTab(tabId, videoId);
+    await dependencies.playVideo(tabId, startTime, videoId);
   };
+
+export async function waitForOriginalScene(tabId: number, videoId: string) {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const tab = await chrome.tabs.get(tabId);
+      if (getCoupangPlayVideoId(tab.pendingUrl ?? tab.url) !== videoId) throw new Error('Original scene changed');
+      if (tab.status === 'complete') {
+        try {
+          const ping = await sendMessageToTab(tabId, 'pingContent');
+          if (ping.success && ping.data.videoId === videoId && ping.data.hasVideo && ping.data.lifecycle === 'content' &&
+            ['movie', 'episode'].includes(ping.data.routeKind)) return;
+        } catch {
+          // The content script may still be attaching. Only readiness is retried.
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error('Original scene is still loading');
+}

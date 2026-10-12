@@ -459,7 +459,7 @@ describe('SubtitleOverview', () => {
       expect.stringContaining('Support for beta'),
       expect.stringContaining('Unpaired support'),
     ]);
-    expect(getSaveButtons(container)).toHaveLength(0);
+    expect(getSaveButtons(container)).toHaveLength(3);
   });
 
   it('keeps a rendered tab stop, moves roving focus, and seeks from an actual row button', async () => {
@@ -593,7 +593,7 @@ describe('SubtitleOverview', () => {
     expect(testState.sendMessageToTab).toHaveBeenCalledWith(7, 'saveSubtitleOverviewCue', {
       expectedIdentity: snapshot.identity,
       expectedSubtitleRevision: 23,
-      learningSourceIndex: 4,
+      sourceIndex: 4,
     });
     expect(testState.toastSuccess).toHaveBeenCalledWith(
       'v2_subtitle_overview_saved_with_support'

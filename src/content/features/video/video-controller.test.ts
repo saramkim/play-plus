@@ -4,6 +4,7 @@ import type {
   V2SyncStorageChanges,
   V2SyncStorageKey,
 } from '@storage/v2/sync-storage';
+import { createV2SyncStorage } from '@storage/v2/sync-storage';
 import type { V2SyncStorage } from '@storage/v2/type';
 import { sendMessage } from '@utils/message';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,6 +13,7 @@ import { useToastStore } from '@/content/core/store/toast-store';
 import { videoManager } from '@/content/core/video/video-manager';
 import { useListeningMissionActiveStore } from '@/content/features/listening-session/mission-active-store';
 import { usePlaybackSpeedStore } from '@/content/features/playback-speed/playback-speed-store';
+import { initializeSubtitleSync } from '@/content/features/subtitle/subtitle';
 import { useSubtitleStore } from '@/content/features/subtitle/subtitle-store';
 import { usePlaybackContextStore } from '@/content/playback-context/playback-context-store';
 import {
@@ -19,11 +21,14 @@ import {
   replacePlaybackFence,
 } from '@/content/playback-context/playback-fence';
 
+import { playbackRepetition, useRepetitionStore } from './playback-repetition';
 import {
   useVideoControlStore,
   VideoController,
   VideoControllerDependencies,
 } from './video-controller';
+
+vi.mock('@utils/coupang-play', () => ({ getCoupangPlayVideoId: () => 'video-test' }));
 
 vi.mock('@utils/message', () => ({ sendMessage: vi.fn() }));
 
@@ -85,16 +90,14 @@ describe('canonical video controller lifecycle', () => {
 
     const shortcuts = {
       ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-      enabled: true,
-      previousCue: 'KeyP',
-      nextCue: 'KeyN',
-      repeatCurrentCue: 'KeyT',
+      previousCue: { key: 'KeyP', enabled: true },
+      nextCue: { key: 'KeyN', enabled: true },
+      repeatCurrentCue: { key: 'KeyT', enabled: true },
     };
     const playbackSpeed = {
-      enabled: true,
-      increase: 'KeyU',
-      decrease: 'KeyD',
-      reset: 'KeyR',
+      increase: { key: 'KeyU', enabled: true },
+      decrease: { key: 'KeyD', enabled: true },
+      reset: { key: 'KeyR', enabled: true },
     };
     storage.emit({ shortcuts: { newValue: shortcuts }, playbackSpeed: { newValue: playbackSpeed } });
 
@@ -102,9 +105,9 @@ describe('canonical video controller lifecycle', () => {
     dispatchKey('KeyN');
     dispatchKey('KeyT');
     expect(execute.mock.calls.map(([command]) => command)).toEqual([
-      'previous',
-      'next',
-      'repeat-current',
+      'previousCue',
+      'nextCue',
+      'repeatCurrentCue',
     ]);
     dispatchKey('KeyU');
     expect(usePlaybackSpeedStore.getState().currentSpeed).toBe(1.1);
@@ -119,14 +122,27 @@ describe('canonical video controller lifecycle', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+
+  it('preserves v1 physical key handling for a modifier key and repeated events', async () => {
+    const storage = new FakeSyncStorage({ shortcuts: {
+      ...DEFAULT_V2_SYNC_STORAGE.shortcuts, previousCue: { key: 'ShiftLeft', enabled: true },
+    } });
+    const controller = new VideoController(createDependencies(storage));
+    const execute = vi.spyOn(controller, 'execute').mockResolvedValue();
+    await controller.start();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true, repeat: true }));
+    expect(execute).toHaveBeenCalledTimes(2);
+    controller.stop();
+  });
+
   it('does not bind learning commands while the shortcuts master is off', async () => {
     const storage = new FakeSyncStorage({
       shortcuts: {
         ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-        enabled: false,
-        previousCue: 'KeyP',
-        nextCue: 'KeyN',
-        repeatCurrentCue: 'KeyT',
+        previousCue: { key: 'KeyP', enabled: false },
+        nextCue: { key: 'KeyN', enabled: false },
+        repeatCurrentCue: { key: 'KeyT', enabled: false },
       },
     });
     const controller = new VideoController(createDependencies(storage));
@@ -145,13 +161,11 @@ describe('canonical video controller lifecycle', () => {
     const storage = new FakeSyncStorage({
       shortcuts: {
         ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-        enabled: true,
-        previousCue: 'KeyP',
+        previousCue: { key: 'KeyP', enabled: true },
       },
       playbackSpeed: {
         ...DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
-        enabled: true,
-        increase: 'KeyU',
+        increase: { key: 'KeyU', enabled: true },
       },
     });
     const controller = new VideoController(createDependencies(storage));
@@ -167,7 +181,7 @@ describe('canonical video controller lifecycle', () => {
     useListeningMissionActiveStore.getState().setActive(false);
     dispatchKey('KeyP');
     dispatchKey('KeyU');
-    expect(execute).toHaveBeenCalledWith('previous');
+    expect(execute).toHaveBeenCalledWith('previousCue');
     expect(usePlaybackSpeedStore.getState().currentSpeed).toBe(1.1);
     controller.stop();
   });
@@ -246,7 +260,6 @@ describe('canonical learning commands', () => {
     const storage = new FakeSyncStorage({
       shortcuts: {
         ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-        enabled: false,
       },
     });
     const controller = new VideoController(createDependencies(storage));
@@ -339,14 +352,14 @@ describe('canonical learning commands', () => {
       }),
     });
     expect(lastToastMessage()).toBe(
-      'v2_learning_card_saved_without_support'
+      'v2_learning_card_saved'
     );
     observedVideo.setObservedTime(3);
     await controller.execute('save');
     expect(sendMessage).toHaveBeenCalledOnce();
     expect(observedVideo.seek).not.toHaveBeenCalled();
     expect(lastToastMessage()).toBe(
-      'v2_no_current_learning_cue_to_save'
+      'v2_no_current_learning_cue'
     );
     controller.stop();
   });
@@ -369,7 +382,7 @@ describe('canonical learning commands', () => {
     expect(useToastStore.getState().toasts).toHaveLength(0);
     persistence.resolve({ success: true, data: {} });
     await firstSave;
-    expect(lastToastMessage()).toBe('v2_learning_card_saved_without_support');
+    expect(lastToastMessage()).toBe('v2_learning_card_saved');
     controller.stop();
   });
 
@@ -398,6 +411,135 @@ describe('canonical learning commands', () => {
       'v2_learning_card_save_error'
     );
     controller.stop();
+  });
+
+  it('uses secondary time navigation without subtitles while preserving independent cue fallback', async () => {
+    const storage = new FakeSyncStorage();
+    const controller = new VideoController(createDependencies(storage));
+    await controller.start();
+    const observed = createObservedVideo(30);
+    vi.spyOn(videoManager, 'get').mockReturnValue(observed.video);
+    const status = usePlaybackContextStore.getState().status!;
+    usePlaybackContextStore.setState({ status: { ...status, learningAvailable: false, subtitleIdentity: { learning: null, support: null, subtitleRevision: useSubtitleStore.getState().subtitleRevision } } });
+    await controller.execute('nextCue');
+    expect(observed.seek).not.toHaveBeenCalled();
+    await controller.execute('secondaryNext');
+    expect(observed.seek).toHaveBeenLastCalledWith(40);
+    const shortcuts = structuredClone(storage.values.shortcuts);
+    shortcuts.navigation.primary.fallbackEnabled = true;
+    shortcuts.navigation.primary.fallbackAmount = 3;
+    storage.emit({ shortcuts: { newValue: shortcuts } });
+    await controller.execute('previousCue');
+    expect(observed.seek).toHaveBeenLastCalledWith(37);
+    controller.stop();
+  });
+
+  it('saves a support-only current cue using its own delay without any learning cue', async () => {
+    const controller = new VideoController(createDependencies(new FakeSyncStorage()));
+    vi.spyOn(videoManager, 'get').mockReturnValue(createObservedVideo(11.5).video);
+    useSubtitleStore.getState().setRegisteredSelection('support', {
+      subtitleId: 'subtitle-00000000-0000-4000-8000-000000000002', cues: [{ start: 10, end: 12, text: 'Support' }], delay: 1,
+    });
+    const status = usePlaybackContextStore.getState().status!;
+    usePlaybackContextStore.setState({ status: { ...status, learningAvailable: false, subtitleIdentity: { ...status.subtitleIdentity, learning: null } } });
+    vi.mocked(sendMessage).mockResolvedValue({ success: true, data: {} } as never);
+    await controller.execute('saveSupport');
+    expect(sendMessage).toHaveBeenCalledWith('addLearningCard', { card: expect.objectContaining({
+      content: { support: { text: 'Support', language: 'ko' } }, source: expect.objectContaining({ startTime: 11, endTime: 13 }),
+    }) });
+    controller.stop();
+  });
+
+
+  it('preserves loops for display changes but invalidates source revisions through the real store and media gate', async () => {
+    const controller = new VideoController(createDependencies(new FakeSyncStorage()));
+    await controller.start();
+    await controller.execute('toggleAB');
+    expect(useRepetitionStore.getState().mode).toBe('ab');
+    const before = useSubtitleStore.getState();
+    await controller.toggleSupportSubtitleVisibility();
+    expect(useSubtitleStore.getState().subtitleRevision).toBe(before.subtitleRevision);
+    expect(useRepetitionStore.getState().mode).toBe('ab');
+    useSubtitleStore.setState({ subtitleRevision: before.subtitleRevision + 1 });
+    expect(useRepetitionStore.getState().mode).toBeNull();
+    await controller.execute('toggleAB');
+    const state = useSubtitleStore.getState();
+    state.setSettings({ learningProfile: { ...state.learningProfile, learningLanguage: 'ko' }, subtitleDisplay: state.subtitleDisplay });
+    expect(useRepetitionStore.getState().mode).toBeNull();
+    controller.stop();
+  });
+
+
+  it('serializes role toggles and preserves profile and appearance changes during a pending write', async () => {
+    const storage = new FakeSyncStorage();
+    const controller = new VideoController(createDependencies(storage));
+    const pending = deferred<void>();
+    const originalSet = storage.set.bind(storage);
+    vi.spyOn(storage, 'set').mockImplementationOnce(async (key, value) => { await pending.promise; await originalSet(key, value); });
+    const learning = controller.toggleSubtitleVisibility('learning');
+    const support = controller.toggleSubtitleVisibility('support');
+    await Promise.resolve();
+    const state = useSubtitleStore.getState();
+    const display = structuredClone(state.subtitleDisplay); display.support.appearance.fontSize = 7;
+    state.setSettings({ learningProfile: { learningLanguage: 'fr', supportLanguage: 'ko' }, subtitleDisplay: display });
+    pending.resolve();
+    expect(await learning).toBe(true); expect(await support).toBe(true);
+    expect(useSubtitleStore.getState().learningProfile.learningLanguage).toBe('fr');
+    expect(storage.values.subtitleDisplay.learning.visibility).toBe('hidden');
+    expect(storage.values.subtitleDisplay.support.visibility).toBe('hidden');
+    expect(storage.values.subtitleDisplay.support.appearance.fontSize).toBe(7);
+    await Promise.all([controller.toggleSubtitleVisibility('support'), controller.toggleSubtitleVisibility('support')]);
+    expect(storage.values.subtitleDisplay.support.visibility).toBe('hidden');
+    controller.stop();
+  });
+
+  it.each(['before', 'after'] as const)('preserves external fields through real subtitle subscriptions when own echo arrives %s completion', async (echoOrder) => {
+    const values = structuredClone(DEFAULT_V2_SYNC_STORAGE) as Record<string, unknown>;
+    const listeners = new Set<(changes: Record<string, chrome.storage.StorageChange>) => void>();
+    vi.mocked(chrome.storage.sync.get).mockImplementation(async (keys) => {
+      const requested = Array.isArray(keys) ? keys : [String(keys)];
+      return Object.fromEntries(requested.map((key) => [key, structuredClone(values[key])])) as never;
+    });
+    vi.mocked(chrome.storage.sync.onChanged.addListener).mockImplementation((listener) => { listeners.add(listener); });
+    vi.mocked(chrome.storage.sync.onChanged.removeListener).mockImplementation((listener) => { listeners.delete(listener); });
+    const started = deferred<void>();
+    const pending = deferred<void>();
+    let first = true;
+    const publish = (items: Record<string, unknown>) => {
+      const changes = Object.fromEntries(Object.entries(items).map(([key, value]) => [key, {
+        oldValue: structuredClone(values[key]), newValue: structuredClone(value),
+      }]));
+      Object.assign(values, structuredClone(items));
+      return () => { for (const listener of listeners) listener(changes); };
+    };
+    vi.mocked(chrome.storage.sync.set).mockImplementation(async (items) => {
+      if (first) { first = false; started.resolve(); await pending.promise; }
+      const emit = publish(items);
+      if (echoOrder === 'before') emit();
+      else setTimeout(emit, 0);
+    });
+    const cleanup = await initializeSubtitleSync();
+    const controller = new VideoController(createDependencies(createV2SyncStorage(chrome.storage.sync)));
+    try {
+      const learning = controller.toggleSubtitleVisibility('learning');
+      const support = controller.toggleSubtitleVisibility('support');
+      await started.promise;
+      const display = structuredClone(DEFAULT_V2_SYNC_STORAGE.subtitleDisplay);
+      display.support.appearance.fontSize = 7;
+      display.support.visibility = 'hidden';
+      publish({ subtitleDisplay: display, learningProfile: { learningLanguage: 'fr', supportLanguage: 'ko' } })();
+      pending.resolve();
+      expect(await learning).toBe(true);
+      expect(await support).toBe(true);
+      const expected = { ...display, learning: { ...display.learning, visibility: 'hidden' }, support: { ...display.support, visibility: 'visible' } };
+      expect(values.subtitleDisplay).toEqual(expected);
+      expect(useSubtitleStore.getState().subtitleDisplay).toEqual(expected);
+      expect(useSubtitleStore.getState().learningProfile.learningLanguage).toBe('fr');
+      await Promise.all([controller.toggleSubtitleVisibility('support'), controller.toggleSubtitleVisibility('support')]);
+      expect(values.subtitleDisplay).toEqual(expected);
+      expect(useSubtitleStore.getState().subtitleDisplay).toEqual(expected);
+    } finally { controller.stop(); cleanup(); }
+    expect(listeners.size).toBe(0);
   });
 
   it('persists support visibility and disables the operation without a support language', async () => {
@@ -444,7 +586,17 @@ const lastToastMessage = () => {
   return toasts[toasts.length - 1]?.message;
 };
 
+useSubtitleStore.subscribe((state) => {
+  const status = usePlaybackContextStore.getState().status;
+  if (status) usePlaybackContextStore.setState({ status: { ...status, subtitleIdentity: {
+    learning: 'native:en', support: state.learningProfile.supportLanguage ? 'native:ko' : null, subtitleRevision: state.subtitleRevision,
+  } } });
+});
+
 const resetStores = () => {
+  playbackRepetition.stop();
+  vi.spyOn(videoManager, 'isCurrent').mockReturnValue(true);
+  vi.spyOn(videoManager, 'get').mockReturnValue(createObservedVideo(1.5).video);
   discardPlaybackFence();
   useListeningMissionActiveStore.getState().setActive(false);
   usePlaybackContextStore.setState({ status: SUPPORTED_PLAYBACK_CONTEXT });
@@ -479,6 +631,9 @@ const dispatchKey = (code: string) => {
 
 const createObservedVideo = (initialTime: number) => {
   const video = document.createElement('video');
+  Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
+  video.play = vi.fn(async () => undefined);
+  video.pause = vi.fn();
   let currentTime = initialTime;
   const seek = vi.fn((time: number) => {
     currentTime = time;
@@ -525,7 +680,9 @@ class FakeSyncStorage implements V2SyncStorageApi {
   }
 
   async set<K extends V2SyncStorageKey>(key: K, value: V2SyncStorage[K]) {
+    const oldValue = structuredClone(this.values[key]);
     Object.assign(this.values, { [key]: structuredClone(value) });
+    this.emit({ [key]: { oldValue, newValue: value } });
   }
 
   async setMany(values: Partial<V2SyncStorage>) {

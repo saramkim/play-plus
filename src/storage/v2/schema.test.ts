@@ -133,57 +133,19 @@ describe('v2 storage schemas', () => {
     ).toBe(false);
   });
 
-  it('rejects reserved and duplicate canonical shortcuts', () => {
-    const valid = {
-      learningProfile: { learningLanguage: 'en', supportLanguage: 'ko' },
-      subtitleDisplay: {
-        learning: {
-          visibility: 'visible',
-          appearance: {
-            positionReference: 'bottom',
-            positionOffset: 0,
-            color: '#ffffff',
-            fontSize: 6,
-            fontWeight: 4,
-            backgroundOpacity: 0,
-            lineBreak: true,
-          },
-        },
-        support: {
-          visibility: 'hidden',
-          appearance: {
-            positionReference: 'bottom',
-            positionOffset: 0,
-            color: '#ffffff',
-            fontSize: 4,
-            fontWeight: 2,
-            backgroundOpacity: 0,
-            lineBreak: false,
-          },
-        },
-      },
-      shortcuts: {
-        enabled: true,
-        saveCard: 'KeyS',
-        previousCue: 'ArrowLeft',
-        nextCue: 'ArrowRight',
-        repeatCurrentCue: 'KeyR',
-      },
-      playbackSpeed: { enabled: true, increase: 'BracketRight', decrease: 'BracketLeft', reset: 'KeyP' },
-    } as const;
-
-    expect(
-      v2SyncStorageSchema.safeParse({
-        ...valid,
-        shortcuts: { ...valid.shortcuts, saveCard: 'Space' },
-      }).success
-    ).toBe(false);
-    expect(
-      v2SyncStorageSchema.safeParse({
-        ...valid,
-        playbackSpeed: { ...valid.playbackSpeed, increase: valid.shortcuts.previousCue },
-      }).success
-    ).toBe(false);
+  it('rejects reserved and active duplicate keys while retaining disabled duplicates', () => {
+    const valid = structuredClone(DEFAULT_V2_SYNC_STORAGE);
+    valid.shortcuts.previousCue.enabled = true;
+    expect(v2SyncStorageSchema.safeParse(valid).success).toBe(true);
+    valid.shortcuts.saveCard = { key: 'ArrowLeft', enabled: false };
+    expect(v2SyncStorageSchema.safeParse(valid).success).toBe(true);
+    valid.shortcuts.saveCard.enabled = true;
+    expect(v2SyncStorageSchema.safeParse(valid).success).toBe(false);
+    valid.shortcuts.saveCard.enabled = false;
+    valid.playbackSpeed.increase = { key: 'ArrowLeft', enabled: true };
+    expect(v2SyncStorageSchema.safeParse(valid).success).toBe(false);
+    valid.playbackSpeed.increase = { key: 'Space', enabled: false };
+    expect(v2SyncStorageSchema.safeParse(valid).success).toBe(false);
   });
 
   it('uses the exported reserved-shortcut contract for canonical validation', () => {

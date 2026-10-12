@@ -1087,4 +1087,115 @@
     "v2_listening_saved_line": { "message": "라이브러리에 저장했어요." },
     "v2_listening_save_error": { "message": "문장을 저장하지 못했어요. 다시 시도하거나 시청으로 돌아갈 수 있어요." },
     "v2_listening_visible_replay": { "message": "자막 보며 듣기" }
+,
+  "v2_unit_seconds": {
+    "message": "초"
+  },
+  "v2_unit_minutes": {
+    "message": "분"
+  },
+  "v2_library_add_learning": {
+    "message": "학습 문장 추가"
+  },
+  "v2_save_learning_only": {
+    "message": "학습만 저장"
+  },
+  "v2_save_support_only": {
+    "message": "보조만 저장"
+  },
+  "v2_copy_learning": {
+    "message": "학습 복사"
+  },
+  "v2_copy_support": {
+    "message": "보조 복사"
+  },
+  "v2_toggle_learning": {
+    "message": "학습 표시 전환"
+  },
+  "v2_toggle_support": {
+    "message": "보조 표시 전환"
+  },
+  "v2_primary_previous": {
+    "message": "주 이동 뒤로"
+  },
+  "v2_primary_next": {
+    "message": "주 이동 앞으로"
+  },
+  "v2_secondary_previous": {
+    "message": "보조 이동 뒤로"
+  },
+  "v2_secondary_next": {
+    "message": "보조 이동 앞으로"
+  },
+  "v2_play_once": {
+    "message": "현재 문장 한 번 재생"
+  },
+  "v2_toggle_ab": {
+    "message": "A/B 반복 전환"
+  },
+  "v2_set_a": {
+    "message": "현재 위치를 A로"
+  },
+  "v2_set_b": {
+    "message": "현재 위치를 B로"
+  },
+  "v2_invalid_playback_range": {
+    "message": "현재 영상에서 재생할 수 없는 구간입니다."
+  },
+  "v2_enable_command": {
+    "message": "$COMMAND$ 단축키 활성",
+    "placeholders": {
+      "command": {
+        "content": "$1"
+      }
+    }
+  },
+  "v2_primary_navigation": {
+    "message": "주 이동"
+  },
+  "v2_secondary_navigation": {
+    "message": "보조 이동"
+  },
+  "v2_navigation_amount": {
+    "message": "이동량"
+  },
+  "v2_navigation_unit": {
+    "message": "이동 단위"
+  },
+  "v2_navigation_fallback": {
+    "message": "자막 없을 때 시간 이동"
+  },
+  "v2_fallback_amount": {
+    "message": "대체 이동량"
+  },
+  "v2_fallback_unit": {
+    "message": "대체 시간 단위"
+  },
+  "v2_unit_cues": {
+    "message": "문장"
+  },
+  "v2_loop_status": {
+    "message": "반복 구간"
+  },
+  "v2_loop_inactive": {
+    "message": "반복 꺼짐"
+  },
+  "v2_loop_active": {
+    "message": "반복 중"
+  },
+  "v2_once_active": {
+    "message": "한 번 재생 중"
+  },
+  "v2_library_copy": {
+    "message": "전체 문장 복사"
+  },
+  "v2_library_copied": {
+    "message": "문장을 복사했어요."
+  },
+  "v2_library_copy_error": {
+    "message": "복사하지 못했어요. 다시 시도해 주세요."
+  },
+  "v2_playback_failed": {
+    "message": "재생하지 못했습니다. 다시 시도해 주세요."
+  }
 }

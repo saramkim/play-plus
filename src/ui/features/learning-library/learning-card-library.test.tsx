@@ -73,6 +73,46 @@ describe('v2 learning card Library component', () => {
 
   afterAll(() => vi.unstubAllGlobals());
 
+  it('copies an entire unassigned sentence and opens its exact source without classification', async () => {
+    const card = unassignedCard('reuse');
+    const duplicate = { ...structuredClone(card), id: 'card-duplicate' };
+    const harness = createStorageHarness([card, duplicate]);
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const onOpenOriginalVideo = vi.fn(async () => {});
+    await act(async () => root.render(
+      <LearningCardLibrary storage={harness.storage} onOpenOriginalVideo={onOpenOriginalVideo} />
+    ));
+    await act(async () => getButton(container, 'v2_library_copy').click());
+    expect(writeText).toHaveBeenCalledWith('Unassigned reuse');
+    expect(container.textContent).toContain('v2_library_copied');
+    await act(async () => getButton(container, 'v2_review_open_video').click());
+    expect(onOpenOriginalVideo).toHaveBeenCalledWith(card.source);
+    expect(harness.state()).toEqual([card, duplicate]);
+    expect(harness.storage.update).not.toHaveBeenCalled();
+  });
+
+  it('reports copy and scene failures, releases the pending lock and permits retry', async () => {
+    const harness = createStorageHarness([unassignedCard('retry')]);
+    const writeText = vi.fn().mockRejectedValue(new Error('Clipboard unavailable'));
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const deferred = createRejectedDeferred<void>();
+    const onOpenOriginalVideo = vi.fn(() => deferred.promise);
+    await act(async () => root.render(
+      <LearningCardLibrary storage={harness.storage} onOpenOriginalVideo={onOpenOriginalVideo} />
+    ));
+    await act(async () => getButton(container, 'v2_library_copy').click());
+    expect(container.querySelector('[role=alert]')?.textContent).toBe('v2_library_copy_error');
+    expect(container.textContent).not.toContain('v2_library_copied');
+    act(() => getButton(container, 'v2_review_open_video').click());
+    expect(getButton(container, 'v2_library_copy').disabled).toBe(true);
+    expect(usePageStore.getState().navigationLocked).toBe(true);
+    await act(async () => deferred.reject(new Error('Playback unavailable')));
+    expect(container.querySelector('[role=alert]')?.textContent).toBe('v2_review_open_video_error');
+    expect(usePageStore.getState().navigationLocked).toBe(false);
+    expect(getButton(container, 'v2_review_open_video').disabled).toBe(false);
+  });
+
   it('announces loading while the strict storage read is pending', async () => {
     const harness = createStorageHarness([]);
     const deferred = createDeferred<LearningCard[]>();

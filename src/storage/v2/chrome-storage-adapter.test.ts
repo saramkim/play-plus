@@ -41,8 +41,12 @@ describe('v2 Chrome Storage migration adapter', () => {
     expect(storage.sync.values).not.toHaveProperty('subVideoSkip');
     expect(storage.sync.values).not.toHaveProperty('loop');
     expect(storage.sync.values).not.toHaveProperty('learningControls');
-    expect(storage.sync.values.shortcuts).toMatchObject({ saveCard: 'KeyS' });
-    expect(storage.sync.values.playbackSpeed).toEqual(fixture.sync.playbackSpeed);
+    expect(storage.sync.values.shortcuts).toMatchObject({ saveLearning: { key: 'KeyS', enabled: true } });
+    expect(storage.sync.values.playbackSpeed).toEqual({
+      increase: { key: fixture.sync.playbackSpeed.increase, enabled: true },
+      decrease: { key: fixture.sync.playbackSpeed.decrease, enabled: true },
+      reset: { key: fixture.sync.playbackSpeed.reset, enabled: true },
+    });
     expect(storage.local.removeCalls).toEqual([[SNAPSHOT_KEY, 'savedSubtitles']]);
     expect(storage.sync.removeCalls).toEqual([
       ['primarySubtitle', 'secondarySubtitle', 'videoSkip', 'subVideoSkip', 'loop'],

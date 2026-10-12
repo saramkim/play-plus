@@ -4,6 +4,7 @@ import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { sendMessageToTab } from '@utils/message';
 
 import { takeViewAction } from './pending-actions';
+import { playOriginalScene } from './view-video';
 
 type MessageResult = { success: boolean; message?: string };
 
@@ -32,6 +33,7 @@ export const createTabLifecycleDependencies = {
           params
         ),
   takeViewAction,
+  playOriginalScene,
 };
 
 type TabLifecycleDependencies = typeof createTabLifecycleDependencies;
@@ -81,7 +83,7 @@ export const handleTabCompleted = async (
   }
 
   const action = await dependencies.takeViewAction(videoId, tab.url);
-  if (action && (await isCurrentRoute())) {
-    await dependencies.sendMessageToTab(tabId, 'playVideo', { startTime: action.startTime });
+  if (action?.videoId && (await isCurrentRoute())) {
+    await dependencies.playOriginalScene(tabId, action.startTime, action.videoId);
   }
 };

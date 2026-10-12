@@ -38,6 +38,7 @@ describe('LearningSettingsPage', () => {
   beforeEach(() => {
     vi.mocked(chrome.i18n.getMessage).mockImplementation((key, substitutions) => {
       const values = Array.isArray(substitutions) ? substitutions : [substitutions];
+      if (key === 'v2_enable_command') return `${key}:${values[0]}`;
       if (key === 'v2_shortcut_conflict_error') return `${key}:${values[0] ?? ''}`;
       if (key === 'v2_shortcut_capture_label') return `Shortcut for ${values[0]}: ${values[1]}`;
       if (key === 'v2_shortcut_unassigned') return 'Unassigned';
@@ -78,12 +79,12 @@ describe('LearningSettingsPage', () => {
       'shortcuts',
       'playback_speed',
     ]);
-    expect(shortcutForm.querySelectorAll("[data-slot='switch']")).toHaveLength(2);
-    expect(shortcutForm.querySelectorAll("input[type='checkbox']")).toHaveLength(2);
+    expect(shortcutForm.querySelectorAll("[data-slot='switch']")).toHaveLength(21);
+    expect(shortcutForm.querySelectorAll("input[type='checkbox']")).toHaveLength(21);
     const shortcutCaptures = Array.from(
       shortcutForm.querySelectorAll<HTMLButtonElement>("button[data-slot='shortcut-capture']")
     );
-    expect(shortcutCaptures).toHaveLength(7);
+    expect(shortcutCaptures).toHaveLength(19);
     expect(shortcutCaptures.every(({ classList }) => classList.contains('w-28') && classList.contains('shrink-0'))).toBe(
       true
     );
@@ -91,12 +92,12 @@ describe('LearningSettingsPage', () => {
     expect(shortcutForm.textContent).toContain('v2_shortcut_capture_hint');
 
     const cueInputs = [
-      getShortcutControl(container, 'v2_previous_learning_cue shortcuts'),
-      getShortcutControl(container, 'v2_next_learning_cue shortcuts'),
+      getShortcutControl(container, 'v2_primary_previous shortcuts'),
+      getShortcutControl(container, 'v2_primary_next shortcuts'),
       getShortcutControl(container, 'v2_repeat_current_learning_cue shortcuts'),
     ];
-    expect(cueInputs.every(({ disabled }) => disabled)).toBe(true);
-    act(() => getButton(container, 'shortcuts').click());
+    expect(cueInputs.every(({ disabled }) => !disabled)).toBe(true);
+    act(() => getButton(container, 'v2_enable_command:v2_save_learning_card').click());
     expect(cueInputs.every(({ disabled }) => !disabled)).toBe(true);
 
     act(() => getButtonByText(profileHeader ?? container, 'edit').click());
@@ -112,11 +113,11 @@ describe('LearningSettingsPage', () => {
 
     const shortcutForm = Array.from(container.querySelectorAll('form'))[2];
     const save = getSubmitButton(shortcutForm);
-    const previous = getShortcutControl(container, 'v2_previous_learning_cue shortcuts');
+    const previous = getShortcutControl(container, 'v2_primary_previous shortcuts');
     expect(previous.value).toBe('←');
     expect(save.disabled).toBe(true);
 
-    act(() => getButton(container, 'shortcuts').click());
+    act(() => getButton(container, 'v2_enable_command:v2_save_learning_card').click());
     act(() => dispatchShortcut(previous, 'KeyA', 'a'));
     expect(previous.value).toBe('A');
     act(() => dispatchShortcut(previous, 'Digit1', '!', true));
@@ -132,8 +133,8 @@ describe('LearningSettingsPage', () => {
       playbackSpeed: DEFAULT_V2_SYNC_STORAGE.playbackSpeed,
       shortcuts: {
         ...DEFAULT_V2_SYNC_STORAGE.shortcuts,
-        enabled: true,
-        previousCue: 'Digit1',
+        saveCard: { key: '', enabled: true },
+        previousCue: { key: 'Digit1', enabled: false },
       },
     });
     await vi.waitFor(() => expect(save.disabled).toBe(true));
@@ -141,14 +142,14 @@ describe('LearningSettingsPage', () => {
 
   it('exposes the friendly value in the accessible name and contains long visual labels', async () => {
     const store = createLearningSettingsStore(createStorage());
-    store.setState({ shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, enabled: true } });
+    store.setState({ shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts } });
     await renderPage(root, store);
 
     const saveCard = getShortcutControl(container, 'v2_save_learning_card shortcuts');
-    const previous = getShortcutControl(container, 'v2_previous_learning_cue shortcuts');
+    const previous = getShortcutControl(container, 'v2_primary_previous shortcuts');
     expect(saveCard.getAttribute('aria-label')).toBe('Shortcut for v2_save_learning_card: Unassigned');
     expect(saveCard.title).toBe('Unassigned');
-    expect(previous.getAttribute('aria-label')).toBe('Shortcut for v2_previous_learning_cue: ←');
+    expect(previous.getAttribute('aria-label')).toBe('Shortcut for v2_primary_previous: ←');
 
     act(() => dispatchShortcut(saveCard, 'LaunchAssistantPanel'));
     expect(saveCard.value).toBe('Launch Assistant Panel');
@@ -171,15 +172,16 @@ describe('LearningSettingsPage', () => {
     const shortcutForm = Array.from(container.querySelectorAll('form'))[2];
     const save = getSubmitButton(shortcutForm);
     const saveCard = getShortcutControl(container, 'v2_save_learning_card shortcuts');
-    const previous = getShortcutControl(container, 'v2_previous_learning_cue shortcuts');
-    act(() => getButton(container, 'shortcuts').click());
+    const previous = getShortcutControl(container, 'v2_primary_previous shortcuts');
+    act(() => getButton(container, 'v2_enable_command:v2_save_learning_card').click());
     expect(save.disabled).toBe(false);
 
+    act(() => getButton(container, 'v2_enable_command:v2_primary_previous').click());
     act(() => dispatchShortcut(saveCard, 'ArrowLeft'));
     expect(saveCard.getAttribute('aria-invalid')).toBe('true');
     expect(previous.getAttribute('aria-invalid')).toBe('true');
     expect(shortcutForm.querySelectorAll('[role=alert]')).toHaveLength(2);
-    expect(shortcutForm.textContent).toContain('v2_shortcut_conflict_error:v2_previous_learning_cue');
+    expect(shortcutForm.textContent).toContain('v2_shortcut_conflict_error:v2_primary_previous');
     expect(shortcutForm.textContent).toContain('v2_shortcut_conflict_error:v2_save_learning_card');
     expect(save.disabled).toBe(true);
 
@@ -198,12 +200,12 @@ describe('LearningSettingsPage', () => {
 
   it('lets Tab leave a formatted shortcut input without changing its raw draft', async () => {
     const store = createLearningSettingsStore(createStorage());
-    store.setState({ shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, enabled: true } });
+    store.setState({ shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts } });
     await renderPage(root, store);
 
     const shortcut = getShortcutControl(container, 'v2_save_learning_card shortcuts');
-    const previousControl = getButton(container, 'shortcuts');
-    const nextControl = getShortcutControl(container, 'v2_previous_learning_cue shortcuts');
+    const previousControl = getButton(container, 'v2_enable_command:v2_save_learning_card');
+    const nextControl = getShortcutControl(container, 'v2_primary_previous shortcuts');
     const originalValue = shortcut.value;
 
     const tab = dispatchTabWithBrowserFocus(shortcut, nextControl);
@@ -232,7 +234,7 @@ describe('LearningSettingsPage', () => {
 
     const shortcutForm = Array.from(container.querySelectorAll('form'))[2];
     const save = getSubmitButton(shortcutForm);
-    const shortcutMaster = getButton(container, 'shortcuts');
+    const shortcutMaster = getButton(container, 'v2_enable_command:v2_save_learning_card');
     const saveCard = getShortcutControl(container, 'v2_save_learning_card shortcuts');
     act(() => shortcutMaster.click());
     await vi.waitFor(() => expect(save.disabled).toBe(false));
@@ -245,7 +247,7 @@ describe('LearningSettingsPage', () => {
 
     act(() => {
       store.setState({
-        shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, enabled: true, saveCard: 'KeyA' },
+        shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, saveCard: { key: 'KeyA', enabled: true } },
       });
     });
     await vi.waitFor(() => expect(saveCard.value).toBe('A'));
@@ -263,7 +265,7 @@ describe('LearningSettingsPage', () => {
 
     const shortcutForm = Array.from(container.querySelectorAll('form'))[2];
     const save = getSubmitButton(shortcutForm);
-    const shortcutMaster = getButton(container, 'shortcuts');
+    const shortcutMaster = getButton(container, 'v2_enable_command:v2_save_learning_card');
     const saveCard = getShortcutControl(container, 'v2_save_learning_card shortcuts');
     act(() => shortcutMaster.click());
     await vi.waitFor(() => expect(save.disabled).toBe(false));
@@ -274,7 +276,7 @@ describe('LearningSettingsPage', () => {
 
     act(() => {
       store.setState({
-        shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, enabled: true, saveCard: 'KeyA' },
+        shortcuts: { ...DEFAULT_V2_SYNC_STORAGE.shortcuts, saveCard: { key: 'KeyA', enabled: true } },
       });
     });
     await vi.waitFor(() => expect(saveCard.value).toBe('A'));
@@ -301,8 +303,8 @@ describe('LearningSettingsPage', () => {
 
     const shortcutForm = Array.from(container.querySelectorAll('form'))[2];
     const save = getSubmitButton(shortcutForm);
-    const shortcutMaster = getButton(container, 'shortcuts');
-    const speedMaster = getButton(container, 'playback_speed');
+    const shortcutMaster = getButton(container, 'v2_enable_command:v2_save_learning_card');
+    const speedMaster = getButton(container, 'v2_enable_command:increase_speed');
     act(() => shortcutMaster.click());
 
     await act(async () => {

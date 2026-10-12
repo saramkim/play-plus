@@ -100,7 +100,7 @@ describe('v2 learning card storage', () => {
     await expect(
       api.update(original.id, {
         ...original,
-        content: { support: { text: 'Support only', language: 'ko' } },
+        content: { support: { text: '', language: 'ko' } },
       } as unknown as LearningCard)
     ).rejects.toThrow();
     await expect(

@@ -16,12 +16,10 @@ describe('v2 first-entry storage', () => {
     expectTypeOf(chrome.storage.local).toMatchTypeOf<V2FirstEntryStorageArea>();
   });
 
-  it('writes explicit choices without per-action state, verifies them, and clears only confirmations', async () => {
+  it('writes explicit choices with per-action activation, verifies them, and clears only confirmations', async () => {
     const confirmations = createAllConfirmations();
     const syncData = createSyncData();
-    syncData.shortcuts.enabled = true;
-    syncData.playbackSpeed.enabled = true;
-    syncData.playbackSpeed.decrease = 'KeyD';
+    syncData.playbackSpeed.decrease = { key: 'KeyD', enabled: true };
     const migrationState = createMigrationState(confirmations);
     const unavailable = migrationState.unavailableRegisteredSubtitles;
     const sync = new FakeStorageArea(syncData);
@@ -46,17 +44,11 @@ describe('v2 first-entry storage', () => {
       {
         learningProfile,
         shortcuts: {
-          enabled: true,
-          saveCard: 'KeyS',
-          previousCue: 'KeyP',
-          nextCue: '',
-          repeatCurrentCue: 'KeyR',
+          ...syncData.shortcuts, saveCard: { key: 'KeyS', enabled: true }, previousCue: { key: 'KeyP', enabled: true },
+          nextCue: { key: 'ArrowRight', enabled: false }, repeatCurrentCue: { key: 'KeyR', enabled: true },
         },
         playbackSpeed: {
-          enabled: true,
-          increase: 'Equal',
-          decrease: '',
-          reset: 'Digit0',
+          increase: { key: 'Equal', enabled: true }, decrease: { key: 'KeyD', enabled: false }, reset: { key: 'Digit0', enabled: true },
         },
       },
     ]);
@@ -77,7 +69,7 @@ describe('v2 first-entry storage', () => {
   it.each([
     ['missing', {}],
     ['extra', { saveCard: 'KeyS', previousCue: null }],
-    ['invalid', { saveCard: 'KeyX' }],
+    ['invalid', { saveCard: { key: 'KeyX', enabled: true } }],
   ])('rejects %s shortcut choices before writing', async (_label, shortcutChoices) => {
     const sync = new FakeStorageArea(createSyncData());
     const local = new FakeStorageArea({
@@ -97,7 +89,9 @@ describe('v2 first-entry storage', () => {
   });
 
   it('rejects duplicate non-empty shortcuts across shortcuts and playback speed', async () => {
-    const sync = new FakeStorageArea(createSyncData());
+    const data = createSyncData();
+    data.shortcuts.previousCue.enabled = true;
+    const sync = new FakeStorageArea(data);
     const local = new FakeStorageArea({
       migrationState: createMigrationState([
         createConfirmation('speedIncrease', 'playbackSpeed.increase', 'ArrowLeft'),
@@ -127,13 +121,12 @@ describe('v2 first-entry storage', () => {
 
     await storage.confirm({
       learningProfile: plan.sync.learningProfile,
-      shortcutChoices: { saveCard: 'KeyS', previousCue: null },
+      shortcutChoices: { saveLearning: 'KeyS', previousCue: null },
     });
 
     expect(sync.values.shortcuts).toMatchObject({
-      enabled: true,
-      saveCard: 'KeyS',
-      previousCue: '',
+      saveLearning: { key: 'KeyS', enabled: true },
+      previousCue: { key: 'KeyS', enabled: false },
     });
     expect(local.values.migrationState).toMatchObject({ shortcutConfirmations: [] });
   });
@@ -159,7 +152,7 @@ describe('v2 first-entry storage', () => {
       migrationState: createMigrationState([createConfirmation('saveCard', 'savePrimary', 'KeyS')]),
     });
     sync.afterSet = (_items, values) => {
-      values.shortcuts = { ...(values.shortcuts as V2SyncStorage['shortcuts']), saveCard: 'KeyX' };
+      values.shortcuts = { ...(values.shortcuts as V2SyncStorage['shortcuts']), saveCard: { key: 'KeyX', enabled: true } };
     };
     const storage = createV2FirstEntryStorage({ local, sync });
 
