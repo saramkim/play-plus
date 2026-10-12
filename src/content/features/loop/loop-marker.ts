@@ -29,6 +29,12 @@ export class LoopMarker {
     this.marker.style.color = enabled ? 'var(--pp-primary)' : 'darkgray';
   }
 
+  cancelDrag() {
+    this.isDragging = false;
+    document.removeEventListener('mouseup', this.handleMouseUp);
+    document.removeEventListener('mousemove', this.handleMouseMove);
+  }
+
   private initialize() {
     this.container.appendChild(this.marker);
     this.setupEventListeners();
@@ -56,14 +62,11 @@ export class LoopMarker {
     if (!this.isDragging) return;
 
     const video = videoManager.get();
+    this.cancelDrag();
     if (!video) return;
 
-    this.isDragging = false;
     const time = getTimeByOffsetLeft(this.container, this.marker.offsetLeft, video.duration);
     this.setTime(time);
-
-    document.removeEventListener('mouseup', this.handleMouseUp);
-    document.removeEventListener('mousemove', this.handleMouseMove);
   };
 
   private handleMouseMove = (e: MouseEvent) => {
