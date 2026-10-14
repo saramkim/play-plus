@@ -64,4 +64,3 @@ describe('list search and sort', () => {
     expect(items).toEqual(original);
   });
 });
-
