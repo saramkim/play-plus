@@ -34,26 +34,31 @@ const validateFile = (file: File) => {
   return { isValid: true, message: '' };
 };
 
+class EmptySubtitleError extends Error {}
+
 const uploadSubtitle = (file: File, title: string, language: Language) => {
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = async () => {
       try {
         const content = getContent(reader.result as ArrayBuffer, language);
-        const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
         const subtitle = getSubtitle(file, content);
+        if (subtitle.length === 0) throw new EmptySubtitleError();
+        const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
 
         const newData = { id, title, language, savedAt: new Date().toISOString() };
         await Promise.all([
           setLocalSubtitle(id, subtitle),
           setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
         ]);
+        resolve();
       } catch (error) {
-        console.error('Failed to process subtitle file:', error);
+        reject(error);
       }
-      resolve();
     };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read subtitle file'));
+    reader.onabort = () => reject(new Error('Subtitle file read aborted'));
 
     reader.readAsArrayBuffer(file);
   });
@@ -156,9 +161,17 @@ export function SubtitleUploader() {
           onSubmit={async (e) => {
             e.preventDefault();
             setIsUploading(true);
-            await uploadSubtitle(file, title, language);
-            setIsUploading(false);
-            reset();
+            try {
+              await uploadSubtitle(file, title, language);
+              reset();
+            } catch (error) {
+              modal.alert({
+                title: t('error'),
+                message: t(error instanceof EmptySubtitleError ? 'error_empty_subtitle' : 'error_try_later'),
+              });
+            } finally {
+              setIsUploading(false);
+            }
           }}
           className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}
         >
