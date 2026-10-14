@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useAutoScroll(activeIndex: number, scrollToFn: (index: number) => void) {
+export function useAutoScroll(activeIndex: number, scrollToFn: (index: number) => void, enabled = true) {
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const isScrollingRef = useRef(true);
 
@@ -10,11 +10,11 @@ export function useAutoScroll(activeIndex: number, scrollToFn: (index: number) =
   };
 
   useEffect(() => {
-    if (isAutoScrolling) {
+    if (isAutoScrolling && enabled) {
       isScrollingRef.current = true;
       scrollToFn(Math.floor(activeIndex) + 1);
     }
-  }, [activeIndex, isAutoScrolling, scrollToFn]);
+  }, [activeIndex, isAutoScrolling, scrollToFn, enabled]);
 
   return { isAutoScrolling, setIsAutoScrolling, handleScroll };
 }

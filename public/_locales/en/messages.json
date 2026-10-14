@@ -193,6 +193,9 @@
   "error_no_subtitle": { "message": "No subtitle." },
   "error_no_current_subtitle": { "message": "No current subtitle." },
   "error_duplicate_shortcuts": { "message": "Shortcuts are duplicated." },
+  "subtitle_body_search": { "message": "Search subtitle text" },
+  "subtitle_search_count": { "message": "$found$ / $total$ subtitles", "placeholders": { "found": { "content": "$1" }, "total": { "content": "$2" } } },
+  "subtitle_search_empty": { "message": "No matching subtitles." },
   "error_unknown": { "message": "Unknown error" },
   "error_loop_time_message": { "message": "Start time is greater than end time." },
   "info_loop_stop_message": { "message": "Loop is stopped because it is out of range." }
