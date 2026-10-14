@@ -94,6 +94,7 @@
   "copy_secondary_subtitle": { "message": "Copy Secondary Subtitle" },
   "save": { "message": "Save" },
   "search_term": { "message": "Search Term" },
+  "clear_search": { "message": "Clear search" },
   "search": { "message": "Search" },
   "secondary_subtitle": { "message": "Secondary Subtitle" },
   "seconds": { "message": "Seconds" },
