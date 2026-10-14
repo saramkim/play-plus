@@ -8,7 +8,7 @@ import { useTabStore } from '@/ui/store/tab-store';
 import { SubtitleAnalysisPage } from './subtitle-analysis-page';
 
 const mocks = vi.hoisted(() => ({
-  play: vi.fn(), save: vi.fn(), scroll: vi.fn(), offset: vi.fn(),
+  play: vi.fn(), save: vi.fn(), scroll: vi.fn(), offset: vi.fn(), readVideo: vi.fn(),
   state: { subtitleId: 'en', activeIndex: 2 },
   subtitles: [
     { start: 1, end: 2, text: 'First line' },
@@ -16,11 +16,13 @@ const mocks = vi.hoisted(() => ({
     { start: 20, end: 22, text: 'hello again' },
   ],
 }));
-vi.mock('@/ui/features/analysis/use-subtitle-analysis', () => ({ useSubtitleAnalysis: () => ({
+vi.mock('@/ui/features/analysis/use-subtitle-analysis', () => ({ useSubtitleAnalysis: (videoId: string | null) => {
+  mocks.readVideo(videoId);
+  return ({
   ...mocks.state, subtitles: mocks.subtitles, defaultSubtitleOptions: [],
   setSubtitleId: vi.fn(), handlePlayVideo: mocks.play, handleToggleSubtitle: mocks.save,
   isSubtitleSaved: () => false,
-}) }));
+}); } }));
 vi.mock('@/ui/features/subtitle-upload/uploaded-subtitle-select', () => ({ UploadedSubtitleSelect: () => null }));
 vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count, getItemKey }: {
   count: number; getItemKey: (index: number) => number;
@@ -43,18 +45,53 @@ const isActive = (row: HTMLElement) => !!row.querySelector('[aria-current="true"
 const press = (element: HTMLElement, key: string) => act(() => {
   element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 });
-beforeEach(() => {
+beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  Object.assign(chrome.tabs, { onUpdated: { addListener: vi.fn(), removeListener: vi.fn() } });
+  Object.assign(chrome.tabs, {
+    get: vi.fn(async () => ({ ...useTabStore.getState().activeTab })),
+    onUpdated: { addListener: vi.fn(), removeListener: vi.fn() },
+  });
   mocks.play.mockClear(); mocks.save.mockClear(); mocks.scroll.mockClear(); mocks.offset.mockClear();
   mocks.state.subtitleId = 'en'; mocks.state.activeIndex = 2;
   useTabStore.setState({ activeTab: { id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000001' } as chrome.tabs.Tab });
   vi.mocked(chrome.i18n.getMessage).mockImplementation((key, args) => `${key}${Array.isArray(args) && args.length ? ':' + args.join('/') : ''}`);
-  container = document.createElement('div'); document.body.append(container); root = createRoot(container); render();
+  container = document.createElement('div'); document.body.append(container); root = createRoot(container);
+  await act(async () => root.render(<SubtitleAnalysisPage />));
 });
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
 describe('analysis body search', () => {
+  it('reads the live tab when mounted after a missed SPA event, hiding native identity until resolved', async () => {
+    act(() => root.render(null)); mocks.readVideo.mockClear();
+    let resolve!: (tab: chrome.tabs.Tab) => void;
+    vi.mocked(chrome.tabs.get).mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    render();
+    expect(mocks.readVideo.mock.calls.every(([id]) => id === null)).toBe(true);
+    await act(async () => resolve({ id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' } as chrome.tabs.Tab));
+    expect(mocks.readVideo).toHaveBeenLastCalledWith('00000000-0000-0000-0000-000000000002');
+  });
+
+  it('does not let a delayed initial tab read overwrite a newer URL-only event', async () => {
+    act(() => root.render(null));
+    let resolve!: (tab: chrome.tabs.Tab) => void;
+    vi.mocked(chrome.tabs.get).mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    render();
+    const listener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls.at(-1)![0];
+    act(() => listener(1, { url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' }, {} as chrome.tabs.Tab));
+    await act(async () => resolve(useTabStore.getState().activeTab!));
+    expect(mocks.readVideo).toHaveBeenLastCalledWith('00000000-0000-0000-0000-000000000002');
+  });
+
+  it('keeps native identity hidden after a failed read and ignores a previous tab read', async () => {
+    act(() => root.render(null));
+    let resolve!: (tab: chrome.tabs.Tab) => void;
+    vi.mocked(chrome.tabs.get).mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    render();
+    vi.mocked(chrome.tabs.get).mockRejectedValueOnce(new Error('tab closed'));
+    await act(async () => useTabStore.setState({ activeTab: { id: 2, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000003' } as chrome.tabs.Tab }));
+    await act(async () => resolve({ id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000001' } as chrome.tabs.Tab));
+    expect(mocks.readVideo).toHaveBeenLastCalledWith(null);
+  });
   it('resets on the active tab URL event without a completed load and removes the listener', () => {
     search('hello'); mocks.scroll.mockClear();
     const listener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls.at(-1)![0];
@@ -121,16 +158,16 @@ describe('analysis body search', () => {
     expect(mocks.scroll).toHaveBeenCalled();
   });
 
-  it('resets search on source, tab and video changes but retains it for ordinary updates', () => {
+  it('resets search on source, tab and video changes but retains it for ordinary updates', async () => {
     search('hello'); mocks.state.activeIndex = 0; render();
     expect(container.querySelector('input')!.value).toBe('hello');
     mocks.state.subtitleId = 'ko'; render();
     expect(container.querySelector('input')!.value).toBe('');
     search('hello');
-    act(() => useTabStore.setState({ activeTab: { id: 2 } as chrome.tabs.Tab }));
+    await act(async () => useTabStore.setState({ activeTab: { id: 2 } as chrome.tabs.Tab }));
     expect(container.querySelector('input')!.value).toBe('');
     search('hello');
-    act(() => useTabStore.setState({ activeTab: { id: 2, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' } as chrome.tabs.Tab }));
+    await act(async () => useTabStore.setState({ activeTab: { id: 2, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' } as chrome.tabs.Tab }));
     expect(container.querySelector('input')!.value).toBe('');
   });
 });

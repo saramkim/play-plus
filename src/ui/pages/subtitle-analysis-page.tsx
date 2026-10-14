@@ -21,16 +21,30 @@ const GAP_HEIGHT = 4;
 
 export function SubtitleAnalysisPage() {
   const activeTab = useTabStore((state) => state.activeTab);
-  const [videoId, setVideoId] = useState(() => getCoupangPlayVideoId(activeTab?.url));
+  const [identity, setIdentity] = useState<{ tabId?: number; cachedUrl?: string; videoId: string | null }>({ videoId: null });
+  const videoId = identity.tabId === activeTab?.id && identity.cachedUrl === activeTab?.url ? identity.videoId : null;
   useEffect(() => {
-    setVideoId(getCoupangPlayVideoId(activeTab?.url));
+    const tabId = activeTab?.id;
+    const cachedUrl = activeTab?.url;
+    let cancelled = false;
+    let revision = 0;
+    const update = (url?: string) => setIdentity({ tabId, cachedUrl, videoId: getCoupangPlayVideoId(url) });
+    update(); // Fail closed until the current tab is read; cached activeTab may predate an SPA transition.
+    if (tabId === undefined) return;
     const handleUpdated = (tabId: number, change: chrome.tabs.TabChangeInfo) => {
       if (tabId === activeTab?.id && change.url !== undefined) {
-        setVideoId(getCoupangPlayVideoId(change.url));
+        revision++;
+        update(change.url);
       }
     };
     chrome.tabs.onUpdated.addListener(handleUpdated);
-    return () => chrome.tabs.onUpdated.removeListener(handleUpdated);
+    const readRevision = revision;
+    void chrome.tabs.get(tabId).then((tab) => {
+      if (!cancelled && revision === readRevision) update(tab.url);
+    }, () => {
+      if (!cancelled && revision === readRevision) update();
+    });
+    return () => { cancelled = true; chrome.tabs.onUpdated.removeListener(handleUpdated); };
   }, [activeTab?.id, activeTab?.url]);
   const {
     subtitles,
