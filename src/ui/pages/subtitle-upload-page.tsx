@@ -65,7 +65,7 @@ interface SubtitleItemProps {
   activeTab: chrome.tabs.Tab | null;
   tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
-  onEdit: (id: SubtitleId, title: string, language: Language) => void;
+  onEdit: (id: SubtitleId, title: string, language: Language) => Promise<unknown>;
   onUpdateDelay: (id: SubtitleId, delay: number) => void;
 }
 
