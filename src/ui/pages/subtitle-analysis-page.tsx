@@ -16,7 +16,7 @@ import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysi
 import { UploadedSubtitleSelect } from '@/ui/features/subtitle-upload/uploaded-subtitle-select';
 import { useTabStore } from '@/ui/store/tab-store';
 
-const ESTIMATED_ITEM_HEIGHT = 37;
+const ESTIMATED_ITEM_HEIGHT = 57;
 const GAP_HEIGHT = 4;
 
 export function SubtitleAnalysisPage() {
@@ -108,6 +108,8 @@ function SubtitleAnalysis({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchText, setSearchText] = useState('');
   const previousQueryRef = useRef('');
+  const playButtonsRef = useRef(new Map<number, HTMLButtonElement>());
+  const pendingFocusRef = useRef<number | null>(null);
   const query = searchText.trim().toLowerCase();
   const visibleRows = useMemo(() => subtitles
     .map((subtitle, sourceIndex) => ({ subtitle, sourceIndex }))
@@ -124,7 +126,22 @@ function SubtitleAnalysis({
   const scrollToIndex = useCallback((index: number) => {
     if (visibleRows.length > 0) rowVirtualizer.scrollToIndex(Math.min(index, visibleRows.length - 1), { align: 'center' });
   }, [rowVirtualizer, visibleRows.length]);
-  const { isAutoScrolling, setIsAutoScrolling, handleScroll } = useAutoScroll(activeIndex, scrollToIndex, query === '');
+  const { isAutoScrolling, setIsAutoScrolling, pauseFollowing } = useAutoScroll(activeIndex, scrollToIndex, query === '');
+
+  const navigateRow = (event: React.KeyboardEvent, index: number) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.key === 'PageUp' || event.key === 'PageDown') pauseFollowing();
+    const next = event.key === 'ArrowDown' ? index + 1 : event.key === 'ArrowUp' ? index - 1
+      : event.key === 'Home' ? 0 : event.key === 'End' ? visibleRows.length - 1 : null;
+    if (next === null) return;
+    event.preventDefault();
+    pauseFollowing();
+    const target = Math.max(0, Math.min(next, visibleRows.length - 1));
+    pendingFocusRef.current = target;
+    rowVirtualizer.scrollToIndex(target, { align: 'auto' });
+    const button = playButtonsRef.current.get(target);
+    if (button) { button.focus({ preventScroll: true }); pendingFocusRef.current = null; }
+  };
 
   useEffect(() => {
     if (previousQueryRef.current !== query) rowVirtualizer.scrollToOffset(0);
@@ -132,6 +149,7 @@ function SubtitleAnalysis({
   }, [query, rowVirtualizer]);
 
   const updateSearch = (value: string) => {
+    pendingFocusRef.current = null;
     setSearchText(value);
     if (value.trim()) setIsAutoScrolling(false);
   };
@@ -146,7 +164,9 @@ function SubtitleAnalysis({
           <XIcon className='size-4' />
         </Button>
       </div>
-      <div ref={containerRef} className='min-h-0 flex-1 overflow-y-auto p-2' onScroll={handleScroll}>
+      <div ref={containerRef} className='min-h-0 flex-1 overflow-y-auto p-2'
+        onWheel={pauseFollowing} onTouchMove={pauseFollowing}
+        onPointerDown={(event) => { if (event.target === event.currentTarget) pauseFollowing(); }}>
         <div className='flex flex-col gap-2'>
           <div className='flex items-center justify-between'>
             <span className='text-muted-foreground' role='status'>{query
@@ -170,6 +190,17 @@ function SubtitleAnalysis({
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
                   <SubtitleItem
+                    onKeyDown={(event) => navigateRow(event, index)}
+                    onFocusCapture={(event) => {
+                      if (event.target.matches(':focus-visible')) pauseFollowing();
+                    }}
+                    playButtonRef={(button) => {
+                      if (!button) { playButtonsRef.current.delete(index); return; }
+                      playButtonsRef.current.set(index, button);
+                      if (pendingFocusRef.current === index) {
+                        button.focus({ preventScroll: true }); pendingFocusRef.current = null;
+                      }
+                    }}
                     subtitle={subtitle}
                     isActive={sourceIndex === activeIndex}
                     isSaved={isSubtitleSaved(subtitle.text)}
@@ -184,18 +215,22 @@ function SubtitleAnalysis({
         </div>
       </div>
 
-      {!isAutoScrolling && query === '' && (
+      <div className='flex items-center justify-between gap-2 border-t p-2'>
+        <span className='whitespace-normal text-xs text-muted-foreground'>{t(query ? 'analysis_follow_search'
+          : isAutoScrolling ? 'analysis_following' : 'analysis_follow_paused')}</span>
+        {!isAutoScrolling && query === '' && (
         <Button
           variant='outline'
-          size='icon'
+          size='sm'
           aria-label={t('auto_scroll')}
-          className='absolute bottom-2 right-3 shadow-lg'
           onClick={() => setIsAutoScrolling(true)}
           tooltip={t('auto_scroll')}
         >
           <GalleryVertical className='size-5' />
+          {t('analysis_follow_resume')}
         </Button>
       )}
+      </div>
     </div>
   );
 }
