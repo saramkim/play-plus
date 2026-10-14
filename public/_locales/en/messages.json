@@ -1,4 +1,6 @@
 {
+  "analysis_companion": { "message": "Show alongside" },
+  "analysis_companion_none": { "message": "None" },
   "app_name": { "message": "Play Plus" },
   "extension_name": { "message": "Play Plus - Enhance Coupang Play's features" },
   "extension_description": {

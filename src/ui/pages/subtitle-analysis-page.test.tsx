@@ -10,6 +10,7 @@ import { SubtitleAnalysisPage } from './subtitle-analysis-page';
 const mocks = vi.hoisted(() => ({
   play: vi.fn(), save: vi.fn(), scroll: vi.fn(), offset: vi.fn(), readVideo: vi.fn(),
   state: { subtitleId: 'en', activeIndex: 2 },
+  windowed: false,
   subtitles: [
     { start: 1, end: 2, text: 'First line' },
     { start: 7, end: 8, text: 'Hello\n안녕하세요' },
@@ -24,13 +25,23 @@ vi.mock('@/ui/features/analysis/use-subtitle-analysis', () => ({ useSubtitleAnal
   isSubtitleSaved: () => false,
 }); } }));
 vi.mock('@/ui/features/subtitle-upload/uploaded-subtitle-select', () => ({ UploadedSubtitleSelect: () => null }));
-vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count, getItemKey }: {
+vi.mock('@/ui/features/subtitle-upload/use-uploaded-subtitles', () => {
+  const subtitles: never[] = [];
+  return { useUploadedSubtitles: () => ({ subtitles }) };
+});
+vi.mock('@tanstack/react-virtual', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-virtual')>();
+  return { ...actual, useVirtualizer: ({ count, getItemKey, rangeExtractor }: {
   count: number; getItemKey: (index: number) => number;
+  rangeExtractor: typeof actual.defaultRangeExtractor;
 }) => ({
   getTotalSize: () => count * 41,
-  getVirtualItems: () => Array.from({ length: count }, (_, index) => ({ index, key: getItemKey(index), start: index * 41 })),
+  getVirtualItems: () => (mocks.windowed
+    ? rangeExtractor({ startIndex: 0, endIndex: 0, overscan: 0, count })
+    : Array.from({ length: count }, (_, index) => index))
+    .map((index) => ({ index, key: getItemKey(index), start: index * 41 })),
   measureElement: vi.fn(), scrollToIndex: mocks.scroll, scrollToOffset: mocks.offset,
-}) }));
+}) }; });
 
 let root: Root;
 let container: HTMLDivElement;
@@ -53,7 +64,9 @@ beforeEach(async () => {
   });
   mocks.play.mockClear(); mocks.save.mockClear(); mocks.scroll.mockClear(); mocks.offset.mockClear();
   mocks.state.subtitleId = 'en'; mocks.state.activeIndex = 2;
-  useTabStore.setState({ activeTab: { id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000001' } as chrome.tabs.Tab });
+  mocks.windowed = false;
+  useTabStore.setState({ activeTab: { id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000001' } as chrome.tabs.Tab,
+    tabInfo: { nativeVideoId: '00000000-0000-0000-0000-000000000001', ko: [{ start: 6, end: 10, text: '보조만' }] } });
   vi.mocked(chrome.i18n.getMessage).mockImplementation((key, args) => `${key}${Array.isArray(args) && args.length ? ':' + args.join('/') : ''}`);
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
   await act(async () => root.render(<SubtitleAnalysisPage />));
@@ -61,6 +74,38 @@ beforeEach(async () => {
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
 describe('analysis body search', () => {
+  it('adds read-only overlap while keeping search, follow and actions primary-only', () => {
+    const select = container.querySelector('select')!;
+    expect(select.value).toBe(''); expect(container.querySelector('[data-companion-text]')).toBeNull();
+    search('hello');
+    act(() => { select.value = 'ko'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(container.querySelector('input')!.value).toBe('hello');
+    expect(container.textContent).toContain('analysis_follow_search');
+    expect(rows()[0].querySelector('[data-companion-text]')?.textContent).toBe('보조만');
+    expect(rows()[1].querySelector('[data-companion-text]')).toBeNull();
+    act(() => rows()[0].querySelector('[data-subtitle-play]')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(mocks.play).toHaveBeenLastCalledWith(7);
+    act(() => rows()[0].querySelectorAll('button')[1].click());
+    expect(mocks.save).toHaveBeenLastCalledWith(mocks.subtitles[1]);
+    search('보조만'); expect(rows()).toHaveLength(0);
+    search(''); expect(container.textContent).toContain('analysis_follow_paused');
+    act(() => { select.value = ''; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(container.textContent).toContain('analysis_follow_paused');
+  });
+
+  it.each(['source', 'tab', 'video'])('resets companion selection on %s change', async (change) => {
+    const select = container.querySelector('select')!;
+    act(() => { select.value = 'ko'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(select.value).toBe('ko');
+    if (change === 'source') { mocks.state.subtitleId = 'custom'; render(); }
+    if (change === 'tab') await act(async () => useTabStore.setState({ activeTab: { ...useTabStore.getState().activeTab!, id: 2 } }));
+    if (change === 'video') {
+      const listener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls.at(-1)![0];
+      act(() => listener(1, { url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' }, {} as chrome.tabs.Tab));
+    }
+    expect(container.querySelector('select')!.value).toBe('');
+    expect(container.querySelector('[data-companion-text]')).toBeNull();
+  });
   it('reads the live tab when mounted after a missed SPA event, hiding native identity until resolved', async () => {
     act(() => root.render(null)); mocks.readVideo.mockClear();
     let resolve!: (tab: chrome.tabs.Tab) => void;
@@ -173,6 +218,20 @@ describe('analysis body search', () => {
 });
 
 describe('analysis keyboard navigation', () => {
+  it('keeps an offscreen navigation target mounted and focused while measured range changes', () => {
+    mocks.windowed = true; render();
+    expect(rows()).toHaveLength(1);
+    press(rows()[0].querySelector<HTMLButtonElement>('[data-subtitle-play]')!, 'End');
+    const target = container.querySelector<HTMLButtonElement>('[data-index="2"] [data-subtitle-play]')!;
+    expect(document.activeElement).toBe(target);
+    render();
+    expect(document.activeElement).toBe(target);
+    act(() => target.click());
+    expect(mocks.play).toHaveBeenLastCalledWith(20);
+    search('First');
+    expect(rows()).toHaveLength(1);
+    expect(container.querySelector('[data-index="2"]')).toBeNull();
+  });
   it('navigates only the list, clamps endpoints and keeps save separate from playback', () => {
     const first = rows()[0].querySelector<HTMLButtonElement>('[data-subtitle-play]')!;
     act(() => first.focus());
