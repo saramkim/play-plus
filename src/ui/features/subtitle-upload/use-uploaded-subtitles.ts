@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { onLocalStorageChange } from '@storage/index';
-import { deleteRegisteredSubtitle, getRegisteredSubtitles, updateRegisteredSubtitle } from '@storage/registered-subtitle';
+import { deleteRegisteredSubtitle, getRegisteredSubtitles, SubtitleDeleteRecoveryError, updateRegisteredSubtitle } from '@storage/registered-subtitle';
 import { SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
@@ -51,6 +51,7 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
       title: t('delete'),
       message: t('confirm_delete'),
       onConfirm: () => deleteRegisteredSubtitle(id),
+      errorMessage: (error) => t(error instanceof SubtitleDeleteRecoveryError ? 'error_subtitle_recovery' : 'error_try_later'),
     });
   };
 

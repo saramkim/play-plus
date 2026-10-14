@@ -17,7 +17,7 @@ interface SubtitleEditFormProps {
   id: SubtitleId;
   initialTitle: string;
   initialLanguage: Language;
-  onEdit: (id: SubtitleId, title: string, language: Language) => void;
+  onEdit: (id: SubtitleId, title: string, language: Language) => Promise<unknown>;
   closeEditMode: () => void;
 }
 
@@ -27,17 +27,32 @@ export function SubtitleEditForm({ id, initialTitle, initialLanguage, onEdit, cl
   const formRef = useRef<HTMLFormElement>(null);
   const selectContentRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside([formRef, selectContentRef], () => closeEditMode());
+  const pendingRef = useRef(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  useClickOutside([formRef, selectContentRef], () => { if (!pendingRef.current) closeEditMode(); });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onEdit(id, editedTitle, editedLanguage);
-    closeEditMode();
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
+    setError('');
+    try {
+      await onEdit(id, editedTitle, editedLanguage);
+      closeEditMode();
+    } catch {
+      setError(t('error_try_later'));
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
   };
 
   return (
-    <form className='flex items-center gap-1' onSubmit={handleSubmit} ref={formRef}>
-      <Select value={editedLanguage} onValueChange={(value) => setEditedLanguage(value as Language)}>
+    <form className='flex flex-col gap-1' onSubmit={handleSubmit} ref={formRef}>
+      <div className='flex items-center gap-1'>
+      <Select disabled={pending} value={editedLanguage} onValueChange={(value) => { if (!pendingRef.current) setEditedLanguage(value as Language); }}>
         <SelectTrigger className='w-fit'>
           <SelectValue placeholder={t('language')} />
         </SelectTrigger>
@@ -49,10 +64,12 @@ export function SubtitleEditForm({ id, initialTitle, initialLanguage, onEdit, cl
           ))}
         </SelectContent>
       </Select>
-      <Input value={editedTitle} onChange={(e) => setEditedTitle(e.target.value)} />
-      <Button variant='outline' size='sm' type='submit'>
+      <Input disabled={pending} value={editedTitle} onChange={(e) => { if (!pendingRef.current) setEditedTitle(e.target.value); }} />
+      <Button disabled={pending} variant='outline' size='sm' type='submit'>
         <CheckIcon />
       </Button>
+      </div>
+      {error && <p role='alert' className='w-full'>{error}</p>}
     </form>
   );
 }

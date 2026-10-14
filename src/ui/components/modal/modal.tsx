@@ -9,11 +9,12 @@ import { modalService } from './modal-service';
 
 export function Modal() {
   const [content, setContent] = useState<React.ReactNode>(null);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = modalService.subscribe(setContent);
+    const unsubscribe = modalService.subscribe((next, busy) => { setContent(next); setPending(busy); });
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setContent(null);
+      if (e.key === 'Escape') modalService.hide();
     };
     document.addEventListener('keydown', handleKeyDown);
 
@@ -40,7 +41,7 @@ export function Modal() {
         data-state={content ? 'open' : 'closed'}
       >
         <div>{content}</div>
-        <button className='absolute top-2 right-2 cursor-default' onClick={() => setContent(null)}>
+        <button className='absolute top-2 right-2 cursor-default' disabled={pending} onClick={modalService.hide}>
           <XIcon className='size-4 text-gray-500 hover:text-gray-700' />
         </button>
       </div>

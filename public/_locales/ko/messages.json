@@ -187,6 +187,7 @@
   "error_duplicate_shortcuts": { "message": "단축키가 중복됩니다." },
   "error_video_not_found": { "message": "영상을 찾을 수 없습니다." },
   "error_try_later": { "message": "나중에 다시 시도해주세요." },
+  "error_subtitle_recovery": { "message": "자막 삭제와 본문 복구에 실패했습니다. 등록된 자막 상태를 확인한 후 다시 시도해주세요." },
   "error_empty_subtitle": { "message": "등록할 수 있는 자막이 없습니다. 자막 내용과 시간 형식을 확인해주세요." },
   "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
   "error_no_subtitle": { "message": "자막이 없습니다." },

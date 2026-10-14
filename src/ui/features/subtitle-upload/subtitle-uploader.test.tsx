@@ -65,6 +65,30 @@ const submit = async () => {
 };
 
 describe('subtitle upload validation', () => {
+  it('locks duplicate submissions and file replacement, preserving the draft after write failure for retry', async () => {
+    let reject!: (error: Error) => void;
+    vi.mocked(chrome.storage.local.set).mockImplementationOnce(() => new Promise<void>((_resolve, fail) => { reject = fail; }));
+    await selectFile('1\n00:00:01,000 --> 00:00:02,000\nvalid');
+    await act(async () => {
+      const form = container.querySelector('form')!;
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await vi.waitFor(() => expect(chrome.storage.local.set).toHaveBeenCalledOnce());
+    });
+    expect(container.querySelector<HTMLInputElement>('input[type=file]')?.disabled).toBe(true);
+    await selectFile('other', 'replacement.srt');
+    expect(container.textContent).toContain('fixture.srt');
+    expect(container.textContent).not.toContain('replacement.srt');
+    await act(async () => reject(new Error('quota')));
+    expect(container.querySelector<HTMLInputElement>('input:not([type=file])')?.value).toBe('fixture');
+    expect(container.querySelector<HTMLButtonElement>('button[type=submit]')?.disabled).toBe(false);
+    vi.mocked(modal.alert).mockClear();
+    vi.mocked(chrome.storage.local.set).mockClear();
+    await submit();
+    expect(chrome.storage.local.set).toHaveBeenCalledOnce();
+    expect(container.querySelector('form')).toBeNull();
+  });
+
   it.each(['error', 'abort'])('recovers from a file read %s without changing stored data', async (event) => {
     vi.spyOn(FileReader.prototype, 'readAsArrayBuffer').mockImplementation(function (this: FileReader) {
       queueMicrotask(() => this.dispatchEvent(new ProgressEvent(event)));

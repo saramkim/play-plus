@@ -94,8 +94,10 @@ export function SubtitleUploader() {
   const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingRef = useRef(false);
 
   const handleFileUpload = (file: File) => {
+    if (pendingRef.current) return;
     const { isValid, message } = validateFile(file);
     if (isValid) {
       setFile(file);
@@ -116,7 +118,7 @@ export function SubtitleUploader() {
     <div className='flex flex-col gap-2'>
       <div
         className='flex justify-center items-center gap-2 border rounded-md p-4 hover:bg-gray-100 cursor-pointer'
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => { if (!pendingRef.current) fileInputRef.current?.click(); }}
         onDrop={(e) => {
           e.preventDefault();
           const file = e.dataTransfer.files?.[0];
@@ -140,6 +142,7 @@ export function SubtitleUploader() {
         <input
           ref={fileInputRef}
           type='file'
+          disabled={isUploading}
           accept={allowedExtensions.join(',')}
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -153,6 +156,8 @@ export function SubtitleUploader() {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
+            if (pendingRef.current) return;
+            pendingRef.current = true;
             setIsUploading(true);
             try {
               await uploadSubtitle(file, title, language);
@@ -163,13 +168,14 @@ export function SubtitleUploader() {
                 message: t(error instanceof EmptySubtitleError ? 'error_empty_subtitle' : 'error_try_later'),
               });
             } finally {
+              pendingRef.current = false;
               setIsUploading(false);
             }
           }}
           className={`flex flex-col gap-2 border rounded-md p-4 ${isUploading ? 'opacity-50' : ''}`}
         >
           <div className='flex justify-between items-center gap-1'>
-            <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+            <Select disabled={isUploading} value={language} onValueChange={(value) => { if (!pendingRef.current) setLanguage(value as Language); }}>
               <SelectTrigger className='w-fit'>
                 <SelectValue placeholder={t('select')} />
               </SelectTrigger>
@@ -181,10 +187,10 @@ export function SubtitleUploader() {
                 ))}
               </SelectContent>
             </Select>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={isUploading} />
+            <Input value={title} onChange={(e) => { if (!pendingRef.current) setTitle(e.target.value); }} disabled={isUploading} />
           </div>
           <div className='flex gap-2'>
-            <Button type='button' variant='outline' className='w-full' onClick={reset} disabled={isUploading}>
+            <Button type='button' variant='outline' className='w-full' onClick={() => { if (!pendingRef.current) reset(); }} disabled={isUploading}>
               {t('cancel')}
             </Button>
             <Button type='submit' className='w-full' disabled={isUploading}>
