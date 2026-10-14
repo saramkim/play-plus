@@ -40,10 +40,14 @@ export const handleFetchVideoMetadata = async (
   };
   const tracks = await coupangStrategy.fetchSubtitles(url, headers);
   check();
+  // A failed regular candidate still takes precedence; SDH fills only an absent regular track.
+  const selectLanguage = (language: 'en' | 'ko') =>
+    (tracks.find(({ lang }) => lang === language) ?? tracks.find(({ lang }) => lang === `${language} sdh`))?.result
+      ?? { status: 'absent' as const };
   const batch: NativeSubtitleBatch = {
     videoId, requestId,
-    en: tracks.find(({ lang }) => lang === 'en')?.result ?? { status: 'absent' },
-    ko: tracks.find(({ lang }) => lang === 'ko')?.result ?? { status: 'absent' },
+    en: selectLanguage('en'),
+    ko: selectLanguage('ko'),
   };
   useSubtitleStore.setState(({ subtitleCache }) => {
     const { en, ko, ...custom } = subtitleCache;

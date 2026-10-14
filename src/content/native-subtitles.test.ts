@@ -69,3 +69,79 @@ describe('native acquisition isolation', () => {
     await expect(handleFetchVideoMetadata(params)).resolves.toEqual({ success: false, message: 'Native subtitle acquisition failed' });
   });
 });
+
+describe('v1 SDH fallback through the real metadata adapter', () => {
+  const valid = (text: string) => `WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n${text}`;
+  const track = (lang: string, src: unknown = lang) => ({ kind: 'subtitles', srclang: lang, src });
+  const acquire = async (descriptors: unknown[]) => {
+    vi.mocked(coupangStrategy.fetchSubtitles).mockRestore();
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (input === params.url) return new Response(JSON.stringify({ data: { raw: { text_tracks: descriptors } } }));
+      if (input === 'fail') return new Response('', { status: 503 });
+      return new Response(valid(String(input)));
+    });
+    await handleFetchVideoMetadata(params);
+    return fetcher;
+  };
+
+  it.each(['en', 'ko'] as const)('uses exact %s SDH only when regular is absent', async (language) => {
+    await acquire([track(`${language} sdh`)]);
+    expect(useSubtitleStore.getState().subtitleCache[language]).toEqual(cues(`${language} sdh`));
+    expect(sendMessage).toHaveBeenLastCalledWith('updateSubtitles', expect.objectContaining({
+      [language]: { status: 'success', subtitleData: cues(`${language} sdh`) },
+    }));
+  });
+
+  it.each(['en', 'ko'] as const)('preserves first %s regular over earlier SDH and later duplicates', async (language) => {
+    await acquire([track(`${language} sdh`), track(language, 'regular'), track(language, 'duplicate')]);
+    expect(useSubtitleStore.getState().subtitleCache[language]).toEqual(cues('regular'));
+  });
+
+  it.each(['fail', 42])('does not fall through a failed/malformed regular (%s) to SDH', async (source) => {
+    await acquire([track('en sdh'), track('en', source), track('en', 'later')]);
+    expect(useSubtitleStore.getState().subtitleCache.en).toEqual(cues('old'));
+    expect(sendMessage).toHaveBeenLastCalledWith('updateSubtitles', expect.objectContaining({ en: { status: 'failed' } }));
+  });
+
+  it.each([null, undefined, ''])('retains missing URL exclusion (%s) before SDH selection', async (source) => {
+    await acquire([{ kind: 'subtitles', srclang: 'en', src: source }, track('en sdh')]);
+    expect(useSubtitleStore.getState().subtitleCache.en).toEqual(cues('en sdh'));
+  });
+
+  it('keeps failed first SDH rather than later duplicate or alternate URL, and does not inherit across videos', async () => {
+    route(B); invalidateNativeSubtitles(B);
+    vi.mocked(sendMessage).mockResolvedValueOnce({ success: false, message: 'Native subtitle acquisition failed' });
+    const fetcher = await acquire([
+      { ...track('en sdh', 'fail'), sources: [{ src: 'alternate' }] }, track('en sdh', 'later'),
+    ]);
+    expect(useSubtitleStore.getState().subtitleCache.en).toBeUndefined();
+    expect(sendMessage).toHaveBeenLastCalledWith('updateSubtitles', expect.objectContaining({ en: { status: 'failed' } }));
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual([params.url, 'fail', 'later']);
+  });
+
+  it('preserves same-video good cache when selected SDH fails', async () => {
+    await acquire([track('ko sdh', 'fail')]);
+    expect(useSubtitleStore.getState().subtitleCache.ko).toEqual(cues('기존'));
+  });
+
+  it('does not normalize labels, broaden kind, or change the empty-src policy', async () => {
+    const fetcher = await acquire([
+      { ...track('en sdh'), kind: 'captions' }, track('EN sdh'), track('en SDH'), track('en-sdh'), track('ko sdh '),
+      { ...track('ko', ''), sources: [{ src: 'alternate' }] }, track('ko sdh'),
+    ]);
+    expect(useSubtitleStore.getState().subtitleCache.en).toBeUndefined();
+    expect(useSubtitleStore.getState().subtitleCache.ko).toEqual(cues('ko sdh'));
+    expect(fetcher.mock.calls.some(([url]) => url === 'alternate')).toBe(false);
+  });
+
+  it('rejects delayed SDH results after a video change', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof coupangStrategy.fetchSubtitles>>) => void;
+    vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => new Promise((done) => { finish = done; }));
+    const pending = expect(handleFetchVideoMetadata(params)).rejects.toThrow('target changed');
+    route(B); invalidateNativeSubtitles(B);
+    finish([{ lang: 'en sdh', result: { status: 'success', subtitleData: cues('stale SDH') } }]);
+    await pending;
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(useSubtitleStore.getState().subtitleCache.en).toBeUndefined();
+  });
+});
