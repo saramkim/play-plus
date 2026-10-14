@@ -120,7 +120,7 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
         <CheckIcon />
       </Button>
       </div>
-      {error && <p role='alert'>{error}</p>}
+      {error && <p role='alert' className='whitespace-normal break-words'>{error}</p>}
     </form>
   );
 }
