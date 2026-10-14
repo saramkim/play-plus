@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { getLocalStorage, onLocalStorageChange, setLocalStorage } from '@storage/index';
-import { removeLocalSubtitle, SubtitleId } from '@storage/subtitle';
+import { onLocalStorageChange } from '@storage/index';
+import { deleteRegisteredSubtitle, getRegisteredSubtitles, updateRegisteredSubtitle } from '@storage/registered-subtitle';
+import { SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
@@ -19,9 +20,13 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await getLocalStorage(STORAGE_KEY);
-      if (data) setSubtitles(data);
-      setLoading(false);
+      try {
+        setSubtitles(await getRegisteredSubtitles());
+      } catch {
+        modal.alert({ title: t('error'), message: t('error_try_later') });
+      } finally {
+        setLoading(false);
+      }
     })();
 
     const { remove } = onLocalStorageChange((changes) => {
@@ -31,14 +36,11 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
     return remove;
   }, []);
 
-  const editSubtitle = (id: string, title: string, language: Language) => {
-    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, title, language } : v));
-    setLocalStorage(STORAGE_KEY, newSubtitles);
-  };
+  const editSubtitle = (id: SubtitleId, title: string, language: Language) =>
+    updateRegisteredSubtitle(id, { title, language });
 
-  const updateDelay = (id: SubtitleId, delay: number) => {
-    const newSubtitles = subtitles.map((v) => (v.id === id ? { ...v, delay } : v));
-    setLocalStorage(STORAGE_KEY, newSubtitles);
+  const updateDelay = async (id: SubtitleId, delay: number) => {
+    await updateRegisteredSubtitle(id, { delay });
     if (activeTab?.id) {
       sendMessageToTab(activeTab.id, 'updateSubtitleDelay', { subtitleId: id, delay });
     }
@@ -48,11 +50,7 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
     modal.confirm({
       title: t('delete'),
       message: t('confirm_delete'),
-      onConfirm: () => {
-        const filtered = subtitles.filter((v) => v.id !== id);
-        setLocalStorage(STORAGE_KEY, filtered);
-        removeLocalSubtitle(id);
-      },
+      onConfirm: () => deleteRegisteredSubtitle(id),
     });
   };
 
