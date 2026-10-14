@@ -184,6 +184,7 @@
   "error_reserved_shortcuts": { "message": "Reserved for the system" },
   "error_video_not_found": { "message": "Video not found." },
   "error_try_later": { "message": "Please try again later." },
+  "error_empty_subtitle": { "message": "No valid subtitles to register. Check the subtitle text and timestamps." },
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },
   "error_no_subtitle": { "message": "No subtitle." },
   "error_no_current_subtitle": { "message": "No current subtitle." },
