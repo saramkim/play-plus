@@ -11,6 +11,7 @@ import { onMessage, sendMessageToTab } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
 
 import { respondToAsyncMessage } from './async-message-response';
+import { invalidateNativeSubtitles, persistNativeSubtitles } from './native-subtitles';
 import {
   enqueueViewAction,
   PendingSubtitleRequest,
@@ -67,8 +68,7 @@ onMessage((request) => {
       return respondToAsyncMessage(request.sendResponse, async () => {
         const tabId = request.sender.tab?.id;
         if (tabId === undefined) throw new Error('Missing sender tab id');
-        const { lang, subtitleData } = request.params;
-        await updateTabInfo(tabId, { [lang]: subtitleData });
+        await persistNativeSubtitles(tabId, request.params);
       });
     }
     case 'contentStatus': {
@@ -152,6 +152,9 @@ chrome.tabs.onActivated.addListener(async (tabInfo) => {
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.url !== undefined) {
+    await invalidateNativeSubtitles(tabId).catch((error) => console.error('Error invalidating native subtitles:', error));
+  }
   if (changeInfo.status !== 'complete') return;
   await handleTabCompleted(tabId, tab, {
     ...createTabLifecycleDependencies,

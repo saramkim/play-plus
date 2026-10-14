@@ -1,5 +1,5 @@
 import { SubtitleId } from '@storage/subtitle';
-import { SubtitleData } from '@utils/parse';
+import { NativeSubtitleBatch } from '@utils/native-subtitles';
 
 export type MessageSchema = {
   resetElement: void;
@@ -26,7 +26,7 @@ export type MessageSchema = {
     params: number;
   };
   updateSubtitles: {
-    params: { lang: string; subtitleData: SubtitleData[] | null };
+    params: NativeSubtitleBatch;
   };
   pingContent: {
     response: { hasVideo: boolean };

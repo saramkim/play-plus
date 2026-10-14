@@ -1,7 +1,6 @@
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import {
   COUPANG_PLAY_VIDEO_URL_LIST,
-  DEFAULT_SUBTITLE_LANGUAGES,
   SET_SUBTITLE_STORAGE_KEY_MAP,
   SetSubtitleAction,
 } from '@utils/constants';
@@ -13,9 +12,9 @@ import { MessageSchema } from '@utils/message/type';
 import { elementStore } from './core/store/element-store';
 import { useVideoStore } from './core/store/video-store';
 import { videoManager } from './core/video/video-manager';
-import { coupangStrategy } from './coupang-play';
 import { loopController } from './features/loop';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
+import { handleFetchVideoMetadata, invalidateNativeSubtitles } from './native-subtitles';
 import { VideoLifecycleEvent, VideoLifecycleMonitor } from './video-lifecycle/video-lifecycle-monitor';
 
 export type VideoLifecycleDependencies = {
@@ -68,8 +67,8 @@ export function initializeMessageListener() {
         break;
       }
       case 'fetchVideoMetadata': {
-        handleFetchVideoMetadata(params);
-        break;
+        handleFetchVideoMetadata(params).then(sendResponse, () => sendResponse({ success: false, message: t('error_try_later') }));
+        return true;
       }
       case 'playVideo': {
         handlePlayVideo(params);
@@ -94,7 +93,10 @@ export function initializeMessageListener() {
       }
     }
   });
-  videoLifecycleMonitor.start(handleVideoLifecycle);
+  videoLifecycleMonitor.start((event) => {
+    invalidateNativeSubtitles(event.videoId);
+    handleVideoLifecycle(event);
+  });
 }
 
 export const retryVideoDetection = () => Promise.resolve(toDetectionResponse(videoLifecycleMonitor.refresh()));
@@ -102,21 +104,6 @@ export const retryVideoDetection = () => Promise.resolve(toDetectionResponse(vid
 const handleResetElement = () => {
   elementStore.reset();
   loopController.resetLoop();
-};
-
-const handleFetchVideoMetadata = async ({ url, headers }: MessageSchema['fetchVideoMetadata']['params']) => {
-  const subtitles = await coupangStrategy.fetchSubtitles(url, headers);
-
-  for (const lang of DEFAULT_SUBTITLE_LANGUAGES) {
-    const subtitleData = subtitles?.find((subtitle) => subtitle.lang === lang)?.subtitleData;
-    if (subtitleData) {
-      useSubtitleStore.getState().setSubtitleCache(lang, subtitleData);
-      await sendMessage('updateSubtitles', { lang, subtitleData });
-    } else {
-      useSubtitleStore.getState().deleteSubtitleCache(lang);
-      await sendMessage('updateSubtitles', { lang, subtitleData: null });
-    }
-  }
 };
 
 const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) => {

@@ -41,7 +41,7 @@ export function SubtitleAnalysisPage() {
     handleToggleSubtitle,
     isSubtitleSaved,
     handlePlayVideo,
-  } = useSubtitleAnalysis();
+  } = useSubtitleAnalysis(videoId);
 
   return (
     <div className='h-full flex flex-col'>

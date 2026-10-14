@@ -118,7 +118,7 @@ describe('coupangStrategy playback response adapter', () => {
       .mockResolvedValueOnce(new Response('WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello'));
 
     await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
-      { lang: 'en', subtitleData: [{ start: 1, end: 2, text: 'Hello' }] },
+      { lang: 'en', result: { status: 'success', subtitleData: [{ start: 1, end: 2, text: 'Hello' }] } },
     ]);
   });
 
@@ -143,7 +143,7 @@ describe('coupangStrategy playback response adapter', () => {
       .mockResolvedValueOnce(new Response('WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n안녕하세요'));
 
     await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).resolves.toEqual([
-      { lang: 'ko', subtitleData: [{ start: 1, end: 2, text: '안녕하세요' }] },
+      { lang: 'ko', result: { status: 'success', subtitleData: [{ start: 1, end: 2, text: '안녕하세요' }] } },
     ]);
   });
 
@@ -153,5 +153,42 @@ describe('coupangStrategy playback response adapter', () => {
     await expect(coupangStrategy.fetchSubtitles('https://example.com/playback', [])).rejects.toThrow(
       'Invalid Coupang Play playback response'
     );
+  });
+
+  it.each(['http', 'empty', 'invalid timing', 'network', 'malformed descriptor'])('isolates %s failure without losing healthy tracks or duplicate order', async (failure) => {
+    const tracks: unknown[] = [null, { kind: 'subtitles', srclang: 'en', src: 'https://example.test/first' },
+      { kind: 'subtitles', srclang: 'ko', src: 'https://example.test/ko' },
+      { kind: 'subtitles', srclang: 'en', src: 'https://example.test/second' }];
+    if (failure === 'malformed descriptor') tracks[1] = { kind: 'subtitles', srclang: 'en', src: 42 };
+    const valid = 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHealthy';
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (input === 'https://example.test/metadata') return new Response(JSON.stringify({ data: { raw: { text_tracks: tracks } } }));
+      if (input !== 'https://example.test/first') return new Response(valid);
+      if (failure === 'network') throw new Error('network');
+      if (failure === 'http') return new Response(valid, { status: 503 });
+      if (failure === 'invalid timing') return new Response('WEBVTT\n\n00:00:02.000 --> 00:00:01.000\nInvalid');
+      return new Response('WEBVTT\n');
+    });
+    const result = await coupangStrategy.fetchSubtitles('https://example.test/metadata', []);
+    expect(result.map(({ lang, result }) => [lang, result.status])).toEqual([['en', 'failed'], ['ko', 'success'], ['en', 'success']]);
+  });
+
+  it('preserves raw language, kind and first-source URL selection without alternate fallback', async () => {
+    const tracks = [
+      { kind: 'captions', srclang: 'en', src: 'ignored' },
+      { kind: 'subtitles', srclang: 'en', src: '', sources: [{ src: 'ignored' }] },
+      { kind: 'subtitles', srclang: 'en sdh', sources: [{ src: 'first' }, { src: 'never-fallback' }] },
+    ];
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { raw: { text_tracks: tracks } } })))
+      .mockResolvedValueOnce(new Response('', { status: 404 }));
+    await expect(coupangStrategy.fetchSubtitles('metadata', [])).resolves.toEqual([{ lang: 'en sdh', result: { status: 'failed' } }]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenLastCalledWith('first');
+  });
+
+  it('rejects failed metadata HTTP responses even when their body looks valid', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify(playbackResponse), { status: 503 }));
+    await expect(coupangStrategy.fetchSubtitles('metadata', [])).rejects.toThrow('metadata request failed');
   });
 });
