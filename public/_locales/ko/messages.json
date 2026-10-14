@@ -194,6 +194,9 @@
   "error_duplicate_subtitle": { "message": "이미 저장된 자막입니다." },
   "error_no_subtitle": { "message": "자막이 없습니다." },
   "error_no_current_subtitle": { "message": "현재 자막이 없습니다." },
+  "subtitle_body_search": { "message": "자막 본문 검색" },
+  "subtitle_search_count": { "message": "$found$ / $total$개 자막", "placeholders": { "found": { "content": "$1" }, "total": { "content": "$2" } } },
+  "subtitle_search_empty": { "message": "검색 결과가 없습니다." },
   "error_unknown": { "message": "알 수 없는 오류" },
   "error_loop_time_message": { "message": "시작 시점이 종료 시점보다 큽니다." },
   "info_loop_stop_message": { "message": "반복 구간을 벗어나 반복을 해제합니다." }
