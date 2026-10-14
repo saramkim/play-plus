@@ -21,6 +21,17 @@ const GAP_HEIGHT = 4;
 
 export function SubtitleAnalysisPage() {
   const activeTab = useTabStore((state) => state.activeTab);
+  const [videoId, setVideoId] = useState(() => getCoupangPlayVideoId(activeTab?.url));
+  useEffect(() => {
+    setVideoId(getCoupangPlayVideoId(activeTab?.url));
+    const handleUpdated = (tabId: number, change: chrome.tabs.TabChangeInfo) => {
+      if (tabId === activeTab?.id && change.url !== undefined) {
+        setVideoId(getCoupangPlayVideoId(change.url));
+      }
+    };
+    chrome.tabs.onUpdated.addListener(handleUpdated);
+    return () => chrome.tabs.onUpdated.removeListener(handleUpdated);
+  }, [activeTab?.id, activeTab?.url]);
   const {
     subtitles,
     subtitleId,
@@ -58,7 +69,7 @@ export function SubtitleAnalysisPage() {
         <EmptyState />
       ) : (
         <SubtitleAnalysis
-          key={`${activeTab?.id ?? ''}:${getCoupangPlayVideoId(activeTab?.url) ?? ''}:${subtitleId}`}
+          key={`${activeTab?.id ?? ''}:${videoId ?? ''}:${subtitleId}`}
           subtitles={subtitles}
           activeIndex={activeIndex}
           handleToggleSubtitle={handleToggleSubtitle}

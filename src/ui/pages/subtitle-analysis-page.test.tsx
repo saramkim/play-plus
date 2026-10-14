@@ -48,6 +48,7 @@ const search = (value: string) => act(() => {
 const rows = () => Array.from(container.querySelectorAll<HTMLElement>('[data-row]'));
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  Object.assign(chrome.tabs, { onUpdated: { addListener: vi.fn(), removeListener: vi.fn() } });
   mocks.play.mockClear(); mocks.save.mockClear(); mocks.scroll.mockClear(); mocks.offset.mockClear();
   mocks.state.subtitleId = 'en'; mocks.state.activeIndex = 2;
   useTabStore.setState({ activeTab: { id: 1, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000001' } as chrome.tabs.Tab });
@@ -57,6 +58,23 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); container.remove(); });
 
 describe('analysis body search', () => {
+  it('resets on the active tab URL event without a completed load and removes the listener', () => {
+    search('hello'); mocks.scroll.mockClear();
+    const listener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls.at(-1)![0];
+    const nextUrl = 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002';
+    act(() => listener(2, { url: nextUrl }, {} as chrome.tabs.Tab));
+    expect(container.querySelector('input')!.value).toBe('hello');
+    act(() => listener(1, { title: 'updated title' }, {} as chrome.tabs.Tab));
+    expect(container.querySelector('input')!.value).toBe('hello');
+    act(() => listener(1, { url: nextUrl }, {} as chrome.tabs.Tab));
+    expect(container.querySelector('input')!.value).toBe('');
+    expect(rows()).toHaveLength(3);
+    expect(mocks.scroll).toHaveBeenCalled();
+    expect(container.querySelector('[aria-label="auto_scroll"]')).toBeNull();
+    act(() => root.render(null));
+    expect(chrome.tabs.onUpdated.removeListener).toHaveBeenCalledWith(listener);
+  });
+
   it('treats whitespace as no search and preserves duplicate cue identity', () => {
     search('   ');
     expect(rows()).toHaveLength(3);
