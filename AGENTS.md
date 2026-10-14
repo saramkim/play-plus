@@ -60,9 +60,9 @@ yarn build:analyze    # 프로덕션 번들 분석
 
 ## Branch Strategy
 
-- `main`은 릴리스 브랜치이자 원격 기본 브랜치, `develop`은 다음 릴리스를 위한 통합 브랜치다. 일반 작업은 `develop`에서 시작해 다시 `develop`으로 합친다.
-- 단순한 1인 개발 흐름을 유지한다. 격리가 필요한 작업만 `feature/<name>`, `fix/<name>`, `refactor/<name>`, `chore/<name>`처럼 변경 종류와 짧은 kebab-case 이름으로 브랜치를 만든다.
-- `main`에는 직접 작업하지 않는다. 검증된 `develop`의 릴리스 변경만 반영한다.
+- `main`은 원격 기본 브랜치이자 다음 릴리스에 포함할 검증된 변경을 통합하는 브랜치다. 실제 릴리스는 릴리스 커밋과 `v<version>` 태그로 구분한다.
+- 모든 변경은 최신 `main`에서 변경 종류와 짧은 kebab-case 이름의 작업 브랜치를 만들어 진행하고, 검증과 검토를 거친 Pull Request로 `main`에 합친다. `main`에 직접 commit/push하지 않는다.
+- 상시 `develop` 또는 release 브랜치는 사용하지 않는다. 기존 2.0 이력은 `archive/play-plus-2.0`에 보존하며, 현재 v1 개발에 자동으로 병합하거나 그 제품 계약을 적용하지 않는다. 전환 당시 기준점은 [README의 개발 기준](README.md#개발-기준)에 기록한다.
 
 ## Commit Rules
 

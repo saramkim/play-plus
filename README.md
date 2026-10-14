@@ -55,6 +55,10 @@
 
 ## 개발 환경 설정
 
+### 개발 기준
+
+`main`은 v1.12.0에 B1–B6·N1–N6 개선을 반영한 현재 개발·PR 통합 기준이다. 전환 당시 HEAD는 `90715605f7ad675ae21d7583be09d85e0e9ceb96`이며, 기존 2.0 `main`의 코드·문서·이력은 [`archive/play-plus-2.0`](https://github.com/saramkim/play-plus/tree/archive/play-plus-2.0)에 보존했다(전환 당시 HEAD: `c7104a4e2cdc68ba35cbfbb44413139c153dd675`). 새 작업은 최신 `main`에서 시작한다. 이 브랜치 전환은 릴리스나 배포가 아니며, 배포 버전은 릴리스 커밋과 `v<version>` 태그로 구분한다.
+
 ### 필수 요구사항
 - **Node.js**: 22–24
 - **Yarn**: 패키지 매니저 (v4.9.1)
