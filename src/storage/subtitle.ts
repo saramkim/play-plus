@@ -8,12 +8,10 @@ export const setLocalSubtitle = (id: SubtitleId, data: SubtitleData[]) => {
   return chrome.storage.local.set({ [id]: data });
 };
 
-export const getLocalSubtitle = (id: SubtitleId): Promise<SubtitleData[]> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(id, (result) => {
-      resolve(result[id]);
-    });
-  });
+export const getLocalSubtitle = async (id: SubtitleId): Promise<SubtitleData[]> => {
+  const result = await chrome.storage.local.get(id);
+  if (!Array.isArray(result[id])) throw new Error('Subtitle body is missing');
+  return result[id];
 };
 
 export const removeLocalSubtitle = (id: SubtitleId) => {

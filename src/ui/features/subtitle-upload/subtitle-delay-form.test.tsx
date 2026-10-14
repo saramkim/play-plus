@@ -4,6 +4,7 @@ import { createRoot, Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SubtitleDelayForm } from './subtitle-delay-form';
+import { SubtitleDelayApplyError } from './update-subtitle-delay';
 
 let container: HTMLDivElement;
 let root: Root;
@@ -40,6 +41,37 @@ const mouse = (button: Element, type: string) => act(() => {
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 
 describe('subtitle delay stepping', () => {
+  it.each([new Error('storage'), new SubtitleDelayApplyError()])('keeps the draft and distinguishes a failed save from unconfirmed playback', async (error) => {
+    let reject!: (error: Error) => void;
+    onUpdateDelay.mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; })).mockResolvedValueOnce('applied');
+    renderForm(1.5);
+    await act(async () => {
+      const form = container.querySelector('form')!;
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    expect(onUpdateDelay).toHaveBeenCalledOnce();
+    expect(container.querySelector('input')!.disabled).toBe(true);
+    act(() => document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
+    expect(closeEditMode).not.toHaveBeenCalled();
+    await act(async () => reject(error));
+    expect(value()).toBe(1.5);
+    expect(container.querySelector('[role=alert]')?.textContent).toBe(error instanceof SubtitleDelayApplyError ? 'error_subtitle_delay_apply' : 'error_try_later');
+    expect(closeEditMode).not.toHaveBeenCalled();
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(closeEditMode).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a successful late completion after the form unmounts', async () => {
+    let resolve!: (value: string) => void;
+    onUpdateDelay.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    renderForm(2);
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    act(() => root.unmount()); mounted = false;
+    await act(async () => resolve('applied'));
+    expect(closeEditMode).not.toHaveBeenCalled();
+  });
+
   it('preserves the 0.1 second step, 300 ms hold delay and 50 ms repeat interval', () => {
     renderForm(-0.2);
     mouse(stepButton('plus'), 'mousedown');
@@ -119,11 +151,11 @@ describe('subtitle delay stepping', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('stops stepping on submit and sends the current draft once', () => {
+  it('stops stepping on submit and sends the current draft once', async () => {
     renderForm(1.2);
     mouse(stepButton('plus'), 'mousedown');
     advance(400);
-    act(() => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
     expect(onUpdateDelay).toHaveBeenCalledExactlyOnceWith(1.5);
     advance(1000);
     expect(value()).toBe(1.5);

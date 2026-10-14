@@ -45,18 +45,25 @@ export function useSubtitleAnalysis() {
   }, [savedSubtitles]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       if (isDefaultSubtitleLanguage(subtitleId)) {
         const subtitle = tabInfo?.[subtitleId] || [];
         setSubtitles(subtitle.map(({ text, start, end }) => ({ text: stripTags(text), start, end })));
       } else {
         const subtitle = await getLocalSubtitle(subtitleId);
+        if (cancelled) return;
         const delay = uploadedSubtitles.find(({ id }) => id === subtitleId)?.delay || 0;
         setSubtitles(
           subtitle.map(({ text, start, end }) => ({ text: stripTags(text), start: start + delay, end: end + delay }))
         );
       }
-    })();
+    })().catch(() => {
+      if (cancelled) return;
+      setSubtitles([]);
+      toast.error(t('error_try_later'));
+    });
+    return () => { cancelled = true; };
   }, [subtitleId, tabInfo, uploadedSubtitles]);
 
   useEffect(() => {
