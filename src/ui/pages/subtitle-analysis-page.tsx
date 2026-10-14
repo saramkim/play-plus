@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { formatTime, cn } from '@utils/helper';
 import { t } from '@utils/i18n';
@@ -11,6 +11,7 @@ import { GalleryVertical, XIcon } from 'lucide-react';
 import { Button } from '@/ui/components/button';
 import { Input } from '@/ui/components/input';
 import { SubtitleItem } from '@/ui/features/analysis/subtitle-item';
+import { findCompanionCues, useAnalysisCompanion } from '@/ui/features/analysis/use-analysis-companion';
 import { useAutoScroll } from '@/ui/features/analysis/use-auto-scroll';
 import { useSubtitleAnalysis } from '@/ui/features/analysis/use-subtitle-analysis';
 import { UploadedSubtitleSelect } from '@/ui/features/subtitle-upload/uploaded-subtitle-select';
@@ -85,6 +86,8 @@ export function SubtitleAnalysisPage() {
         <SubtitleAnalysis
           key={`${activeTab?.id ?? ''}:${videoId ?? ''}:${subtitleId}`}
           subtitles={subtitles}
+          subtitleId={subtitleId}
+          videoId={videoId}
           activeIndex={activeIndex}
           handleToggleSubtitle={handleToggleSubtitle}
           isSubtitleSaved={isSubtitleSaved}
@@ -105,6 +108,8 @@ function EmptyState() {
 
 interface SubtitleAnalysisProps {
   subtitles: SubtitleData[];
+  subtitleId: string;
+  videoId: string | null;
   activeIndex: number;
   handleToggleSubtitle: (subtitle: SubtitleData) => void;
   isSubtitleSaved: (content: string) => boolean;
@@ -113,17 +118,21 @@ interface SubtitleAnalysisProps {
 
 function SubtitleAnalysis({
   subtitles,
+  subtitleId,
+  videoId,
   activeIndex,
   handleToggleSubtitle,
   isSubtitleSaved,
   handlePlayVideo,
 }: SubtitleAnalysisProps) {
+  const companion = useAnalysisCompanion(subtitleId, videoId);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchText, setSearchText] = useState('');
   const previousQueryRef = useRef('');
   const playButtonsRef = useRef(new Map<number, HTMLButtonElement>());
   const pendingFocusRef = useRef<number | null>(null);
+  const [navigationIndex, setNavigationIndex] = useState<number | null>(null);
   const query = searchText.trim().toLowerCase();
   const visibleRows = useMemo(() => subtitles
     .map((subtitle, sourceIndex) => ({ subtitle, sourceIndex }))
@@ -135,6 +144,12 @@ function SubtitleAnalysis({
     getScrollElement: () => containerRef.current,
     estimateSize: () => ESTIMATED_ITEM_HEIGHT + GAP_HEIGHT,
     overscan: 5,
+    // Dynamic companion heights can briefly move the focused target outside the measured range.
+    rangeExtractor: (range) => {
+      const indices = defaultRangeExtractor(range);
+      return navigationIndex !== null && navigationIndex < visibleRows.length
+        ? [...new Set([...indices, navigationIndex])].sort((a, b) => a - b) : indices;
+    },
   });
 
   const scrollToIndex = useCallback((index: number) => {
@@ -152,6 +167,7 @@ function SubtitleAnalysis({
     pauseFollowing();
     const target = Math.max(0, Math.min(next, visibleRows.length - 1));
     pendingFocusRef.current = target;
+    setNavigationIndex(target);
     rowVirtualizer.scrollToIndex(target, { align: 'auto' });
     const button = playButtonsRef.current.get(target);
     if (button) { button.focus({ preventScroll: true }); pendingFocusRef.current = null; }
@@ -164,12 +180,22 @@ function SubtitleAnalysis({
 
   const updateSearch = (value: string) => {
     pendingFocusRef.current = null;
+    setNavigationIndex(null);
     setSearchText(value);
     if (value.trim()) setIsAutoScrolling(false);
   };
 
   return (
     <div className='relative flex min-h-0 flex-1 flex-col overflow-hidden'>
+      <label className='flex min-w-0 items-center gap-2 border-b p-2 text-sm'>
+        <span className='shrink-0'>{t('analysis_companion')}</span>
+        <select aria-label={t('analysis_companion')} value={companion.selectedId}
+          onChange={(event) => companion.setSelectedId(event.target.value)}
+          className='min-w-0 flex-1 rounded border bg-background p-1 text-foreground'>
+          <option value=''>{t('analysis_companion_none')}</option>
+          {companion.options.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+        </select>
+      </label>
       <div className='flex items-center gap-2 border-b p-2'>
         <Input ref={searchInputRef} type='search' aria-label={t('subtitle_body_search')} placeholder={t('subtitle_body_search')}
           value={searchText} onChange={(event) => updateSearch(event.target.value)} />
@@ -216,6 +242,7 @@ function SubtitleAnalysis({
                       }
                     }}
                     subtitle={subtitle}
+                    companionCues={findCompanionCues(subtitle, companion.cues)}
                     isActive={sourceIndex === activeIndex}
                     isSaved={isSubtitleSaved(subtitle.text)}
                     onClick={() => handlePlayVideo(subtitle.start)}

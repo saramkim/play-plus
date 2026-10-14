@@ -14,10 +14,11 @@ interface SubtitleItemProps extends React.ComponentProps<'div'> {
   isSaved: boolean;
   onToggleSave: (subtitle: SubtitleData) => void;
   playButtonRef?: React.Ref<HTMLButtonElement>;
+  companionCues?: SubtitleData[];
 }
 
 export const SubtitleItem = memo(
-  ({ subtitle, isActive, isSaved, onToggleSave, playButtonRef, className, ...props }: SubtitleItemProps) => {
+  ({ subtitle, isActive, isSaved, onToggleSave, playButtonRef, companionCues, className, ...props }: SubtitleItemProps) => {
     const { text, start, end } = subtitle;
     return (
       <div
@@ -28,11 +29,16 @@ export const SubtitleItem = memo(
         )}
         {...props}
       >
+        <div className='min-w-0 flex-1'>
         <button type='button' ref={playButtonRef} data-subtitle-play aria-current={isActive ? 'true' : undefined}
-          className='min-w-0 flex-1 rounded text-left focus-visible:outline-2 focus-visible:outline-primary'>
+          className='w-full min-w-0 rounded text-left focus-visible:outline-2 focus-visible:outline-primary'>
           <span className='block whitespace-pre-line break-words'>{text}</span>
           <span className='block text-xs text-muted-foreground'>{formatTime(start)} - {formatTime(end)}</span>
         </button>
+        {!!companionCues?.length && <div data-companion-text className='mt-1 border-l-2 pl-2 text-sm text-muted-foreground'>
+          {companionCues.map((cue, index) => <p key={index} className='whitespace-pre-line break-words'>{cue.text}</p>)}
+        </div>}
+        </div>
         <Button
           type='button'
           aria-label={`${t(isSaved ? 'delete' : 'save')}: ${text}`}

@@ -1,4 +1,6 @@
 {
+  "analysis_companion": { "message": "함께 볼 자막" },
+  "analysis_companion_none": { "message": "없음" },
   "app_name": { "message": "Play Plus" },
   "extension_name": { "message": "Play Plus - 쿠팡플레이 기능 확장" },
   "extension_description": {
