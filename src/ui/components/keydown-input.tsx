@@ -1,5 +1,6 @@
 import { cn } from '@utils/helper';
 import { t } from '@utils/i18n';
+import { formatShortcutCode } from '@utils/shortcut-code';
 import { XIcon } from 'lucide-react';
 
 
@@ -14,7 +15,7 @@ export const KeydownInput = ({ value, onChange, className, ...props }: KeydownIn
   return (
     <div className='relative w-full group'>
       <Input
-        value={value}
+        value={typeof value === 'string' ? formatShortcutCode(value, chrome.i18n.getUILanguage()) : value}
         onKeyDown={({ code }) => code !== value && onChange(code)}
         readOnly
         placeholder={t('press_any_key')}
