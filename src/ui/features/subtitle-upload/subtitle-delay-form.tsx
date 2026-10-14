@@ -1,5 +1,5 @@
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { round } from '@utils/helper';
 import { CheckIcon, MinusIcon, PlusIcon } from 'lucide-react';
@@ -22,30 +22,41 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
 
   useClickOutside([formRef], closeEditMode);
 
+  const stopStepping = useCallback(() => {
+    if (delayTimeoutRef.current !== null) {
+      clearTimeout(delayTimeoutRef.current);
+      delayTimeoutRef.current = null;
+    }
+
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('blur', stopStepping);
+    return () => {
+      window.removeEventListener('blur', stopStepping);
+      stopStepping();
+    };
+  }, [stopStepping]);
+
   const startStepping = (step: number) => {
+    stopStepping();
     setDelay((prev) => round(prev + step));
 
     delayTimeoutRef.current = setTimeout(() => {
+      delayTimeoutRef.current = null;
       intervalRef.current = setInterval(() => {
         setDelay((prev) => round(prev + step));
       }, 50);
     }, 300);
   };
 
-  const stopStepping = () => {
-    if (delayTimeoutRef.current) {
-      clearTimeout(delayTimeoutRef.current);
-      delayTimeoutRef.current = null;
-    }
-
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    stopStepping();
     onUpdateDelay(delay);
   };
 
@@ -58,6 +69,7 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
         onMouseDown={() => startStepping(-0.1)}
         onMouseUp={stopStepping}
         onMouseLeave={stopStepping}
+        onPointerCancel={stopStepping}
       >
         <MinusIcon />
       </Button>
@@ -71,6 +83,7 @@ export function SubtitleDelayForm({ initialDelay, onUpdateDelay, closeEditMode }
         onMouseDown={() => startStepping(0.1)}
         onMouseUp={stopStepping}
         onMouseLeave={stopStepping}
+        onPointerCancel={stopStepping}
       >
         <PlusIcon />
       </Button>
