@@ -2,6 +2,7 @@
 import { memo } from 'react';
 
 import { formatTime, cn } from '@utils/helper';
+import { t } from '@utils/i18n';
 import { SubtitleData } from '@utils/parse';
 import { StarIcon, StarOffIcon } from 'lucide-react';
 
@@ -12,34 +13,33 @@ interface SubtitleItemProps extends React.ComponentProps<'div'> {
   isActive: boolean;
   isSaved: boolean;
   onToggleSave: (subtitle: SubtitleData) => void;
+  playButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
 export const SubtitleItem = memo(
-  ({ subtitle, isActive, isSaved, onToggleSave, className, ...props }: SubtitleItemProps) => {
+  ({ subtitle, isActive, isSaved, onToggleSave, playButtonRef, className, ...props }: SubtitleItemProps) => {
     const { text, start, end } = subtitle;
     return (
       <div
         className={cn(
-          'p-2 rounded relative group',
+          'p-2 rounded flex items-center gap-2',
           isActive ? 'bg-primary/20' : isSaved ? 'bg-yellow-50 hover:bg-yellow-100' : 'bg-gray-50 hover:bg-gray-100',
           className
         )}
         {...props}
       >
-        <p className='whitespace-pre-line'>{text}</p>
-        <div
-          className={cn(
-            'absolute bottom-[calc(100%+0.25rem)] right-0 bg-gray-200 rounded px-2 py-1 z-10 text-[13px]',
-            'opacity-0 group-hover:opacity-100 pointer-events-none'
-          )}
-        >
-          {formatTime(start)} - {formatTime(end)}
-        </div>
+        <button type='button' ref={playButtonRef} data-subtitle-play aria-current={isActive ? 'true' : undefined}
+          className='min-w-0 flex-1 rounded text-left focus-visible:outline-2 focus-visible:outline-primary'>
+          <span className='block whitespace-pre-line break-words'>{text}</span>
+          <span className='block text-xs text-muted-foreground'>{formatTime(start)} - {formatTime(end)}</span>
+        </button>
         <Button
+          type='button'
+          aria-label={`${t(isSaved ? 'delete' : 'save')}: ${text}`}
           variant='ghost'
           size='xxs'
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 right-2 opacity-0 group-hover:opacity-100',
+            'shrink-0',
             isSaved ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-800' : 'bg-gray-100'
           )}
           onClick={(e) => {

@@ -22,13 +22,6 @@ vi.mock('@/ui/features/analysis/use-subtitle-analysis', () => ({ useSubtitleAnal
   isSubtitleSaved: () => false,
 }) }));
 vi.mock('@/ui/features/subtitle-upload/uploaded-subtitle-select', () => ({ UploadedSubtitleSelect: () => null }));
-vi.mock('@/ui/features/analysis/subtitle-item', () => ({
-  SubtitleItem: ({ subtitle, isActive, onClick, onToggleSave }: {
-    subtitle: { start: number; end: number; text: string }; isActive: boolean;
-    onClick: () => void; onToggleSave: (subtitle: unknown) => void;
-  }) => <div data-row data-active={isActive}><button onClick={onClick}>{subtitle.text}</button>
-    <button onClick={() => onToggleSave(subtitle)}>save</button></div>,
-}));
 vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count, getItemKey }: {
   count: number; getItemKey: (index: number) => number;
 }) => ({
@@ -45,7 +38,11 @@ const search = (value: string) => act(() => {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
   input.dispatchEvent(new Event('input', { bubbles: true }));
 });
-const rows = () => Array.from(container.querySelectorAll<HTMLElement>('[data-row]'));
+const rows = () => Array.from(container.querySelectorAll<HTMLElement>('[data-index]'));
+const isActive = (row: HTMLElement) => !!row.querySelector('[aria-current="true"]');
+const press = (element: HTMLElement, key: string) => act(() => {
+  element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+});
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   Object.assign(chrome.tabs, { onUpdated: { addListener: vi.fn(), removeListener: vi.fn() } });
@@ -84,7 +81,7 @@ describe('analysis body search', () => {
       mocks.subtitles[0] = { start: 7, end: 8, text: 'Hello\n안녕하세요' };
       render(); search('hello');
       expect(rows()).toHaveLength(3);
-      expect(rows().filter((row) => row.dataset.active === 'true')).toEqual([rows()[2]]);
+      expect(rows().filter(isActive)).toEqual([rows()[2]]);
       act(() => rows()[1].querySelectorAll('button')[1].click());
       expect(mocks.save).toHaveBeenCalledWith(mocks.subtitles[1]);
     } finally {
@@ -97,7 +94,7 @@ describe('analysis body search', () => {
     search('  HELLO  ');
     expect(rows()).toHaveLength(2);
     expect(rows()[0].textContent).toContain('안녕하세요');
-    expect(rows()[1].dataset.active).toBe('true');
+    expect(isActive(rows()[1])).toBe(true);
     expect(container.querySelector('[role=status]')?.textContent).toBe('subtitle_search_count:2/3');
     act(() => rows()[1].querySelector('button')!.click());
     expect(mocks.play).toHaveBeenCalledWith(20);
@@ -135,5 +132,48 @@ describe('analysis body search', () => {
     search('hello');
     act(() => useTabStore.setState({ activeTab: { id: 2, url: 'https://www.coupangplay.com/play/00000000-0000-0000-0000-000000000002' } as chrome.tabs.Tab }));
     expect(container.querySelector('input')!.value).toBe('');
+  });
+});
+
+describe('analysis keyboard navigation', () => {
+  it('navigates only the list, clamps endpoints and keeps save separate from playback', () => {
+    const first = rows()[0].querySelector<HTMLButtonElement>('[data-subtitle-play]')!;
+    act(() => first.focus());
+    press(first, 'End');
+    expect(document.activeElement).toBe(rows()[2].querySelector('[data-subtitle-play]'));
+    expect(mocks.scroll).toHaveBeenLastCalledWith(2, { align: 'auto' });
+    press(document.activeElement as HTMLElement, 'ArrowDown');
+    expect(document.activeElement).toBe(rows()[2].querySelector('[data-subtitle-play]'));
+    press(document.activeElement as HTMLElement, 'ArrowUp');
+    expect(document.activeElement).toBe(rows()[1].querySelector('[data-subtitle-play]'));
+    press(document.activeElement as HTMLElement, 'Home');
+    expect(document.activeElement).toBe(first);
+    expect(mocks.play).not.toHaveBeenCalled();
+    act(() => rows()[0].querySelectorAll('button')[1].click());
+    expect(mocks.save).toHaveBeenCalledExactlyOnceWith(mocks.subtitles[0]);
+    expect(mocks.play).not.toHaveBeenCalled();
+    act(() => first.click());
+    expect(mocks.play).toHaveBeenCalledExactlyOnceWith(1);
+    mocks.scroll.mockClear();
+    press(container.querySelector('input')!, 'End');
+    expect(mocks.scroll).not.toHaveBeenCalled();
+    expect(container.querySelector('button button')).toBeNull();
+  });
+
+  it('uses filtered order and keeps following paused after navigation or user scrolling', () => {
+    search('hello');
+    const first = rows()[0].querySelector<HTMLButtonElement>('[data-subtitle-play]')!;
+    press(first, 'End');
+    act(() => (document.activeElement as HTMLButtonElement).click());
+    expect(mocks.play).toHaveBeenCalledExactlyOnceWith(20);
+    act(() => container.querySelector<HTMLButtonElement>('[aria-label="clear_search"]')!.click());
+    mocks.scroll.mockClear(); mocks.state.activeIndex = 1; render();
+    expect(mocks.scroll).not.toHaveBeenCalled();
+    act(() => container.querySelector<HTMLButtonElement>('[aria-label="auto_scroll"]')!.click());
+    const list = container.querySelector('.overflow-y-auto')!;
+    act(() => list.dispatchEvent(new Event('scroll', { bubbles: true })));
+    expect(container.textContent).toContain('analysis_following');
+    act(() => list.dispatchEvent(new Event('wheel', { bubbles: true })));
+    expect(container.textContent).toContain('analysis_follow_paused');
   });
 });
