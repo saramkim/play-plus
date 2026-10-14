@@ -9,6 +9,8 @@ export type TabInfo = {
   secondarySubtitle?: SubtitleId | null;
   en?: SubtitleData[] | null;
   ko?: SubtitleData[] | null;
+  nativeVideoId?: string | null;
+  nativeRequestId?: number;
   connectionStatus?: ConnectionStatus;
   videoStatus?: VideoStatus;
 };
@@ -16,16 +18,27 @@ export type TabInfo = {
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 export type VideoStatus = 'idle' | 'detecting' | 'detected' | 'not_detected';
 
-export const updateTabInfo = async (tabId: number, info: TabInfo) => {
-  const currentInfo = await getTabInfo(tabId);
-  const key = KEY_PREFIX + tabId.toString();
-  return chrome.storage.session.set({ [key]: currentInfo ? { ...currentInfo, ...info } : info });
+const updates = new Map<number, Promise<void>>();
+type TabInfoUpdate = TabInfo | ((current: TabInfo) => Promise<TabInfo | undefined>);
+
+// Serialize read/modify/write operations within this context, including native invalidation.
+// This is not a cross-context storage lock.
+export const updateTabInfo = (tabId: number, info: TabInfoUpdate): Promise<void> => {
+  const task = (updates.get(tabId) ?? Promise.resolve()).catch(() => {}).then(async () => {
+    const current = await getTabInfo(tabId) ?? {};
+    const patch = typeof info === 'function' ? await info(current) : info;
+    if (patch) await chrome.storage.session.set({ [KEY_PREFIX + tabId.toString()]: { ...current, ...patch } });
+  });
+  updates.set(tabId, task);
+  void task.finally(() => { if (updates.get(tabId) === task) updates.delete(tabId); }).catch(() => {});
+  return task;
 };
 
 export const getTabInfo = (tabId: number): Promise<TabInfo | undefined> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const key = KEY_PREFIX + tabId.toString();
     chrome.storage.session.get(key, (result) => {
+      if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
       resolve(result[key]);
     });
   });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { COUPANG_PLAY_SELECTORS } from '@utils/constants';
+import { NativeSubtitleResult } from '@utils/native-subtitles';
 import { parseVTT, SubtitleData } from '@utils/parse';
 
 import { arrayToHeadersObject } from '@/content/features/subtitle/subtitle-utils';
@@ -115,7 +116,15 @@ class CoupangPlayStrategy {
   async fetchSubtitles(url: string, headers: chrome.webRequest.HttpHeader[]) {
     const subtitleApiInfoList = await this.fetchVideoMetadata(url, headers);
     return Promise.all(
-      subtitleApiInfoList.map(async ({ lang, url }) => ({ lang, subtitleData: await this.fetchSubtitle(url) }))
+      subtitleApiInfoList.map(async ({ lang, url }): Promise<{ lang: string; result: NativeSubtitleResult }> => {
+        try {
+          if (!url) throw new Error('Invalid subtitle track');
+          return { lang, result: { status: 'success', subtitleData: await this.fetchSubtitle(url) } };
+        } catch {
+          // Keep failed candidates in source order: a later duplicate must not become the selected track.
+          return { lang, result: { status: 'failed' } };
+        }
+      })
     );
   }
 
@@ -125,12 +134,19 @@ class CoupangPlayStrategy {
       'X-Extension-Request': 'true', // 무한 루프 방지용 커스텀 헤더
     };
     const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error('Coupang Play metadata request failed');
     return this.extractSubtitleApiInfoFromResponse(await response.json());
   }
 
   private async fetchSubtitle(url: string): Promise<SubtitleData[]> {
     const response = await fetch(url);
-    return parseVTT(await response.text());
+    if (!response.ok) throw new Error('Subtitle request failed');
+    const cues = parseVTT(await response.text());
+    if (!cues.length || cues.some(({ start, end, text }) =>
+      !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || !text.trim())) {
+      throw new Error('Unusable subtitle track');
+    }
+    return cues;
   }
 
   private extractSubtitleApiInfoFromResponse(response: unknown) {
@@ -139,9 +155,15 @@ class CoupangPlayStrategy {
       throw new Error('Invalid Coupang Play playback response');
     }
 
-    return result.data.data.raw.text_tracks.flatMap(({ kind, srclang, src, sources }) => {
-      if (kind !== 'subtitles' || !srclang) return [];
-      const url = src ?? sources?.[0]?.src;
+    return result.data.data.raw.text_tracks.flatMap<{ lang: string; url: string | null }>((value) => {
+      const descriptor = trackDescriptorSchema.safeParse(value);
+      if (!descriptor.success) return [];
+      const { kind, srclang } = descriptor.data;
+      if (kind !== 'subtitles' || typeof srclang !== 'string' || !srclang) return [];
+      const parsed = trackSchema.safeParse(value);
+      if (!parsed.success) return [{ lang: srclang, url: null }];
+      const url = parsed.data.src ?? parsed.data.sources?.[0]?.src;
+      // Missing URLs were not selectable in v1. Preserve that policy.
       return url ? [{ lang: srclang, url }] : [];
     });
   }
@@ -152,14 +174,15 @@ export const coupangStrategy = new CoupangPlayStrategy();
 const playbackResponseSchema = z.object({
   data: z.object({
     raw: z.object({
-      text_tracks: z.array(
-        z.object({
-          kind: z.string(),
-          srclang: z.string().nullish(),
-          src: z.string().nullish(),
-          sources: z.array(z.object({ src: z.string() })).optional(),
-        })
-      ),
+      text_tracks: z.array(z.unknown()),
     }),
   }),
+});
+
+const trackDescriptorSchema = z.object({ kind: z.unknown(), srclang: z.unknown(), src: z.unknown(), sources: z.unknown() });
+const trackSchema = z.object({
+  kind: z.string(),
+  srclang: z.string().nullish(),
+  src: z.string().nullish(),
+  sources: z.array(z.object({ src: z.string() })).optional(),
 });

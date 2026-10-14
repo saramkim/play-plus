@@ -21,8 +21,10 @@ vi.mock('@/ui/store/page-store', () => ({ usePageParams: () => ({ id: 'subtitle-
 let root: Root;
 let container: HTMLDivElement;
 let mounted: boolean;
-function Analysis() {
-  const { subtitles } = useSubtitleAnalysis();
+let analysis: ReturnType<typeof useSubtitleAnalysis>;
+function Analysis({ videoId = null }: { videoId?: string | null }) {
+  analysis = useSubtitleAnalysis(videoId);
+  const { subtitles } = analysis;
   return <div>{JSON.stringify(subtitles)}</div>;
 }
 beforeEach(() => {
@@ -47,5 +49,37 @@ describe('analysis subtitle read errors', () => {
     await act(async () => root.unmount()); mounted = false;
     await act(async () => reject(new Error('late')));
     expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+describe('native analysis video identity', () => {
+  it('hides stale rows/options synchronously on URL change and exposes only matching native data', async () => {
+    const cues = [{ start: 1, end: 2, text: '<b>English</b>' }];
+    vi.mocked(getLocalSubtitle).mockResolvedValue([]);
+    useTabStore.setState({ tabInfo: { nativeVideoId: 'A', en: cues, ko: null } });
+    await act(async () => root.render(<Analysis videoId='A' />));
+    await act(async () => analysis.setSubtitleId('en'));
+    expect(container.textContent).toContain('English');
+    expect(container.textContent).not.toContain('<b>');
+    expect(analysis.defaultSubtitleOptions.map(({ id }) => id)).toEqual(['en']);
+    await act(async () => root.render(<Analysis videoId='B' />));
+    expect(container.textContent).toBe('[]');
+    expect(analysis.defaultSubtitleOptions).toEqual([]);
+    await act(async () => useTabStore.setState({ tabInfo: { nativeVideoId: 'B', en: null, ko: [{ start: 3, end: 4, text: '현재' }] } }));
+    await act(async () => analysis.setSubtitleId('ko'));
+    expect(container.textContent).toContain('현재');
+    await act(async () => useTabStore.setState({ tabInfo: { nativeVideoId: 'A', en: cues, ko: cues } }));
+    expect(container.textContent).toBe('[]');
+    expect(analysis.defaultSubtitleOptions).toEqual([]);
+  });
+  it('does not interpret legacy unscoped native data as current, while custom data remains available', async () => {
+    const custom = [{ start: 1, end: 2, text: 'uploaded' }];
+    vi.mocked(getLocalSubtitle).mockResolvedValue(custom);
+    useTabStore.setState({ tabInfo: { en: custom } });
+    await act(async () => root.render(<Analysis videoId='A' />));
+    expect(container.textContent).toContain('uploaded');
+    expect(analysis.defaultSubtitleOptions).toEqual([]);
+    await act(async () => analysis.setSubtitleId('en'));
+    expect(container.textContent).toBe('[]');
   });
 });

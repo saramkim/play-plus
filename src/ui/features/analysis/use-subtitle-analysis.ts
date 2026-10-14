@@ -17,8 +17,8 @@ import { useTabStore } from '@/ui/store/tab-store';
 
 const isDefaultSubtitleLanguage = (language: string) => language === 'en' || language === 'ko';
 
-export function useSubtitleAnalysis() {
-  const [subtitles, setSubtitles] = useState<SubtitleData[]>([]);
+export function useSubtitleAnalysis(currentVideoId: string | null) {
+  const [customSubtitles, setSubtitles] = useState<SubtitleData[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const { subtitles: savedSubtitles, saveSubtitle, deleteSubtitle } = useSavedSubtitle();
   const activeTab = useTabStore((state) => state.activeTab);
@@ -30,15 +30,21 @@ export function useSubtitleAnalysis() {
     params?.id || tabInfo?.primarySubtitle || primarySubtitleLanguage
   );
 
+  const nativeMatches = Boolean(currentVideoId && tabInfo?.nativeVideoId === currentVideoId);
+  // Derive native rows synchronously so a URL-only change never renders the previous video's rows.
+  const subtitles = useMemo(() => isDefaultSubtitleLanguage(subtitleId)
+    ? (nativeMatches ? tabInfo?.[subtitleId] ?? [] : []).map(({ text, start, end }) => ({ text: stripTags(text), start, end }))
+    : customSubtitles, [subtitleId, nativeMatches, tabInfo, customSubtitles]);
+
   const activeIndex = useMemo(() => findSubtitleIndex(subtitles, currentTime), [subtitles, currentTime]);
   const defaultSubtitleOptions = useMemo(() => {
-    return tabInfo
+    return tabInfo && nativeMatches
       ? Object.keys(tabInfo)
           .filter(isDefaultSubtitleLanguage)
           .filter((key) => tabInfo[key])
           .map((key) => ({ id: key, label: t(LANGUAGES[key]) }))
       : [];
-  }, [tabInfo]);
+  }, [tabInfo, nativeMatches]);
 
   const isSubtitleSaved = useMemo(() => {
     return (content: string) => savedSubtitles.some((saved) => saved.content === content);
@@ -47,10 +53,7 @@ export function useSubtitleAnalysis() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (isDefaultSubtitleLanguage(subtitleId)) {
-        const subtitle = tabInfo?.[subtitleId] || [];
-        setSubtitles(subtitle.map(({ text, start, end }) => ({ text: stripTags(text), start, end })));
-      } else {
+      if (!isDefaultSubtitleLanguage(subtitleId)) {
         const subtitle = await getLocalSubtitle(subtitleId);
         if (cancelled) return;
         const delay = uploadedSubtitles.find(({ id }) => id === subtitleId)?.delay || 0;
@@ -64,7 +67,7 @@ export function useSubtitleAnalysis() {
       toast.error(t('error_try_later'));
     });
     return () => { cancelled = true; };
-  }, [subtitleId, tabInfo, uploadedSubtitles]);
+  }, [subtitleId, uploadedSubtitles]);
 
   useEffect(() => {
     (async () => {
