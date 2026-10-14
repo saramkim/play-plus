@@ -1,9 +1,8 @@
 
 import { useRef, useState } from 'react';
 
-import { getLocalStorage, setLocalStorage } from '@storage/index';
-import { setLocalSubtitle } from '@storage/subtitle';
-import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES, REGISTRATION } from '@utils/constants';
+import { addRegisteredSubtitle } from '@storage/registered-subtitle';
+import { ENCODING_MAP, Language, LANGUAGE_ENCODING_MAP, LANGUAGES } from '@utils/constants';
 import { t } from '@utils/i18n';
 import { getSubtitleFormat, parseSubtitle } from '@utils/parse';
 import { FileTextIcon, FileUpIcon } from 'lucide-react';
@@ -45,13 +44,7 @@ const uploadSubtitle = (file: File, title: string, language: Language) => {
         const content = getContent(reader.result as ArrayBuffer, language);
         const subtitle = getSubtitle(file, content);
         if (subtitle.length === 0) throw new EmptySubtitleError();
-        const id = `${REGISTRATION.ID_PREFIX}-${crypto.randomUUID()}` as const;
-
-        const newData = { id, title, language, savedAt: new Date().toISOString() };
-        await Promise.all([
-          setLocalSubtitle(id, subtitle),
-          setLocalStorage('registeredSubtitles', [...((await getLocalStorage('registeredSubtitles')) ?? []), newData]),
-        ]);
+        await addRegisteredSubtitle({ title, language, body: subtitle });
         resolve();
       } catch (error) {
         reject(error);
