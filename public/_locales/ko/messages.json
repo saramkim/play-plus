@@ -95,6 +95,7 @@
   "copy_secondary_subtitle": { "message": "서브 자막 복사" },
   "save": { "message": "저장" },
   "search_term": { "message": "검색어" },
+  "clear_search": { "message": "검색 해제" },
   "search": { "message": "검색" },
   "secondary_subtitle": { "message": "서브 자막" },
   "seconds": { "message": "초" },
