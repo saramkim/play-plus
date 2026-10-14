@@ -66,7 +66,7 @@ interface SubtitleItemProps {
   tabInfo: TabInfo | null;
   onDelete: (id: SubtitleId) => void;
   onEdit: (id: SubtitleId, title: string, language: Language) => Promise<unknown>;
-  onUpdateDelay: (id: SubtitleId, delay: number) => void;
+  onUpdateDelay: (id: SubtitleId, delay: number) => Promise<'stored' | 'applied'>;
 }
 
 function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDelay }: SubtitleItemProps) {
@@ -112,10 +112,7 @@ function SubtitleItem({ data, activeTab, tabInfo, onDelete, onEdit, onUpdateDela
         {isDelayEditing ? (
           <SubtitleDelayForm
             initialDelay={data.delay}
-            onUpdateDelay={(delay) => {
-              onUpdateDelay(data.id, delay);
-              setIsDelayEditing(false);
-            }}
+            onUpdateDelay={(delay) => onUpdateDelay(data.id, delay)}
             closeEditMode={() => setIsDelayEditing(false)}
           />
         ) : (

@@ -20,7 +20,7 @@ export type MessageSchema = {
     params: { subtitleId: SubtitleId | null; delay: number };
   };
   updateSubtitleDelay: {
-    params: { subtitleId: SubtitleId; delay: number };
+    params: { subtitleId: SubtitleId; delay: number; expectedVideoId: string };
   };
   updateCurrentTime: {
     params: number;

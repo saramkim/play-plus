@@ -7,9 +7,10 @@ import { SubtitleId } from '@storage/subtitle';
 import { SubtitleMetadata } from '@storage/type';
 import { Language, REGISTRATION } from '@utils/constants';
 import { t } from '@utils/i18n';
-import { sendMessageToTab } from '@utils/message';
 
 import { modal } from '@/ui/components/modal';
+
+import { updateSubtitleDelay } from './update-subtitle-delay';
 
 const { STORAGE_KEY } = REGISTRATION;
 
@@ -39,12 +40,7 @@ export function useUploadedSubtitles(activeTab?: chrome.tabs.Tab | null) {
   const editSubtitle = (id: SubtitleId, title: string, language: Language) =>
     updateRegisteredSubtitle(id, { title, language });
 
-  const updateDelay = async (id: SubtitleId, delay: number) => {
-    await updateRegisteredSubtitle(id, { delay });
-    if (activeTab?.id) {
-      sendMessageToTab(activeTab.id, 'updateSubtitleDelay', { subtitleId: id, delay });
-    }
-  };
+  const updateDelay = (id: SubtitleId, delay: number) => updateSubtitleDelay(id, delay, activeTab);
 
   const deleteSubtitle = (id: SubtitleId) => {
     modal.confirm({

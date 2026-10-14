@@ -185,6 +185,8 @@
   "error_reserved_shortcuts": { "message": "Reserved for the system" },
   "error_video_not_found": { "message": "Video not found." },
   "error_try_later": { "message": "Please try again later." },
+  "error_subtitle_delay_apply": { "message": "Saved, but the change could not be confirmed in the current video. Please apply it again." },
+  "info_subtitle_delay_saved": { "message": "Saved. The delay will apply when you select this subtitle." },
   "error_subtitle_recovery": { "message": "The subtitle could not be deleted and its text could not be restored. Check the registered subtitle before retrying." },
   "error_empty_subtitle": { "message": "No valid subtitles to register. Check the subtitle text and timestamps." },
   "error_duplicate_subtitle": { "message": "Already saved subtitle." },

@@ -1,10 +1,11 @@
-import { getLocalSubtitle } from '@storage/subtitle';
+import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import {
   COUPANG_PLAY_VIDEO_URL_LIST,
   DEFAULT_SUBTITLE_LANGUAGES,
   SET_SUBTITLE_STORAGE_KEY_MAP,
   SetSubtitleAction,
 } from '@utils/constants';
+import { getCoupangPlayVideoId } from '@utils/coupang-play';
 import { t } from '@utils/i18n';
 import { MessageResponse, onMessage, sendMessage } from '@utils/message/index';
 import { MessageSchema } from '@utils/message/type';
@@ -76,12 +77,12 @@ export function initializeMessageListener() {
       }
       case 'setPrimarySubtitle':
       case 'setSecondarySubtitle': {
-        handleSetSubtitle(message, params).then(sendResponse);
+        handleSetSubtitle(message, params).then(sendResponse, () => sendResponse({ success: false, message: t('error_try_later') }));
         return true;
       }
       case 'updateSubtitleDelay': {
-        handleUpdateSubtitleDelay(params);
-        break;
+        handleUpdateSubtitleDelay(params).then(sendResponse, () => sendResponse({ success: false, message: t('error_try_later') }));
+        return true;
       }
       case 'getVideoTime': {
         handleGetVideoTime().then(sendResponse);
@@ -129,42 +130,78 @@ const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) =>
   }
 };
 
-const handleSetSubtitle = async (
+const selectionRequests = { setPrimarySubtitle: 0, setSecondarySubtitle: 0 };
+const cacheRequests = new Map<SubtitleId, { delay: number; generation: number }>();
+let cacheGeneration = 0;
+
+const captureVideo = () => {
+  const video = videoManager.get();
+  if (!video) throw new Error('Video not found');
+  const videoId = getCoupangPlayVideoId(location.href);
+  const source = video.currentSrc || video.src;
+  const check = () => {
+    if (!videoManager.isCurrent(video) || getCoupangPlayVideoId(location.href) !== videoId ||
+      (video.currentSrc || video.src) !== source) throw new Error('Video changed');
+  };
+  check();
+  return { video, videoId, check };
+};
+
+const refreshCustomSubtitle = async (subtitleId: SubtitleId, delay: number, check: () => void) => {
+  if (!Number.isFinite(delay)) throw new Error('Invalid subtitle delay');
+  // Two roles requesting the same offset may complete independently. A newer offset supersedes old reads.
+  const previous = cacheRequests.get(subtitleId);
+  const generation = previous?.delay === delay ? previous.generation : ++cacheGeneration;
+  cacheRequests.set(subtitleId, { delay, generation });
+  const subtitle = await getLocalSubtitle(subtitleId);
+  check();
+  if (cacheRequests.get(subtitleId)?.generation !== generation) throw new Error('Subtitle delay changed');
+  useSubtitleStore.getState().setSubtitleCache(subtitleId, subtitle.map((data) => ({
+    ...data,
+    start: data.start + delay,
+    end: data.end + delay,
+  })));
+};
+
+export const handleSetSubtitle = async (
   action: SetSubtitleAction,
   { subtitleId, delay }: MessageSchema['setPrimarySubtitle']['params'] | MessageSchema['setSecondarySubtitle']['params']
 ): Promise<MessageResponse<'setPrimarySubtitle' | 'setSecondarySubtitle'>> => {
-  const video = videoManager.get();
-  if (!video) return { success: false, message: t('error_video_not_found') };
-
-  if (subtitleId && !useSubtitleStore.getState().hasSubtitleCache(subtitleId)) {
-    const subtitle = await getLocalSubtitle(subtitleId);
-    const updatedSubtitle = subtitle.map((data) => ({
-      ...data,
-      start: data.start + delay,
-      end: data.end + delay,
-    }));
-    useSubtitleStore.getState().setSubtitleCache(subtitleId, updatedSubtitle);
-  }
+  if (!videoManager.get()) return { success: false, message: t('error_video_not_found') };
+  const target = captureVideo();
+  const request = ++selectionRequests[action];
+  const check = () => {
+    target.check();
+    if (selectionRequests[action] !== request) throw new Error('Subtitle selection changed');
+  };
+  if (subtitleId) await refreshCustomSubtitle(subtitleId, delay, check);
+  check();
 
   useSubtitleStore.getState().setCustomSubtitleId(SET_SUBTITLE_STORAGE_KEY_MAP[action], subtitleId);
-  useVideoStore.getState().setCurrentTime(video.currentTime);
+  useVideoStore.getState().setCurrentTime(target.video.currentTime);
 
   return { success: true };
 };
 
-const handleUpdateSubtitleDelay = async ({ subtitleId, delay }: MessageSchema['updateSubtitleDelay']['params']) => {
-  const video = videoManager.get();
-  if (!video) return;
-
-  const subtitle = await getLocalSubtitle(subtitleId);
-  const updatedSubtitle = subtitle.map((data) => ({
-    ...data,
-    start: data.start + delay,
-    end: data.end + delay,
-  }));
-
-  useSubtitleStore.getState().setSubtitleCache(subtitleId, updatedSubtitle);
-  useVideoStore.getState().setCurrentTime(video.currentTime);
+export const handleUpdateSubtitleDelay = async ({ subtitleId, delay, expectedVideoId }: MessageSchema['updateSubtitleDelay']['params']): Promise<MessageResponse<'updateSubtitleDelay'>> => {
+  const target = captureVideo();
+  const selected = useSubtitleStore.getState().customSubtitleId;
+  const primary = selected.primarySubtitle === subtitleId;
+  const secondary = selected.secondarySubtitle === subtitleId;
+  const primaryRequest = selectionRequests.setPrimarySubtitle;
+  const secondaryRequest = selectionRequests.setSecondarySubtitle;
+  const check = () => {
+    target.check();
+    const current = useSubtitleStore.getState().customSubtitleId;
+    if (!expectedVideoId || target.videoId !== expectedVideoId || (!primary && !secondary) ||
+      (current.primarySubtitle === subtitleId) !== primary || (current.secondarySubtitle === subtitleId) !== secondary ||
+      (primary && selectionRequests.setPrimarySubtitle !== primaryRequest) ||
+      (secondary && selectionRequests.setSecondarySubtitle !== secondaryRequest)) throw new Error('Subtitle target changed');
+  };
+  check();
+  await refreshCustomSubtitle(subtitleId, delay, check);
+  useVideoStore.getState().setCurrentTime(target.video.currentTime);
+  return { success: true };
 };
 
 const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> => {
