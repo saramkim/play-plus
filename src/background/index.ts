@@ -17,6 +17,7 @@ import {
   PendingSubtitleRequest,
   savePendingSubtitleRequest,
 } from './pending-actions';
+import { restoreUploadedSubtitles } from './restore-uploaded-subtitles';
 import { createTabLifecycleDependencies, handleTabCompleted } from './tab-lifecycle';
 
 const updateConnectedStatus = async (tabId: number, isVideoUrl: boolean, hasVideo: boolean) => {
@@ -77,6 +78,7 @@ onMessage((request) => {
         if (tabId === undefined) throw new Error('Missing sender tab id');
         const { hasVideo, isVideoUrl } = request.params;
         await updateConnectedStatus(tabId, isVideoUrl, hasVideo);
+        if (hasVideo && request.params.restoreUploadedSubtitles) await restoreUploadedSubtitles(tabId);
       });
     }
   }

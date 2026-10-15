@@ -1,5 +1,11 @@
 import { vi } from 'vitest';
 
+// jsdom has no modal dialog methods; native focus trapping is checked in Chrome.
+Object.defineProperties(HTMLDialogElement.prototype, {
+  showModal: { configurable: true, value(this: HTMLDialogElement) { this.open = true; } },
+  close: { configurable: true, value(this: HTMLDialogElement) { this.open = false; } },
+});
+
 Object.defineProperty(globalThis, 'chrome', {
   configurable: true,
   value: {

@@ -49,6 +49,8 @@ it('restores banner focus on cancel and menu focus after success removes the ban
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await click('feedback_send');
+  expect(sendFeedback).not.toHaveBeenCalled();
+  await click('feedback_confirm_send');
   expect(sendFeedback).toHaveBeenCalledOnce();
   await click('feedback_close');
   expect(document.activeElement).toBe(button('menu'));

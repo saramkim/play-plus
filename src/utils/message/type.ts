@@ -22,6 +22,10 @@ export type MessageSchema = {
   updateSubtitleDelay: {
     params: { subtitleId: SubtitleId; delay: number; expectedVideoId: string };
   };
+  restoreUploadedSubtitles: {
+    params: { primarySubtitle: SubtitleId | null; secondarySubtitle: SubtitleId | null };
+    response: { primarySubtitle: SubtitleId | null; secondarySubtitle: SubtitleId | null };
+  };
   updateCurrentTime: {
     params: number;
   };
@@ -32,7 +36,7 @@ export type MessageSchema = {
     response: { hasVideo: boolean };
   };
   contentStatus: {
-    params: { hasVideo: boolean; isVideoUrl: boolean };
+    params: { hasVideo: boolean; isVideoUrl: boolean; restoreUploadedSubtitles?: boolean };
   };
   getVideoTime: {
     response: number;
