@@ -3,6 +3,7 @@ import { useVideoStore } from '@/content/core/store/video-store';
 export class VideoManager {
   private video: HTMLVideoElement | null = null;
   private frameCallbackId: number | null = null;
+  private removeTimeListener: (() => void) | null = null;
 
   set(video: HTMLVideoElement) {
     if (this.video === video) return;
@@ -34,14 +35,24 @@ export class VideoManager {
 
   private startTimeTracking(video: HTMLVideoElement) {
     const updateCurrentTime = () => {
+      if (!this.isCurrent(video)) return;
       useVideoStore.getState().setCurrentTime(video.currentTime);
-      this.frameCallbackId = video.requestVideoFrameCallback(updateCurrentTime);
     };
 
-    this.frameCallbackId = video.requestVideoFrameCallback(updateCurrentTime);
+    // Frame callbacks may pause when Chrome is occluded even while audio keeps playing.
+    video.addEventListener('timeupdate', updateCurrentTime);
+    this.removeTimeListener = () => video.removeEventListener('timeupdate', updateCurrentTime);
+    const updateFrame = () => {
+      if (!this.isCurrent(video)) return;
+      updateCurrentTime();
+      this.frameCallbackId = video.requestVideoFrameCallback(updateFrame);
+    };
+    this.frameCallbackId = video.requestVideoFrameCallback(updateFrame);
   }
 
   private stopTimeTracking() {
+    this.removeTimeListener?.();
+    this.removeTimeListener = null;
     if (this.frameCallbackId === null) return;
 
     this.video?.cancelVideoFrameCallback(this.frameCallbackId);
