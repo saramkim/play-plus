@@ -1,6 +1,8 @@
 # Play Plus Manual Release Smoke Test
 
-Run this checklist against the production `dist/` directory before publishing a release.
+> **Historical evidence — v1.12.0 (2026-10-13).** The PASS results below apply only to the specified release candidate and tested environment. They do not verify the newer `main` or the in-panel feedback feature. For any future release, reuse this matrix as a checklist but record fresh results for the exact new build; never carry forward prior PASS values.
+
+This document preserves the execution and results of the v1.12.0 production `dist/` smoke test.
 
 ## Test environment
 
