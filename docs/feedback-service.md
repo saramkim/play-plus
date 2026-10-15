@@ -1,5 +1,7 @@
 # In-panel feedback (Issue #128)
 
+> **Operations guide (2026-10-15 status snapshot).** Extension [PR #129](https://github.com/saramkim/play-plus/pull/129) and validation documentation [PR #132](https://github.com/saramkim/play-plus/pull/132) are merged. The privacy page was published and synthetic production API checks were recorded, but Chrome Web Store publication and real-user feedback collection are not established by those steps. Verify live Worker intake, policy disclosures and release gates at execution time. See the [document guide](./README.md) and [archived validation](./archive/feedback/2026-10-15-issue-128-validation.md).
+
 This v1 feature collects voluntarily submitted text before the future 2.0 release. The Worker is isolated in `services/feedback`; it is not imported into any extension entry. No account, email, media URL, subtitles, cookies, telemetry SDK, attachment or automatic submission is added.
 
 ## Configuration and current release gate
@@ -14,7 +16,7 @@ The owner approved the following free-plan setup, Wrangler access and both repos
 - Operator: 김유준; public contact: `saramkimm@gmail.com`. The supplied phone number is omitted from the public page.
 - Retention: 90 days plus the daily cleanup interval, with up to 7 additional days in Free D1 recovery history.
 - D1 `play-plus-feedback` was created through the existing authenticated dashboard, with Asia Pacific location hint. Database ID: `a9f9ee53-6f21-444f-9f7a-ea45b7424094`. A hint is not a country residency guarantee.
-- The ignored `services/feedback/wrangler.production.jsonc` references this real database and the agreed workers.dev route. Previews/logging are disabled. Intake is opened only for controlled synthetic validation and restored to `ACCEPT_FEEDBACK=false` afterward; see `feedback-validation.md` for current evidence.
+- The ignored `services/feedback/wrangler.production.jsonc` references this real database and the agreed workers.dev route. Previews/logging are disabled. Intake is opened only for controlled synthetic validation and restored to `ACCEPT_FEEDBACK=false` afterward; see `archive/feedback/2026-10-15-issue-128-validation.md` for current evidence.
 - The bilingual policy page, footer and sitemap are live at the approved URL. Website PR #3 merged as `76628ca32de79d59856b6c41757ad081736e396a`; final CI, Vercel production deployment and live HTTP/content checks passed. Desktop and 360px previews rendered without horizontal overflow. The owner reported submitting a FortiGuard reclassification request after an Unrated network-policy block; reclassification is not yet confirmed.
 - Wrangler is authenticated with the approved `account:read`, `user:read`, `workers_scripts:write`, `d1:write` scopes and OAuth background access. Credentials are encrypted with a key in Windows Credential Manager; no credential is included in this repository. Unneeded default scopes were not requested.
 - Live HTTPS probes passed: allowed-origin POST returns 503 while intake is disabled; untrusted origin returns 403 without CORS allowance; GET returns 405; valid preflight returns 204. Temporary enabled-intake tests verified production POST, exact D1 readback, identical retry receipts, conflicting-ID rejection and 429 responses. Synthetic rows are deleted by exact ID; these CLI probes do not prove Chrome permission interaction.
@@ -173,4 +175,4 @@ Record each result against the exact candidate, extension ID, source/diff and en
 | Regression | Existing settings, menu actions, tabs, subtitles, playback and review with API disabled/denied/failed |
 | Final release | Entire `docs/manual-smoke-test.md` matrix on final approved production build |
 
-See `docs/feedback-validation.md` for execution results and outstanding gates.
+See `docs/archive/feedback/2026-10-15-issue-128-validation.md` for execution results and outstanding gates.

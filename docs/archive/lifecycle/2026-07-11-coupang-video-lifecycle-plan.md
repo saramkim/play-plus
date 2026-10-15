@@ -1,5 +1,7 @@
 # Coupang Play Video Lifecycle Monitor Implementation Plan
 
+> **HISTORICAL PLAN — 2026-07-11; not an active implementation instruction.** The task checkboxes and agent tool directions below are preserved for traceability, not authorization to run or reimplement them today. The current [AGENTS.md](../../../AGENTS.md), latest `main` code and approved Issue take precedence. See [documentation index](../../README.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace one-shot Coupang Play video detection with a persistent monitor that ignores advertisements and placeholders, releases stale videos, and automatically attaches each episode's content video.

@@ -33,7 +33,7 @@
 ### 개발 빌드 설치
 1. 저장소를 클론합니다:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/saramkim/play-plus.git
    cd play-plus
    ```
 
@@ -58,6 +58,10 @@
 ### 개발 기준
 
 `main`은 v1.12.0에 B1–B6·N1–N6 개선을 반영한 현재 개발·PR 통합 기준이다. 전환 당시 HEAD는 `90715605f7ad675ae21d7583be09d85e0e9ceb96`이며, 기존 2.0 `main`의 코드·문서·이력은 [`archive/play-plus-2.0`](https://github.com/saramkim/play-plus/tree/archive/play-plus-2.0)에 보존했다(전환 당시 HEAD: `c7104a4e2cdc68ba35cbfbb44413139c153dd675`). 새 작업은 최신 `main`에서 시작한다. 이 브랜치 전환은 릴리스나 배포가 아니며, 배포 버전은 릴리스 커밋과 `v<version>` 태그로 구분한다.
+
+### 문서 안내
+
+현재 개발 규칙, 새 2.0 기획 초안, 피드백 운영 문서와 과거 검증·설계 기록의 구분은 [문서 안내](docs/README.md)를 참고하세요. **새 2.0은 아직 기획 중**이며, [2.0 기획 초안](docs/play-plus-2.0-planning.md)은 구현 승인이나 기존 2.0 계약의 재적용을 의미하지 않습니다.
 
 ### 필수 요구사항
 - **Node.js**: 22–24

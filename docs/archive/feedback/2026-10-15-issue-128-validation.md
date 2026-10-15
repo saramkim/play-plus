@@ -1,5 +1,7 @@
 # Issue #128 implementation validation
 
+> **Historical validation snapshot (2026-10-15).** This record includes post-merge synthetic production checks added in [PR #132](https://github.com/saramkim/play-plus/pull/132); it does not claim Chrome Web Store release or actual user collection. Current operations and approval gates are documented in [feedback-service.md](../../feedback-service.md). Retain the test statuses and execution evidence below as recorded.
+
 Initial validation: 2026-10-15 Pacific/Auckland, base `e4e7ebdb2684d6a4c9a61d0a4d283d914f179658`, branch `feat/in-panel-feedback`. Follow-up production evidence below is dated 2026-10-15 UTC. Feature PR #129 merged as `df5e61a459b222fe4ead2691a7ef9b0569772b66`; source version remains 1.12.0. The owner approved commits, pushes, review PRs, the free Cloudflare setup and remaining validation work. Intake is temporarily enabled only for synthetic tests and restored afterward. No Store submission or real user collection has been performed.
 
 ## Automated verification
@@ -66,11 +68,11 @@ Remaining browser release checks: native Allow/Deny/Cancel prompt interaction, K
 
 **NOT RELEASE-READY**. Current infrastructure evidence and remaining gates:
 
-- Approved account, exact endpoint, D1, Free plan, public operator/contact and 90-day retention plus daily interval / seven-day recovery history are recorded in `feedback-service.md`.
+- Approved account, exact endpoint, D1, Free plan, public operator/contact and 90-day retention plus daily interval / seven-day recovery history are recorded in `docs/feedback-service.md`.
 - Free D1 migration and Worker deployment at `https://play-plus-feedback.saramkimm.workers.dev` are complete. Default intake remains disabled. Observability and previews are disabled; per-IP 5/min and shared 100/min bindings are configured. These are approximate location-scoped limits, not exact accounting or global spending caps.
 - Live HTTPS checks passed: allowed-origin POST 503 when disabled, untrusted origin 403/no CORS, GET 405 and valid preflight 204. Enabled-intake CLI tests now verify production storage/readback, retry and rejection behavior; see evidence below. They do not replace real Chrome submission or permission tests.
 - Website PR https://github.com/saramkim/saramkim.com/pull/3 merged as `76628ca32de79d59856b6c41757ad081736e396a`. Released dependency fixes plus the owner's documented narrow braces exception passed full CI/audit. Vercel deployed successfully; live policy HTTP 200, both languages, operator/contact, retention, canonical URL, footer and sitemap passed. The user reported requesting FortiGuard reclassification after an Unrated block; approval/propagation is unconfirmed.
-- Real scheduled retention execution is verified below. Before public collection, finish operational/account logging checks. `feedback-service.md` contains draft Store descriptions and a fail-closed shutdown procedure.
+- Real scheduled retention execution is verified below. Before public collection, finish operational/account logging checks. `docs/feedback-service.md` contains draft Store descriptions and a fail-closed shutdown procedure.
 - Complete actual Chrome checks and the full release matrix on the final approved production build; update Store data/permission disclosures.
 - Feature PR #129 is merged. Store release still requires explicit authority and completed checks. No version bump, tag, Store submission or publication has been performed for this feature.
 
@@ -100,4 +102,4 @@ The original daily `17 3 * * *` UTC schedule and disabled intake were redeployed
 
 The later production-origin Chrome test installed the configured local build with user approval and verified no requests before Send, no request while permission was pending, and retained draft text. Native Allow/Deny/Cancel remained inaccessible to the available tool. Reload discarded the in-memory test draft and ended the pending request; it was not a denial test. Its Set Up Manually onboarding flag remains set in the dedicated test profile. The default disabled build was restored, owned tabs closed and the gateway stopped; do not apply the earlier full-storage restoration claim to this later test.
 
-The available browser connector also refused navigation to the Chrome Web Store developer console. No Store fields were edited and no package was uploaded; the resulting temporary blank tab was closed. Store copy is prepared in `feedback-service.md` for a later authorized submission through an available management interface.
+The available browser connector also refused navigation to the Chrome Web Store developer console. No Store fields were edited and no package was uploaded; the resulting temporary blank tab was closed. Store copy is prepared in `docs/feedback-service.md` for a later authorized submission through an available management interface.
