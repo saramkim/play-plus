@@ -1,6 +1,6 @@
 # Play Plus Manual Release Smoke Test
 
-> **v1.13.0 candidate — HOLD, not release-ready.** Version bump and branch push are complete in Draft PR #133. Automated checks pass, but the full Chrome matrix and privacy/Store alignment are incomplete. The preparation checkpoint below is historical; final-candidate evidence follows it. The original v1.12.0 record is preserved at [archive/releases/v1.12.0-smoke-test.md](./archive/releases/v1.12.0-smoke-test.md).
+> **v1.13.0 candidate — HOLD, not release-ready.** Draft PR #133 contains the candidate. The integrated bilingual privacy policy is deployed; Store alignment and the full Chrome matrix remain incomplete. The 2026-10-16 follow-up supersedes the earlier candidate results only where explicitly stated. The original v1.12.0 record is preserved at [archive/releases/v1.12.0-smoke-test.md](./archive/releases/v1.12.0-smoke-test.md).
 
 ## Preparation checkpoint — 2026-10-15 Pacific/Auckland
 
@@ -26,7 +26,7 @@ Build settings are `PLAY_PLUS_FEEDBACK_ORIGIN=https://play-plus-feedback.saramki
 
 Next sequence: review/integrate the UI commit via PR; approve the version bump; update package/manifest/README/this checklist together; build the exact candidate; complete all rows below and feedback-service gates; prepare final Store metadata and ZIP; obtain the separately required tag/push/Store submission/publication/collection authority. The UI commit is local; push and publication have not been performed by this checkpoint.
 
-## Release candidate identity
+## Initial release candidate identity — 2026-10-15
 
 - Proposed extension version: **1.13.0**, owner-approved on 2026-10-15; no tag or publication yet.
 - Source: `87b91409251289242a0be17452487cba876313ca` (`chore: prepare v1.13.0 candidate`), including UI commit `fb5e5bd14dcf958f4111470e646b9c523d0aab9a`; Draft [PR #133](https://github.com/saramkim/play-plus/pull/133). Subsequent validation-record changes are documentation only. No release tag.
@@ -90,18 +90,42 @@ Candidate-specific feedback results:
 - CONTROLLED LAYOUT PASS: English feedback strings from the checked-in locale were temporarily injected into the real panel; form and modal fit 320/360/390px. The original i18n function was restored. This does **not** prove Chrome's native English locale selection, full-English application layout or screen-reader output.
 - Still NOT RUN on the final candidate: fresh-install onboarding/banner matrix; native English Chrome; screen reader and native IME composition; fresh Deny/Cancel and Chrome-settings revocation/re-request; full offline/reconnect, timeout, 429, malformed receipt, double-click/lost-response native matrix. Unit/Worker tests and earlier UI evidence are not substitutes for these rows.
 
+## Follow-up — 2026-10-16 Pacific/Auckland
+
+- Current tested source: `3cca53a8a9778743a65a3c8ea755ad75347abf93`, `fix(content): track playback behind other windows`. Real playback reproduced a short-cue loop ending after another window/tab was brought forward. Frame callbacks stopped updating playback time while the video continued. A guarded `timeupdate` listener now supplements frame callbacks and is detached when the video is replaced or cleared. Stale callbacks from replaced videos are ignored. This is an observed occlusion case, not proof for every Chrome background throttling mode.
+- Automated verification: type check, lint, **295 tests in 42 files**, and configured production build PASS. Focused VideoManager/loop tests: 9 PASS, including absent frame delivery and stale-video events. Three existing Webpack size warnings remain.
+- Current `dist/content.js`: **414498 bytes**, SHA256 `3914D6B2074990C3F6D7DE02EAA18F8B7633840B7F340386234F8ECAF1AEBEA9`. UI/background sizes and hashes are unchanged from the table above; manifest remains 1.13.0 with SHA256 `D199F5FC67592AA0D42086CF02CC2546C5D22431D2A7FE507F650EE3BF82086A`. Earlier browser evidence remains attributed to its original source; it is not a fresh full-matrix run on this fix.
+- Same dedicated Chrome 155 profile, actual side panel and episode as above. Provider language temporarily Korean under the existing approval, then visibly restored to English.
+
+| Follow-up area | Result | Real-Chrome evidence and limit |
+| --- | --- | --- |
+| Primary/secondary selection | PASS, both routes | Explicit primary Korean/secondary English selection displayed matching cues; restored primary English/secondary Korean. Previous hide/show and seek evidence remains as recorded above. |
+| Loop | PASS, both routes | Current-cue 269.366–271.1 at 1.1x continued wrapping with another page brought forward. Manual A/B 300–302 repeatedly wrapped; explicit clear allowed playback past 302 and removed the active marker. This resolves the earlier short-cue observation. |
+| Speed | PASS, both routes | Physical `Slash` reset 1.1 to 1, supplementing prior increase/decrease checks. |
+| Reconnect | PASS, both routes | Closed and action-reopened the actual panel during playback; connected/detected status, version and settings recovered. |
+| Reload | PASS for native subtitles, both routes | Explicit `/play` reload recovered playback, English/Korean native cues and panel connection; complements the earlier `/en/play` result. Uploaded selection restoration is not included in this PASS. |
+| SPA navigation | PASS, both routes | Provider back/history UI moved away and returned to the same episode with a new video element; a document marker remained unchanged and cues/connection recovered. Different-episode navigation was not tested. |
+| Upload | PARTIAL | `/play` synthetic SRT upload, apply, edit, delay 2, and panel reopen preserved metadata. Settled cue samples: 241.520 empty, 242.500 first, 251.628 first, 252.632 second. Test upload removed; original upload preserved. Player reload showed native cues despite the panel retaining the uploaded selection; selecting again restored it. Investigate this selection/UI mismatch before marking the entire upload/reload row PASS. |
+| Native Korean IME | PASS | Owner typed directly using the Korean IME and pressed Enter twice. Recorded compositionstart/compositionend and Enter events; text plus two newlines remained, no dialog and zero feedback resource requests. Listener removed afterward. |
+
+Remaining Chrome gates: fresh-install/default/onboarding/banner coverage, native English locale, screen-reader output, fresh Deny/Cancel plus Chrome-settings revocation/re-request, and the full native offline/reconnect/timeout/429/malformed-receipt/double-click/lost-response matrix. Upload selection after player reload remains unresolved. Full-diff review of the final source is also pending.
+
+Read-only backend checks: D1 total **0**, no database changes; disabled intake **503**, foreign origin **403**, public reader **405**, preflight **204** all PASS. No backend deployment or public intake activation in this follow-up.
+
+Cleanup: exact JSON comparison with the previous final checkpoint confirms unchanged sync, local, localStorage and permissions. Original upload preserved, temporary upload absent, optional feedback host absent. Provider language restored to English; no video remains active. Probe listeners/document marker removed. Temporary policy preview tab and local preview server closed. Existing tabs and current panel preserved. The synthetic IME draft remains in the panel because automatic approval review rejected its cancellation as input deletion. Dedicated gateway stop returned `ok: true, active: false`.
+
 ### Privacy and Store gate — HOLD
 
-The owner supplied the currently registered [Notion policy](https://saramkim.notion.site/Play-Plus-135b75df10d480d3a854c5caeb35ead6). Both public pages were read in the browser on 2026-10-15:
+The owner supplied the currently registered [Notion policy](https://saramkim.notion.site/Play-Plus-135b75df10d480d3a854c5caeb35ead6). The domain policy was integrated and deployed on 2026-10-16:
 
 - The Notion page says all extension data stays locally and is not sent to external servers. That is incompatible with enabling optional feedback; its device-only wording also needs an accurate distinction between `chrome.storage.local` and settings in `chrome.storage.sync`.
-- The [new domain policy](https://www.saramkim.com/play-plus/privacy) expressly covers only optional feedback. It must not silently replace the complete extension policy until existing settings/subtitle/review handling is covered. Its Korean/English send wording still describes Send, whereas the candidate sends only after Agree and send.
-- Proposed next step: integrate the whole-extension disclosure and final consent wording on the domain page, review it, then update the Store policy URL and matching data/permission declarations under explicit publication authority. No policy or Store field was edited in this validation.
-- Actual Store published version and selected data categories remain UNKNOWN. The authorized automated dashboard read was blocked by `The extensions gallery cannot be scripted`; the user provided the policy URL, not those remaining fields.
+- The [integrated domain policy](https://www.saramkim.com/play-plus/privacy) now covers settings sync, local uploaded/saved subtitles, tab/playback/request processing, permissions, retention/deletion and optional feedback in Korean and English. Send opens confirmation; Agree and send requests permission/transmits. Website [PR #4](https://github.com/saramkim/saramkim.com/pull/4), source `81691188befaee413a17f85555ee459d05a91f54`, merged as `5629611071deb345bbb666bf2de4ebd61d6d5d9d` under explicit approval. Website lint/type/build/export and CI passed; Vercel production and live page content/date were verified.
+- Owner explicitly deferred changing the Store policy URL until submission. Target URL: `https://www.saramkim.com/play-plus/privacy`. No Store field or certification was changed here.
+- Owner screenshot shows all nine data categories unchecked. Published Store version and certification boxes remain UNKNOWN. Dashboard automation was blocked by `The extensions gallery cannot be scripted`; this restriction was not bypassed. See the [category review draft](./feedback-service.md#store-data-category-review--2026-10-16) before submission.
 
-Release decision: **HOLD**. Do not tag, package for submission, merge as release-ready, publish, or enable public intake while the incomplete rows and policy mismatch remain unresolved. No code change was made to mask provider/network limitations or the inconclusive loop observation.
+Release decision: **HOLD**. The public policy mismatch is resolved, but remaining Chrome rows, uploaded-selection reload behavior, final-source review and Store alignment are not. Do not tag, package for submission, merge as release-ready, publish, or enable public intake until those gates are resolved or an explicit scope decision is documented.
 
-Cleanup checkpoint: owned playback tab 5 and both temporary policy-reading tabs were closed; existing user tabs were preserved. Korean gateway stopped with `ok: true, active: false`. Test-only locale/key probes were removed, provider language is English again, and no browser permission prompt or temporary backend deployment remains pending.
+Earlier cleanup checkpoint (2026-10-15): owned playback tab 5 and both temporary policy-reading tabs were closed; existing user tabs were preserved. Korean gateway stopped with `ok: true, active: false`. Test-only locale/key probes were removed, provider language was English again, and no browser permission prompt or temporary backend deployment remained pending. Current cleanup is recorded in the follow-up above.
 
 ## Evidence limits, cleanup and decision
 

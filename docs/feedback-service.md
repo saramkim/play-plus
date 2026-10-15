@@ -144,7 +144,7 @@ Delete only the intended row and confirm count zero. Anonymous submissions canno
 
 ## Store submission preparation (draft, not submitted)
 
-**Current v1.13.0 gate: HOLD.** The Store's existing Notion policy says all data stays local, while the new domain policy covers only optional feedback and still uses the earlier Send wording. Integrate whole-extension handling and the final Agree and send flow before replacing the Store URL. See [the current candidate privacy/Store findings](./manual-smoke-test.md#privacy-and-store-gate--hold); do not treat a reachable feedback policy as proof that the full Store disclosure is ready.
+**Current v1.13.0 gate: HOLD.** Whole-extension Korean/English privacy integration is deployed at the domain URL through website [PR #4](https://github.com/saramkim/saramkim.com/pull/4), production commit `5629611071deb345bbb666bf2de4ebd61d6d5d9d`. It covers the final Agree and send flow. The owner deferred replacing the Store's old Notion URL until submission; Store declarations and the remaining Chrome gates are still incomplete. See [the current candidate privacy/Store findings](./manual-smoke-test.md#privacy-and-store-gate--hold).
 
 Use the existing Play Plus Store item, not a new extension identity. Build the final approved version with both `PLAY_PLUS_FEEDBACK_ORIGIN=https://play-plus-feedback.saramkimm.workers.dev` and `PLAY_PLUS_FEEDBACK_PRIVACY_URL=https://www.saramkim.com/play-plus/privacy`. Without these variables, the banner and API are disabled. A build still numbered `1.12.0` is test evidence, not the next release package.
 
@@ -156,7 +156,25 @@ Suggested feedback data-use description:
 
 > When the user chooses to send feedback, Play Plus transmits their written message, extension version and a random per-submission receipt ID. The server adds the UTC receipt time. The developer reads these submissions to understand issues and improve the extension. Cloudflare Workers and D1 process and store them. No viewing history, video URL/title, subtitles, files, account information or cookies are automatically attached. Free text can contain personal information. Live records are retained for 90 days plus the daily deletion interval; deleted data can remain in D1 recovery history for up to seven further days. Details and deletion contact: https://www.saramkim.com/play-plus/privacy.
 
-These paragraphs describe the added feature only. Review the Store's complete existing data/permission declarations against the whole extension; do not declare "no data collected" or certify unchecked disclosures automatically. The privacy page's scope is the optional feedback feature, so preserve any applicable disclosure of existing extension behavior.
+These paragraphs describe the added feature only. The integrated privacy page also covers existing extension behavior. Review the Store's complete data/permission declarations against that behavior; do not declare "no data collected" or certify unchecked disclosures automatically.
+
+### Store data category review — 2026-10-16
+
+The owner's screenshot shows all nine categories unchecked. It does not establish the published version or the certification checkboxes. The following is a submission preparation proposal based on current code and observed processing, not a saved dashboard change or a Google classification ruling. Local-only processing also needs disclosure under Google's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq); reconcile the fields with the policy as described in the [dashboard guide](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy).
+
+| Dashboard category | Proposed treatment | Evidence / remaining question |
+| --- | --- | --- |
+| Website content | Include | Native/imported subtitle text, copied/saved lines and related video content are processed locally. Feedback free text is also user-provided content; nothing automatically attaches subtitles to feedback. |
+| Web history | Include | Active-tab URL/title, saved video URL/time and open-tab matching support playback and reopening saved lines. This is not a persistent general browsing-history database. |
+| User activity | Include for network monitoring | `webRequest` observes Coupang playback requests for subtitle acquisition. Do not describe this as analytics or keystroke logging. |
+| Personal communications | Recommend include for direct feedback | The user explicitly sends a written message for the developer to read. Treating developer-directed feedback as a communication is a conservative classification judgment. |
+| Location | Recommend include for IP processing | Cloudflare receives the connecting IP and the Worker uses it transiently for rate limiting. D1 does not store it; there is no GPS or location tracking. The screenshot expressly lists IP address under this category. |
+| Personally identifiable information | Resolve before submission | No name/email/account field is requested and the receipt ID is per submission, not a user ID. Free text may contain personal information, and provider request headers include device/profile/session identifiers. Determine their identifying use; header names alone do not prove semantics. Do not certify this category as absent yet. |
+| Authentication information | Resolve before submission | Provider playback requests are reissued with request headers and may use browser credentials. Check whether copied values are authentication/session credentials without exporting their values. Lack of a Play Plus login does not establish absence. |
+| Health information | No dedicated collection identified | No health feature or requested field. Voluntary arbitrary text is not a reason to claim health monitoring. |
+| Financial/payment information | No dedicated collection identified | No payment feature or requested field. No financial data is automatically attached to feedback. |
+
+Before submission, resolve the two identifier/authentication questions, confirm the published version and complete the certifications against actual behavior. Change the policy URL to `https://www.saramkim.com/play-plus/privacy` at the owner's requested submission stage. Do not submit the current all-unchecked state as verified complete.
 
 Suggested release-note addition:
 
