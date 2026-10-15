@@ -6,7 +6,7 @@ This v1 feature collects voluntarily submitted text before the future 2.0 releas
 
 ### Owner-approved operating choices (2026-10-15)
 
-The owner approved the following free-plan setup, then separately approved Wrangler access and both repositories' commits, pushes and review PRs. Paid upgrades, PR merge and Store release are not covered by these approvals.
+The owner approved the following free-plan setup, Wrangler access and both repositories' commits, pushes and review PRs, then authorized completing the remaining work. Play Plus PR #129 and website PR #3 were subsequently merged. Paid upgrades and Store submission/publication remain separate decisions.
 
 - Cloudflare account: `Saramkimm@gmail.com's Account` (`06dcd49cf34af7e671eff6950e9199b8`), Workers Free verified in the dashboard.
 - API target: `https://play-plus-feedback.saramkimm.workers.dev`; no DNS migration or new domain.
@@ -14,13 +14,13 @@ The owner approved the following free-plan setup, then separately approved Wrang
 - Operator: 김유준; public contact: `saramkimm@gmail.com`. The supplied phone number is omitted from the public page.
 - Retention: 90 days plus the daily cleanup interval, with up to 7 additional days in Free D1 recovery history.
 - D1 `play-plus-feedback` was created through the existing authenticated dashboard, with Asia Pacific location hint. Database ID: `a9f9ee53-6f21-444f-9f7a-ea45b7424094`. A hint is not a country residency guarantee.
-- The ignored `services/feedback/wrangler.production.jsonc` references this real database, enables the agreed workers.dev route, disables previews/logging and keeps `ACCEPT_FEEDBACK=false`. Remote migration and deployment succeeded. Deployed version: `272f1475-8caf-41f9-80b7-ad14f08d54de` (2026-10-15 02:12 UTC); daily Cron is registered. Actual scheduled execution remains unverified.
-- The bilingual policy page, footer and sitemap changes are prepared on `docs/play-plus-feedback-privacy` in `C:/Users/Yujun/dev/saramkim.com`. `yarn check` and `git diff --check` passed. Desktop and 360px browser previews rendered without horizontal overflow. The public page is not yet published.
+- The ignored `services/feedback/wrangler.production.jsonc` references this real database and the agreed workers.dev route. Previews/logging are disabled. Intake is opened only for controlled synthetic validation and restored to `ACCEPT_FEEDBACK=false` afterward; see `feedback-validation.md` for current evidence.
+- The bilingual policy page, footer and sitemap are live at the approved URL. Website PR #3 merged as `76628ca32de79d59856b6c41757ad081736e396a`; final CI, Vercel production deployment and live HTTP/content checks passed. Desktop and 360px previews rendered without horizontal overflow. The owner reported submitting a FortiGuard reclassification request after an Unrated network-policy block; reclassification is not yet confirmed.
 - Wrangler is authenticated with the approved `account:read`, `user:read`, `workers_scripts:write`, `d1:write` scopes and OAuth background access. Credentials are encrypted with a key in Windows Credential Manager; no credential is included in this repository. Unneeded default scopes were not requested.
-- Live HTTPS probes passed: allowed-origin POST returns 503 while intake is disabled; untrusted origin returns 403 without CORS allowance; GET returns 405; valid preflight returns 204. D1 readback confirmed zero feedback rows. This is not successful live submission/readback evidence.
-- Website review PR: https://github.com/saramkim/saramkim.com/pull/3 (`656376b`). Existing unchanged dependencies fail `yarn audit` at high/critical severity; that publication gate must be resolved separately from the policy content.
+- Live HTTPS probes passed: allowed-origin POST returns 503 while intake is disabled; untrusted origin returns 403 without CORS allowance; GET returns 405; valid preflight returns 204. Temporary enabled-intake tests verified production POST, exact D1 readback, identical retry receipts, conflicting-ID rejection and 429 responses. Synthetic rows are deleted by exact ID; these CLI probes do not prove Chrome permission interaction.
+- Website PR: https://github.com/saramkim/saramkim.com/pull/3. Released dependency fixes and the owner's narrow exception for unpatched braces advisory `1240992` allowed the full audit/CI to pass. The exception is documented in that repository and is not a vulnerability fix.
 
-Next: resolve the website audit gate and publish the policy through its reviewed repository workflow, then validate the live API with synthetic data before opening collection. Extension Store release remains a separate gate.
+Next: finish the remaining live-service and actual Chrome checks, review operational shutdown procedures, and prepare the final versioned release. Extension Store release remains a separate gate; the default build does not enable feedback.
 
 An unconfigured extension build has no feedback host permission, hides the invitation banner, and explains that feedback is unavailable when opened from More options. It remains usable for all existing features. This is **not a feedback release candidate**.
 
@@ -135,6 +135,26 @@ Delete only the intended row and confirm count zero. Anonymous submissions canno
 5. Publish the approved policy and contact route. Align Store user-data disclosures with actual free text, version, receipt ID, server timestamp, developer reading, Cloudflare processing and retention. A voluntary text field can contain personal information; do not claim “no data collected.” Review the optional permission disclosure. The form's Send notice provides explicit consent without another required field.
 6. Build with the approved origin and policy URL. Inspect manifest and bundles; no placeholder host, client secret, automatic media data or new required permissions. Complete the actual Chrome matrix below and the entire existing release matrix on the final version/build.
 7. Version bump, tag, push, Store submission and publication remain separate explicitly authorized release work.
+
+## Store submission preparation (draft, not submitted)
+
+Use the existing Play Plus Store item, not a new extension identity. Build the final approved version with both `PLAY_PLUS_FEEDBACK_ORIGIN=https://play-plus-feedback.saramkimm.workers.dev` and `PLAY_PLUS_FEEDBACK_PRIVACY_URL=https://www.saramkim.com/play-plus/privacy`. Without these variables, the banner and API are disabled. A build still numbered `1.12.0` is test evidence, not the next release package.
+
+Suggested optional-host permission explanation:
+
+> Optional access to https://play-plus-feedback.saramkimm.workers.dev/* is requested only when the user selects Send feedback. It permits sending the user's written feedback to the developer and receiving a storage receipt. Declining access does not prevent subtitle or playback features from working.
+
+Suggested feedback data-use description:
+
+> When the user chooses to send feedback, Play Plus transmits their written message, extension version and a random per-submission receipt ID. The server adds the UTC receipt time. The developer reads these submissions to understand issues and improve the extension. Cloudflare Workers and D1 process and store them. No viewing history, video URL/title, subtitles, files, account information or cookies are automatically attached. Free text can contain personal information. Live records are retained for 90 days plus the daily deletion interval; deleted data can remain in D1 recovery history for up to seven further days. Details and deletion contact: https://www.saramkim.com/play-plus/privacy.
+
+These paragraphs describe the added feature only. Review the Store's complete existing data/permission declarations against the whole extension; do not declare "no data collected" or certify unchecked disclosures automatically. The privacy page's scope is the optional feedback feature, so preserve any applicable disclosure of existing extension behavior.
+
+Suggested release-note addition:
+
+> Play Plus 개선을 위한 선택적 의견 보내기 기능을 추가했습니다. 사이드 패널의 안내 또는 더보기 메뉴에서 의견을 보낼 수 있습니다. 직접 보내기를 선택할 때만 전송하며, 이용하지 않아도 기존 자막·재생 기능은 그대로 사용할 수 있습니다.
+
+After all release checks and explicit release authority, update the four version files, produce the release commit/tag and ZIP, and submit the existing Store item with deferred publication. Do not publish an unvalidated build to work around the native-permission testing gap. At approved collection commencement, deploy `ACCEPT_FEEDBACK=true`, verify a synthetic receipt and cleanup, and publish the reviewed Store version. Stop intake with `ACCEPT_FEEDBACK=false` if storage receipts, retention cleanup or privacy guarantees fail; do not enable paid upgrades automatically.
 
 ## Required Chrome matrix
 
