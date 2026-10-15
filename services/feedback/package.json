@@ -1,0 +1,18 @@
+{
+  "name": "play-plus-feedback",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "dev": "wrangler dev --local --local-protocol https --test-scheduled",
+    "migrate:local": "wrangler d1 migrations apply DB --local"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261014.1",
+    "miniflare": "5.20261012.0-beta",
+    "typescript": "5.8.3",
+    "wrangler": "4.151.0"
+  }
+}

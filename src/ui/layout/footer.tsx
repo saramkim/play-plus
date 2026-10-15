@@ -1,7 +1,7 @@
 import { ModeToggle } from './mode-toggle';
 import { MoreMenu } from './more-menu';
 
-export function Footer() {
+export function Footer({ onFeedback }: { onFeedback: (trigger: HTMLElement) => void }) {
   return (
     <div className='flex justify-between items-center h-10 border-t px-2'>
       <div className='w-full'>
@@ -12,7 +12,7 @@ export function Footer() {
         <h1 className='text-[16px] font-bold text-primary'>Play Plus</h1>
       </div>
       <div className='flex justify-end items-center w-full'>
-        <MoreMenu />
+        <MoreMenu onFeedback={onFeedback} />
       </div>
     </div>
   );

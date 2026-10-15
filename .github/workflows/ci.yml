@@ -16,7 +16,15 @@ jobs:
       - run: corepack enable
       - run: yarn --version
       - run: yarn install --immutable
+      - run: npm ci
+        working-directory: services/feedback
       - run: yarn type-check
       - run: yarn lint
       - run: yarn test:run
       - run: yarn build
+      - run: npm run type-check
+        working-directory: services/feedback
+      - run: npm test
+        working-directory: services/feedback
+        env:
+          WRANGLER_SEND_METRICS: 'false'

@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import { clearStorage, setStorageAll } from '@storage/index';
 import { LEARNING_CONFIG } from '@storage/preset';
 import { MORE_MENU_OPTIONS } from '@utils/constants';
@@ -15,7 +17,9 @@ import { modal } from '@/ui/components/modal';
 
 const { RESET_SETTINGS, SET_LEARNING_CONFIG } = MORE_MENU_OPTIONS;
 
-export function MoreMenu() {
+export function MoreMenu({ onFeedback }: { onFeedback: (trigger: HTMLElement) => void }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const openingFeedback = useRef(false);
   const options = [
     { label: t('reset_settings'), value: RESET_SETTINGS },
     { label: t('optimize_for_learning'), value: SET_LEARNING_CONFIG },
@@ -45,16 +49,25 @@ export function MoreMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' size='icon'>
+        <Button ref={trigger} data-feedback-menu-trigger aria-label={t('feedback_more_menu')} variant='ghost' size='icon'>
           <EllipsisIcon className='size-6' />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent onCloseAutoFocus={(event) => {
+        if (openingFeedback.current) {
+          event.preventDefault();
+          openingFeedback.current = false;
+          if (trigger.current) onFeedback(trigger.current);
+        }
+      }}>
         {options.map((option) => (
           <DropdownMenuItem key={option.value} onClick={() => menuMap[option.value]()}>
             {option.label}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuItem onSelect={() => {
+          openingFeedback.current = true;
+        }}>{t('feedback_open')}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

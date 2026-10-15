@@ -11,6 +11,8 @@ export default [
   {
     ignores: [
       'dist/**',
+      'services/feedback/dist/**',
+      'services/feedback/.wrangler/**',
       '.yarn/**',
       '.vscode/**',
       'public/**',
@@ -26,6 +28,7 @@ export default [
   },
   { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
   { languageOptions: { globals: globals.browser } },
+  { files: ['services/feedback/test/**/*.mjs'], languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
@@ -106,5 +109,9 @@ export default [
         },
       ],
     },
+  },
+  {
+    files: ['services/feedback/**/*.{ts,mjs}'],
+    settings: { 'import/resolver': { node: { moduleDirectory: ['node_modules', 'services/feedback/node_modules'], extensions: ['.ts', '.mjs', '.js'] } } },
   },
 ];
