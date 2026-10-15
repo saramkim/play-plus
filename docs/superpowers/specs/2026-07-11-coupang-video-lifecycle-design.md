@@ -1,5 +1,7 @@
 # Coupang Play Video Lifecycle Monitor Design
 
+> **HISTORICAL DESIGN — 2026-07-11.** This is a dated observation and proposed design, not a guarantee about the current Coupang Play website or the latest Play Plus runtime. Consult the current code, relevant tests and approved Issue before making new technical decisions. See [documentation index](../../README.md).
+
 ## Goal
 
 Replace one-shot video detection with a persistent lifecycle monitor that reliably connects Play Plus to the current Coupang Play content video across initial loading, placeholders, advertisements, and SPA episode transitions.
