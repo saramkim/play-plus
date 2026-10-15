@@ -1,33 +1,32 @@
 # Play Plus 문서 안내
 
-> **문서 상태 안내 (2026-10-15 정리)**
->
-> 저장소 문서는 현재 개발 기준, 새 2.0 기획 초안, 피드백 운영 절차, 과거 검증 기록으로 구분한다. 날짜가 있는 운영·검증 정보는 **그 시점의 증거**이며 최신 배포·인프라 상태를 자동으로 증명하지 않는다.
+> **현재 문서와 과거 기록을 분리합니다.** 현재 작업에서는 최신 `main`, `AGENTS.md`와 승인된 Issue를 우선합니다. 오래된 설계·검증 기록은 별도 아카이브에 보존하며 자동으로 다시 실행하거나 승인된 제품 계약으로 취급하지 않습니다.
 
-## 현재 개발·기획 기준
+## 현재 사용하는 문서
 
-| 문서 | 용도와 효력 |
+| 문서 | 역할 |
 | --- | --- |
-| [README.md](../README.md) | 제품 소개, 개발 환경, 브랜치·릴리스 구분 |
-| [AGENTS.md](../AGENTS.md) | 현재 저장소의 AI 협업·코드·Git 작업 규칙 |
-| [Play Plus 2.0 기획](./play-plus-2.0-planning.md) | **DRAFT**: v1.12.0 기반 새 2.0의 A 기능 후보와 피드백 반영 계획. 아직 canonical 계약이나 기능별 구현 승인이 아님 |
-| [피드백 서비스 운영](./feedback-service.md) | Issue #128 피드백 API·보안·보관·설정·출시 게이트. 계정·배포·정책 상태는 기록 시점과 실제 운영 상태를 구분해 재확인 |
+| [프로젝트 README](../README.md) | 제품 소개, 개발 기준과 설치 안내 |
+| [AGENTS.md](../AGENTS.md) | 현재 코드·Git·검증 작업 규칙 |
+| [새 2.0 기획 초안](./play-plus-2.0-planning.md) | **DRAFT**: v1.12.0을 출발점으로 A 기능과 사용자 피드백을 정리. 개별 기능 구현 승인이 아님 |
+| [피드백 서비스 운영](./feedback-service.md) | Issue #128의 API, 개인정보, 보관 및 운영·릴리스 게이트. 운영 상태는 사용 시점에 다시 확인 |
+| [릴리스 스모크 체크리스트](./manual-smoke-test.md) | 다음 릴리스의 **빈 검증 양식**. 18개 기존 핵심 항목과 피드백 조건부 확인. 과거 PASS를 승계하지 않음 |
 
-**기준 브랜치:** 최신 `main`은 개발·PR 통합 기준이고, 사용자 공개 릴리스는 `v<version>` 태그와 실제 Chrome 웹 스토어 배포로 구분한다. 기존 미배포 2.0의 [보관 브랜치](https://github.com/saramkim/play-plus/tree/archive/play-plus-2.0)와 그 [과거 canonical 계약](https://github.com/saramkim/play-plus/blob/archive/play-plus-2.0/docs/play-plus-2.0.md)은 **참고 이력**일 뿐 현재의 구현 지시나 제품 계약이 아니다.
+## 과거 기록: [docs/archive/](./archive/README.md)
 
-## 검증 증거와 이전 설계 기록
-
-| 문서 | 상태 |
+| 기록 | 보관 위치 |
 | --- | --- |
-| [v1.12.0 릴리스 스모크](./manual-smoke-test.md) | **과거 릴리스 증거**: 2026-10-13 실행한 v1.12.0 후보 결과. 최신 `main` 및 다음 릴리스에 PASS를 이월하지 않음 |
-| [피드백 기능 검증](./feedback-validation.md) | **구현 당시 증거**: Issue #128의 PR 병합 전 테스트·미확인 항목. 이후 [PR #129](https://github.com/saramkim/play-plus/pull/129)가 병합됐지만 그것만으로 실제 사용자 수집·스토어 배포가 완료되지는 않음 |
-| [2026-07 영상 생명주기 설계](./superpowers/specs/2026-07-11-coupang-video-lifecycle-design.md) | **과거 설계 기록**: 당시 관찰과 제안. 현재 코드 및 최신 Issue보다 우선하지 않음 |
-| [2026-07 영상 생명주기 구현 계획](./superpowers/plans/2026-07-11-coupang-video-lifecycle.md) | **과거 작업 계획**: 체크리스트와 에이전트 실행 지시는 보존된 이력이며 현재 실행 명령이 아님 |
+| v1.12.0 릴리스 실행 결과 (2026-10-13) | [릴리스 증거](./archive/releases/v1.12.0-smoke-test.md) |
+| Issue #128 피드백 구현 당시 검증 (2026-10-15) | [피드백 검증](./archive/feedback/2026-10-15-issue-128-validation.md) |
+| Coupang Play 영상 생명주기 설계 (2026-07-11) | [과거 설계](./archive/lifecycle/2026-07-11-coupang-video-lifecycle-design.md) |
+| 해당 구현 계획과 에이전트 체크리스트 (2026-07-11) | [과거 계획](./archive/lifecycle/2026-07-11-coupang-video-lifecycle-plan.md) |
 
-## 문서 유지 원칙
+기존 미배포 2.0 전체 코드는 별도의 [archive/play-plus-2.0 브랜치](https://github.com/saramkim/play-plus/tree/archive/play-plus-2.0)에 보존되어 있습니다. 그 안의 [과거 2.0 canonical 계약](https://github.com/saramkim/play-plus/blob/archive/play-plus-2.0/docs/play-plus-2.0.md)은 **현재 제품 계약이 아닙니다.**
 
-1. 새 2.0의 기능 후보·결정 기록은 먼저 **기획 DRAFT**에 축적하고, 사용자 승인 후 별도 canonical 계약과 구현 Issue로 옮긴다.
-2. 기존 사용자 기능·설정·저장 데이터는 현재 공개 버전과 최신 `main` 양쪽에서 확인한다. 과거 2.0 코드를 자동으로 병합하지 않는다.
-3. 과거 문서의 테스트 수치, 실행 환경, 미완료 항목은 **기록된 시점 그대로** 둔다. 다음 릴리스는 정확한 새 빌드에서 검증하고 별도의 결과를 남긴다.
-4. 이동·삭제로 GitHub Issue/PR의 근거 링크를 깨지 않도록 역사적 문서는 경로를 유지한다.
-5. 피드백 서비스는 API/개인정보/운영·릴리스의 별도 승인 게이트를 따른다. 코드를 `main`에 병합했다는 이유만으로 수집을 시작하거나 출시 준비 완료로 간주하지 않는다.
+## 유지 원칙
+
+1. `main`은 개발 기준이고 배포 버전은 별도의 릴리스 태그·실제 Chrome 웹 스토어 게시 상태로 구분합니다.
+2. 2.0의 새 제품 결정은 우선 기획 초안에 기록하고 사용자 승인 후 별도 canonical 계약과 구현 Issue로 구체화합니다.
+3. 아카이브는 당시 관찰·검증의 출처로만 사용합니다. PASS/NOT RUN, 환경, 과거 실행 지시는 현재 작업 결과나 권한을 대신하지 않습니다.
+4. 새로운 릴리스는 [릴리스 체크리스트](./manual-smoke-test.md)에 **새 빌드의 실제 결과**를 기록하고 완료된 검증 기록을 아카이브에 보존합니다.
+5. 피드백 기능의 코드 병합은 공개 배포·수집 개시를 뜻하지 않습니다. 운영 및 개인정보 승인 게이트를 별도로 확인합니다.
