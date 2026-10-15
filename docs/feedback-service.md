@@ -1,5 +1,7 @@
 # In-panel feedback (Issue #128)
 
+> **Operations guide + 2026-10-15 readiness snapshot.** The account, deployment, website review and test results below record conditions at the time of writing. [Extension PR #129](https://github.com/saramkim/play-plus/pull/129) was subsequently merged to `main`, but merge alone does not authorize or prove live feedback collection or Chrome Web Store publication. Verify the currently deployed Worker, privacy page, user-data disclosures and release gates before operating or releasing a configured build. See [documentation index](./README.md) and [implementation evidence](./feedback-validation.md).
+
 This v1 feature collects voluntarily submitted text before the future 2.0 release. The Worker is isolated in `services/feedback`; it is not imported into any extension entry. No account, email, media URL, subtitles, cookies, telemetry SDK, attachment or automatic submission is added.
 
 ## Configuration and current release gate
