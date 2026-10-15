@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "play-plus-feedback-local",
+  "main": "src/entry.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": {
+    "ALLOWED_ORIGINS": "chrome-extension://dmpmihmopccgeieooepklikeacdhkbki",
+    "ACCEPT_FEEDBACK": "false"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "play-plus-feedback-local",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }],
+  "ratelimits": [
+    { "name": "FEEDBACK_RATE_LIMITER", "namespace_id": "1281", "simple": { "limit": 5, "period": 60 } },
+    { "name": "GLOBAL_RATE_LIMITER", "namespace_id": "1282", "simple": { "limit": 100, "period": 60 } }
+  ],
+  "triggers": { "crons": ["17 3 * * *"] }
+}
