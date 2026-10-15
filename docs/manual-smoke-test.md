@@ -127,6 +127,31 @@ Release decision: **HOLD**. The public policy mismatch is resolved, but remainin
 
 Earlier cleanup checkpoint (2026-10-15): owned playback tab 5 and both temporary policy-reading tabs were closed; existing user tabs were preserved. Korean gateway stopped with `ok: true, active: false`. Test-only locale/key probes were removed, provider language was English again, and no browser permission prompt or temporary backend deployment remained pending. Current cleanup is recorded in the follow-up above.
 
+## Uploaded-subtitle restoration follow-up — 2026-10-16
+
+This checkpoint supersedes the unresolved uploaded-selection observation above. Tested source is the restoration change included in the commit containing this checkpoint, based on `5abee3cb87f5d3fcd8a270d8add81bf14fa9c8a2`. The owner subsequently authorized committing this change; it is not yet part of the remote PR head. No release or public intake activation was performed.
+
+On a new player document, the content script now requests the tab's saved upload selections through the background worker, reloads registered subtitle bodies with their saved delay, and reconciles deleted uploads. Explicit newer selection/deselection takes precedence. Startup reporting retries at most three times after a failed response and stops when the video is replaced or detached. The first native run exposed a failed initial restoration request; adding bounded retry and propagating restoration failure resolved that observation. The precise cause of the initial transport failure was not established.
+
+- Automated gates: `yarn type-check`, `yarn lint`, `yarn test:run` (**306 tests, 44 files**) and the configured production build all PASS. Regression tests cover both roles, delay applied once, stale selection/video/route rejection, deleted uploads, asynchronous response handling and bounded startup retries. Three existing Webpack bundle-size warnings remain.
+- `/en/play`: explicit player reload preserved the selected test upload in **both** roles without manual re-selection. Stored delay remained **+2 seconds**. Settled samples at 241.5/242.5/251.5/252.5 seconds showed no cue / first cue / first cue / second cue, with shifted starts 242/252.
+- `/play`: a new full document preserved both selections and the delay. A subsequent reload hit provider buffering/timeouts and is not counted as PASS. After the dedicated KR gateway recovered, navigation to the same episode in another fresh document again restored both selections automatically; settled 241.5/242.5/252.5 samples showed no cue / first cue / second cue at the same shifted boundaries. No manual re-selection or restoration message was used for these final observations.
+- Feedback: the previously retained IME draft was deleted under the owner's explicit instruction. An agent-authored synthetic draft survived an actual offline send failure and subsequent online rejection. Double-clicking final confirmation produced one POST; retrying reused request ID `e78c8e35-3100-4a71-b1da-19f7af3b33bc`. Both observed online responses were **403**, with no success notice and the draft retained. Payload keys were only `message`, `requestId`, `extensionVersion` (`1.13.0`). This is request/retry evidence, not production storage or lost-response proof.
+- The intended native permission-denial attempt ended with permission present; no fresh denial PASS is claimed. The owner's prompt-visibility/denial answer remains pending. Programmatic permission removal during cleanup does not substitute for Chrome-settings revocation coverage.
+
+Exact configured artifact:
+
+| File | Bytes | SHA256 |
+| --- | ---: | --- |
+| `dist/index.js` | 769810 | `E31EF264A78BA6BEA5838E79B9E3205ECF81FF48DD18714C964F6275EAEA3ECC` |
+| `dist/content.js` | 415614 | `424B1A3965AC09CB2C710E5D5453A3E41A95E323DE42229895A6C8F80438A5CE` |
+| `dist/background.js` | 7410 | `7A48597E25AD5D52CA649DE1C148011C1B54B7B38A6E5A0F7BAD58416DFFB329` |
+| `dist/manifest.json` | 900 | `D199F5FC67592AA0D42086CF02CC2546C5D22431D2A7FE507F650EE3BF82086A` |
+
+Cleanup PASS: the agent-authored feedback draft and `v113-smoke` upload were removed through the UI; the existing upload was preserved. The passive fetch observer and restoration probes were removed, offline emulation reset, and feedback host permission removed. Exact JSON comparisons of sync, local, localStorage and permissions against ignored `services/feedback/.wrangler/pre-upload-restore-storage.json` all match. Post-check state is saved in `post-upload-restore-storage.json`. Provider language visibly restored to English at `/en/my-profile`, with no video active. Existing tabs 1/2 and actual panel 11 were preserved; no disposable test tabs remain. Gateway stop returned `ok: true, active: false`.
+
+Release remains **HOLD**: fresh-install/default/onboarding/banner, native English Chrome locale, screen-reader output, fresh permission Deny/Cancel and settings revocation/re-request, native timeout/429/malformed-receipt/lost-response coverage, final-source full-diff review and Store alignment remain incomplete. Earlier receipt/backend checks retain their original source/date; D1 and deployment state were not refreshed in this follow-up. This change is committed at the owner's request; no push, tag, Store submission or collection activation is included in this checkpoint.
+
 ## Evidence limits, cleanup and decision
 
 - Record **NOT RUN** and **BLOCKED** honestly; environment problems are not feature PASS.

@@ -1,3 +1,4 @@
+import { getRegisteredSubtitles } from '@storage/registered-subtitle';
 import { getLocalSubtitle, SubtitleId } from '@storage/subtitle';
 import {
   COUPANG_PLAY_VIDEO_URL_LIST,
@@ -83,6 +84,10 @@ export function initializeMessageListener() {
         handleUpdateSubtitleDelay(params).then(sendResponse, () => sendResponse({ success: false, message: t('error_try_later') }));
         return true;
       }
+      case 'restoreUploadedSubtitles': {
+        handleRestoreUploadedSubtitles(params).then(sendResponse, () => sendResponse({ success: false, message: t('error_try_later') }));
+        return true;
+      }
       case 'getVideoTime': {
         handleGetVideoTime().then(sendResponse);
         return true;
@@ -118,6 +123,7 @@ const handlePlayVideo = ({ startTime }: MessageSchema['playVideo']['params']) =>
 };
 
 const selectionRequests = { setPrimarySubtitle: 0, setSecondarySubtitle: 0 };
+const restoredRoles = new Set<SetSubtitleAction>();
 const cacheRequests = new Map<SubtitleId, { delay: number; generation: number }>();
 let cacheGeneration = 0;
 
@@ -170,6 +176,35 @@ export const handleSetSubtitle = async (
   return { success: true };
 };
 
+export const handleRestoreUploadedSubtitles = async (
+  selection: MessageSchema['restoreUploadedSubtitles']['params']
+): Promise<MessageResponse<'restoreUploadedSubtitles'>> => {
+  const target = captureVideo();
+  await Promise.all((['setPrimarySubtitle', 'setSecondarySubtitle'] as const).map(async (action) => {
+    if (restoredRoles.has(action)) return;
+    const role = SET_SUBTITLE_STORAGE_KEY_MAP[action];
+    // An explicit selection, including deselection, takes precedence over startup restoration.
+    if (selectionRequests[action] !== 0) { restoredRoles.add(action); return; }
+    const check = () => {
+      target.check();
+      if (selectionRequests[action] !== 0 || restoredRoles.has(action)) throw new Error('Subtitle selection changed');
+    };
+    let id = selection[role];
+    if (id) {
+      const metadata = (await getRegisteredSubtitles()).find((item) => item.id === id);
+      check();
+      if (metadata) await refreshCustomSubtitle(id, metadata.delay ?? 0, check);
+      else id = null;
+    }
+    check();
+    useSubtitleStore.getState().setCustomSubtitleId(role, id);
+    restoredRoles.add(action);
+  }));
+  target.check();
+  useVideoStore.getState().setCurrentTime(target.video.currentTime);
+  return { success: true, data: { ...useSubtitleStore.getState().customSubtitleId } };
+};
+
 export const handleUpdateSubtitleDelay = async ({ subtitleId, delay, expectedVideoId }: MessageSchema['updateSubtitleDelay']['params']): Promise<MessageResponse<'updateSubtitleDelay'>> => {
   const target = captureVideo();
   const selected = useSubtitleStore.getState().customSubtitleId;
@@ -197,9 +232,18 @@ const handleGetVideoTime = async (): Promise<MessageResponse<'getVideoTime'>> =>
   return { success: false, message: t('error_video_not_found') };
 };
 
-const reportContentStatus = (hasVideo: boolean) => {
+export const reportContentStatus = async (hasVideo: boolean) => {
   const isVideoUrl = COUPANG_PLAY_VIDEO_URL_LIST.some((url) => window.location.href.startsWith(url));
-  sendMessage('contentStatus', { hasVideo, isVideoUrl });
+  const video = videoManager.get();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0 && (!video || !videoManager.isCurrent(video))) return;
+    try {
+      const result = await sendMessage('contentStatus', { hasVideo, isVideoUrl, restoreUploadedSubtitles: hasVideo && restoredRoles.size < 2 });
+      if (result.success) return;
+    } catch { /* A worker wakeup or video transition can interrupt the initial request. */ }
+    if (!hasVideo || !video || !videoManager.isCurrent(video) || restoredRoles.size === 2) return;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
 };
 
 const handleVideoLifecycle = createVideoLifecycleHandler({
