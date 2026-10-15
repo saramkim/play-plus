@@ -1,8 +1,8 @@
 # Issue #128 implementation validation
 
-> **Historical validation snapshot — 2026-10-15.** Results, PENDING/NOT RUN gates and the no-merge statement below describe the pre-merge implementation review, not the present state. [PR #129](https://github.com/saramkim/play-plus/pull/129) was later merged to `main`. Merging is not evidence of Chrome Web Store publication, live feedback acceptance or completion of the remaining operational gates. Recheck [feedback service operations](../../feedback-service.md) and current systems before release decisions.
+> **Historical validation snapshot (2026-10-15).** This record includes post-merge synthetic production checks added in [PR #132](https://github.com/saramkim/play-plus/pull/132); it does not claim Chrome Web Store release or actual user collection. Current operations and approval gates are documented in [feedback-service.md](../../feedback-service.md). Retain the test statuses and execution evidence below as recorded.
 
-Date: 2026-10-15 Pacific/Auckland. Base: `e4e7ebdb2684d6a4c9a61d0a4d283d914f179658`. Branch: `feat/in-panel-feedback`. Source version remains 1.12.0. The owner approved commits, pushes, review PRs and the free Cloudflare setup. The Worker is deployed with intake disabled; there has been no PR merge, Store submission or real user collection.
+Initial validation: 2026-10-15 Pacific/Auckland, base `e4e7ebdb2684d6a4c9a61d0a4d283d914f179658`, branch `feat/in-panel-feedback`. Follow-up production evidence below is dated 2026-10-15 UTC. Feature PR #129 merged as `df5e61a459b222fe4ead2691a7ef9b0569772b66`; source version remains 1.12.0. The owner approved commits, pushes, review PRs, the free Cloudflare setup and remaining validation work. Intake is temporarily enabled only for synthetic tests and restored afterward. No Store submission or real user collection has been performed.
 
 ## Automated verification
 
@@ -68,12 +68,38 @@ Remaining browser release checks: native Allow/Deny/Cancel prompt interaction, K
 
 **NOT RELEASE-READY**. Current infrastructure evidence and remaining gates:
 
-- Approved account, exact endpoint, D1, Free plan, public operator/contact and 90-day retention plus daily interval / seven-day recovery history are recorded in `feedback-service.md`.
-- Free D1 migration applied and Worker version `272f1475-8caf-41f9-80b7-ad14f08d54de` deployed at `https://play-plus-feedback.saramkimm.workers.dev`, `ACCEPT_FEEDBACK=false`. Registered Cron: `17 3 * * *`. Observability and previews disabled; per-IP 5/min and shared 100/min bindings deployed.
-- Live HTTPS checks passed: allowed-origin POST 503, untrusted origin 403/no CORS, GET 405 and valid preflight 204. Remote D1 readback: zero feedback rows. Successful live POST/readback, actual scheduled execution and production rate-limit behavior remain NOT RUN.
-- Publish the prepared policy through website PR https://github.com/saramkim/saramkim.com/pull/3. Website lint/typecheck/build/export and 360px/desktop preview passed; existing dependency audit fails high/critical advisories and remains a publication gate.
-- After policy publication, validate production POST → D1 receipt, rate limits and cleanup before collection; establish operational shutdown thresholds and verify applicable account-level logging controls.
+- Approved account, exact endpoint, D1, Free plan, public operator/contact and 90-day retention plus daily interval / seven-day recovery history are recorded in `docs/feedback-service.md`.
+- Free D1 migration and Worker deployment at `https://play-plus-feedback.saramkimm.workers.dev` are complete. Default intake remains disabled. Observability and previews are disabled; per-IP 5/min and shared 100/min bindings are configured. These are approximate location-scoped limits, not exact accounting or global spending caps.
+- Live HTTPS checks passed: allowed-origin POST 503 when disabled, untrusted origin 403/no CORS, GET 405 and valid preflight 204. Enabled-intake CLI tests now verify production storage/readback, retry and rejection behavior; see evidence below. They do not replace real Chrome submission or permission tests.
+- Website PR https://github.com/saramkim/saramkim.com/pull/3 merged as `76628ca32de79d59856b6c41757ad081736e396a`. Released dependency fixes plus the owner's documented narrow braces exception passed full CI/audit. Vercel deployed successfully; live policy HTTP 200, both languages, operator/contact, retention, canonical URL, footer and sitemap passed. The user reported requesting FortiGuard reclassification after an Unrated block; approval/propagation is unconfirmed.
+- Real scheduled retention execution is verified below. Before public collection, finish operational/account logging checks. `docs/feedback-service.md` contains draft Store descriptions and a fail-closed shutdown procedure.
 - Complete actual Chrome checks and the full release matrix on the final approved production build; update Store data/permission disclosures.
-- PR merge and Store release require their own authority and completed checks; commit/push/review-PR authority has been granted.
+- Feature PR #129 is merged. Store release still requires explicit authority and completed checks. No version bump, tag, Store submission or publication has been performed for this feature.
 
-Implementation, automated verification, targeted Chrome checks and disabled-intake deployment are complete. Remaining browser, website and live-collection gates are open; users cannot yet submit feedback to this deployment.
+Implementation, automated verification, targeted Chrome checks and policy publication are complete. Remaining browser and live-collection gates are open; existing Store users do not yet have this feedback feature.
+
+## Production synthetic checks (2026-10-15 UTC)
+
+The API was enabled temporarily with the existing exact Store origin and real D1 binding, then restored to disabled intake in a `finally` block. No Chrome permission was bypassed: these were server-side CLI probes, not browser UX evidence. Test rows were removed by exact random receipt ID and verified absent. No real opinions or IP addresses were exported.
+
+- Version `411fe6f3-e202-4d28-a376-f0a2f8335663`, 03:25:59–03:26:04: a synthetic POST returned 200 with only the expected receipt fields. Exact D1 readback matched the submitted message, version and server timestamp. An identical retry returned the same receipt and left one row; changed text under the same ID returned 409; an extra payload field returned 400.
+- The first test incorrectly expected the sixth request to be 429. It returned 200, so that whole test run is **not PASS**. Requests crossed the minute boundary, and Cloudflare's limiter is permissive/eventually consistent. The failed assertion and cleanup result are retained in ignored local evidence. Disabled version `c7283c09-2233-4404-924b-f3cf1de6ea74` then passed the 503/403/405/204 probes.
+- Version `b7d740fa-9035-49fb-8a1c-ef6bbdabfb6c`, 03:27:05–03:27:08: storage/readback again succeeded, followed by an actual 429 with `Retry-After: 60` from AKL. This confirms live throttling, but that run also failed its fixed-order expectation of a successful retry and is **not an all-green suite**. Its synthetic row was deleted; disabled version `971f87d3-db6d-438b-a77c-7b67b7e763d5` was restored.
+
+The individually observed storage, idempotency, rejection and throttling outcomes are valid; do not relabel the failed fixed-sequence scripts as passing. [Cloudflare documents the rate limiter's locality and approximate consistency](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+
+- A third immediate-after-deploy run on `23418d28-ed1a-4eb0-b3b2-27b471f30b9d` passed storage/retry/conflict checks, then received an unexpected 503 for an extra-field request at 03:35:26. This run failed and was cleaned up; the cause is **UNKNOWN**, not proven to be deployment propagation. Disabled version `95ea2aa7-ac0d-4ae4-ae02-430c521467cf` was restored.
+- Final run on `9b31995e-e35f-4731-b31c-01783d9430f3`, after a 30-second post-deploy wait: **PASS** for 200 receipt/exact D1 readback, same receipt and one row on identical retry, 409 conflicting retry, 400 extra field, 429 with `Retry-After: 60` within a bounded probe, and 403/no CORS for a foreign origin. All replies were no-store. Only this final full sequence is recorded as passing; the earlier failure evidence remains preserved.
+- Final restoration: `8fe6b402-5cfb-472f-8b88-aea4fa793a4a`, `ACCEPT_FEEDBACK=false`, daily `17 3 * * *` UTC. Disabled-intake 503, foreign-origin 403, reader 405 and preflight 204 checks all passed. Remote D1 total count was zero after exact synthetic-row cleanup. Before collection commencement, allow deployment settings to settle and repeat a synthetic smoke check; investigate any recurring 503 instead of treating it as confirmed propagation.
+
+### Real scheduled retention
+
+From 03:28:38 to 03:34:36 UTC, intake stayed disabled while two synthetic rows were inserted: one 91 days old and one current. A temporary every-minute Cron was deployed as `8a72b8b5-5ac7-4f78-ab29-6a4a6699b0d3`, with a bounded wait and mandatory restoration/cleanup in `finally`. At 03:34:28 the actual scheduled handler had deleted the expired row and preserved the recent row. No manual deletion of the expired fixture occurred before this observation.
+
+The original daily `17 3 * * *` UTC schedule and disabled intake were redeployed as `ff5cf6b2-75a3-4116-b563-2346357dff16`. Both exact synthetic IDs were then deleted and read back as absent. This proves actual Cloudflare scheduled-handler execution with D1 retention, not the elapsed timing of the next daily 03:17 run. Cron configuration propagation may take time; keep this separate from the already passing local scheduled test.
+
+### Additional production-origin Chrome check
+
+The later production-origin Chrome test installed the configured local build with user approval and verified no requests before Send, no request while permission was pending, and retained draft text. Native Allow/Deny/Cancel remained inaccessible to the available tool. Reload discarded the in-memory test draft and ended the pending request; it was not a denial test. Its Set Up Manually onboarding flag remains set in the dedicated test profile. The default disabled build was restored, owned tabs closed and the gateway stopped; do not apply the earlier full-storage restoration claim to this later test.
+
+The available browser connector also refused navigation to the Chrome Web Store developer console. No Store fields were edited and no package was uploaded; the resulting temporary blank tab was closed. Store copy is prepared in `docs/feedback-service.md` for a later authorized submission through an available management interface.
