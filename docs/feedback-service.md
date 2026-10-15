@@ -20,6 +20,8 @@ The owner approved the following free-plan setup, Wrangler access and both repos
 - The bilingual policy page, footer and sitemap are live at the approved URL. Website PR #3 merged as `76628ca32de79d59856b6c41757ad081736e396a`; final CI, Vercel production deployment and live HTTP/content checks passed. Desktop and 360px previews rendered without horizontal overflow. The owner reported submitting a FortiGuard reclassification request after an Unrated network-policy block; reclassification is not yet confirmed.
 - Wrangler is authenticated with the approved `account:read`, `user:read`, `workers_scripts:write`, `d1:write` scopes and OAuth background access. Credentials are encrypted with a key in Windows Credential Manager; no credential is included in this repository. Unneeded default scopes were not requested.
 - Live HTTPS probes passed: allowed-origin POST returns 503 while intake is disabled; untrusted origin returns 403 without CORS allowance; GET returns 405; valid preflight returns 204. Temporary enabled-intake tests verified production POST, exact D1 readback, identical retry receipts, conflicting-ID rejection and 429 responses. Synthetic rows are deleted by exact ID; these CLI probes do not prove Chrome permission interaction.
+- Subsequent human-operated Chrome permission refusal/Allow and native Korean input checks passed. After MCP reconnection, the real side panel sent one synthetic message to production, received HTTP 200, focused its success notice, and matched one D1 row. Cleanup deleted the exact row and restored disabled intake as `19f1cfab-43ec-4b62-8d82-a535bc96d9ff`; D1 total count was zero and disabled-endpoint probes passed again.
+- Read-only dashboard verification confirmed Free as the current $0 plan (10 ms CPU per request), Worker Logs/Traces/Issues off, no telemetry export destinations, preview URLs off, no custom domains/routes and the daily Cron. The account Logpush page showed a subscription invitation; no subscription or settings change was made. This checks the visible operator-controlled settings, not Cloudflare's internal network/security metadata processing.
 - Website PR: https://github.com/saramkim/saramkim.com/pull/3. Released dependency fixes and the owner's narrow exception for unpatched braces advisory `1240992` allowed the full audit/CI to pass. The exception is documented in that repository and is not a vulnerability fix.
 
 Next: finish the remaining live-service and actual Chrome checks, review operational shutdown procedures, and prepare the final versioned release. Extension Store release remains a separate gate; the default build does not enable feedback.
@@ -35,7 +37,9 @@ Extension build variables (both required together):
 
 Webpack injects these values into the side panel and adds only `<origin>/*` to the generated manifest's `optional_host_permissions`. The source manifest and required permissions are unchanged. The server address is public configuration, never a secret. Production builds reject localhost, IP and reserved example/test addresses. With no variables, `yarn build` remains the disabled baseline. Never package a local test build for the Store.
 
-The send click synchronously calls `chrome.permissions.request`, then awaits the result. Denial leaves the draft and other features intact. Opening the form, typing, dismissing or installing makes no feedback request. A clicked privacy link navigates to the policy separately. Drafts and retry IDs stay only in panel memory. Cancel discards the draft; panel closure may also discard it. Only banner dismissal is persisted in extension-origin localStorage, independently of existing setting schemas.
+Send opens the disclosure dialog. Its Agree and send click synchronously calls `chrome.permissions.request`, then awaits the result. Denial leaves the draft and other features intact. Opening the form or confirmation, typing, dismissing or installing makes no feedback request. A clicked privacy link navigates to the policy separately. Drafts and retry IDs stay only in panel memory. Go back/Escape in the dialog retains the draft; Cancel in the form discards it, and panel closure may also discard it. Only banner dismissal is persisted in extension-origin localStorage, independently of existing setting schemas.
+
+Removing an active permission with `chrome.permissions.remove` does not guarantee a new native prompt on the next Send: Chrome can silently restore a previously granted permission. The actual Chrome check observed this documented behavior. Keep API-level removal distinct from a user revoking access through Chrome settings; do not promise a prompt on every submission. [Chrome permissions documentation](https://developer.chrome.com/docs/extensions/reference/api/permissions#method-remove).
 
 ## Local setup
 
@@ -134,7 +138,7 @@ Delete only the intended row and confirm count zero. Anonymous submissions canno
 2. In that account create D1, copy its real ID into the production config and apply `migrations/0001-feedback.sql` using Wrangler `d1 migrations apply DB --remote --config wrangler.production.jsonc`. Keep intake disabled initially. Store credentials in the operator's secret store/CI secrets, never the extension or repository.
 3. Run `wrangler deploy --config wrangler.production.jsonc` only under the separate deployment approval. Confirm HTTPS, narrow CORS, kill switch, account-level logging, retention and actual binding availability.
 4. After intake approval, enable it and perform a synthetic production POST, read the exact row in D1, exercise duplicate/429/failure behavior, and delete the synthetic row. Record receipt ID/times and results without opinion text or IP. Verify scheduled cleanup execution independently.
-5. Publish the approved policy and contact route. Align Store user-data disclosures with actual free text, version, receipt ID, server timestamp, developer reading, Cloudflare processing and retention. A voluntary text field can contain personal information; do not claim “no data collected.” Review the optional permission disclosure. The form's Send notice provides explicit consent without another required field.
+5. Publish the approved policy and contact route. Align Store user-data disclosures with actual free text, version, receipt ID, server timestamp, developer reading, Cloudflare processing and retention. A voluntary text field can contain personal information; do not claim “no data collected.” Review the optional permission disclosure. Send opens a disclosure dialog; only Agree and send requests permission and transmits feedback. Go back or Escape keeps the draft. The privacy-policy link remains below the input, outside the dialog.
 6. Build with the approved origin and policy URL. Inspect manifest and bundles; no placeholder host, client secret, automatic media data or new required permissions. Complete the actual Chrome matrix below and the entire existing release matrix on the final version/build.
 7. Version bump, tag, push, Store submission and publication remain separate explicitly authorized release work.
 
@@ -144,7 +148,7 @@ Use the existing Play Plus Store item, not a new extension identity. Build the f
 
 Suggested optional-host permission explanation:
 
-> Optional access to https://play-plus-feedback.saramkimm.workers.dev/* is requested only when the user selects Send feedback. It permits sending the user's written feedback to the developer and receiving a storage receipt. Declining access does not prevent subtitle or playback features from working.
+> Optional access to https://play-plus-feedback.saramkimm.workers.dev/* is requested only when the user selects Agree and send in the feedback confirmation. It permits sending the user's written feedback to the developer and receiving a storage receipt. Declining access does not prevent subtitle or playback features from working.
 
 Suggested feedback data-use description:
 
@@ -168,7 +172,7 @@ Record each result against the exact candidate, extension ID, source/diff and en
 | Layout | Korean and English at 320/360/390px; no horizontal overflow, hidden buttons or clipped disclosure; scroll works |
 | Keyboard | Entry focuses textarea; normal Tab order, IME/Enter never submits unexpectedly; Escape/cancel restores trigger; success focuses receipt |
 | No collection | Install/open/type/dismiss causes zero feedback requests and zero permission prompts |
-| Optional host | Unrequested/allowed/denied/revoked; prompt only on Send; denial keeps text and existing features |
+| Optional host | Unrequested/allowed/denied/revoked; prompt only on Agree and send; opening/dismissing confirmation makes no request; denial keeps text and existing features |
 | Storage | POST to real local/test API, D1 readback, matching receipt; repeated click and lost-response retry store one row |
 | Failure | Offline/reconnect, timeout, 429, server error, malformed receipt; input retained and no false success |
 | Retention | Daily deletion path tested with expired and recent synthetic rows |
