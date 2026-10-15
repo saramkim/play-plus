@@ -1,5 +1,7 @@
 # Issue #128 implementation validation
 
+> **Historical validation snapshot — 2026-10-15.** Results, PENDING/NOT RUN gates and the no-merge statement below describe the pre-merge implementation review, not the present state. [PR #129](https://github.com/saramkim/play-plus/pull/129) was later merged to `main`. Merging is not evidence of Chrome Web Store publication, live feedback acceptance or completion of the remaining operational gates. Recheck [feedback service operations](./feedback-service.md) and current systems before release decisions.
+
 Date: 2026-10-15 Pacific/Auckland. Base: `e4e7ebdb2684d6a4c9a61d0a4d283d914f179658`. Branch: `feat/in-panel-feedback`. Source version remains 1.12.0. The owner approved commits, pushes, review PRs and the free Cloudflare setup. The Worker is deployed with intake disabled; there has been no PR merge, Store submission or real user collection.
 
 ## Automated verification
