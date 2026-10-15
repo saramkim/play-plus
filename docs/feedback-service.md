@@ -144,6 +144,8 @@ Delete only the intended row and confirm count zero. Anonymous submissions canno
 
 ## Store submission preparation (draft, not submitted)
 
+**Current v1.13.0 gate: HOLD.** The Store's existing Notion policy says all data stays local, while the new domain policy covers only optional feedback and still uses the earlier Send wording. Integrate whole-extension handling and the final Agree and send flow before replacing the Store URL. See [the current candidate privacy/Store findings](./manual-smoke-test.md#privacy-and-store-gate--hold); do not treat a reachable feedback policy as proof that the full Store disclosure is ready.
+
 Use the existing Play Plus Store item, not a new extension identity. Build the final approved version with both `PLAY_PLUS_FEEDBACK_ORIGIN=https://play-plus-feedback.saramkimm.workers.dev` and `PLAY_PLUS_FEEDBACK_PRIVACY_URL=https://www.saramkim.com/play-plus/privacy`. Without these variables, the banner and API are disabled. A build still numbered `1.12.0` is test evidence, not the next release package.
 
 Suggested optional-host permission explanation:
