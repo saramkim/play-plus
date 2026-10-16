@@ -3,7 +3,6 @@ import { MessageResponse, sendMessage } from '@utils/message';
 import { MessageSchema } from '@utils/message/type';
 import { NativeSubtitleBatch, resolveNativeSubtitle } from '@utils/native-subtitles';
 
-import { videoManager } from './core/video/video-manager';
 import { coupangStrategy } from './coupang-play';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
 
@@ -30,11 +29,10 @@ export const handleFetchVideoMetadata = async (
   const request = ++generation;
   // Comparable across content-document reloads; the sequence also handles reduced timer precision.
   const requestId = lastRequestId = Math.max(lastRequestId + 1, performance.timeOrigin + performance.now());
-  const video = videoManager.get();
-  const source = video?.currentSrc || video?.src;
+  // Tracks belong to the title, not the media element/blob used to play it.
+  // A same-title player replacement must not discard an otherwise current response.
   const check = () => {
-    if (request !== generation || getCoupangPlayVideoId(location.href) !== videoId ||
-      (video && (!videoManager.isCurrent(video) || (video.currentSrc || video.src) !== source))) {
+    if (request !== generation || getCoupangPlayVideoId(location.href) !== videoId) {
       throw new Error('Native subtitle target changed');
     }
   };

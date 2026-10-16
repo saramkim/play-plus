@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { VideoLifecycleEvent, VideoLifecycleMonitor } from './video-lifecycle-monitor';
 
@@ -42,6 +42,30 @@ describe('VideoLifecycleMonitor', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '';
     history.replaceState({}, '', '/');
+  });
+
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+  it.each(['source', 'element'])('reads a page-world URL change before reporting a new %s', async (change) => {
+    const previousId = '123e4567-e89b-12d3-a456-426614174000';
+    vi.stubGlobal('location', { href: `https://www.coupangplay.com/play/${previousId}` });
+    const player = addPlayer();
+    const video = addMainVideo(player);
+    video.src = 'blob:https://www.coupangplay.com/old';
+    const monitor = new VideoLifecycleMonitor();
+    const events: VideoLifecycleEvent[] = [];
+    monitor.start((event) => events.push(event));
+    try {
+      // Page-world history calls do not invoke an isolated content world's patched methods.
+      location.href = `https://www.coupangplay.com/play/${NEXT_ID}`;
+      let current = video;
+      if (change === 'element') { video.remove(); current = addMainVideo(player); }
+      current.src = 'blob:https://www.coupangplay.com/new';
+      current.dispatchEvent(new Event('loadedmetadata'));
+      await flushLifecycleSignals();
+      expect(events.slice(1).every((event) => event.videoId === NEXT_ID)).toBe(true);
+      expect(events.at(-1)).toMatchObject({ state: 'content', video: current, videoId: NEXT_ID });
+    } finally { monitor.stop(); }
   });
 
   it('tracks placeholder, advertisement, and content on the same video element', async () => {

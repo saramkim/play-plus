@@ -1,6 +1,6 @@
 # Play Plus Manual Release Smoke Test
 
-> **v1.13.0 candidate — technical verification complete with two owner-approved test exclusions; submission pending.** Validated runtime source `403b7ab` is pushed in PR #133 and its CI passed. See the final checkpoint below for the exact evidence and limits. Store metadata/certification, release commit/tag/package and publication remain separate steps. Historical HOLD records below describe their original checkpoints. The original v1.12.0 record is preserved at [archive/releases/v1.12.0-smoke-test.md](./archive/releases/v1.12.0-smoke-test.md).
+> **v1.13.2 candidate — technical follow-up complete; final CI and release actions tracked in PR #134.** Runtime fixes are committed at `5e458f65d00b6b6a6445b54afaf2d7cab3b42c97` in PR #134. The owner reports a v1.13.1 rollback to v1.12.0 behavior. The final v1.13.2 checkpoint below distinguishes new Chrome checks from reused evidence and retains the two owner-approved test exclusions. The original v1.12.0 record is preserved at [archive/releases/v1.12.0-smoke-test.md](./archive/releases/v1.12.0-smoke-test.md).
 
 ## Preparation checkpoint — 2026-10-15 Pacific/Auckland
 
@@ -178,6 +178,63 @@ Cleanup: the controlled local D1 was emptied (0 rows); loopback server stopped; 
 Dedicated gateway cleanup returned `ok: true, active: false`. Loopback port 18789 has no listener.
 
 Decision: technical verification is complete subject to the two explicit exclusions above. Submission still requires the owner-deferred Store policy URL, reviewed data categories and certifications, and confirmation of the currently published version. See [Store preparation](./feedback-service.md#store-data-category-review--2026-10-16). No merge, release commit/tag/ZIP, Store upload/submission/publication or public intake activation was performed. The owner explicitly authorized committing and pushing this documentation checkpoint after reviewing the final results.
+
+## Post-release native subtitle regression fix — 2026-10-16
+
+The owner reports rolling the Store back to v1.12.0 behavior under version v1.13.1. This checkpoint covers uncommitted fixes on `codex/fix-native-subtitle-regressions`, based on `959d31a6d258ad05254229e891fdad345612c844`. Package/manifest versions remain 1.13.0 for this local test build; it is not a new Store submission artifact. These observations do not establish the reviewer's exact failing title or installed version.
+
+Three content-side defects were addressed:
+
+- Same-title media element/source replacement no longer discards in-flight native subtitle acquisition. Title and newer-request guards remain enforced.
+- Lifecycle refresh checks the current page URL before emitting a video ID. Page-world SPA navigation can bypass the isolated content world's history wrappers; the previous player/source is retained for transition comparison so an already-replaced player is not mistaken for stale content.
+- An invalid cue is excluded individually instead of rejecting its entire track. Tracks with no usable cues still fail.
+
+Automated gates: type check, lint, **312 tests in 44 files**, and the configured production build PASS. Regression cases failed before their respective fixes: two same-title media changes, three invalid-cue positions, and two page-world route/player changes. Tests also cover new-episode acquisition across lifecycle refresh and actual background persistence for both language tracks. Three existing Webpack size warnings remain. Final tested `dist/content.js` SHA256: `A00C3028B748936DB5F677A718C82C42AAE0EDA77F6081443D8F8F45F4292DE8`.
+
+| Actual Chrome check | Result and limits |
+| --- | --- |
+| Initial playback | Both native overlays and the actual side-panel list displayed on `/en/play`. |
+| Different-episode SPA navigation | The first build, containing only acquisition/cue fixes, reproduced missing subtitles after Next Episode. After the lifecycle fix, the provider's Next Episode button changed `be5a6352-dff1-4328-b0b3-f1b5ab9c382d` to `ba219084-82bf-4114-8665-99abbabbb357` in the same document. Session data contained 274 English and 258 Korean cues for the new ID; the actual panel displayed the 274-cue list with 14 virtualized rows. |
+| Mixed valid/invalid cues | Controlled inline metadata/VTT fixtures passed through the compiled extension's native acquisition and background persistence. Each language retained one healthy cue and excluded the reversed-time cue; both overlays and the panel showed the healthy text. This is not a malformed provider-asset observation. |
+| Reload after fixture | Provider metadata restored 274 English/258 Korean cues; synthetic text was absent. Both natural subtitle overlays displayed again during playback. |
+
+Cleanup PASS: exact comparisons confirm original sync/local storage, extension localStorage and permissions restored, including existing uploads. Test instrumentation and synthetic tracks were cleared; no feedback was sent. Owned playback tab 2 and side-panel page 4 were closed; pre-existing blank tab 1 and the stable extension were preserved. Provider language remained English. Dedicated gateway stop returned `ok: true, active: false`. Ignored diagnostic evidence is under `services/feedback/.wrangler/incident-20261016/`.
+
+Scope: bug-fix validation complete; **not a release-readiness declaration**. This follow-up did not rerun the full release matrix, the `/play` route in actual Chrome, or a Store automatic-update path. No commit, push, tag, deployment, Store submission or collection-setting change was performed.
+
+## v1.13.2 candidate follow-up — 2026-10-16 Pacific/Auckland
+
+Runtime source: `5e458f65d00b6b6a6445b54afaf2d7cab3b42c97`; reviewed base: `959d31a6d258ad05254229e891fdad345612c844`. [PR #134](https://github.com/saramkim/play-plus/pull/134), GitHub [CI run 38860885865](https://github.com/saramkim/play-plus/actions/runs/38860885865), **PASS**. The version commit containing this checkpoint changes only package/manifest version to 1.13.2, README and this checkpoint. No runtime changes followed the 312-test/type/lint PASS. A new configured production build passed with the same three size warnings; all three JavaScript hashes exactly match the previous tested fix build, so those automated results are reused rather than rerun solely for version/docs changes.
+
+Actual Chrome 155, persistent dedicated KR profile, stable unpacked extension `mpknnoepdadenanfhmccdaoiaidjhcna`, manifest **1.13.2**, action-opened side panel:
+
+| Area | Current evidence / reuse boundary |
+| --- | --- |
+| Install and existing storage | PASS: 1.13.2 loaded; actual panel connected/detected. Original sync/local/localStorage/permissions match after cleanup. This is persistent-profile unpacked evidence, not Store auto-update delivery. |
+| `/en/play` and pre-roll recovery | PASS: actual 15-second provider ad was observed, then content reached readyState 4 with both native overlays and 274 English/258 Korean cues. This does not add a new during-ad shortcut-inhibition claim; classifier/lifecycle advertisement tests remain part of the 312-test suite. |
+| `/play` | PASS: provider language temporarily changed via its UI under the prior owner approval. Native overlays, 274-cue actual analysis list, player reload and panel close/action-reopen worked. |
+| Different-episode SPA on `/play` | PASS: native Next Episode changed `ba219084-82bf-4114-8665-99abbabbb357` to `878f0ed9-b9b5-45dd-8b6e-307f409f9dc8` without losing the document marker. New title stored 206 English/211 Korean cues; actual panel had 206 cues/18 virtualized rows. Both overlays were sampled at 37.409s. `/en/play` different-episode evidence is recorded in the preceding fix checkpoint on identical JavaScript. |
+| Primary/secondary visibility | PASS: Q hid only English and W hid only Korean after that SPA transition; both restored. |
+| Upload selection, delay, reload | PASS on `/play`: UI-uploaded two-cue SRT selected for both roles, delay +2 seconds saved, then player reloaded without reselecting. Settled playback samples: 241.899 empty, 243.050 first cue in both overlays, 251.941 first, 253.049 second. Earlier immediate paused-seek samples were empty and are not counted as proof; settled readyState 4 playback is the evidence. Prior `/en/play` upload/edit evidence is reused for unchanged upload code. |
+| Seek, speed, loop, reconnect | PASS on `/play`: ArrowRight 252.5→262.5, ArrowLeft→252.5; Period 1→1.1, Slash→1. Current uploaded cue loop wrapped 261.883→252.721 within 252–262; L disabled looping and subsequent playback at 265.620 remained beyond its end. Closing/reopening the actual panel retained selection and connection. |
+| Copy/save/review, other settings, feedback | REUSED: earlier final v1.13.0 checkpoints. Their UI/background/storage/permission code is unchanged; exact index.js/background.js hashes are unchanged, and current native acquisition, display, controls and storage were checked above. No new clipboard prompt, feedback POST, backend mutation or policy change was performed. |
+| Accessibility and permission revocation | NOT RUN — retained owner exclusions: spoken screen-reader output and Chrome-settings revocation/re-request. No new exclusion is inferred. |
+| Final source review | COMPLETE, no blocking finding identified: author review of all seven committed diff files plus route observation, lifecycle classification/consumer, native request ordering and background persistence; version-only manifest change/required permissions also checked. This is not an independent review or a guarantee against every provider timing variation. |
+
+Candidate artifact (configured endpoint/privacy URL unchanged):
+
+| File | Bytes | SHA256 |
+| --- | ---: | --- |
+| `dist/index.js` | 769810 | `E31EF264A78BA6BEA5838E79B9E3205ECF81FF48DD18714C964F6275EAEA3ECC` |
+| `dist/content.js` | 415622 | `A00C3028B748936DB5F677A718C82C42AAE0EDA77F6081443D8F8F45F4292DE8` |
+| `dist/background.js` | 7410 | `7A48597E25AD5D52CA649DE1C148011C1B54B7B38A6E5A0F7BAD58416DFFB329` |
+| `dist/manifest.json` | 900 | `55A1696805070582AAA6121F4DD4F2B937671E364A340D9A381F6930DDFAA06E` |
+
+Ignored `services/feedback/.wrangler/incident-20261016/play-plus-1.13.2-candidate.zip` has SHA256 `08532E36784F82333CFBAA38D216201D5A04137CCCEDD96F80C34CFEDCF6FD43`. All 15 archive entries were read and compared by SHA256 against the tested `dist/`; manifest is at archive root and no source, credentials or test evidence is packaged. This is the candidate for the version commit containing this checkpoint; the release/tag workflow and Store submission remain separate.
+
+Cleanup PASS: synthetic upload deleted through its confirmation UI; existing upload preserved. Exact sync/local/localStorage/permissions comparisons pass. Provider Language visibly restored to English. Owned playback tab 2 and panel 4 closed, existing blank tab 1 preserved, diagnostic timers removed with their document. No video, pending permission prompt or feedback draft remains. Gateway stop: `ok: true, active: false`. Panel and worker console error queries returned none; provider warnings are not counted as extension failures.
+
+Decision: technical follow-up complete using current targeted Chrome evidence plus the explicitly identified unchanged evidence above. This is not a claim of freshly repeating every matrix row. The owner authorized committing/pushing the version and this checkpoint and checking final CI. The final version-commit CI result is tracked in PR #134 to avoid a documentation-only commit loop. Merge, release tag and Store upload/submission remain separate steps. No merge, tag, Store action or backend deployment is included.
 
 ## Evidence limits, cleanup and decision
 
