@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>피드백함 · Play Plus</title>
+  <link rel="stylesheet" href="/inbox.css">
+  <script src="/inbox.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><div class="brand"><span class="brand-mark" aria-hidden="true">P<span>+</span></span><span>Play Plus <small>관리자</small></span></div><a class="logout" href="/cdn-cgi/access/logout">로그아웃</a></header>
+    <section class="intro"><p class="eyebrow">FEEDBACK INBOX</p><h1>함께 만드는 Play Plus</h1><p>사용자가 들려준 이야기를 확인하세요.</p></section>
+    <section class="inbox" aria-label="피드백함">
+      <div class="toolbar"><div class="filters" role="group" aria-label="피드백 필터"><button id="all" aria-pressed="true">전체</button><button id="unread" aria-pressed="false">안 읽음</button></div><button class="refresh" id="refresh" aria-label="피드백 새로고침">새로고침 <span aria-hidden="true">↻</span></button></div>
+      <form id="search-form" role="search"><label class="sr-only" for="search">피드백 검색</label><input id="search" type="search" maxlength="200" placeholder="어떤 이야기를 찾으세요?" autocomplete="off"><button type="submit">검색</button></form>
+      <div class="list-heading"><h2>받은 이야기 <span id="count"></span></h2><span>최신순</span></div>
+      <p id="status" role="status" aria-live="polite">피드백을 불러오는 중이에요.</p>
+      <a id="login" href="/" hidden>다시 로그인</a>
+      <div id="list" aria-busy="true"></div>
+      <button id="more" hidden>더 보기</button>
+    </section>
+    <footer><span class="lock" aria-hidden="true">●</span> 나만 볼 수 있는 피드백함 <span class="separator">·</span> 접수일로부터 90일 보관</footer>
+  </main>
+</body>
+</html>

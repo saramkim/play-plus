@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "play-plus-feedback-inbox",
+  "main": "src/admin-entry.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": { "ACCESS_AUD": "" },
+  "rules": [{ "type": "Text", "globs": ["**/admin/*.html", "**/admin/*.css", "**/admin/inbox.js"], "fallthrough": true }],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "play-plus-feedback-local",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }]
+}
