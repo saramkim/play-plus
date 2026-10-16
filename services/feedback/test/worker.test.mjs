@@ -30,6 +30,7 @@ before(async () => {
   }] }));
   db = await mf.getD1Database('DB');
   await db.exec((await readFile(new URL('../migrations/0001-feedback.sql', import.meta.url), 'utf8')).replaceAll('\n', ' '));
+  await db.exec((await readFile(new URL('../migrations/0002-feedback-read-state.sql', import.meta.url), 'utf8')).replace(/^--.*$/gm, '').replaceAll('\n', ' '));
 });
 after(async () => { await mf?.dispose(); });
 
@@ -43,7 +44,7 @@ test('POST -> real local D1 readback, server timestamp and idempotent retry', as
   assert.equal(receipt.requestId, data.requestId);
   assert.ok(Date.parse(receipt.receivedAt) >= before);
   const row = await db.prepare('SELECT * FROM feedback WHERE request_id = ?').bind(data.requestId).first();
-  assert.deepEqual(row, { request_id: data.requestId, message: '한글 의견', extension_version: '1.12.0', received_at: receipt.receivedAt });
+  assert.deepEqual(row, { request_id: data.requestId, message: '한글 의견', extension_version: '1.12.0', received_at: receipt.receivedAt, read_at: null });
   assert.deepEqual(await (await post(data)).json(), receipt);
   assert.equal((await post({ ...data, message: 'changed' })).status, 409);
   const count = await db.prepare('SELECT COUNT(*) AS count FROM feedback WHERE request_id = ?').bind(data.requestId).first();
@@ -103,8 +104,8 @@ test('real local rate limiter rejects the sixth request before DB writes', async
 
 test('scheduled cleanup removes expired rows and preserves recent feedback', async () => {
   const old = randomUUID(); const current = randomUUID();
-  await db.prepare('INSERT INTO feedback VALUES (?, ?, ?, ?)').bind(old, 'expired', '1.12.0', new Date(Date.now() - 91 * 86400000).toISOString()).run();
-  await db.prepare('INSERT INTO feedback VALUES (?, ?, ?, ?)').bind(current, 'recent', '1.12.0', new Date().toISOString()).run();
+  await db.prepare('INSERT INTO feedback (request_id, message, extension_version, received_at, read_at) VALUES (?, ?, ?, ?, ?)').bind(old, 'expired', '1.12.0', new Date(Date.now() - 91 * 86400000).toISOString(), new Date().toISOString()).run();
+  await db.prepare('INSERT INTO feedback (request_id, message, extension_version, received_at) VALUES (?, ?, ?, ?)').bind(current, 'recent', '1.12.0', new Date().toISOString()).run();
   const worker = await mf.getWorker();
   await worker.scheduled({ cron: '17 3 * * *' });
   assert.equal(await db.prepare('SELECT * FROM feedback WHERE request_id = ?').bind(old).first(), null);

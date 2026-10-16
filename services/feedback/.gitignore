@@ -4,3 +4,5 @@ dist/
 .dev.vars*
 wrangler.production.jsonc
 wrangler.local.jsonc
+wrangler.admin.production.jsonc
+wrangler.admin.local.jsonc
