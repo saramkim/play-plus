@@ -1,10 +1,15 @@
+import { TabInfo } from '@storage/tab';
 import { sendMessage } from '@utils/message';
+import { NativeSubtitleBatch } from '@utils/native-subtitles';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { persistNativeSubtitles } from '@/background/native-subtitles';
 
 import { videoManager } from './core/video/video-manager';
 import { coupangStrategy } from './coupang-play';
 import { useSubtitleStore } from './features/subtitle/subtitle-store';
 import { handleFetchVideoMetadata, invalidateNativeSubtitles } from './native-subtitles';
+import { VideoLifecycleMonitor } from './video-lifecycle/video-lifecycle-monitor';
 
 vi.mock('@utils/message', () => ({ sendMessage: vi.fn() }));
 const A = '123e4567-e89b-12d3-a456-426614174000';
@@ -48,7 +53,44 @@ describe('native acquisition isolation', () => {
     expect(useSubtitleStore.getState().subtitleCache).toEqual({ en: cues('old'), [customId]: cues('custom') });
     expect(sendMessage).toHaveBeenLastCalledWith('updateSubtitles', expect.objectContaining({ en: { status: 'failed' }, ko: { status: 'absent' } }));
   });
-  it.each(['route', 'newer request', 'video source', 'video replacement'])('rejects a delayed request after %s changes', async (change) => {
+  it.each(['video source', 'video replacement'])('keeps same-title subtitles when %s changes during acquisition', async (change) => {
+    useSubtitleStore.setState({ subtitleCache: {} });
+    let tabInfo: TabInfo = {};
+    vi.stubGlobal('chrome', {
+      ...chrome,
+      tabs: { ...chrome.tabs, get: vi.fn(async () => ({ url: location.href })) },
+      storage: {
+        ...chrome.storage,
+        session: {
+          ...chrome.storage.session,
+          get: vi.fn((_key: string, callback: (data: object) => void) => callback({ tab_7: tabInfo })),
+          set: vi.fn(async (values: { tab_7: TabInfo }) => { tabInfo = values.tab_7; }),
+        },
+      },
+    });
+    vi.mocked(sendMessage).mockImplementationOnce(async (...args: unknown[]) => {
+      await persistNativeSubtitles(7, args[1] as NativeSubtitleBatch);
+      return { success: true as const };
+    });
+    const video = document.createElement('video'); document.body.append(video);
+    vi.mocked(videoManager.get).mockReturnValue(video);
+    vi.spyOn(videoManager, 'isCurrent').mockImplementation((candidate) => candidate === video && video.isConnected);
+    let finish!: (value: typeof tracks) => void;
+    vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => new Promise((done) => { finish = done; }));
+    const pending = handleFetchVideoMetadata(params);
+    if (change === 'video source') video.src = 'https://example.test/same-title-new-source.mp4';
+    else video.remove();
+    finish([tracks[0], { lang: 'ko', result: { status: 'success', subtitleData: cues('한국어') } }]);
+    await expect(pending).resolves.toEqual({ success: true });
+    expect(useSubtitleStore.getState().subtitleCache).toEqual({ en: cues('English'), ko: cues('한국어') });
+    expect(tabInfo).toMatchObject({ nativeVideoId: A, en: cues('English'), ko: cues('한국어') });
+    expect(sendMessage).toHaveBeenCalledExactlyOnceWith('updateSubtitles', expect.objectContaining({
+      videoId: A,
+      en: { status: 'success', subtitleData: cues('English') },
+      ko: { status: 'success', subtitleData: cues('한국어') },
+    }));
+  });
+  it.each(['route', 'newer request'])('rejects a delayed request after %s changes', async (change) => {
     const video = document.createElement('video'); document.body.append(video);
     vi.mocked(videoManager.get).mockReturnValue(video);
     vi.spyOn(videoManager, 'isCurrent').mockImplementation((candidate) => candidate === video && video.isConnected);
@@ -57,8 +99,6 @@ describe('native acquisition isolation', () => {
     const pending = expect(handleFetchVideoMetadata(params)).rejects.toThrow('target changed');
     if (change === 'route') { route(B); invalidateNativeSubtitles(B); }
     if (change === 'newer request') await handleFetchVideoMetadata(params);
-    if (change === 'video source') video.src = 'https://example.test/new.mp4';
-    if (change === 'video replacement') video.remove();
     const before = useSubtitleStore.getState().subtitleCache;
     finish(tracks); await pending;
     expect(useSubtitleStore.getState().subtitleCache).toBe(before);
@@ -67,6 +107,27 @@ describe('native acquisition isolation', () => {
   it('does not turn a persistence/all-failed rejection into a success acknowledgement', async () => {
     vi.mocked(sendMessage).mockResolvedValueOnce({ success: false, message: 'Native subtitle acquisition failed' });
     await expect(handleFetchVideoMetadata(params)).resolves.toEqual({ success: false, message: 'Native subtitle acquisition failed' });
+  });
+
+  it('does not invalidate a new episode request with the lifecycle monitor\'s previous route', async () => {
+    document.body.innerHTML = '<div id="playerWrapper"><video data-cy="main-video"></video></div>';
+    const video = document.querySelector('video')!;
+    video.src = 'blob:https://www.coupangplay.com/old';
+    const monitor = new VideoLifecycleMonitor();
+    monitor.start((event) => invalidateNativeSubtitles(event.videoId));
+    let finish!: (value: typeof tracks) => void;
+    vi.mocked(coupangStrategy.fetchSubtitles).mockImplementationOnce(() => new Promise((done) => { finish = done; }));
+    try {
+      // The page changes URL before its new player signals reach the isolated world.
+      route(B);
+      const pending = handleFetchVideoMetadata(params);
+      video.src = 'blob:https://www.coupangplay.com/new';
+      monitor.refresh();
+      finish([tracks[0], { lang: 'ko', result: { status: 'success', subtitleData: cues('한국어') } }]);
+      await expect(pending).resolves.toEqual({ success: true });
+      expect(useSubtitleStore.getState().subtitleCache).toMatchObject({ en: cues('English'), ko: cues('한국어') });
+      expect(sendMessage).toHaveBeenCalledExactlyOnceWith('updateSubtitles', expect.objectContaining({ videoId: B }));
+    } finally { monitor.stop(); }
   });
 });
 

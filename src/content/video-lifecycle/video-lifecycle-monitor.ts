@@ -23,6 +23,7 @@ export class VideoLifecycleMonitor {
   private routeSubscription: RouteSubscription | null = null;
   private currentVideoId = getCoupangPlayVideoId(location.href);
   private previousEvent: VideoLifecycleEvent | null = null;
+  private previousSource = '';
   private transitionVideo: HTMLVideoElement | null = null;
   private transitionSource = '';
   private scheduled = false;
@@ -51,6 +52,8 @@ export class VideoLifecycleMonitor {
   }
 
   refresh(): VideoLifecycleEvent {
+    // Page-world pushState does not call the isolated content world's history wrapper.
+    this.routeSubscription?.check();
     const classification = classifyCoupangPlayVideo(this.root);
     const source = classification.video?.currentSrc || classification.video?.src || '';
     const isStaleTransitionVideo =
@@ -87,10 +90,11 @@ export class VideoLifecycleMonitor {
   }
 
   private handleRouteChange = (videoId: string | null) => {
-    const classification = classifyCoupangPlayVideo(this.root);
     this.currentVideoId = videoId;
-    this.transitionVideo = classification.video;
-    this.transitionSource = classification.video?.currentSrc || classification.video?.src || '';
+    // A DOM/media signal may reveal the new player and route together. Compare with
+    // the last observed player, not the replacement that is already in the DOM.
+    this.transitionVideo = this.previousEvent?.video ?? null;
+    this.transitionSource = this.previousSource;
     this.emit({ state: 'transitioning', video: null, videoId, delayed: false });
     this.scheduleRefresh();
   };
@@ -105,7 +109,9 @@ export class VideoLifecycleMonitor {
   };
 
   private emit(event: VideoLifecycleEvent) {
-    if (!this.started || this.isDuplicate(event)) return;
+    if (!this.started) return;
+    this.previousSource = event.video?.currentSrc || event.video?.src || '';
+    if (this.isDuplicate(event)) return;
     this.previousEvent = event;
     if (event.state === 'content') this.clearDelayedTimer();
     else this.ensureDelayedTimer();

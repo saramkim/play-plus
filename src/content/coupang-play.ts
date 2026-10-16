@@ -141,11 +141,9 @@ class CoupangPlayStrategy {
   private async fetchSubtitle(url: string): Promise<SubtitleData[]> {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Subtitle request failed');
-    const cues = parseVTT(await response.text());
-    if (!cues.length || cues.some(({ start, end, text }) =>
-      !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || !text.trim())) {
-      throw new Error('Unusable subtitle track');
-    }
+    const cues = parseVTT(await response.text()).filter(({ start, end, text }) =>
+      Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end >= start && text.trim());
+    if (!cues.length) throw new Error('Unusable subtitle track');
     return cues;
   }
 

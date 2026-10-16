@@ -191,4 +191,17 @@ describe('coupangStrategy playback response adapter', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify(playbackResponse), { status: 503 }));
     await expect(coupangStrategy.fetchSubtitles('metadata', [])).rejects.toThrow('metadata request failed');
   });
+
+  it.each(['first', 'middle', 'last'])('keeps healthy cues when a reversed-time cue is %s in a track', async (position) => {
+    const blocks = ['00:00:01.000 --> 00:00:02.000\nFirst', '00:00:05.000 --> 00:00:06.000\nLast'];
+    blocks.splice(['first', 'middle', 'last'].indexOf(position), 0, '00:00:04.000 --> 00:00:03.000\nInvalid');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(playbackResponse)))
+      .mockResolvedValueOnce(new Response(`WEBVTT\n\n${blocks.join('\n\n')}`));
+    await expect(coupangStrategy.fetchSubtitles('metadata', [])).resolves.toEqual([
+      { lang: 'en', result: { status: 'success', subtitleData: [
+        { start: 1, end: 2, text: 'First' }, { start: 5, end: 6, text: 'Last' },
+      ] } },
+    ]);
+  });
 });

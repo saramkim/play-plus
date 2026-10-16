@@ -179,6 +179,29 @@ Dedicated gateway cleanup returned `ok: true, active: false`. Loopback port 1878
 
 Decision: technical verification is complete subject to the two explicit exclusions above. Submission still requires the owner-deferred Store policy URL, reviewed data categories and certifications, and confirmation of the currently published version. See [Store preparation](./feedback-service.md#store-data-category-review--2026-10-16). No merge, release commit/tag/ZIP, Store upload/submission/publication or public intake activation was performed. The owner explicitly authorized committing and pushing this documentation checkpoint after reviewing the final results.
 
+## Post-release native subtitle regression fix — 2026-10-16
+
+The owner reports rolling the Store back to v1.12.0 behavior under version v1.13.1. This checkpoint covers uncommitted fixes on `codex/fix-native-subtitle-regressions`, based on `959d31a6d258ad05254229e891fdad345612c844`. Package/manifest versions remain 1.13.0 for this local test build; it is not a new Store submission artifact. These observations do not establish the reviewer's exact failing title or installed version.
+
+Three content-side defects were addressed:
+
+- Same-title media element/source replacement no longer discards in-flight native subtitle acquisition. Title and newer-request guards remain enforced.
+- Lifecycle refresh checks the current page URL before emitting a video ID. Page-world SPA navigation can bypass the isolated content world's history wrappers; the previous player/source is retained for transition comparison so an already-replaced player is not mistaken for stale content.
+- An invalid cue is excluded individually instead of rejecting its entire track. Tracks with no usable cues still fail.
+
+Automated gates: type check, lint, **312 tests in 44 files**, and the configured production build PASS. Regression cases failed before their respective fixes: two same-title media changes, three invalid-cue positions, and two page-world route/player changes. Tests also cover new-episode acquisition across lifecycle refresh and actual background persistence for both language tracks. Three existing Webpack size warnings remain. Final tested `dist/content.js` SHA256: `A00C3028B748936DB5F677A718C82C42AAE0EDA77F6081443D8F8F45F4292DE8`.
+
+| Actual Chrome check | Result and limits |
+| --- | --- |
+| Initial playback | Both native overlays and the actual side-panel list displayed on `/en/play`. |
+| Different-episode SPA navigation | The first build, containing only acquisition/cue fixes, reproduced missing subtitles after Next Episode. After the lifecycle fix, the provider's Next Episode button changed `be5a6352-dff1-4328-b0b3-f1b5ab9c382d` to `ba219084-82bf-4114-8665-99abbabbb357` in the same document. Session data contained 274 English and 258 Korean cues for the new ID; the actual panel displayed the 274-cue list with 14 virtualized rows. |
+| Mixed valid/invalid cues | Controlled inline metadata/VTT fixtures passed through the compiled extension's native acquisition and background persistence. Each language retained one healthy cue and excluded the reversed-time cue; both overlays and the panel showed the healthy text. This is not a malformed provider-asset observation. |
+| Reload after fixture | Provider metadata restored 274 English/258 Korean cues; synthetic text was absent. Both natural subtitle overlays displayed again during playback. |
+
+Cleanup PASS: exact comparisons confirm original sync/local storage, extension localStorage and permissions restored, including existing uploads. Test instrumentation and synthetic tracks were cleared; no feedback was sent. Owned playback tab 2 and side-panel page 4 were closed; pre-existing blank tab 1 and the stable extension were preserved. Provider language remained English. Dedicated gateway stop returned `ok: true, active: false`. Ignored diagnostic evidence is under `services/feedback/.wrangler/incident-20261016/`.
+
+Scope: bug-fix validation complete; **not a release-readiness declaration**. This follow-up did not rerun the full release matrix, the `/play` route in actual Chrome, or a Store automatic-update path. No commit, push, tag, deployment, Store submission or collection-setting change was performed.
+
 ## Evidence limits, cleanup and decision
 
 - Record **NOT RUN** and **BLOCKED** honestly; environment problems are not feature PASS.
